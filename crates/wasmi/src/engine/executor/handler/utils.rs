@@ -745,6 +745,9 @@ pub fn call_func_entry(
     params: BoundedSlotSpan,
     func: &FuncEntry,
     instance: Option<Inst>,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
 ) -> Control<(Ip, Sp), Break> {
     let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func_entry!(state, func);
     let callee_sp = state
@@ -756,6 +759,9 @@ pub fn call_func_entry(
             len_local_slots,
             len_stack_slots,
             instance,
+            ireg,
+            freg32,
+            freg64,
         )
         .into_control()?;
     Control::Continue((callee_ip, callee_sp))
@@ -768,6 +774,9 @@ pub fn call_wasm(
     params: BoundedSlotSpan,
     func: EngineFunc,
     instance: Option<Inst>,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
 ) -> Control<(Ip, Sp), Break> {
     let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func!(state, func);
     let callee_sp = state
@@ -779,6 +788,9 @@ pub fn call_wasm(
             len_local_slots,
             len_stack_slots,
             instance,
+            ireg,
+            freg32,
+            freg64,
         )
         .into_control()?;
     Control::Continue((callee_ip, callee_sp))
@@ -906,6 +918,9 @@ pub fn call_wasm_or_host(
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: Inst,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
 ) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
     let func_entity = resolve_func(state.store, &func);
     let next_state = match func_entity {
@@ -913,8 +928,16 @@ pub fn call_wasm_or_host(
             let func = wasm_func.func_body();
             let callee_instance = *wasm_func.instance();
             let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
-            let (callee_ip, callee_sp) =
-                call_wasm(state, caller_ip, params, func, Some(callee_instance))?;
+            let (callee_ip, callee_sp) = call_wasm(
+                state,
+                caller_ip,
+                params,
+                func,
+                Some(callee_instance),
+                ireg,
+                freg32,
+                freg64,
+            )?;
             let (instance, mem0, mem0_len) =
                 update_instance(state.store, instance, callee_instance, mem0, mem0_len);
             (callee_ip, callee_sp, mem0, mem0_len, instance)

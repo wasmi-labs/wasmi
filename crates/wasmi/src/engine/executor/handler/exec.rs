@@ -299,7 +299,7 @@ execution_handler! {
         //  - its allocation is never moved or freed while this bytecode runs.
         //  - the `FuncEntry` type mutates only guarded by lock-free atomics.
         let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
-        let (callee_ip, callee_sp) = call_func_entry(state, caller_ip, params, func, None)?;
+        let (callee_ip, callee_sp) = call_func_entry(state, caller_ip, params, func, None, ireg, freg32, freg64)?;
         dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -319,7 +319,7 @@ execution_handler! {
         let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
         let func = fetch_func(instance, func);
         let (ip, sp, mem0, mem0_len, instance) =
-            call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
+            call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance, ireg, freg32, freg64)?;
         dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -361,7 +361,7 @@ macro_rules! call_indirect_execution_handler {
                             freg64,
                         ).into_control()?;
                     let (callee_ip, sp, mem0, mem0_len, instance) =
-                        call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
+                        call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance, ireg, freg32, freg64)?;
                     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }

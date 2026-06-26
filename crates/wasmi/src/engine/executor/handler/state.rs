@@ -847,10 +847,19 @@ impl Stack {
         callee_locals: u16,
         callee_slots: u16,
         callee_instance: Option<Inst>,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Result<Sp, TrapCode> {
-        let start = self
-            .frames
-            .push(caller_ip, callee_ip, callee_params, callee_instance)?;
+        let start = self.frames.push(
+            caller_ip,
+            callee_ip,
+            callee_params,
+            callee_instance,
+            ireg,
+            freg32,
+            freg64,
+        )?;
         self.values
             .push(start, callee_locals, callee_slots, callee_params.len())
     }
@@ -1313,6 +1322,9 @@ impl CallStack {
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
         instance: Option<Inst>,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Result<SpOffset, TrapCode> {
         if self.frames.len() == self.max_height {
             return Err(TrapCode::StackOverflow);
@@ -1331,6 +1343,9 @@ impl CallStack {
             ip: callee_ip,
             start,
             instance: prev_instance,
+            ireg,
+            freg32,
+            freg64,
         });
         Ok(start)
     }
@@ -1397,6 +1412,12 @@ pub struct Frame {
     /// This is only `Some` if [`Frame`] and its caller originate from different
     /// Wasm instances and thus execution needs to change the currently used [`Inst`].
     instance: Option<Inst>,
+    /// The `ireg` state of hte frame.
+    ireg: Ireg,
+    /// The `freg32` state of hte frame.
+    freg32: Freg32,
+    /// The `freg64` state of hte frame.
+    freg64: Freg64,
 }
 
 /// The offset of an [`Sp`] of a [`Stack`].
