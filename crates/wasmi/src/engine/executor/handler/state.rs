@@ -1418,11 +1418,11 @@ pub struct Frame {
     /// This is only `Some` if [`Frame`] and its caller originate from different
     /// Wasm instances and thus execution needs to change the currently used [`Inst`].
     instance: Option<Inst>,
-    /// The `ireg` state of hte frame.
+    /// The `ireg` state of the frame.
     ireg: Ireg,
-    /// The `freg32` state of hte frame.
+    /// The `freg32` state of the frame.
     freg32: Freg32,
-    /// The `freg64` state of hte frame.
+    /// The `freg64` state of the frame.
     freg64: Freg64,
 }
 
