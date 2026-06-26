@@ -753,14 +753,7 @@ impl FuncTranslator {
         let ty = operand.ty();
         let copy_op = match self.resolve_operand::<RawVal>(operand)? {
             ResolvedOperand::Slot(slot) => return Ok(slot),
-            ResolvedOperand::Reg(ty) => match ty {
-                | ValType::I32 | ValType::FuncRef | ValType::ExternRef | ValType::I64 => {
-                    Op::u64_copy_sr(result)
-                }
-                | ValType::F32 => Op::f32_copy_sr(result),
-                | ValType::F64 => Op::f64_copy_sr(result),
-                | ValType::V128 => unreachable!(),
-            },
+            ResolvedOperand::Reg(ty) => Self::select_copy_sr_op(result, ty),
             ResolvedOperand::Immediate(value) => {
                 Self::select_copy_si_op(result, TypedRawVal::new(ty, value))
             }
