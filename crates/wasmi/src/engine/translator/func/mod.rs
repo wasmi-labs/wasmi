@@ -1158,8 +1158,8 @@ impl FuncTranslator {
 
     /// Prepares to encode a return operator returning `n` (`n > 1`) values.
     ///
-    /// This will attemp to copy the `n` values on top of the stack to the
-    /// stack slots required for returning to teh caller.
+    /// This will attempt to copy the `n` values on top of the stack to the
+    /// stack slots required for returning to the caller.
     fn prepare_return_n_op(
         &mut self,
         len: u16,
