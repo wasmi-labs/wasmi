@@ -137,8 +137,6 @@ define_ident!(
     Store: store,
 
     Copy: copy,
-    CopySpanAsc: copy_span_asc,
-    CopySpanDes: copy_span_des,
     Reinterpret: reinterpret,
 
     Table: table,

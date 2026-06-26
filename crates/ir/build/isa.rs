@@ -587,25 +587,6 @@ fn add_copy_ops(isa: &mut Isa) {
             OperandKind::Reg,
         ));
     }
-    let ops = [
-        Op::from(GenericOp::new(
-            Ident::CopySpanAsc,
-            [
-                Field::new(Ident::Results, FieldTy::SlotSpan),
-                Field::new(Ident::Values, FieldTy::SlotSpan),
-                Field::new(Ident::Len, FieldTy::U16),
-            ],
-        )),
-        Op::from(GenericOp::new(
-            Ident::CopySpanDes,
-            [
-                Field::new(Ident::Results, FieldTy::SlotSpan),
-                Field::new(Ident::Values, FieldTy::SlotSpan),
-                Field::new(Ident::Len, FieldTy::U16),
-            ],
-        )),
-    ];
-    isa.push_ops(ops);
     for result_ty in [Ty::U64, Ty::F32, Ty::F64] {
         for index in 0..10 {
             isa.push_op(UnaryOp::new(
