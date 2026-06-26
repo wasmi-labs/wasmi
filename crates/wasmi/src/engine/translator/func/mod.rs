@@ -1569,8 +1569,6 @@ impl FuncTranslator {
     /// with the length equal to the number of cells storing the call parameters.
     fn adjust_stack_for_call(&mut self, ty: &FuncType) -> Result<BoundedSlotSpan, Error> {
         let fuel_pos = self.stack.fuel_pos();
-        self.preserve_regs(fuel_pos)?;
-        let fuel_pos = self.stack.fuel_pos();
         let params = self.copy_operands_to_temp(ty.len_params(), fuel_pos)?;
         for _ in 0..ty.len_params() {
             self.stack.pop();
