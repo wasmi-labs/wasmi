@@ -540,7 +540,6 @@ pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
 }
 
 pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
-    std::println!("exec_copy_span_asc dst = {dst:?}, src = {src:?}, len = {len}");
     debug_assert!(dst.head() < src.head());
     debug_assert!(len > 0);
     let mut dst = dst.head();
@@ -555,7 +554,6 @@ pub fn exec_copy_span_asc(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
 }
 
 pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
-    std::println!("exec_copy_span_des dst = {dst:?}, src = {src:?}, len = {len}");
     debug_assert!(dst.head() > src.head());
     debug_assert!(len > 0);
     let dst_end = dst.head();
