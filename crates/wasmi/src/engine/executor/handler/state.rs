@@ -733,7 +733,7 @@ pub struct Stack {
     freg64: Freg64,
 }
 
-type ReturnCallHost = Control<(Ip, Sp, Inst), Sp>;
+type ReturnCallHost = Control<(Ip, Sp, Inst, Ireg, Freg32, Freg64), Sp>;
 
 impl Stack {
     /// Creates a new [`Stack`] with the given [`StackConfig`] limits.
@@ -1033,12 +1033,12 @@ impl ValueStack {
     /// the caller's caller.
     fn return_prepare_host_frame<'a>(
         &'a mut self,
-        caller: Option<(Ip, SpOffset, Inst)>,
+        caller: Option<(Ip, SpOffset, Inst, Ireg, Freg32, Freg64)>,
         callee_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
     ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
-        let caller_start = caller.map(|(_, start, _)| start).unwrap_or_default();
+        let caller_start = caller.map(|(_, start, ..)| start).unwrap_or_default();
         let params_offset = usize::from(u16::from(callee_params.span().head()));
         let params_len = usize::from(callee_params.len());
         let results_len = usize::from(results_len);
@@ -1050,7 +1050,9 @@ impl ValueStack {
             };
             let inout = InOutParams::new(&mut [], 0, 0).unwrap();
             let control = match caller {
-                Some((ip, _, instance)) => ReturnCallHost::Continue((ip, sp, instance)),
+                Some((ip, _, instance, ireg, freg32, freg64)) => {
+                    ReturnCallHost::Continue((ip, sp, instance, ireg, freg32, freg64))
+                }
                 None => ReturnCallHost::Break(sp),
             };
             return Ok((control, inout));
@@ -1068,7 +1070,9 @@ impl ValueStack {
             panic!("todo")
         };
         let control = match caller {
-            Some((ip, _, instance)) => ReturnCallHost::Continue((ip, caller_sp, instance)),
+            Some((ip, _, instance, ireg, freg32, freg64)) => {
+                ReturnCallHost::Continue((ip, caller_sp, instance, ireg, freg32, freg64))
+            }
             None => ReturnCallHost::Break(caller_sp),
         };
         Ok((control, inout))
@@ -1301,15 +1305,16 @@ impl CallStack {
     /// In the following code, `callee` represents the called host function frame
     /// and `caller` represents the caller of the caller of the host function, a.k.a.
     /// the caller's caller.
+    #[expect(clippy::type_complexity)]
     pub fn return_prepare_host_frame(
         &mut self,
         callee_instance: Inst,
-    ) -> (SpOffset, Option<(Ip, SpOffset, Inst)>) {
+    ) -> (SpOffset, Option<(Ip, SpOffset, Inst, Ireg, Freg32, Freg64)>) {
         let callee_start = self.top_start();
         let caller = match self.pop() {
-            Some((ip, start, instance, _ireg, _freg32, _freg64)) => {
+            Some((ip, start, instance, ireg, freg32, freg64)) => {
                 let instance = instance.unwrap_or(callee_instance);
-                Some((ip, start, instance))
+                Some((ip, start, instance, ireg, freg32, freg64))
             }
             None => None,
         };

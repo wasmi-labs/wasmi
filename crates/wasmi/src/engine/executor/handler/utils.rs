@@ -839,6 +839,7 @@ pub fn return_call_wasm(
     Control::Continue((callee_ip, callee_sp))
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn call_host(
     state: &mut VmState,
     func: Func,
@@ -847,6 +848,9 @@ pub fn call_host(
     params: BoundedSlotSpan,
     instance: Option<Inst>,
     call_hooks: CallHooks,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
 ) -> Control<Sp, Break> {
     debug_assert_eq!(params.len(), host_func.len_param_cells());
     let trampoline = *host_func.trampoline();
@@ -860,6 +864,7 @@ pub fn call_host(
     {
         Ok(()) => {}
         Err(StoreError::External(error)) => {
+            state.stack.sync_regs(ireg, freg32, freg64);
             done!(state, DoneReason::host_error(error, func, params.span()))
         }
         Err(StoreError::Internal(error)) => unsafe {
@@ -878,7 +883,7 @@ pub fn return_call_host(
     host_func: HostFuncEntity,
     params: BoundedSlotSpan,
     instance: Inst,
-) -> Control<(Ip, Sp, Inst), Break> {
+) -> Control<(Ip, Sp, Inst, Ireg, Freg32, Freg64), Break> {
     debug_assert_eq!(params.len(), host_func.len_param_cells());
     let trampoline = *host_func.trampoline();
     let (control, inout) = state
@@ -907,7 +912,9 @@ pub fn return_call_host(
     }
     state.code.refresh();
     match control {
-        Control::Continue((ip, sp, instance)) => Control::Continue((ip, sp, instance)),
+        Control::Continue((ip, sp, instance, ireg, freg32, freg64)) => {
+            Control::Continue((ip, sp, instance, ireg, freg32, freg64))
+        }
         Control::Break(sp) => done!(state, DoneReason::Return(sp)),
     }
 }
@@ -955,6 +962,9 @@ pub fn call_wasm_or_host(
                 params,
                 Some(instance),
                 CallHooks::Call,
+                ireg,
+                freg32,
+                freg64,
             )?;
             // Host functions may re-enter WASM (e.g. calling cabi_realloc)
             // which can trigger memory.grow, invalidating the cached mem0

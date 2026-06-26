@@ -414,7 +414,7 @@ execution_handler! {
         let (_, crate::ir::decode::ReturnCallImported { params, func }) = unsafe { decode_op(ip) };
         let func = fetch_func(instance, func);
         let func_entity = resolve_func(state.store, &func);
-        let (callee_ip, sp, new_instance) = match func_entity {
+        let (callee_ip, sp, new_instance, ireg, freg32, freg64) = match func_entity {
             FuncEntity::Wasm(func) => {
                 let wasm_func = func.func_body();
                 let callee_instance = *func.instance();
@@ -425,7 +425,7 @@ execution_handler! {
                 };
                 let (callee_ip, callee_sp) =
                     return_call_wasm(state, params, wasm_func, changed_instance)?;
-                (callee_ip, callee_sp, callee_instance)
+                (callee_ip, callee_sp, callee_instance, ireg, freg32, freg64)
             }
             FuncEntity::Host(host_func) => {
                 let host_func = *host_func;
@@ -475,7 +475,7 @@ macro_rules! return_call_indirect_execution_handler {
                             freg64,
                         ).into_control()?;
                     let func_entity = resolve_func(state.store, &func);
-                    let (callee_ip, sp, callee_instance) = match func_entity {
+                    let (callee_ip, sp, callee_instance, ireg, freg32, freg64) = match func_entity {
                         FuncEntity::Wasm(func) => {
                             let wasm_func = func.func_body();
                             let callee_instance = *func.instance();
@@ -486,7 +486,7 @@ macro_rules! return_call_indirect_execution_handler {
                             };
                             let (callee_ip, callee_sp) =
                                 return_call_wasm(state, params, wasm_func, changed_instance)?;
-                            (callee_ip, callee_sp, callee_instance)
+                            (callee_ip, callee_sp, callee_instance, ireg, freg32, freg64)
                         }
                         FuncEntity::Host(host_func) => {
                             let host_func = *host_func;
