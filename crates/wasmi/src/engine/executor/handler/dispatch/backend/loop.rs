@@ -193,6 +193,7 @@ macro_rules! impl_executor_handlers {
             #[cfg_attr(all(feature = "indirect-dispatch", debug_assertions), inline(never))]
             #[cfg_attr(not(feature = "indirect-dispatch"), inline(never))]
             fn $snake_case(&mut self, state: &mut VmState) -> Control<(), Break> {
+                std::println!(stringify!($snake_case));
                 match exec::$snake_case(state, self.ip, self.sp, self.mem0, self.mem0_len, self.instance, self.ireg, self.freg32, self.freg64) {
                     Done::Continue(NextState { ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64 }) => {
                         self.ip = ip;
