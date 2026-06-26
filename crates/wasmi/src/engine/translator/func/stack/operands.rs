@@ -694,32 +694,6 @@ impl OperandStack {
         self.regs.discard_local_regs()
     }
 
-    /// Preserve all register operands on the [`OperandStack`].
-    ///
-    /// This is done by converting those operands to [`StackOperand::Temp`] and
-    /// returning their associated [`Slot`] in order to emit copy operators by
-    /// the caller.
-    #[must_use]
-    pub fn preserve_all_regs(&mut self) -> PreservedRegs {
-        fn preserve_reg(this: &mut OperandStack, link: RegisterLink) -> Option<Slot> {
-            let RegisterLink::Temp(stack_pos) = link else {
-                return None;
-            };
-            Some(this.operand_to_temp_at(stack_pos).temp_slots().head())
-        }
-        let reg_tys = [ValType::I64, ValType::F32, ValType::F64];
-        let [ireg, freg32, freg64] = reg_tys.map(|ty| {
-            self.regs
-                .dealloc(ty)
-                .and_then(|reg| preserve_reg(self, reg))
-        });
-        PreservedRegs {
-            ireg,
-            freg32,
-            freg64,
-        }
-    }
-
     /// Preserve all temporary register operands on the [`OperandStack`].
     ///
     /// This is done by converting those operands to [`StackOperand::Temp`] and

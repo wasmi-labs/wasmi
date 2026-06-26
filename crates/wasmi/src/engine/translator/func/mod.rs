@@ -1602,12 +1602,6 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Preserve all register operands on the [`Stack`].
-    fn preserve_regs(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<(), Error> {
-        let regs = self.stack.preserve_all_regs();
-        self.copy_preserved_regs_to_slots(regs, fuel_pos)
-    }
-
     /// Preserve all temporary register operands on the [`Stack`] but keep `local` register links.
     fn preserve_temp_regs(
         &mut self,
