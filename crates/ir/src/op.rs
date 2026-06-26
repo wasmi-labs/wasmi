@@ -13,7 +13,6 @@ use crate::{
     Reg,
     Slot,
     SlotAndReg,
-    SlotSpan,
     core::{ShiftAmount, TrapCode, ValType},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
