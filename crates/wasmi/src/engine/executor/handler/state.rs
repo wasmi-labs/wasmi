@@ -839,6 +839,7 @@ impl Stack {
 
     /// Adjusts `self` for a normal function call.
     #[inline(always)]
+    #[expect(clippy::too_many_arguments)]
     pub fn push_frame(
         &mut self,
         caller_ip: Option<Ip>,
@@ -865,6 +866,7 @@ impl Stack {
     }
 
     /// Adjusts `self` after returning from a function.
+    #[expect(clippy::type_complexity)]
     pub fn pop_frame(
         &mut self,
         store: &mut PrunedStore,
@@ -1316,6 +1318,7 @@ impl CallStack {
 
     /// Adjusts `self` for a normal function call.
     #[inline(always)]
+    #[expect(clippy::too_many_arguments)]
     fn push(
         &mut self,
         caller_ip: Option<Ip>,

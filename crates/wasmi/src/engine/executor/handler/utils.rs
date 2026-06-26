@@ -739,6 +739,7 @@ pub fn update_instance(
     (new_instance, mem0, mem0_len)
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn call_func_entry(
     state: &mut VmState,
     caller_ip: Ip,
@@ -768,6 +769,7 @@ pub fn call_func_entry(
 }
 
 #[inline(never)]
+#[expect(clippy::too_many_arguments)]
 pub fn call_wasm(
     state: &mut VmState,
     caller_ip: Ip,
@@ -910,6 +912,7 @@ pub fn return_call_host(
     }
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn call_wasm_or_host(
     state: &mut VmState,
     caller_ip: Ip,
