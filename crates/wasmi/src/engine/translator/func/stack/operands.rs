@@ -335,6 +335,29 @@ impl OperandStack {
         Some(returned)
     }
 
+    /// Restores the temporary operand at `stack_pos` back into its register.
+    ///
+    /// # Note
+    ///
+    /// This is the inverse of [`OperandStack::dealloc_reg`] and is used to undo an
+    /// unnecessary register spill after the spilling operator has been dropped.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// - If the operand at `stack_pos` is not a [`StackOperand::Temp`].
+    /// - If the operand at `stack_pos` is already linked to its register.
+    pub fn restore_reg_temp(&mut self, stack_pos: StackPos) {
+        let operand = self.get_at_mut(stack_pos);
+        let StackOperand::Temp { ty, in_reg, .. } = operand else {
+            unreachable!("can only restore a temporary operand into its register")
+        };
+        debug_assert!(!*in_reg);
+        *in_reg = true;
+        let ty = *ty;
+        let prev = self.regs.alloc(ty, RegisterLink::Temp(stack_pos));
+        debug_assert!(prev.is_none());
+    }
+
     /// Returns the current [`RegisterMap`] state.
     pub fn get_registers(&self) -> RegisterMap {
         self.regs

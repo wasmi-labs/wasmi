@@ -315,7 +315,7 @@ impl TempOperand {
     }
 
     /// Returns the stack position of the [`TempOperand`].
-    fn stack_pos(&self) -> StackPos {
+    pub fn stack_pos(&self) -> StackPos {
         self.stack_pos
     }
 

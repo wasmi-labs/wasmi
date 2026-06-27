@@ -1,4 +1,4 @@
-use super::{Reset, ReusableAllocations};
+use super::{Reset, ReusableAllocations, stack::StackPos};
 use crate::{
     Engine,
     Error,
@@ -197,6 +197,38 @@ pub struct OpEncoder {
     labels: LabelRegistry,
 }
 
+/// A register spill that was emitted right before staging an [`Op`].
+///
+/// # Note
+///
+/// Staging an [`Op`] whose result occupies a register may evict a resident operand by
+/// emitting a standalone `copy_sr` spill operator. If the staged [`Op`] is later dropped
+/// (e.g. fused into a result-less branch) this spill turns out to be unnecessary and can
+/// be reverted: the `copy_sr` bytes are truncated and the spilled operand is restored into
+/// its register.
+#[derive(Debug, Copy, Clone)]
+pub struct Spill {
+    /// The position of the emitted `copy_sr` spill [`Op`] in the encoded buffer.
+    copy_pos: Pos<Op>,
+    /// The stack position of the spilled operand.
+    stack_pos: StackPos,
+}
+
+impl Spill {
+    /// Creates a new [`Spill`] from the spill `copy_pos` and the spilled operand `stack_pos`.
+    pub fn new(copy_pos: Pos<Op>, stack_pos: StackPos) -> Self {
+        Self {
+            copy_pos,
+            stack_pos,
+        }
+    }
+
+    /// Returns the stack position of the spilled operand.
+    pub fn stack_pos(&self) -> StackPos {
+        self.stack_pos
+    }
+}
+
 /// The staged [`Op`] and information about its fuel consumption.
 #[derive(Debug, Copy, Clone)]
 pub struct StagedOp {
@@ -209,19 +241,31 @@ pub struct StagedOp {
     /// - The [`Op::ConsumeFuel`] operator associated to the staged [`Op`] if any.
     /// - The fuel required by the staged [`Op`].
     fuel: Option<(Pos<BlockFuel>, FuelUsed)>,
+    /// The unnecessary spill caused by staging this [`Op`] if any.
+    spill: Option<Spill>,
 }
 
 impl StagedOp {
-    /// Creates a new [`StagedOp`] from `op` and `fuel`.
-    pub fn new(op: Op, pos: Pos<Op>, fuel: Option<(Pos<BlockFuel>, FuelUsed)>) -> Self {
-        Self { op, pos, fuel }
+    /// Creates a new [`StagedOp`] from `op`, `fuel` and the optional `spill` it caused.
+    pub fn new(
+        op: Op,
+        pos: Pos<Op>,
+        fuel: Option<(Pos<BlockFuel>, FuelUsed)>,
+        spill: Option<Spill>,
+    ) -> Self {
+        Self {
+            op,
+            pos,
+            fuel,
+            spill,
+        }
     }
 
     /// Updates the current [`Op`] of `self` with `op`.
     ///
     /// # Note
     ///
-    /// There is no need to update `pos` or `fuel` since both stay
+    /// There is no need to update `pos`, `fuel` or `spill` since all stay
     /// the same given that the staged [`Op`] is always last.
     pub fn update(&mut self, op: Op) {
         self.op = op;
@@ -339,6 +383,7 @@ impl OpEncoder {
         new_staged: Op,
         fuel_op: Option<Pos<BlockFuel>>,
         fuel_selector: impl FuelCostsSelector,
+        spill: Option<Spill>,
     ) -> Result<(), Error> {
         self.commit_staged_if_any()?;
         self.pad_to_op_alignment()?;
@@ -348,7 +393,7 @@ impl OpEncoder {
             (Some(fuel_op), Some(fuel_costs)) => Some((fuel_op, fuel_selector.select(fuel_costs))),
             _ => unreachable!(),
         };
-        self.staged = Some(StagedOp::new(new_staged, pos, fuel));
+        self.staged = Some(StagedOp::new(new_staged, pos, fuel, spill));
         Ok(())
     }
 
@@ -385,12 +430,18 @@ impl OpEncoder {
 
     /// Drops the staged [`Op`] without encoding it.
     ///
-    /// Returns the staged [`Op`]'s fuel information or `None` if fuel metering is disabled.
+    /// Returns the staged [`Op`]'s fuel information (or `None` if fuel metering is disabled)
+    /// and the [`Spill`] it caused (if any).
+    ///
+    /// # Note
+    ///
+    /// The caller may revert the returned [`Spill`] via [`OpEncoder::revert_spill`] when it
+    /// knows that the now-dropped staged [`Op`] made the spill unnecessary.
     ///
     /// # Panics
     ///
     /// If there was no staged [`Op`].
-    pub fn drop_staged(&mut self) -> (Option<Pos<BlockFuel>>, FuelUsed) {
+    pub fn drop_staged(&mut self) -> (Option<Pos<BlockFuel>>, FuelUsed, Option<Spill>) {
         let Some(staged) = self.staged.take() else {
             panic!("could not drop staged `Op` since there was none")
         };
@@ -398,7 +449,33 @@ impl OpEncoder {
         self.ops.truncate(staged.pos);
         let fuel_pos = staged.fuel.map(|(pos, _)| pos);
         let fuel_used = staged.fuel.map(|(_, used)| used).unwrap_or(0);
-        (fuel_pos, fuel_used)
+        (fuel_pos, fuel_used, staged.spill)
+    }
+
+    /// Reverts the `spill` that was caused by a now-dropped staged [`Op`].
+    ///
+    /// # Note
+    ///
+    /// - Truncates the encoded `copy_sr` spill operator from the buffer.
+    /// - Reverses the fuel consumption that was bumped for the `copy_sr` spill operator.
+    ///
+    /// The caller is responsible for restoring the spilled operand into its register
+    /// (e.g. via `Stack::restore_reg_temp`).
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If there currently is a staged [`Op`].
+    pub fn revert_spill(
+        &mut self,
+        spill: Spill,
+        fuel_pos: Option<Pos<BlockFuel>>,
+    ) -> Result<(), Error> {
+        debug_assert!(self.staged.is_none());
+        // The `copy_sr` spill was emitted via `encode_op` which already bumped its base
+        // fuel costs, hence we have to reverse that here before truncating the operator.
+        self.reduce_fuel_consumption(fuel_pos, FuelCostsProvider::base)?;
+        self.ops.truncate(spill.copy_pos);
+        Ok(())
     }
 
     /// Replaces the staged [`Op`] with `new_staged`.
@@ -568,6 +645,55 @@ impl OpEncoder {
         self.ops
             .update_encoded(fuel_pos, |mut fuel| -> Option<BlockFuel> {
                 fuel.bump_by(delta).ok()?;
+                Some(fuel)
+            });
+        Ok(())
+    }
+
+    /// Reduces consumed fuel for the [`Op::ConsumeFuel`] at `fuel_pos`.
+    ///
+    /// Does nothing if fuel metering is disabled.
+    ///
+    /// # Errors
+    ///
+    /// If consumed fuel is out of bounds after this operation.
+    fn reduce_fuel_consumption(
+        &mut self,
+        fuel_pos: Option<Pos<BlockFuel>>,
+        fuel_selector: impl FuelCostsSelector,
+    ) -> Result<(), Error> {
+        debug_assert_eq!(fuel_pos.is_some(), self.fuel_costs.is_some());
+        let fuel_used = self
+            .fuel_costs
+            .as_ref()
+            .map(|costs| fuel_selector.select(costs))
+            .unwrap_or(0);
+        if fuel_used == 0 {
+            return Ok(());
+        }
+        self.reduce_fuel_consumption_by(fuel_pos, fuel_used)
+    }
+
+    /// Reduces consumed fuel for [`Op::ConsumeFuel`] at `fuel_pos` by `delta`.
+    ///
+    /// Does nothing if fuel metering is disabled.
+    ///
+    /// # Errors
+    ///
+    /// If consumed fuel is out of bounds after this operation.
+    fn reduce_fuel_consumption_by(
+        &mut self,
+        fuel_pos: Option<Pos<BlockFuel>>,
+        delta: FuelUsed,
+    ) -> Result<(), Error> {
+        debug_assert_eq!(fuel_pos.is_some(), self.fuel_costs.is_some());
+        let fuel_pos = match fuel_pos {
+            None => return Ok(()),
+            Some(fuel_pos) => fuel_pos,
+        };
+        self.ops
+            .update_encoded(fuel_pos, |mut fuel| -> Option<BlockFuel> {
+                fuel.reduce_by(delta).ok()?;
                 Some(fuel)
             });
         Ok(())

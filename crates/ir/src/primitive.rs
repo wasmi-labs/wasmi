@@ -187,6 +187,18 @@ impl BlockFuel {
             .ok_or(Error::BlockFuelOutOfBounds)?;
         Ok(())
     }
+
+    /// Reduce the fuel by `amount` if possible.
+    ///
+    /// # Errors
+    ///
+    /// If the new fuel amount after this operation would underflow.
+    pub fn reduce_by(&mut self, amount: u64) -> Result<(), Error> {
+        self.0 = u64::from(*self)
+            .checked_sub(amount)
+            .ok_or(Error::BlockFuelOutOfBounds)?;
+        Ok(())
+    }
 }
 
 /// A 64-bit memory address used for some load and store instructions.

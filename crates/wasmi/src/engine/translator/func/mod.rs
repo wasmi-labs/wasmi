@@ -14,7 +14,7 @@ mod visit;
 use self::stack::ImmediateOperand;
 
 use self::{
-    encoder::{OpEncoder, OpEncoderAllocations, Pos},
+    encoder::{OpEncoder, OpEncoderAllocations, Pos, Spill},
     labels::{LabelRef, LabelRegistry},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
@@ -837,22 +837,37 @@ impl FuncTranslator {
     /// If a register operand of an equivalent type is already on the stack
     /// a copy operator is encoded to turn the existing register operand into
     /// a temporary operand.
-    fn push_result_reg(&mut self, ty: ValType) -> Result<(), Error> {
+    ///
+    /// Returns the [`Spill`] that was caused if a standalone `copy_sr` spill operator was
+    /// emitted. The caller may use it to revert the spill if the staged operator whose result
+    /// occupies the register ends up being dropped (e.g. fused into a result-less branch).
+    fn push_result_reg(&mut self, ty: ValType) -> Result<Option<Spill>, Error> {
         let fuel_pos = self.stack.fuel_pos();
+        let mut spill = None;
         if let Some(operand) = self.stack.dealloc_reg(ty) {
             let result = operand.temp_slots().head();
-            let op = match self.fuse_copy_sr(result, ty) {
+            match self.fuse_copy_sr(result, ty) {
                 Some(fused_op) => {
+                    // Case: the spill was fused into the staged producer operator (which writes
+                    //       its result to both `slot` and register) so there is no standalone
+                    //       `copy_sr` operator to revert later.
                     self.instrs.drop_staged();
-                    fused_op
+                    self.instrs
+                        .encode_op(fused_op, fuel_pos, FuelCostsProvider::base)?;
                 }
-                None => Self::select_copy_sr_op(result, operand.ty()),
-            };
-            self.instrs
-                .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+                None => {
+                    // Case: a standalone `copy_sr` spill operator is emitted. Record it so that
+                    //       a later fusion of the staged operator can revert this spill.
+                    let copy_op = Self::select_copy_sr_op(result, operand.ty());
+                    let copy_pos =
+                        self.instrs
+                            .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
+                    spill = Some(Spill::new(copy_pos, operand.stack_pos()));
+                }
+            }
         };
         self.stack.push_temp(ty, Allocation::Reg)?;
-        Ok(())
+        Ok(spill)
     }
 
     /// Pushes the `instr` to the function with the associated `fuel_costs`.
@@ -863,9 +878,9 @@ impl FuncTranslator {
         fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
         debug_assert_eq!(op.result_loc().map(|loc| loc.is_reg()), Some(true));
-        self.push_result_reg(result_ty)?;
+        let spill = self.push_result_reg(result_ty)?;
         let fuel_pos = self.stack.fuel_pos();
-        self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
+        self.instrs.stage_op(op, fuel_pos, fuel_costs, spill)?;
         Ok(())
     }
 
@@ -899,7 +914,7 @@ impl FuncTranslator {
             .head();
         let op = make_instr(result);
         debug_assert!(op.result_ref().is_some());
-        self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
+        self.instrs.stage_op(op, fuel_pos, fuel_costs, None)?;
         Ok(())
     }
 
@@ -920,7 +935,7 @@ impl FuncTranslator {
             .temp_slots()
             .head();
         if let Some(op) = make_op(result) {
-            self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
+            self.instrs.stage_op(op, fuel_pos, fuel_costs, None)?;
         }
         Ok(())
     }
@@ -1264,7 +1279,7 @@ impl FuncTranslator {
         let fused_op = self.fused_local_set(result, input)?;
         let staged_fuel = match fused_op {
             Some(_) => {
-                let (_, fuel_used) = self.instrs.drop_staged();
+                let (_, fuel_used, _) = self.instrs.drop_staged();
                 Some(fuel_used)
             }
             None => None,
@@ -1407,7 +1422,14 @@ impl FuncTranslator {
         branch_eqz: bool,
     ) -> Result<(), Error> {
         if let Some(fused_op) = self.fused_cmp_branch(condition, branch_eqz)? {
-            let (fuel_pos, _) = self.instrs.drop_staged();
+            let (fuel_pos, _, spill) = self.instrs.drop_staged();
+            if let Some(spill) = spill {
+                // The dropped compare operator made an earlier register spill unnecessary:
+                // the register still holds the spilled value, so revert the spill operator
+                // and restore the operand into its register.
+                self.instrs.revert_spill(spill, fuel_pos)?;
+                self.stack.restore_reg_temp(spill.stack_pos());
+            }
             self.encode_branch_op(
                 label,
                 |offset| fused_op.with_branch_offset(offset),

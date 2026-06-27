@@ -6,7 +6,7 @@ mod operands;
 use self::{
     control::ControlStack,
     locals::LocalsHead,
-    operands::{OperandStack, StackOperand, StackPos},
+    operands::{OperandStack, StackOperand},
 };
 pub use self::{
     control::{
@@ -25,7 +25,7 @@ pub use self::{
         RegKind,
     },
     operand::{ImmediateOperand, LocalOperand, Location, Operand, ResolvedOperand, TempOperand},
-    operands::{Allocation, PreservedAllLocalsIter, PreservedLocalsIter, PreservedRegs},
+    operands::{Allocation, PreservedAllLocalsIter, PreservedLocalsIter, PreservedRegs, StackPos},
 };
 use super::{Reset, ReusableAllocations};
 use crate::{
@@ -520,6 +520,16 @@ impl Stack {
     /// and `None` is returned as no copy operator is required.
     pub fn dealloc_reg(&mut self, ty: ValType) -> Option<TempOperand> {
         self.operands.dealloc_reg(ty)
+    }
+
+    /// Restores the temporary operand at `stack_pos` back into its register.
+    ///
+    /// # Note
+    ///
+    /// This is the inverse of [`Stack::dealloc_reg`] and is used to undo an unnecessary
+    /// register spill after the spilling operator has been dropped.
+    pub fn restore_reg_temp(&mut self, stack_pos: StackPos) {
+        self.operands.restore_reg_temp(stack_pos)
     }
 
     /// Pushes the [`Operand`] back to the [`Stack`].
