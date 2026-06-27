@@ -91,14 +91,14 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         bail_unreachable!(self);
         let (ptr, value) = self.stack.pop2();
         let (memory, offset) = Self::decode_memarg(memarg)?;
+        let Some(offset) = Offset::new(offset) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
         let ptr = self.copy_immediate_to_slot(ptr)?;
         let value = self.copy_operand_to_slot(value)?;
         if self.translate_store128_mem0_offset16(ptr, offset, memory, value)? {
             return Ok(());
         }
-        let Some(offset) = Offset::new(offset) else {
-            return self.translate_trap(TrapCode::MemoryOutOfBounds);
-        };
         self.push_instr(
             match ptr {
                 Location::Slot(ptr) => Op::v128_store_ss(ptr, offset, value, memory),

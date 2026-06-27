@@ -295,8 +295,11 @@ impl FuncTranslator {
 
     fn translate_v128_load(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr_opd = self.stack.pop();
+        let (memory, offset) = Self::decode_memarg(memarg)?;
+        let Some(offset) = Offset::new(offset) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
         let ptr = self.resolve_operand_as_index(ptr_opd, memory)?;
         if let ResolvedOperand::Immediate(ptr) = ptr {
             if self.effective_address(memory, ptr, offset).is_none() {
@@ -317,9 +320,9 @@ impl FuncTranslator {
             if !memory.is_default() {
                 break 'opt;
             }
-            let offset = match Offset16::try_from(offset) {
-                Ok(offset) => offset,
-                Err(_) => break 'opt,
+            let offset = match Offset16::new(offset) {
+                Some(offset) => offset,
+                None => break 'opt,
             };
             self.push_op_with_result_slot(
                 ValType::V128,
@@ -332,9 +335,6 @@ impl FuncTranslator {
             return Ok(());
         }
         // Case: non-optimized fallback load operator.
-        let Some(offset) = Offset::new(offset) else {
-            return self.translate_trap(TrapCode::MemoryOutOfBounds);
-        };
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match ptr_loc {
@@ -437,9 +437,12 @@ impl FuncTranslator {
             ResolvedOperand::Slot(v128) => v128,
         };
         let (memory, offset) = Self::decode_memarg(memarg)?;
+        let Some(offset) = Offset::new(offset) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
         let ptr = self.copy_immediate_to_slot(ptr)?;
         if memory.is_default() {
-            if let Ok(offset16) = Offset16::try_from(offset) {
+            if let Some(offset16) = Offset16::new(offset) {
                 self.push_instr(
                     match ptr {
                         Location::Reg(_) => op_rs_mem0_offset16(offset16, v128, lane),
@@ -450,9 +453,6 @@ impl FuncTranslator {
                 return Ok(());
             }
         }
-        let Some(offset) = Offset::new(offset) else {
-            return self.translate_trap(TrapCode::MemoryOutOfBounds);
-        };
         self.push_instr(
             match ptr {
                 Location::Reg(_) => op_rs(offset, v128, memory, lane),
@@ -473,14 +473,14 @@ impl FuncTranslator {
     fn translate_store128_mem0_offset16(
         &mut self,
         ptr: Location,
-        offset: u64,
+        offset: Offset,
         memory: index::Memory,
         value: Slot,
     ) -> Result<bool, Error> {
         if !memory.is_default() {
             return Ok(false);
         }
-        let Ok(offset16) = Offset16::try_from(offset) else {
+        let Some(offset16) = Offset16::new(offset) else {
             return Ok(false);
         };
         self.push_instr(

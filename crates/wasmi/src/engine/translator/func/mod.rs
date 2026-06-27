@@ -2309,15 +2309,18 @@ impl FuncTranslator {
     /// If `ptr+offset` is a constant value the address is pre-calculated.
     fn select_load_op<T: op::LoadOp>(&mut self, ptr: Operand, memarg: MemArg) -> Result<Op, Error> {
         let (memory, offset) = Self::decode_memarg(memarg)?;
+        let Some(offset) = Offset::new(offset) else {
+            return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
+        };
         let ptr = self.resolve_operand_as_index(ptr, memory)?;
         'opt: {
             // Try to encode an optimized load operator if possible, otherwise fallback.
             if !memory.is_default() {
                 break 'opt;
             }
-            let offset = match Offset16::try_from(offset) {
-                Ok(offset) => offset,
-                Err(_) => break 'opt,
+            let offset = match Offset16::new(offset) {
+                Some(offset) => offset,
+                None => break 'opt,
             };
             let op = match ptr {
                 ResolvedOperand::Reg(_) => T::op_rr_mem0_offset16(offset),
@@ -2328,9 +2331,6 @@ impl FuncTranslator {
         }
         // We need to encode a non-optimized fallback load operator.
         let Some(ptr) = ptr.filter_map(|ptr| self.effective_address(memory, ptr, offset)) else {
-            return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
-        };
-        let Some(offset) = Offset::new(offset) else {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
         let op = match ptr {
@@ -2373,14 +2373,6 @@ impl FuncTranslator {
         T::Value: Copy + From<TypedRawVal>,
         T::Immediate: Copy,
     {
-        let (memory, offset) = Self::decode_memarg(memarg)?;
-        let Some(ptr) = self
-            .resolve_operand_as_index(ptr, memory)?
-            .map(|ptr| self.effective_address(memory, ptr, offset))
-            .transpose()
-        else {
-            return self.translate_trap(TrapCode::MemoryOutOfBounds);
-        };
         let op = self.choose_store_op::<T>(memarg, ptr, value)?;
         if let Op::Trap { trap_code } = op {
             return self.translate_trap(trap_code);
@@ -2393,7 +2385,7 @@ impl FuncTranslator {
     fn choose_store_op<T: op::StoreOp>(
         &mut self,
         memarg: MemArg,
-        ptr: ResolvedOperand<Address>,
+        ptr: Operand,
         value: Operand,
     ) -> Result<Op, Error>
     where
@@ -2402,15 +2394,22 @@ impl FuncTranslator {
     {
         use ResolvedOperand as Opd;
         let (memory, offset) = Self::decode_memarg(memarg)?;
+        let Some(offset) = Offset::new(offset) else {
+            return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
+        };
+        let Some(ptr) = self
+            .resolve_operand_as_index(ptr, memory)?
+            .map(|ptr| self.effective_address(memory, ptr, offset))
+            .transpose()
+        else {
+            return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
+        };
         if let Some(op) = self.choose_store_mem0_offset16_op::<T>(ptr, offset, memory, value)? {
             return Ok(op);
         }
         let value = self
             .resolve_operand::<T::Value>(value)?
             .map(T::into_immediate);
-        let Some(offset) = Offset::new(offset) else {
-            return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
-        };
         let op = match (ptr, value) {
             (Opd::Reg(_), Opd::Reg(_)) => match T::store_rr(offset, memory) {
                 Some(op) => op,
@@ -2438,7 +2437,7 @@ impl FuncTranslator {
     fn choose_store_mem0_offset16_op<T: op::StoreOp>(
         &mut self,
         ptr: ResolvedOperand<Address>,
-        offset: u64,
+        offset: Offset,
         memory: index::Memory,
         value: Operand,
     ) -> Result<Option<Op>, Error>
@@ -2451,7 +2450,7 @@ impl FuncTranslator {
         if !memory.is_default() {
             return Ok(None);
         }
-        let Ok(offset) = Offset16::try_from(offset) else {
+        let Some(offset) = Offset16::new(offset) else {
             return Ok(None);
         };
         let ptr = match ptr {
@@ -2492,12 +2491,11 @@ impl FuncTranslator {
     }
 
     /// Returns the effective address `ptr+offset` if it is valid.
-    // TODO: rename to just `effective_address` and remove old `effective_address`
-    fn effective_address(&self, mem: index::Memory, ptr: u64, offset: u64) -> Option<Address> {
+    fn effective_address(&self, mem: index::Memory, ptr: u64, offset: Offset) -> Option<Address> {
         let memory_type = *self
             .module
             .get_type_of_memory(MemoryIdx::from(u32::from(u16::from(mem))));
-        let Some(address) = ptr.checked_add(offset) else {
+        let Some(address) = ptr.checked_add(u64::from(offset)) else {
             // Case: address overflows any legal memory index.
             return None;
         };
@@ -2513,11 +2511,7 @@ impl FuncTranslator {
             // Case: address overflows the 32-bit memory index.
             return None;
         }
-        let Ok(address) = Address::try_from(address) else {
-            // Case: address is too big for the system to handle properly.
-            return None;
-        };
-        Some(address)
+        Address::new(address)
     }
 
     /// Translates a Wasm `i64.binop128` instruction from the `wide-arithmetic` proposal.
