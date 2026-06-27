@@ -99,10 +99,6 @@ impl BranchTableTarget {
     }
 }
 
-/// Error that may occur upon converting values to [`Address`] and [`Offset16`].
-#[derive(Debug, Copy, Clone)]
-pub struct OutOfBoundsConst;
-
 /// A signed offset for branch instructions.
 ///
 /// This defines how much the instruction pointer is offset
@@ -194,14 +190,13 @@ impl BlockFuel {
 #[repr(transparent)]
 pub struct Address(u64);
 
-impl TryFrom<u64> for Address {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(address: u64) -> Result<Self, OutOfBoundsConst> {
-        if usize::try_from(address).is_err() {
-            return Err(OutOfBoundsConst);
-        };
-        Ok(Self(address))
+impl Address {
+    /// Creates a new [`Address`] from `addr` if `addr` is valid for this system.
+    pub fn new(addr: u64) -> Option<Self> {
+        if usize::try_from(addr).is_err() {
+            return None;
+        }
+        Some(Self(addr))
     }
 }
 
@@ -225,13 +220,12 @@ impl From<Address> for u64 {
 #[repr(transparent)]
 pub struct Offset16(u16);
 
-impl TryFrom<u64> for Offset16 {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(address: u64) -> Result<Self, Self::Error> {
-        <u16>::try_from(address)
-            .map(Self)
-            .map_err(|_| OutOfBoundsConst)
+impl Offset16 {
+    /// Creates a new [`Offset16`] from `offset` if within bounds.
+    ///
+    /// Returns `None` if `offset` is out of bounds for [`Offset16`].
+    pub fn new(offset: Offset) -> Option<Self> {
+        u16::try_from(u64::from(offset)).ok().map(Self)
     }
 }
 
