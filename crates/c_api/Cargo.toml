@@ -24,7 +24,7 @@ test = false
 doctest = false
 
 [features]
-default = ["std"]
+default = ["std", "wasmi/memory64"]
 std = []
 prefix-symbols = []
 simd = ["wasmi/simd"]
