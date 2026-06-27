@@ -73,6 +73,7 @@ use crate::{
         BoundedSlotSpan,
         BranchOffset,
         FixedSlotSpan,
+        Offset,
         Offset16,
         Op,
         Slot,
@@ -2329,6 +2330,9 @@ impl FuncTranslator {
         let Some(ptr) = ptr.filter_map(|ptr| self.effective_address(memory, ptr, offset)) else {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
+        let Some(offset) = Offset::new(offset) else {
+            return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
+        };
         let op = match ptr {
             ResolvedOperand::Reg(_) => T::op_rr(offset, memory),
             ResolvedOperand::Slot(ptr) => T::op_rs(ptr, offset, memory),
@@ -2378,6 +2382,9 @@ impl FuncTranslator {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
         let op = self.choose_store_op::<T>(memarg, ptr, value)?;
+        if let Op::Trap { trap_code } = op {
+            return self.translate_trap(trap_code);
+        }
         self.push_instr(op, FuelCostsProvider::store)?;
         Ok(())
     }
@@ -2401,6 +2408,9 @@ impl FuncTranslator {
         let value = self
             .resolve_operand::<T::Value>(value)?
             .map(T::into_immediate);
+        let Some(offset) = Offset::new(offset) else {
+            return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
+        };
         let op = match (ptr, value) {
             (Opd::Reg(_), Opd::Reg(_)) => match T::store_rr(offset, memory) {
                 Some(op) => op,
