@@ -27,10 +27,6 @@ std = [
     "wasmi_core/std",
 ]
 simd = ["wasmi_core/simd"]
-# Enables support for the Wasm `memory64` proposal, i.e. 64-bit linear memories.
-#
-# Disabling this feature narrows the `offset` field of generic load and store
-# operators from 64-bit to 32-bit, shrinking their encoded bytecode size.
 memory64 = []
 slot16 = []
 
