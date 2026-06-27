@@ -8,6 +8,7 @@ use crate::{
     BranchOffset,
     Decode,
     Decoder,
+    Offset,
     Offset16,
     Reg,
     decode::DecodeError,
@@ -161,7 +162,7 @@ where
 pub struct LoadOp<Res, Ptr> {
     pub result: Res,
     pub ptr: Ptr,
-    pub offset: u64,
+    pub offset: Offset,
     pub memory: Memory,
 }
 
@@ -224,7 +225,7 @@ where
 #[derive(Copy, Clone)]
 pub struct StoreOp<Ptr, Val> {
     pub ptr: Ptr,
-    pub offset: u64,
+    pub offset: Offset,
     pub value: Val,
     pub memory: Memory,
 }
