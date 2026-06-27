@@ -32,6 +32,7 @@ use crate::{
         BoundedSlotSpan,
         BranchOffset,
         Local,
+        Offset,
         Offset16,
         Slot,
         SlotAndReg,
@@ -199,6 +200,13 @@ impl_get_value!(
 );
 #[cfg(feature = "simd")]
 impl_get_value!([ImmLaneIdx<32>; 16]);
+
+impl GetValue<u64> for Offset {
+    #[inline(always)]
+    fn get_value(src: Self, _sp: Sp, _ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> u64 {
+        u64::from(src)
+    }
+}
 
 macro_rules! impl_get_value_for_ireg {
     ( $($prim:ty),* $(,)? ) => {
