@@ -1,6 +1,7 @@
 use super::FuncTranslator;
 use crate::{
     Error,
+    TrapCode,
     V128,
     ValType,
     core::{
@@ -9,7 +10,7 @@ use crate::{
         simd::{self, ImmLaneIdx},
     },
     engine::translator::func::{Operand, op, simd::op as simd_op, stack::Location},
-    ir::{Op, Slot},
+    ir::{Offset, Op, Slot},
 };
 use core::array;
 use wasmparser::{MemArg, VisitOperator, VisitSimdOperator};
@@ -95,6 +96,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         if self.translate_store128_mem0_offset16(ptr, offset, memory, value)? {
             return Ok(());
         }
+        let Some(offset) = Offset::new(offset) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
         self.push_instr(
             match ptr {
                 Location::Slot(ptr) => Op::v128_store_ss(ptr, offset, value, memory),

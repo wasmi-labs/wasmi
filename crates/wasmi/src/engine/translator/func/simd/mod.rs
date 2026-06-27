@@ -26,6 +26,7 @@ use crate::{
         utils::{ToBits, Wrap},
     },
     ir::{
+        Offset,
         Offset16,
         Op,
         Slot,
@@ -331,6 +332,9 @@ impl FuncTranslator {
             return Ok(());
         }
         // Case: non-optimized fallback load operator.
+        let Some(offset) = Offset::new(offset) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match ptr_loc {
@@ -403,8 +407,8 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        op_rs: fn(offset: u64, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
-        op_ss: fn(ptr: Slot, offset: u64, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
+        op_rs: fn(offset: Offset, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
+        op_ss: fn(ptr: Slot, offset: Offset, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
         op_rs_mem0_offset16: fn(offset: Offset16, value: Slot, lane: T::LaneIdx) -> Op,
         op_ss_mem0_offset16: fn(ptr: Slot, offset: Offset16, value: Slot, lane: T::LaneIdx) -> Op,
         translate_imm: fn(
@@ -446,6 +450,9 @@ impl FuncTranslator {
                 return Ok(());
             }
         }
+        let Some(offset) = Offset::new(offset) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
         self.push_instr(
             match ptr {
                 Location::Reg(_) => op_rs(offset, v128, memory, lane),
