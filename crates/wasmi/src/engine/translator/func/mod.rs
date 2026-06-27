@@ -1272,16 +1272,9 @@ impl FuncTranslator {
         let ty = input.ty();
         let fuel_pos = self.stack.fuel_pos();
         for preserved in self.stack.preserve_locals(local_idx) {
-            let ty = preserved.ty();
             let result = preserved.temp_slots().head();
-            let op = match preserved.in_reg() {
-                true => Self::select_copy_sr_op(result, ty),
-                false => {
-                    let value = self.layout.local_to_slot(preserved)?;
-                    Self::select_copy_ss_op(result, value, ty)
-                        .expect("local preservation must not yield no-op copies")
-                }
-            };
+            let op = Self::select_copy_sx_op(result, preserved.into(), &self.layout)?
+                .expect("local preservation must not yield no-op copies");
             self.instrs
                 .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
         }
