@@ -9,6 +9,7 @@ use crate::{
     BranchOffset,
     FixedSlotSpan,
     Local,
+    Offset,
     Offset16,
     Reg,
     Slot,
@@ -80,12 +81,10 @@ impl Reg<f64> {
 
 #[test]
 fn op_size_of_and_alignment() {
-    assert_eq!(
-        core::mem::size_of::<Op>(),
-        match cfg!(feature = "slot16") {
-            true => 24,
-            false => 32,
-        }
-    );
+    let expected_size = match cfg!(feature = "simd") && !cfg!(feature = "slot16") {
+        true => 32,
+        false => 24,
+    };
+    assert_eq!(core::mem::size_of::<Op>(), expected_size);
     assert_eq!(core::mem::align_of::<Op>(), 8);
 }
