@@ -156,10 +156,13 @@ impl_little_endian_convert_primitive!(u8, u16, u32, u64, u128, i8, i16, i32, i64
 ///
 /// If the resulting effective address overflows.
 fn effective_address(ptr: u64, offset: u64) -> Result<usize, TrapCode> {
-    let Some(address) = ptr.checked_add(offset) else {
-        return Err(TrapCode::MemoryOutOfBounds);
-    };
-    usize::try_from(address).map_err(|_| TrapCode::MemoryOutOfBounds)
+    #[cfg(not(feature = "memory64"))]
+    let ptr = u64::from(ptr as u32);
+    #[cfg(not(feature = "memory64"))]
+    let offset = u64::from(offset as u32);
+    ptr.checked_add(offset)
+        .and_then(|addr| usize::try_from(addr).ok())
+        .ok_or(TrapCode::MemoryOutOfBounds)
 }
 
 /// Executes a generic `T.load` Wasm operation.
