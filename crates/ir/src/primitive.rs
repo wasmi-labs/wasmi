@@ -246,3 +246,45 @@ impl From<Offset16> for u16 {
         offset.0
     }
 }
+
+/// The integer representation of a load or store address [`Offset`].
+///
+/// This is 64-bit if the `memory64` crate feature is enabled and 32-bit otherwise.
+/// Disabling `memory64` shrinks the encoded size of generic load and store operators.
+#[cfg(feature = "memory64")]
+pub type OffsetRepr = u64;
+#[cfg(not(feature = "memory64"))]
+pub type OffsetRepr = u32;
+
+/// A linear memory load or store address offset.
+///
+/// 64-bit if `memory64` is enabled, otherwise 32-bit.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Offset(pub(crate) OffsetRepr);
+
+impl Offset {
+    /// Creates an [`Offset`] from `offset` if its value is in bounds.
+    ///
+    /// Returns `None` otherwise.
+    pub fn new(offset: u64) -> Option<Self> {
+        OffsetRepr::try_from(offset).ok().map(Self)
+    }
+
+    /// Creates a new [`Offset`] from the raw `value`.
+    pub(crate) fn from_raw(value: OffsetRepr) -> Self {
+        Self(value)
+    }
+
+    /// Returns the underlying raw [`OffsetRepr`] value.
+    pub(crate) fn into_raw(self) -> OffsetRepr {
+        self.0
+    }
+}
+
+impl From<Offset> for u64 {
+    #[cfg_attr(feature = "memory64", expect(clippy::useless_conversion))]
+    fn from(offset: Offset) -> Self {
+        u64::from(offset.0)
+    }
+}

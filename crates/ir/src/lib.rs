@@ -30,6 +30,7 @@ pub use self::{
         BranchOffset,
         BranchTableTarget,
         Local,
+        Offset,
         Offset16,
         Reg,
         SlotAndReg,

@@ -41,6 +41,7 @@ use crate::{
     BranchTableTarget,
     FixedSlotSpan,
     Local,
+    Offset,
     Offset16,
     OpCode,
     Reg,
@@ -49,6 +50,7 @@ use crate::{
     SlotSpan,
     core::{ShiftAmount, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, RawSlot, Table},
+    primitive::OffsetRepr,
 };
 use core::{
     error::Error as CoreError,
@@ -169,6 +171,7 @@ impl_decode_using! {
     bool as u8 = |value| value != 0,
     Offset16 as u16 = Into::into,
     BranchOffset as i32 = Into::into,
+    Offset as OffsetRepr = Offset::from_raw,
     BlockFuel as u64 = Into::into,
     Func as u32 = Into::into,
     FuncType as u32 = Into::into,
