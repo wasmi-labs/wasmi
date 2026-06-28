@@ -221,7 +221,7 @@ impl_decode_fallible_using! {
         TrapCode::try_from(code).map_err(|_| DecodeError::InvalidBitPattern)
     },
     OpCode as u16 = |code: u16| {
-        OpCode::try_from(code).map_err(|_| DecodeError::InvalidBitPattern)
+        OpCode::new(code).ok_or(DecodeError::InvalidBitPattern)
     }
 }
 
