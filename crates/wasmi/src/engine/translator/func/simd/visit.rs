@@ -10,7 +10,7 @@ use crate::{
         simd::{self, ImmLaneIdx},
     },
     engine::translator::func::{Operand, op, simd::op as simd_op, stack::Location},
-    ir::{Offset, Op, Slot},
+    ir::{Op, Slot},
 };
 use core::array;
 use wasmparser::{MemArg, VisitOperator, VisitSimdOperator};
@@ -90,8 +90,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_v128_store(&mut self, memarg: MemArg) -> Self::Output {
         bail_unreachable!(self);
         let (ptr, value) = self.stack.pop2();
-        let (memory, offset) = Self::decode_memarg(memarg)?;
-        let Some(offset) = Offset::new(offset) else {
+        let Some((memory, offset)) = Self::decode_memarg(memarg)? else {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
         let ptr = self.copy_immediate_to_slot(ptr)?;

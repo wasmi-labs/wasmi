@@ -2308,8 +2308,7 @@ impl FuncTranslator {
     /// This chooses the right encoding for the given `load` instruction.
     /// If `ptr+offset` is a constant value the address is pre-calculated.
     fn select_load_op<T: op::LoadOp>(&mut self, ptr: Operand, memarg: MemArg) -> Result<Op, Error> {
-        let (memory, offset) = Self::decode_memarg(memarg)?;
-        let Some(offset) = Offset::new(offset) else {
+        let Some((memory, offset)) = Self::decode_memarg(memarg)? else {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
         let ptr = self.resolve_operand_as_index(ptr, memory)?;
@@ -2393,8 +2392,7 @@ impl FuncTranslator {
         T::Immediate: Copy,
     {
         use ResolvedOperand as Opd;
-        let (memory, offset) = Self::decode_memarg(memarg)?;
-        let Some(offset) = Offset::new(offset) else {
+        let Some((memory, offset)) = Self::decode_memarg(memarg)? else {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
         let Some(ptr) = self
@@ -2485,9 +2483,12 @@ impl FuncTranslator {
     /// # Panics
     ///
     /// If the [`MemArg`] offset is not 32-bit.
-    fn decode_memarg(memarg: MemArg) -> Result<(index::Memory, u64), Error> {
+    fn decode_memarg(memarg: MemArg) -> Result<Option<(index::Memory, Offset)>, Error> {
         let memory = index::Memory::try_from(memarg.memory)?;
-        Ok((memory, memarg.offset))
+        let Some(offset) = Offset::new(memarg.offset) else {
+            return Ok(None);
+        };
+        Ok(Some((memory, offset)))
     }
 
     /// Returns the effective address `ptr+offset` if it is valid.

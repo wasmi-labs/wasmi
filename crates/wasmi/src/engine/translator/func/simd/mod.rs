@@ -296,8 +296,7 @@ impl FuncTranslator {
     fn translate_v128_load(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
         let ptr_opd = self.stack.pop();
-        let (memory, offset) = Self::decode_memarg(memarg)?;
-        let Some(offset) = Offset::new(offset) else {
+        let Some((memory, offset)) = Self::decode_memarg(memarg)? else {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
         let ptr = self.resolve_operand_as_index(ptr_opd, memory)?;
@@ -436,8 +435,7 @@ impl FuncTranslator {
             }
             ResolvedOperand::Slot(v128) => v128,
         };
-        let (memory, offset) = Self::decode_memarg(memarg)?;
-        let Some(offset) = Offset::new(offset) else {
+        let Some((memory, offset)) = Self::decode_memarg(memarg)? else {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
         let ptr = self.copy_immediate_to_slot(ptr)?;
