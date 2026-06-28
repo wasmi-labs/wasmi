@@ -8,6 +8,7 @@ use crate::{
     BranchTableTarget,
     FixedSlotSpan,
     Local,
+    Offset,
     Offset16,
     Op,
     OpCode,
@@ -17,6 +18,7 @@ use crate::{
     SlotSpan,
     core::{ShiftAmount, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, RawSlot, Table},
+    primitive::OffsetRepr,
 };
 use core::num::NonZero;
 
@@ -167,7 +169,8 @@ macro_rules! impl_encode_using {
 }
 impl_encode_using! {
     bool as u8 = Into::into,
-    Offset16 as u16 = Into::into,
+    Offset16 as u16 = |o: Offset16| o.0,
+    Offset as OffsetRepr = |o: Offset| o.0,
     Address as u64 = Into::into,
     Func as u32 = Into::into,
     FuncType as u32 = Into::into,

@@ -33,6 +33,7 @@ impl MemoryType {
     /// 64-bit memories are part of the [Wasm `memory64` proposal].
     ///
     /// [Wasm `memory64` proposal]: https://github.com/WebAssembly/memory64
+    #[cfg(feature = "memory64")]
     pub fn new64(minimum: u64, maximum: Option<u64>) -> Self {
         let mut b = Self::builder();
         b.memory64(true);

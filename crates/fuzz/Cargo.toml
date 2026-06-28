@@ -18,6 +18,7 @@ publish = false
 wasmi = { workspace = true, features = [
     "std",
     "simd",
+    "memory64",
     "portable-dispatch",
     "extra-checks",
     "validate",

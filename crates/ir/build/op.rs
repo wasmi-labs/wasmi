@@ -552,7 +552,7 @@ impl LoadOp {
     pub fn offset_field(&self) -> Option<Field> {
         let offset_ty = match self.ptr {
             OperandKind::Slot | OperandKind::Reg => match self.offset {
-                OffsetOperand::Offset => FieldTy::U64,
+                OffsetOperand::Offset => FieldTy::Offset,
                 OffsetOperand::Offset16 => FieldTy::Offset16,
             },
             _ => return None,
@@ -656,7 +656,7 @@ impl StoreOp {
         let offset_ty = match self.ptr {
             OperandKind::Slot | OperandKind::Reg => match self.offset {
                 OffsetOperand::Offset16 => FieldTy::Offset16,
-                OffsetOperand::Offset => FieldTy::U64,
+                OffsetOperand::Offset => FieldTy::Offset,
             },
             _ => return None,
         };

@@ -77,7 +77,7 @@ impl Config {
         features.set(WasmFeatures::EXTENDED_CONST, true);
         features.set(WasmFeatures::FLOATS, true);
         features.set(WasmFeatures::CUSTOM_PAGE_SIZES, false);
-        features.set(WasmFeatures::MEMORY64, true);
+        features.set(WasmFeatures::MEMORY64, cfg!(feature = "memory64"));
         features.set(WasmFeatures::WIDE_ARITHMETIC, false);
         features.set(WasmFeatures::SIMD, cfg!(feature = "simd"));
         features.set(WasmFeatures::RELAXED_SIMD, cfg!(feature = "simd"));
@@ -283,10 +283,10 @@ impl Config {
     ///
     /// # Note
     ///
-    /// Disabled by default.
+    /// Enabled by default. (if `memory64` crate feature is enabled)
     ///
     /// [`memory64`]: https://github.com/WebAssembly/memory64
-    #[cfg(feature = "validate")]
+    #[cfg(all(feature = "memory64", feature = "validate"))]
     pub fn wasm_memory64(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::MEMORY64, enable);
         self

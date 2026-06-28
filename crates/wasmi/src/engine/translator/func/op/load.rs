@@ -1,6 +1,6 @@
 use crate::{
     core::Typed,
-    ir::{Address, Offset16, Op, Slot, index::Memory},
+    ir::{Address, Offset, Offset16, Op, Slot, index::Memory},
 };
 
 /// Trait implemented by all Wasm operators that can be translated as load extend instructions.
@@ -8,8 +8,8 @@ pub trait LoadOp {
     /// The type of the loaded value.
     type Result: Typed;
 
-    fn op_rr(offset: u64, memory: Memory) -> Op;
-    fn op_rs(ptr: Slot, offset: u64, memory: Memory) -> Op;
+    fn op_rr(offset: Offset, memory: Memory) -> Op;
+    fn op_rs(ptr: Slot, offset: Offset, memory: Memory) -> Op;
     fn op_ri(address: Address, memory: Memory) -> Op;
     fn op_rr_mem0_offset16(offset: Offset16) -> Op;
     fn op_rs_mem0_offset16(ptr: Slot, offset: Offset16) -> Op;
@@ -32,11 +32,11 @@ macro_rules! impl_load_extend {
             impl LoadOp for $name {
                 type Result = $result_ty;
 
-                fn op_rr(offset: u64, memory: Memory) -> Op {
+                fn op_rr(offset: Offset, memory: Memory) -> Op {
                     $store_rr(offset, memory)
                 }
 
-                fn op_rs(ptr: Slot, offset: u64, memory: Memory) -> Op {
+                fn op_rs(ptr: Slot, offset: Offset, memory: Memory) -> Op {
                     $store_rs(ptr, offset, memory)
                 }
 

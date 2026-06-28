@@ -1,7 +1,7 @@
 use crate::{
     core::Typed,
     engine::translator::utils::{ToBits, Wrap},
-    ir::{Address, Offset16, Op, Slot, index::Memory},
+    ir::{Address, Offset, Offset16, Op, Slot, index::Memory},
 };
 
 /// Trait implemented by all Wasm operators that can be translated as wrapping store instructions.
@@ -19,15 +19,15 @@ pub trait StoreOp {
     /// - Conversion to bits type or identity for normal stores.
     fn into_immediate(value: Self::Value) -> Self::Immediate;
 
-    fn store_rr(offset: u64, memory: Memory) -> Option<Op> {
+    fn store_rr(offset: Offset, memory: Memory) -> Option<Op> {
         _ = (offset, memory);
         None
     }
-    fn store_rs(offset: u64, value: Slot, memory: Memory) -> Op;
-    fn store_ri(offset: u64, value: Self::Immediate, memory: Memory) -> Op;
-    fn store_sr(ptr: Slot, offset: u64, memory: Memory) -> Op;
-    fn store_ss(ptr: Slot, offset: u64, value: Slot, memory: Memory) -> Op;
-    fn store_si(ptr: Slot, offset: u64, value: Self::Immediate, memory: Memory) -> Op;
+    fn store_rs(offset: Offset, value: Slot, memory: Memory) -> Op;
+    fn store_ri(offset: Offset, value: Self::Immediate, memory: Memory) -> Op;
+    fn store_sr(ptr: Slot, offset: Offset, memory: Memory) -> Op;
+    fn store_ss(ptr: Slot, offset: Offset, value: Slot, memory: Memory) -> Op;
+    fn store_si(ptr: Slot, offset: Offset, value: Self::Immediate, memory: Memory) -> Op;
     fn store_ir(address: Address, memory: Memory) -> Op;
     fn store_is(address: Address, value: Slot, memory: Memory) -> Op;
     fn store_ii(address: Address, value: Self::Immediate, memory: Memory) -> Op;
@@ -80,28 +80,28 @@ macro_rules! impl_store_wrap {
                 }
 
                 $(
-                    fn store_rr(offset: u64, memory: Memory) -> Option<Op> {
+                    fn store_rr(offset: Offset, memory: Memory) -> Option<Op> {
                         Some($store_rr(offset, memory))
                     }
                 )?
 
-                fn store_rs(offset: u64, value: Slot, memory: Memory) -> Op {
+                fn store_rs(offset: Offset, value: Slot, memory: Memory) -> Op {
                     $store_rs(offset, value, memory)
                 }
 
-                fn store_ri(offset: u64, value: Self::Immediate, memory: Memory) -> Op {
+                fn store_ri(offset: Offset, value: Self::Immediate, memory: Memory) -> Op {
                     $store_ri(offset, value, memory)
                 }
 
-                fn store_sr(ptr: Slot, offset: u64, memory: Memory) -> Op {
+                fn store_sr(ptr: Slot, offset: Offset, memory: Memory) -> Op {
                     $store_sr(ptr, offset, memory)
                 }
 
-                fn store_ss(ptr: Slot, offset: u64, value: Slot, memory: Memory) -> Op {
+                fn store_ss(ptr: Slot, offset: Offset, value: Slot, memory: Memory) -> Op {
                     $store_ss(ptr, offset, value, memory)
                 }
 
-                fn store_si(ptr: Slot, offset: u64, value: Self::Immediate, memory: Memory) -> Op {
+                fn store_si(ptr: Slot, offset: Offset, value: Self::Immediate, memory: Memory) -> Op {
                     $store_si(ptr, offset, value, memory)
                 }
 

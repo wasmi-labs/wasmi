@@ -12,7 +12,7 @@ cargo-fuzz = true
 
 [dependencies]
 wasmi_fuzz = { workspace = true }
-wasmi = { workspace = true, features = ["std", "simd"] }
+wasmi = { workspace = true, features = ["std", "simd", "memory64"] }
 wasm-smith = { workspace = true }
 libfuzzer-sys = "0.4.10"
 arbitrary = "1.4"

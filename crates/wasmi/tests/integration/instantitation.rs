@@ -2,6 +2,10 @@ use wasmi::{Engine, Instance, Module, Store};
 
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
+#[cfg_attr(
+    not(feature = "memory64"),
+    ignore = "requires the memory64 crate feature"
+)]
 fn instantiate_out_of_memory() {
     let wasm = r#"
         (module

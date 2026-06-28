@@ -27,6 +27,7 @@ std = [
     "wasmi_core/std",
 ]
 simd = ["wasmi_core/simd"]
+memory64 = []
 slot16 = []
 
 [package.metadata.docs.rs]

@@ -178,6 +178,11 @@ impl MemoryTypeBuilder {
     ///
     /// If the chosen configuration for the constructed [`MemoryType`] is invalid.
     fn validate(&self) -> Result<(), MemoryError> {
+        #[cfg(not(feature = "memory64"))]
+        if self.inner.index_type.is_64() {
+            // Case: 64-bit memories require the `memory64` crate feature which is disabled.
+            return Err(MemoryError::InvalidMemoryType);
+        }
         match self.inner.page_size_log2 {
             0 | MemoryType::DEFAULT_PAGE_SIZE_LOG2 => {}
             _ => {

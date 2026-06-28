@@ -41,6 +41,7 @@ use crate::{
     BranchTableTarget,
     FixedSlotSpan,
     Local,
+    Offset,
     Offset16,
     OpCode,
     Reg,
@@ -49,6 +50,7 @@ use crate::{
     SlotSpan,
     core::{ShiftAmount, TrapCode},
     index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, RawSlot, Table},
+    primitive::OffsetRepr,
 };
 use core::{
     error::Error as CoreError,
@@ -167,8 +169,9 @@ macro_rules! impl_decode_using {
 }
 impl_decode_using! {
     bool as u8 = |value| value != 0,
-    Offset16 as u16 = Into::into,
+    Offset16 as u16 = Offset16,
     BranchOffset as i32 = Into::into,
+    Offset as OffsetRepr = Offset,
     BlockFuel as u64 = Into::into,
     Func as u32 = Into::into,
     FuncType as u32 = Into::into,
@@ -200,7 +203,7 @@ macro_rules! impl_decode_fallible_using {
 }
 impl_decode_fallible_using! {
     Address as u64 = |address| {
-        Address::try_from(address).map_err(|_| DecodeError::InvalidBitPattern)
+        Address::new(address).ok_or(DecodeError::InvalidBitPattern)
     },
     NonZero<i32> as i32 = |value| {
         NonZero::new(value).ok_or(DecodeError::InvalidBitPattern)

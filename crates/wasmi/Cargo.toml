@@ -35,7 +35,7 @@ assert_matches = "1.5"
 criterion = { version = "0.5", default-features = false }
 
 [features]
-default = ["stable", "std", "wat", "validate"]
+default = ["stable", "std", "wat", "validate", "memory64"]
 std = [
     "wasmi_ir/std",
     "wasmi_core/std",
@@ -53,6 +53,7 @@ prefer-btree-collections = [
 ]
 wat = ["dep:wat", "std"]
 simd = ["wasmi_core/simd", "wasmi_ir/simd", "wasmparser/simd"]
+memory64 = ["wasmi_core/memory64", "wasmi_ir/memory64"]
 validate = ["wasmparser/validate", "wasmparser/features"]
 stable = []
 unstable = []

@@ -556,7 +556,7 @@ macro_rules! handler_store_lane_mem0_offset16_ss {
                     let offset = get_value(offset, sp, ireg, freg32, freg64);
                     let value = get_value(value, sp, ireg, freg32, freg64);
                     let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
-                    $eval(mem_bytes, ptr, u64::from(u16::from(offset)), value, lane).into_control()?;
+                    $eval(mem_bytes, ptr, u64::from(offset), value, lane).into_control()?;
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }

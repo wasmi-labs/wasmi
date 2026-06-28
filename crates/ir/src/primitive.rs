@@ -99,10 +99,6 @@ impl BranchTableTarget {
     }
 }
 
-/// Error that may occur upon converting values to [`Address`] and [`Offset16`].
-#[derive(Debug, Copy, Clone)]
-pub struct OutOfBoundsConst;
-
 /// A signed offset for branch instructions.
 ///
 /// This defines how much the instruction pointer is offset
@@ -194,14 +190,13 @@ impl BlockFuel {
 #[repr(transparent)]
 pub struct Address(u64);
 
-impl TryFrom<u64> for Address {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(address: u64) -> Result<Self, OutOfBoundsConst> {
-        if usize::try_from(address).is_err() {
-            return Err(OutOfBoundsConst);
-        };
-        Ok(Self(address))
+impl Address {
+    /// Creates a new [`Address`] from `addr` if `addr` is valid for this system.
+    pub fn new(addr: u64) -> Option<Self> {
+        if usize::try_from(addr).is_err() {
+            return None;
+        }
+        Some(Self(addr))
     }
 }
 
@@ -223,26 +218,59 @@ impl From<Address> for u64 {
 /// A 16-bit encoded load or store address offset.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct Offset16(u16);
+pub struct Offset16(pub(crate) u16);
 
-impl TryFrom<u64> for Offset16 {
-    type Error = OutOfBoundsConst;
-
-    fn try_from(address: u64) -> Result<Self, Self::Error> {
-        <u16>::try_from(address)
-            .map(Self)
-            .map_err(|_| OutOfBoundsConst)
+impl Offset16 {
+    /// Creates a new [`Offset16`] from `offset` if within bounds.
+    ///
+    /// Returns `None` if `offset` is out of bounds for [`Offset16`].
+    pub fn new(offset: Offset) -> Option<Self> {
+        u16::try_from(u64::from(offset)).ok().map(Self)
     }
 }
 
-impl From<u16> for Offset16 {
-    fn from(offset: u16) -> Self {
-        Self(offset)
-    }
-}
-
-impl From<Offset16> for u16 {
+impl From<Offset16> for u64 {
+    #[inline]
     fn from(offset: Offset16) -> Self {
-        offset.0
+        u64::from(offset.0)
+    }
+}
+
+/// The integer representation of a load or store address [`Offset`].
+///
+/// This is 64-bit if the `memory64` crate feature is enabled and 32-bit otherwise.
+/// Disabling `memory64` shrinks the encoded size of generic load and store operators.
+#[cfg(feature = "memory64")]
+pub type OffsetRepr = u64;
+#[cfg(not(feature = "memory64"))]
+pub type OffsetRepr = u32;
+
+/// A linear memory load or store address offset.
+///
+/// 64-bit if `memory64` is enabled, otherwise 32-bit.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Offset(pub(crate) OffsetRepr);
+
+impl Offset {
+    /// Creates an [`Offset`] from `offset` if its value is in bounds.
+    ///
+    /// Returns `None` otherwise.
+    pub fn new(offset: u64) -> Option<Self> {
+        OffsetRepr::try_from(offset).ok().map(Self)
+    }
+}
+
+impl From<Offset> for u64 {
+    #[inline]
+    fn from(offset: Offset) -> Self {
+        #[cfg(feature = "memory64")]
+        {
+            offset.0
+        }
+        #[cfg(not(feature = "memory64"))]
+        {
+            u64::from(offset.0)
+        }
     }
 }

@@ -26,6 +26,7 @@ use crate::{
         utils::{ToBits, Wrap},
     },
     ir::{
+        Offset,
         Offset16,
         Op,
         Slot,
@@ -294,8 +295,10 @@ impl FuncTranslator {
 
     fn translate_v128_load(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (memory, offset) = Self::decode_memarg(memarg)?;
         let ptr_opd = self.stack.pop();
+        let Some((memory, offset)) = Self::decode_memarg(memarg)? else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
         let ptr = self.resolve_operand_as_index(ptr_opd, memory)?;
         if let ResolvedOperand::Immediate(ptr) = ptr {
             if self.effective_address(memory, ptr, offset).is_none() {
@@ -316,9 +319,9 @@ impl FuncTranslator {
             if !memory.is_default() {
                 break 'opt;
             }
-            let offset = match Offset16::try_from(offset) {
-                Ok(offset) => offset,
-                Err(_) => break 'opt,
+            let offset = match Offset16::new(offset) {
+                Some(offset) => offset,
+                None => break 'opt,
             };
             self.push_op_with_result_slot(
                 ValType::V128,
@@ -403,8 +406,8 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        op_rs: fn(offset: u64, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
-        op_ss: fn(ptr: Slot, offset: u64, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
+        op_rs: fn(offset: Offset, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
+        op_ss: fn(ptr: Slot, offset: Offset, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
         op_rs_mem0_offset16: fn(offset: Offset16, value: Slot, lane: T::LaneIdx) -> Op,
         op_ss_mem0_offset16: fn(ptr: Slot, offset: Offset16, value: Slot, lane: T::LaneIdx) -> Op,
         translate_imm: fn(
@@ -432,10 +435,12 @@ impl FuncTranslator {
             }
             ResolvedOperand::Slot(v128) => v128,
         };
-        let (memory, offset) = Self::decode_memarg(memarg)?;
+        let Some((memory, offset)) = Self::decode_memarg(memarg)? else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
         let ptr = self.copy_immediate_to_slot(ptr)?;
         if memory.is_default() {
-            if let Ok(offset16) = Offset16::try_from(offset) {
+            if let Some(offset16) = Offset16::new(offset) {
                 self.push_instr(
                     match ptr {
                         Location::Reg(_) => op_rs_mem0_offset16(offset16, v128, lane),
@@ -466,14 +471,14 @@ impl FuncTranslator {
     fn translate_store128_mem0_offset16(
         &mut self,
         ptr: Location,
-        offset: u64,
+        offset: Offset,
         memory: index::Memory,
         value: Slot,
     ) -> Result<bool, Error> {
         if !memory.is_default() {
             return Ok(false);
         }
-        let Ok(offset16) = Offset16::try_from(offset) else {
+        let Some(offset16) = Offset16::new(offset) else {
             return Ok(false);
         };
         self.push_instr(
