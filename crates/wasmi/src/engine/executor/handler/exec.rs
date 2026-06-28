@@ -1324,6 +1324,37 @@ impl_branch_table_exec_handler! {
 }
 
 handler_unary! {
+    // specialized copy_sNsM operators
+    fn u64_copy_s0s1(U64Copy_S0s1) = identity::<u64>;
+    fn u64_copy_s0s2(U64Copy_S0s2) = identity::<u64>;
+    fn u64_copy_s0s3(U64Copy_S0s3) = identity::<u64>;
+    fn u64_copy_s0s4(U64Copy_S0s4) = identity::<u64>;
+    fn u64_copy_s0s5(U64Copy_S0s5) = identity::<u64>;
+    fn u64_copy_s1s0(U64Copy_S1s0) = identity::<u64>;
+    fn u64_copy_s1s2(U64Copy_S1s2) = identity::<u64>;
+    fn u64_copy_s1s3(U64Copy_S1s3) = identity::<u64>;
+    fn u64_copy_s1s4(U64Copy_S1s4) = identity::<u64>;
+    fn u64_copy_s1s5(U64Copy_S1s5) = identity::<u64>;
+    fn u64_copy_s2s0(U64Copy_S2s0) = identity::<u64>;
+    fn u64_copy_s2s1(U64Copy_S2s1) = identity::<u64>;
+    fn u64_copy_s2s3(U64Copy_S2s3) = identity::<u64>;
+    fn u64_copy_s2s4(U64Copy_S2s4) = identity::<u64>;
+    fn u64_copy_s2s5(U64Copy_S2s5) = identity::<u64>;
+    fn u64_copy_s3s0(U64Copy_S3s0) = identity::<u64>;
+    fn u64_copy_s3s1(U64Copy_S3s1) = identity::<u64>;
+    fn u64_copy_s3s2(U64Copy_S3s2) = identity::<u64>;
+    fn u64_copy_s3s4(U64Copy_S3s4) = identity::<u64>;
+    fn u64_copy_s3s5(U64Copy_S3s5) = identity::<u64>;
+    fn u64_copy_s4s0(U64Copy_S4s0) = identity::<u64>;
+    fn u64_copy_s4s1(U64Copy_S4s1) = identity::<u64>;
+    fn u64_copy_s4s2(U64Copy_S4s2) = identity::<u64>;
+    fn u64_copy_s4s3(U64Copy_S4s3) = identity::<u64>;
+    fn u64_copy_s4s5(U64Copy_S4s5) = identity::<u64>;
+    fn u64_copy_s5s0(U64Copy_S5s0) = identity::<u64>;
+    fn u64_copy_s5s1(U64Copy_S5s1) = identity::<u64>;
+    fn u64_copy_s5s2(U64Copy_S5s2) = identity::<u64>;
+    fn u64_copy_s5s3(U64Copy_S5s3) = identity::<u64>;
+    fn u64_copy_s5s4(U64Copy_S5s4) = identity::<u64>;
     // specialized copy_sNr operators
     fn u64_copy_s0r(U64Copy_S0r) = identity::<u64>;
     fn u64_copy_s1r(U64Copy_S1r) = identity::<u64>;

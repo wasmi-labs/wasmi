@@ -594,9 +594,49 @@ impl FuncTranslator {
         if result == value {
             return None;
         }
-        let op = match ty {
-            #[cfg(feature = "simd")]
-            ValType::V128 => Op::v128_copy_ss(result, value),
+        #[cfg(feature = "simd")]
+        if matches!(ty, ValType::V128) {
+            return Some(Op::v128_copy_ss(result, value));
+        }
+        let r = u16::from(result);
+        let v = u16::from(value);
+        let op = match (r, v) {
+            // s0sN
+            (0, 1) => Op::u64_copy_s0s1(),
+            (0, 2) => Op::u64_copy_s0s2(),
+            (0, 3) => Op::u64_copy_s0s3(),
+            (0, 4) => Op::u64_copy_s0s4(),
+            (0, 5) => Op::u64_copy_s0s5(),
+            // s1sN
+            (1, 0) => Op::u64_copy_s1s0(),
+            (1, 2) => Op::u64_copy_s1s2(),
+            (1, 3) => Op::u64_copy_s1s3(),
+            (1, 4) => Op::u64_copy_s1s4(),
+            (1, 5) => Op::u64_copy_s1s5(),
+            // s2sN
+            (2, 0) => Op::u64_copy_s2s0(),
+            (2, 1) => Op::u64_copy_s2s1(),
+            (2, 3) => Op::u64_copy_s2s3(),
+            (2, 4) => Op::u64_copy_s2s4(),
+            (2, 5) => Op::u64_copy_s2s5(),
+            // s3sN
+            (3, 0) => Op::u64_copy_s3s0(),
+            (3, 1) => Op::u64_copy_s3s1(),
+            (3, 2) => Op::u64_copy_s3s2(),
+            (3, 4) => Op::u64_copy_s3s4(),
+            (3, 5) => Op::u64_copy_s3s5(),
+            // s4sN
+            (4, 0) => Op::u64_copy_s4s0(),
+            (4, 1) => Op::u64_copy_s4s1(),
+            (4, 2) => Op::u64_copy_s4s2(),
+            (4, 3) => Op::u64_copy_s4s3(),
+            (4, 5) => Op::u64_copy_s4s5(),
+            // s5sN
+            (5, 0) => Op::u64_copy_s5s0(),
+            (5, 1) => Op::u64_copy_s5s1(),
+            (5, 2) => Op::u64_copy_s5s2(),
+            (5, 3) => Op::u64_copy_s5s3(),
+            (5, 4) => Op::u64_copy_s5s4(),
             _ => Op::u64_copy_ss(result, value),
         };
         Some(op)

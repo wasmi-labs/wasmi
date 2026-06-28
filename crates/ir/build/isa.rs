@@ -572,6 +572,20 @@ fn add_copy_ops(isa: &mut Isa) {
     for (ty, result, value) in ops {
         isa.push_op(UnaryOp::new(Ident::Copy, ty, ty, result, value));
     }
+    for result in 0..6 {
+        for value in 0..6 {
+            if result == value {
+                continue;
+            }
+            isa.push_op(UnaryOp::new(
+                Ident::Copy,
+                Ty::U64,
+                Ty::U64,
+                OperandKind::Local(result),
+                OperandKind::Local(value),
+            ));
+        }
+    }
     let reinterpret_ops = [
         (Ty::F32, Ty::I32),
         (Ty::I32, Ty::F32),
