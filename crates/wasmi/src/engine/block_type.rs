@@ -85,7 +85,7 @@ impl BlockType {
     }
 
     /// Applies `f` to `self`'s [`FuncType`] and returns the result.
-    pub fn func_type_with<R>(&self, engine: &Engine, f: impl for<'a> FnOnce(&FuncType) -> R) -> R {
+    pub fn func_type_with<R>(&self, engine: &Engine, f: impl FnOnce(&FuncType) -> R) -> R {
         match &self.inner {
             BlockTypeInner::Empty => f(&FuncType::new([], [])),
             BlockTypeInner::Returns(return_type) => f(&FuncType::new([], [*return_type])),
