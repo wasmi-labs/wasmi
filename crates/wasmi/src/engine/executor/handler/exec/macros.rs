@@ -179,7 +179,7 @@ macro_rules! handler_load_mem0_offset16_ss {
                     let ptr = get_value(ptr, sp, ireg, freg32, freg64);
                     let offset = get_value(offset, sp, ireg, freg32, freg64);
                     let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
-                    let loaded = $load(mem_bytes, ptr, u64::from(u16::from(offset))).into_control()?;
+                    let loaded = $load(mem_bytes, ptr, u64::from(offset)).into_control()?;
                     set_value!(result, loaded, sp, ireg, freg32, freg64);
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
@@ -251,7 +251,7 @@ macro_rules! handler_store_mem0_offset16_sx {
                     let offset = get_value(offset, sp, ireg, freg32, freg64);
                     let value: $hint = get_value(value, sp, ireg, freg32, freg64);
                     let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
-                    $store(mem_bytes, ptr, u64::from(u16::from(offset)), value.into()).into_control()?;
+                    $store(mem_bytes, ptr, u64::from(offset), value.into()).into_control()?;
                     dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }

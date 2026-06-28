@@ -218,7 +218,7 @@ impl From<Address> for u64 {
 /// A 16-bit encoded load or store address offset.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct Offset16(u16);
+pub struct Offset16(pub(crate) u16);
 
 impl Offset16 {
     /// Creates a new [`Offset16`] from `offset` if within bounds.
@@ -229,15 +229,10 @@ impl Offset16 {
     }
 }
 
-impl From<u16> for Offset16 {
-    fn from(offset: u16) -> Self {
-        Self(offset)
-    }
-}
-
-impl From<Offset16> for u16 {
+impl From<Offset16> for u64 {
+    #[inline]
     fn from(offset: Offset16) -> Self {
-        offset.0
+        u64::from(offset.0)
     }
 }
 
@@ -264,21 +259,18 @@ impl Offset {
     pub fn new(offset: u64) -> Option<Self> {
         OffsetRepr::try_from(offset).ok().map(Self)
     }
-
-    /// Creates a new [`Offset`] from the raw `value`.
-    pub(crate) fn from_raw(value: OffsetRepr) -> Self {
-        Self(value)
-    }
-
-    /// Returns the underlying raw [`OffsetRepr`] value.
-    pub(crate) fn into_raw(self) -> OffsetRepr {
-        self.0
-    }
 }
 
 impl From<Offset> for u64 {
-    #[cfg_attr(feature = "memory64", expect(clippy::useless_conversion))]
+    #[inline]
     fn from(offset: Offset) -> Self {
-        u64::from(offset.0)
+        #[cfg(feature = "memory64")]
+        {
+            offset.0
+        }
+        #[cfg(not(feature = "memory64"))]
+        {
+            u64::from(offset.0)
+        }
     }
 }
