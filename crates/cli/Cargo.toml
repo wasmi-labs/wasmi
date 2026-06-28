@@ -19,7 +19,7 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-wasmi = { workspace = true, features = ["std", "memory64"] }
+wasmi = { workspace = true, features = ["std"] }
 wasmi_wasi = { workspace = true, optional = true }
 wasmi_wast = { workspace = true, optional = true }
 anyhow = "1"
