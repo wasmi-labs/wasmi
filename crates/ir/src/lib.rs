@@ -22,7 +22,7 @@ pub use self::{
     encode::{Encode, Encoder},
     error::Error,
     index::Slot,
-    op::{Location, Op},
+    op::{LEN_OPS, Location, Op},
     opcode::{InvalidOpCode, OpCode},
     primitive::{
         Address,
