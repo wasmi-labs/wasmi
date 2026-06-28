@@ -1323,6 +1323,34 @@ impl_branch_table_exec_handler! {
     fn branch_table_span_r(BranchTableSpan_R) = exec_branch_table_with_copies;
 }
 
+execution_handler! {
+    fn u64_copy_ss(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
+    ) -> Done = {
+        use core::sync::atomic::{AtomicU64, Ordering};
+        const THRESHOLD: u16 = 6;
+        static COUNT_TOTAL: AtomicU64 = AtomicU64::new(0);
+        static COUNT_OPT: AtomicU64 = AtomicU64::new(0);
+        let (ip, crate::ir::decode::U64Copy_Ss { result, value }) = unsafe { decode_op(ip) };
+        let delta = (u16::from(result) <= THRESHOLD && u16::from(value) <= THRESHOLD) as u64;
+        let count_opt = COUNT_OPT.fetch_add(delta, Ordering::AcqRel);
+        let count_total = COUNT_TOTAL.fetch_add(1, Ordering::AcqRel);
+        std::println!("u64_copy_ss({}, {}) {}/{}", u16::from(result), u16::from(value), count_opt, count_total);
+        let value = get_value(value, sp, ireg, freg32, freg64);
+        let value = identity::<u64>(value).into_control()?;
+        set_value!(result, value, sp, ireg, freg32, freg64);
+        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+    }
+}
+
 handler_unary! {
     // specialized copy_sNr operators
     fn u64_copy_s0r(U64Copy_S0r) = identity::<u64>;
@@ -1361,7 +1389,7 @@ handler_unary! {
     fn u64_copy_rs(U64Copy_Rs) = identity::<u64>;
     fn u64_copy_ri(U64Copy_Ri) = identity::<u64>;
     fn u64_copy_sr(U64Copy_Sr) = identity::<u64>;
-    fn u64_copy_ss(U64Copy_Ss) = identity::<u64>;
+    // fn u64_copy_ss(U64Copy_Ss) = identity::<u64>;
     fn u64_copy_si(U64Copy_Si) = identity::<u64>;
     fn f32_copy_ri(F32Copy_Ri) = identity::<f32>;
     fn f32_copy_rs(F32Copy_Rs) = identity::<f32>;
