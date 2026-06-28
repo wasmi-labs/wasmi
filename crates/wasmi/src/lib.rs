@@ -71,6 +71,7 @@
 //! | `prefer-btree-collections` | `wasmi`<br>`wasmi_collections` | Enforces use of btree-map based collections in Wasmi internals. This may yield performance improvements and memory consumption decreases in some use cases. Also it enables Wasmi to run on platforms that have no random source. <br><br> Disabled by default. |
 //! | `extra-checks` | `wasmi` | Enables extra runtime checks in the Wasmi executor. Expected execution overhead is ~20%. Enable this if your focus is on safety. Disable this for maximum execution performance. <br><br> Disabled by default. |
 //! | `validate` | `wasmi`<br>`wasmi_cli` | Enable Wasm validation support. Turning this off allows user with control over their inputs to slim down Wasmi's binary size significantly. <br><br> Enabled by default. |
+//! | `memory64` | `wasmi`<br>`wasmi_core`<br>`wasmi_ir` | Controls Wasm `memory64` support at compile-time. Disabling this feature may have positive effects on load/store operator codegen and encoding. <br><br> Enabled by default. |
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]

@@ -53,12 +53,6 @@ prefer-btree-collections = [
 ]
 wat = ["dep:wat", "std"]
 simd = ["wasmi_core/simd", "wasmi_ir/simd", "wasmparser/simd"]
-# Enables support for the Wasm `memory64` proposal, i.e. 64-bit linear memories.
-#
-# Disabling this feature improves codegen for load and store operators by
-# omitting the overflow check from their effective address computation, since
-# all memory indices are then guaranteed to be 32-bit. Disabling it also makes
-# Wasmi reject Wasm modules and host-created memory types that use 64-bit memories.
 memory64 = ["wasmi_core/memory64", "wasmi_ir/memory64"]
 validate = ["wasmparser/validate", "wasmparser/features"]
 stable = []
