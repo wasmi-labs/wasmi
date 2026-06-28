@@ -235,10 +235,21 @@ impl GetValue<f64> for ir::Reg<f64> {
     }
 }
 
+impl<const N: u16, T> GetValue<T> for Local<N>
+where
+    T: LoadFromCellsByValue,
+{
+    #[inline]
+    fn get_value(_src: Self, sp: Sp, ireg: Ireg, freg32: Freg32, freg64: Freg64) -> T {
+        <Slot as GetValue<T>>::get_value(Slot::from(N), sp, ireg, freg32, freg64)
+    }
+}
+
 impl<T> GetValue<T> for Slot
 where
     T: LoadFromCellsByValue,
 {
+    #[inline]
     fn get_value(src: Self, sp: Sp, _ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> T {
         // # Safety
         //
