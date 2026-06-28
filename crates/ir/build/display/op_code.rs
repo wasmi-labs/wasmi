@@ -38,14 +38,6 @@ impl Display for DisplayOpCode<&'_ Isa> {
                 .iter()
                 .map(|op| DisplayOpCode::new(op, indent.inc_by(3))),
         );
-        let match_arms_tryfrom = DisplaySequence::new(
-            ",\n",
-            self.value
-                .ops
-                .iter()
-                .map(DisplayTryFromU16)
-                .map(|op| DisplayOpCode::new(op, indent.inc_by(3))),
-        );
         let match_arms_debug = DisplaySequence::new(
             ",\n",
             self.value
@@ -70,18 +62,6 @@ impl Display for DisplayOpCode<&'_ Isa> {
             {indent}        match self {{\n\
                                 {match_arms_code}\n\
             {indent}        }}\n\
-            {indent}    }}\n\
-            {indent}}}\n\
-            \n\
-            {indent}impl TryFrom<u16> for OpCode {{\n\
-            {indent}    type Error = InvalidOpCode;\n\
-            {indent}    #[inline(always)]\n\
-            {indent}    fn try_from(value: u16) -> Result<Self, Self::Error> {{\n\
-            {indent}        let op_code = match value {{\n\
-                                {match_arms_tryfrom},\n\
-            {indent}            _ => return Err(InvalidOpCode),\n\
-            {indent}        }};\n\
-            {indent}        Ok(op_code)\n\
             {indent}    }}\n\
             {indent}}}\n\
             \n\
