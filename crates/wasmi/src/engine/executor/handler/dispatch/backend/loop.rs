@@ -71,9 +71,15 @@ macro_rules! expand_op_code_to_handler {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
         #[inline(always)]
         pub fn op_code_to_handler(code: OpCode) -> Handler {
-            match code {
-                $( OpCode::$camel_case => Executor::$snake_case, )*
-            }
+            static HANDLERS: [Handler; ir::LEN_OPS] = [
+                $( Executor::$snake_case ),*
+            ];
+            // SAFETY: the `HANDLERS` table has exactly the same size as `LEN_OPS`
+            //         which represents the number of [`Op`] and thus [`OpCode`]
+            //         variants. Since [`OpCode`] is contiguously defined, all [`OpCode`]
+            //         values are represented in the table, thus using their values as
+            //         unchecked index into the `HANDLERS` table is safe.
+            unsafe { *HANDLERS.get_unchecked(usize::from(u16::from(code))) }
         }
     };
 }
