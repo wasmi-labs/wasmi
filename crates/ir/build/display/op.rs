@@ -110,6 +110,7 @@ impl Display for DisplayOp<&'_ Isa> {
                 .iter()
                 .map(|op| DisplayForEachOpBody::new(op, indent.inc())),
         );
+        let len_ops = self.value.ops.len();
         write!(
             f,
             "\
@@ -125,6 +126,9 @@ impl Display for DisplayOp<&'_ Isa> {
             {indent}pub enum Op {{\n\
                         {variants}\n\
             {indent}}}\n\
+            \n\
+            {indent}/// The number of unique operator variants in [`Op`].
+            {indent}pub const LEN_OPS: ::core::primitive::usize = {len_ops};\n\
             \n\
             {indent}/// Expands `mac` using the snake-case and camel-case identifiers of all operators.
             {indent}/// \n\
