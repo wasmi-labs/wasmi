@@ -14,7 +14,7 @@ concurrency:
 
 env:
   # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
-  RUST_NIGHTLY_VERSION: nightly-2025-12-20
+  RUST_NIGHTLY_VERSION: nightly-2026-06-25
 
 jobs:
   check:
@@ -348,9 +348,13 @@ jobs:
       - name: Miri (setup)
         run: cargo miri setup --target x86_64-unknown-linux-gnu --lib --workspace --locked
       - name: Miri (--lib)
-        run: cargo miri nextest run --target x86_64-unknown-linux-gnu --lib --workspace --locked
+        # We exclude `wasmi_c_api_macros` since it is a proc-macro crate.
+        # Its test binary is host-compiled and run outside Miri, which makes
+        # `cargo miri nextest`'s test-list phase fail when routing it through
+        # the Miri runner.
+        run: cargo miri nextest run --target x86_64-unknown-linux-gnu --lib --workspace --exclude wasmi_c_api_macros --locked
       - name: Miri (--doc)
-        run: cargo miri test --target x86_64-unknown-linux-gnu --doc --workspace --locked
+        run: cargo miri test --target x86_64-unknown-linux-gnu --doc --workspace --exclude wasmi_c_api_macros --locked
 
   miri-spec:
     name: Miri (spec)
