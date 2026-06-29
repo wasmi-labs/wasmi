@@ -1145,26 +1145,10 @@ impl FuncTranslator {
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Op, Error> {
         debug_assert!(len > 1);
-        if self.requires_return_copies(len)? {
-            self.preserve_pure_locals(len, fuel_pos)?;
-            let dst = SlotSpan::new(Slot::from(0));
-            self.copy_operands_to_dst(dst, len, 0, fuel_pos)?;
-        }
+        self.preserve_pure_locals(len, fuel_pos)?;
+        let dst = SlotSpan::new(Slot::from(0));
+        self.copy_operands_to_dst(dst, len, 0, fuel_pos)?;
         Ok(Op::r#return())
-    }
-
-    /// Returns `true` if a copy operator is required to return the top `n` operands on the stack.
-    fn requires_return_copies(&self, n: u16) -> Result<bool, Error> {
-        let mut result = Slot::from(0);
-        for depth in (0..n).rev() {
-            let depth = usize::from(depth);
-            let value = self.stack.peek(depth);
-            if let Some(_op) = Self::select_copy_sx_op(result, value, &self.layout)? {
-                return Ok(true);
-            }
-            result = result.next_n(required_cells_for_ty(value.ty()));
-        }
-        Ok(false)
     }
 
     /// Preserves all pure local operands up to a depth of `n`.
@@ -1178,23 +1162,32 @@ impl FuncTranslator {
         n: u16,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<(), Error> {
-        for depth in 0..n {
+        let mut return_result = Slot::from(0);
+        for depth in (0..n).rev() {
             let depth = usize::from(depth);
-            let value = self.stack.peek(depth);
-            let Operand::Local(local) = value else {
-                // No local -> no preservation.
+            let returned = self.stack.peek(depth);
+            let ty = returned.ty();
+            let probe_result = return_result;
+            return_result = return_result.next_n(required_cells_for_ty(ty));
+            let Operand::Local(local) = returned else {
+                // Only locals need to be preserved as only locals may be overwritten.
                 continue;
             };
             if local.in_reg() {
-                // No need to preserve locals that are cached in accumulator registers.
+                // Local will be accessed via accumulator register => local overwrite is avoided.
+                continue;
+            }
+            let value = self.layout.local_to_slot(local.local_index())?;
+            let copy_op = Self::select_copy_ss_op(probe_result, value, ty);
+            if copy_op.is_none() {
+                // Local is already at the stack slot expected by the caller => local overwrite is impossible.
                 continue;
             }
             let moved = self.stack.operand_to_temp(depth);
             debug_assert!(!moved.in_reg());
-            debug_assert!(moved.is_same(&value));
+            debug_assert!(moved.is_same(&returned));
             let result = local.temp_slots().head();
-            let value = self.layout.local_to_slot(local.local_index())?;
-            let op = Self::select_copy_ss_op(result, value, local.ty())
+            let op = Self::select_copy_ss_op(result, value, ty)
                 .expect("must yield `Some` since `value` is a `local`");
             self.instrs
                 .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
