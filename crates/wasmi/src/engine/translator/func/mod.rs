@@ -1145,8 +1145,11 @@ impl FuncTranslator {
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Op, Error> {
         debug_assert!(len > 1);
-        let span = self.copy_operands_to_temp(len, fuel_pos)?;
-        Ok(Self::make_return_span(span))
+        self.preserve_pure_locals(len, fuel_pos)?;
+        let dst = SlotSpan::new(Slot::from(0));
+        self.copy_operands_to_dst(dst, len, 0, fuel_pos)?;
+        Ok(Op::r#return())
+    }
 
     /// Preserves all pure local operands up to a depth of `n`.
     ///
