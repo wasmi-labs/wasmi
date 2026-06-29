@@ -8,6 +8,30 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## Unreleased
+
+### Fixed
+
+- Fixed native stack overflows in the `call`, `call_indirect`, `return_call`, `return_call_indirect`
+  and SIMD operators when Wasmi is built without the `portable-dispatch` feature and with
+  `codegen-units > 1`. [#1942]
+  - These operator handlers used to prevent LLVM from tail-calling Wasmi's operator dispatch (the
+    call operators only at `codegen-units > 1`, the SIMD operators regardless), which accumulated
+    native stack frames and could overflow the stack on hot loops or deep (tail-)recursion. Their
+    helper functions are now inlined so the operator dispatch stays a tail call.
+  - As a result `codegen-units = 1` is no longer required in the `release` profile to avoid these
+    overflows, and SIMD-heavy loops no longer leak a native stack frame per executed operator.
+
+### Internal
+
+- Strengthened the CI guard for tail-call operator dispatch. [#1942]
+  - The tail-call CI job now runs the entire `wasmi_wast` suite (not just the call tests) on the
+    non-`portable-dispatch` path at `codegen-units > 1`, plus a new `wasmi_torture` test that loops
+    every Wasm operator category under a small `RUST_MIN_STACK` so any handler that stops tail-calling
+    overflows the native stack and fails CI.
+
+[#1942]: https://github.com/wasmi-labs/wasmi/pull/1946
+
 ## `2.0.0-beta.3` - 2026-06-22
 
 ### Added

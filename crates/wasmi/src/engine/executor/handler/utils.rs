@@ -758,6 +758,7 @@ pub fn update_instance(
     (new_instance, mem0, mem0_len)
 }
 
+#[inline]
 pub fn call_func_entry(
     state: &mut VmState,
     caller_ip: Ip,
@@ -803,6 +804,7 @@ pub fn call_wasm(
     Control::Continue((callee_ip, callee_sp))
 }
 
+#[inline]
 pub fn return_call_func_entry(
     state: &mut VmState,
     params: BoundedSlotSpan,
@@ -957,4 +959,37 @@ pub fn call_wasm_or_host(
         }
     };
     Control::Continue(next_state)
+}
+
+/// Tail-call (`return_call`) twin of [`call_wasm_or_host`].
+pub fn return_call_wasm_or_host(
+    state: &mut VmState,
+    func: Func,
+    params: BoundedSlotSpan,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
+    let func_entity = resolve_func(state.store, &func);
+    let (callee_ip, sp, new_instance) = match func_entity {
+        FuncEntity::Wasm(wasm_func) => {
+            let wasm_func_body = wasm_func.func_body();
+            let callee_instance = *wasm_func.instance();
+            let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
+            let changed_instance = match callee_instance != instance {
+                true => Some(callee_instance),
+                false => None,
+            };
+            let (callee_ip, callee_sp) =
+                return_call_wasm(state, params, wasm_func_body, changed_instance)?;
+            (callee_ip, callee_sp, callee_instance)
+        }
+        FuncEntity::Host(host_func) => {
+            let host_func = *host_func;
+            return_call_host(state, func, host_func, params, instance)?
+        }
+    };
+    let (instance, mem0, mem0_len) =
+        update_instance(state.store, instance, new_instance, mem0, mem0_len);
+    Control::Continue((callee_ip, sp, mem0, mem0_len, instance))
 }

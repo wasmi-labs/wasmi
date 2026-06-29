@@ -226,6 +226,7 @@ impl_decode_fallible_using! {
 }
 
 impl<const N: usize, T: Decode> Decode for [T; N] {
+    #[inline]
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         let mut array = <MaybeUninit<[T; N]>>::uninit();
         // Safety: we are going to decode and initialize all array items and won't read any.
@@ -241,6 +242,7 @@ impl<const N: usize, T: Decode> Decode for [T; N] {
 
 #[cfg(feature = "simd")]
 impl<const N: u8> Decode for ImmLaneIdx<N> {
+    #[inline]
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         let byte = u8::decode(decoder)?;
         let lane = ImmLaneIdx::try_from(byte).map_err(|_| DecodeError::InvalidBitPattern)?;
