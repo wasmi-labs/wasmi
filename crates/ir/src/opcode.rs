@@ -16,6 +16,9 @@ impl From<OpCode> for u16 {
 }
 
 impl OpCode {
+    /// Creates a new [`OpCode`] from `code` if `code` is within bounds.
+    ///
+    /// Returns `None` otherwise.
     pub fn new(code: u16) -> Option<Self> {
         if usize::from(code) >= crate::LEN_OPS {
             return None;
