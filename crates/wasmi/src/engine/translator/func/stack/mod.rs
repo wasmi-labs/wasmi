@@ -627,6 +627,20 @@ impl Stack {
         (o1, o2, o3)
     }
 
+    /// Converts and returns the [`Operand`] at `depth` into an [`Operand::Temp`].
+    ///
+    /// # Note
+    ///
+    /// - Returns the [`Operand`] at `depth` before being converted to an [`Operand::Temp`].
+    /// - [`Operand::Temp`] will have their optional `instr` set to `None`.
+    ///
+    /// # Panics
+    ///
+    /// If `depth` is out of bounds for `self`.
+    pub fn operand_to_temp(&mut self, depth: usize) -> Operand {
+        self.operands.operand_to_temp(depth)
+    }
+
     /// Preserve all locals on the [`Stack`] that refer to `local_index`.
     ///
     /// This is done by converting those locals to [`Operand::Temp`] and yielding them.
