@@ -30,7 +30,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     every Wasm operator category under a small `RUST_MIN_STACK` so any handler that stops tail-calling
     overflows the native stack and fails CI.
 
-[#1942]: https://github.com/wasmi-labs/wasmi/issues/1942
+[#1942]: https://github.com/wasmi-labs/wasmi/pull/1946
 
 ## `2.0.0-beta.3` - 2026-06-22
 
