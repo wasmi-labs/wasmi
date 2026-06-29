@@ -1145,8 +1145,54 @@ impl FuncTranslator {
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Op, Error> {
         debug_assert!(len > 1);
-        let span = self.copy_operands_to_temp(len, fuel_pos)?;
-        Ok(Self::make_return_span(span))
+        self.preserve_pure_locals(len, fuel_pos)?;
+        let dst = SlotSpan::new(Slot::from(0));
+        self.copy_operands_to_dst(dst, len, 0, fuel_pos)?;
+        Ok(Op::r#return())
+    }
+
+    /// Preserves all pure local operands up to a depth of `n`.
+    ///
+    /// # Note
+    ///
+    /// - A local operand is pure if it isn't hold in an accumulator register.
+    /// - Preserved operands are copied to their temporary stack slots.
+    fn preserve_pure_locals(
+        &mut self,
+        n: u16,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
+        let mut return_result = Slot::from(0);
+        for depth in (0..n).rev() {
+            let depth = usize::from(depth);
+            let returned = self.stack.peek(depth);
+            let ty = returned.ty();
+            let probe_result = return_result;
+            return_result = return_result.next_n(required_cells_for_ty(ty));
+            let Operand::Local(local) = returned else {
+                // Only locals need to be preserved as only locals may be overwritten.
+                continue;
+            };
+            if local.in_reg() {
+                // Local will be accessed via accumulator register => local overwrite is avoided.
+                continue;
+            }
+            let value = self.layout.local_to_slot(local.local_index())?;
+            let copy_op = Self::select_copy_ss_op(probe_result, value, ty);
+            if copy_op.is_none() {
+                // Local is already at the stack slot expected by the caller => local overwrite is impossible.
+                continue;
+            }
+            let moved = self.stack.operand_to_temp(depth);
+            debug_assert!(!moved.in_reg());
+            debug_assert!(moved.is_same(&returned));
+            let result = local.temp_slots().head();
+            let op = Self::select_copy_ss_op(result, value, ty)
+                .expect("must yield `Some` since `value` is a `local`");
+            self.instrs
+                .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+        }
+        Ok(())
     }
 
     /// Translates the end of a Wasm `block` control frame.

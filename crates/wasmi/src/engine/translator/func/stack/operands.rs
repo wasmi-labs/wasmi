@@ -598,6 +598,23 @@ impl OperandStack {
         &mut self.operands[usize::from(pos)]
     }
 
+    /// Converts and returns the [`StackOperand`] at `depth` into a [`StackOperand::Temp`].
+    ///
+    /// # Note
+    ///
+    /// - Returns the [`Operand`] at `depth` before being converted to an [`Operand::Temp`].
+    /// - [`Operand::Temp`] will have their optional `instr` set to `None`.
+    ///
+    /// # Panics
+    ///
+    /// If `depth` is out of bounds for `self`.
+    #[inline]
+    pub fn operand_to_temp(&mut self, depth: usize) -> Operand {
+        let pos = self.depth_to_stack_pos(depth);
+        let opd = self.operand_to_temp_at(pos);
+        Operand::new(pos, opd, false)
+    }
+
     /// Converts and returns the [`StackOperand`] at `index` into a [`StackOperand::Temp`].
     ///
     /// # Note
