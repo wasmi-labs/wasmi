@@ -25,7 +25,3 @@ impl OpCode {
         Some(unsafe { mem::transmute::<u16, Self>(code) })
     }
 }
-
-/// Indicated an invalid `u16` value for an [`OpCode`].
-#[derive(Debug, Copy, Clone)]
-pub struct InvalidOpCode;

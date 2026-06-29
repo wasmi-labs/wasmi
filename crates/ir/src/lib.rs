@@ -23,7 +23,7 @@ pub use self::{
     error::Error,
     index::Slot,
     op::{LEN_OPS, Location, Op},
-    opcode::{InvalidOpCode, OpCode},
+    opcode::OpCode,
     primitive::{
         Address,
         BlockFuel,
