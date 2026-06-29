@@ -183,13 +183,28 @@ jobs:
         env:
           RUSTFLAGS: "-C debug-assertions"
         run: cargo test --bench benches --release --locked
-      # Regression guard for https://github.com/wasmi-labs/wasmi/issues/1942:
-      # Without `portable-dispatch` Wasmi relies on LLVM tail-calling its operator dispatch. This
-      # runs the `[return_]call[_indirect]` spec tests on that tail-call path with the default
-      # (multi-unit) `codegen-units` — the configuration that previously overflowed the native
-      # stack. `CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16` keeps the guard effective even if a
-      # `codegen-units = 1` release override is ever re-introduced.
-      - name: Test (release, tail-call dispatch, multi codegen-units)
+
+  # Regression guard for https://github.com/wasmi-labs/wasmi/issues/1942.
+  #
+  # Without `portable-dispatch` Wasmi relies on LLVM tail-calling its operator dispatch. A handler
+  # that fails to tail-call leaks a native stack frame per execution and overflows the stack on a
+  # loop or deep recursion. This job exercises that tail-call path with the default (multi-unit)
+  # `codegen-units` — the configuration that previously overflowed. `CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16`
+  # keeps the guard effective even if a `codegen-units = 1` release override is ever re-introduced.
+  stackoverflow:
+    name: Detect Stackoverflow
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Test (full wasmi_wast suite, tail-call dispatch, multi codegen-units)
         env:
           CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
         run: >-
@@ -199,11 +214,21 @@ jobs:
           --locked
           --no-default-features
           --features stable
+      - name: Test (operator torture, reduced native stack)
+        env:
+          CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
+          RUST_MIN_STACK: "262144" # 256 KiB in bytes: 256 × 1024 = 262144
+        run: >-
+          cargo test
+          -p wasmi_wast
+          --test mod
+          --release
+          --locked
+          --no-default-features
+          --features stable
           --
-          spec_call
-          spec_call_indirect
-          spec_return_call
-          spec_return_call_indirect
+          --ignored
+          wasmi_torture
 
   fmt:
     name: Formatting
