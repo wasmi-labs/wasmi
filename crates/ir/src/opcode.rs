@@ -10,6 +10,7 @@ impl Clone for OpCode {
     }
 }
 impl From<OpCode> for u16 {
+    #[inline]
     fn from(code: OpCode) -> Self {
         code as u16
     }
@@ -19,6 +20,7 @@ impl OpCode {
     /// Creates a new [`OpCode`] from `code` if `code` is within bounds.
     ///
     /// Returns `None` otherwise.
+    #[inline]
     pub fn new(code: u16) -> Option<Self> {
         if usize::from(code) >= crate::LEN_OPS {
             return None;
