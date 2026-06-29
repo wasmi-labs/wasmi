@@ -594,9 +594,9 @@ mod memory64 {
 /// This is a tail-call operator dispatch torture test.
 ///
 /// It executes every Wasm operator millions of times in a loop.
-/// 
+///
 /// # Background
-/// 
+///
 /// When Wasmi is built without `portable-dispatch`, an operator handler that fails
 /// to tail-call leaks one native stack frame per loop iteration, so a leaking handler
 /// in any loop overflows the native stack and aborts (fails) the test.
