@@ -42,24 +42,19 @@ use crate::{
                 memory_slice_mut,
                 resolve_data_mut,
                 resolve_elem_mut,
-                resolve_func,
                 resolve_global,
                 resolve_indirect_func,
-                resolve_instance,
                 resolve_memory,
                 resolve_table,
                 resolve_table_mut,
                 return_call_func_entry,
-                return_call_host,
-                return_call_wasm,
+                return_call_wasm_or_host,
                 set_global,
-                update_instance,
             },
         },
         utils::unreachable_unchecked,
     },
     errors::{FuelError, MemoryError, TableError},
-    func::FuncEntity,
     ir::{self, BoundedSlotSpan, Slot, SlotSpan, index},
     store::StoreError,
 };
@@ -362,27 +357,8 @@ execution_handler! {
     ) -> Done = {
         let (_, crate::ir::decode::ReturnCallImported { params, func }) = unsafe { decode_op(ip) };
         let func = fetch_func(instance, func);
-        let func_entity = resolve_func(state.store, &func);
-        let (callee_ip, sp, new_instance) = match func_entity {
-            FuncEntity::Wasm(func) => {
-                let wasm_func = func.func_body();
-                let callee_instance = *func.instance();
-                let callee_instance = resolve_instance(state.store, &callee_instance).into();
-                let changed_instance = match callee_instance != instance {
-                    true => Some(callee_instance),
-                    false => None,
-                };
-                let (callee_ip, callee_sp) =
-                    return_call_wasm(state, params, wasm_func, changed_instance)?;
-                (callee_ip, callee_sp, callee_instance)
-            }
-            FuncEntity::Host(host_func) => {
-                let host_func = *host_func;
-                return_call_host(state, func, host_func, params, instance)?
-            }
-        };
-        let (instance, mem0, mem0_len) =
-            update_instance(state.store, instance, new_instance, mem0, mem0_len);
+        let (callee_ip, sp, mem0, mem0_len, instance) =
+            return_call_wasm_or_host(state, func, params, mem0, mem0_len, instance)?;
         dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
 }
@@ -423,27 +399,8 @@ macro_rules! return_call_indirect_execution_handler {
                             freg32,
                             freg64,
                         ).into_control()?;
-                    let func_entity = resolve_func(state.store, &func);
-                    let (callee_ip, sp, callee_instance) = match func_entity {
-                        FuncEntity::Wasm(func) => {
-                            let wasm_func = func.func_body();
-                            let callee_instance = *func.instance();
-                            let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
-                            let changed_instance = match callee_instance != instance {
-                                true => Some(callee_instance),
-                                false => None,
-                            };
-                            let (callee_ip, callee_sp) =
-                                return_call_wasm(state, params, wasm_func, changed_instance)?;
-                            (callee_ip, callee_sp, callee_instance)
-                        }
-                        FuncEntity::Host(host_func) => {
-                            let host_func = *host_func;
-                            return_call_host(state, func, host_func, params, instance)?
-                        }
-                    };
-                    let (instance, mem0, mem0_len) =
-                        update_instance(state.store, instance, callee_instance, mem0, mem0_len);
+                    let (callee_ip, sp, mem0, mem0_len, instance) =
+                        return_call_wasm_or_host(state, func, params, mem0, mem0_len, instance)?;
                     dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
                 }
             }
