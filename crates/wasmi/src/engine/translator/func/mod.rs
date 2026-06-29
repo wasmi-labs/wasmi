@@ -1145,10 +1145,26 @@ impl FuncTranslator {
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Op, Error> {
         debug_assert!(len > 1);
-        self.preserve_pure_locals(len, fuel_pos)?;
-        let dst = SlotSpan::new(Slot::from(0));
-        self.copy_operands_to_dst(dst, len, 0, fuel_pos)?;
+        if self.requires_return_copies(len)? {
+            self.preserve_pure_locals(len, fuel_pos)?;
+            let dst = SlotSpan::new(Slot::from(0));
+            self.copy_operands_to_dst(dst, len, 0, fuel_pos)?;
+        }
         Ok(Op::r#return())
+    }
+
+    /// Returns `true` if a copy operator is required to return the top `n` operands on the stack.
+    fn requires_return_copies(&self, n: u16) -> Result<bool, Error> {
+        let mut result= Slot::from(0);
+        for depth in (0..n).rev() {
+            let depth = usize::from(depth);
+            let value = self.stack.peek(depth);
+            if let Some(_op) = Self::select_copy_sx_op(result, value, &self.layout)? {
+                return Ok(true)
+            }
+            result = result.next_n(required_cells_for_ty(value.ty()));
+        }
+        Ok(false)
     }
 
     /// Preserves all pure local operands up to a depth of `n`.
