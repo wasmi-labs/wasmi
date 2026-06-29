@@ -22,6 +22,14 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - As a result `codegen-units = 1` is no longer required in the `release` profile to avoid these
     overflows, and SIMD-heavy loops no longer leak a native stack frame per executed operator.
 
+### Internal
+
+- Strengthened the CI guard for tail-call operator dispatch. [#1942]
+  - The tail-call CI job now runs the entire `wasmi_wast` suite (not just the call tests) on the
+    non-`portable-dispatch` path at `codegen-units > 1`, plus a new `wasmi_torture` test that loops
+    every Wasm operator category under a small `RUST_MIN_STACK` so any handler that stops tail-calling
+    overflows the native stack and fails CI.
+
 [#1942]: https://github.com/wasmi-labs/wasmi/issues/1942
 
 ## `2.0.0-beta.3` - 2026-06-22
