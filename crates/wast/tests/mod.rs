@@ -590,3 +590,37 @@ mod memory64 {
         });
     }
 }
+
+/// This is a tail-call operator dispatch torture test.
+///
+/// It executes every Wasm operator millions of times in a loop.
+/// 
+/// # Background
+/// 
+/// When Wasmi is built without `portable-dispatch`, an operator handler that fails
+/// to tail-call leaks one native stack frame per loop iteration, so a leaking handler
+/// in any loop overflows the native stack and aborts (fails) the test.
+///
+/// The test is marked as `#[ignore]` because it is slow in unoptimized builds and only makes
+/// sense on the tail-call dispatch path. It is run via a dedicated CI job that uses a small
+/// `RUST_MIN_STACK` to detect stack overflow regressions.
+///
+/// ```text
+/// RUST_MIN_STACK=262144 \
+/// cargo test -p wasmi_wast \
+///     --release \
+///     --no-default-features \
+///     --features stable \
+///     -- \
+///     --ignored wasmi_torture
+/// ```
+#[test]
+#[ignore = "slow torture loop; run via the dedicated reduced-stack CI step"]
+fn wasmi_torture() {
+    let wast = include_str!("wasmi/tests/torture.wast");
+    process_wast(
+        "wasmi/tests/torture",
+        wast,
+        runner_config(apply_spec_config(FuelMetering::Disabled)),
+    );
+}
