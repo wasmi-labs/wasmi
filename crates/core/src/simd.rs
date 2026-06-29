@@ -222,20 +222,24 @@ macro_rules! impl_lanes_for {
                     unsafe { ::core::mem::transmute::<[$ty; $n], V128>(self.0) }
                 }
 
+                #[inline]
                 fn splat(value: Self::Item) -> Self {
                     Self([value; $n])
                 }
 
+                #[inline]
                 fn extract_lane(self, lane: Self::LaneIdx) -> Self::Item {
                     self.0[u8::from(lane) as usize]
                 }
 
+                #[inline]
                 fn replace_lane(self, lane: Self::LaneIdx, item: Self::Item) -> Self {
                     let mut this = self;
                     this.0[u8::from(lane) as usize] = item;
                     this
                 }
 
+                #[inline]
                 fn lanewise_unary(self, f: impl Fn(Self::Item) -> Self::Item) -> Self {
                     let mut this = self.0;
                     for i in 0..Self::LANES {
@@ -244,6 +248,7 @@ macro_rules! impl_lanes_for {
                     Self(this)
                 }
 
+                #[inline]
                 fn lanewise_binary(self, other: Self, f: impl Fn(Self::Item, Self::Item) -> Self::Item) -> Self {
                     let mut lhs = self.0;
                     let rhs = other.0;
@@ -253,6 +258,7 @@ macro_rules! impl_lanes_for {
                     Self(lhs)
                 }
 
+                #[inline]
                 fn lanewise_ternary(self, b: Self, c: Self, f: impl Fn(Self::Item, Self::Item, Self::Item) -> Self::Item) -> Self {
                     let mut a = self.0;
                     let b = b.0;
@@ -263,6 +269,7 @@ macro_rules! impl_lanes_for {
                     Self(a)
                 }
 
+                #[inline]
                 fn lanewise_comparison(self, other: Self, f: impl Fn(Self::Item, Self::Item) -> bool) -> Self {
                     self.lanewise_binary(other, |lhs, rhs| match f(lhs, rhs) {
                         true => Self::ALL_ONES,
@@ -270,6 +277,7 @@ macro_rules! impl_lanes_for {
                     })
                 }
 
+                #[inline]
                 fn lanewise_reduce<T>(self, acc: T, f: impl Fn(u8, Self::Item, T) -> T) -> T {
                     let this = self.0;
                     let mut acc = acc;
@@ -347,6 +355,7 @@ macro_rules! impl_from_narrow_for {
     ( $( impl FromNarrow<$narrow_ty:ty> for $self_ty:ty; )* ) => {
         $(
             impl FromNarrow<$narrow_ty> for $self_ty {
+                #[inline]
                 fn pairwise_unary(
                     narrow: $narrow_ty,
                     f: impl Fn(<$narrow_ty as Lanes>::Item, <$narrow_ty as Lanes>::Item) -> Self::Item,
@@ -370,14 +379,17 @@ macro_rules! impl_from_narrow_for {
                     }))
                 }
 
+                #[inline]
                 fn low_unary(narrow: $narrow_ty, f: impl Fn(<$narrow_ty as Lanes>::Item) -> Self::Item) -> Self {
                     Self(array::from_fn(|i| f(narrow.0[i])))
                 }
 
+                #[inline]
                 fn high_unary(narrow: $narrow_ty, f: impl Fn(<$narrow_ty as Lanes>::Item) -> Self::Item) -> Self {
                     Self(array::from_fn(|i| f(narrow.0[i + Self::LANES])))
                 }
 
+                #[inline]
                 fn low_binary(
                     narrow_lhs: $narrow_ty,
                     narrow_rhs: $narrow_ty,
@@ -388,6 +400,7 @@ macro_rules! impl_from_narrow_for {
                     Self(array::from_fn(|i| f(narrow_lhs[i], narrow_rhs[i])))
                 }
 
+                #[inline]
                 fn high_binary(
                     narrow_lhs: $narrow_ty,
                     narrow_rhs: $narrow_ty,
@@ -442,6 +455,7 @@ macro_rules! impl_from_wide_for {
     ) => {
         $(
             impl FromWide<$wide_ty> for $narrow_ty {
+                #[inline]
                 fn from_low_high(
                     low: $wide_ty,
                     high: $wide_ty,
@@ -510,16 +524,19 @@ impl_reinterpret_as_for!(u64, f64);
 
 impl V128 {
     /// Convenience method to help implement splatting methods.
+    #[inline]
     fn splat<T: IntoLanes>(value: T) -> Self {
         <<T as IntoLanes>::Lanes>::splat(value).into_v128()
     }
 
     /// Convenience method to help implement lane extraction methods.
+    #[inline]
     fn extract_lane<T: IntoLanes>(self, lane: <T as IntoLanes>::LaneIdx) -> T {
         <<T as IntoLanes>::Lanes>::from_v128(self).extract_lane(lane)
     }
 
     /// Convenience method to help implement lane replacement methods.
+    #[inline]
     fn replace_lane<T: IntoLanes>(self, lane: <T as IntoLanes>::LaneIdx, item: T) -> Self {
         <<T as IntoLanes>::Lanes>::from_v128(self)
             .replace_lane(lane, item)
@@ -527,6 +544,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement lanewise unary methods.
+    #[inline]
     fn lanewise_unary<T: IntoLanes>(self, f: impl Fn(T) -> T) -> Self {
         <<T as IntoLanes>::Lanes>::from_v128(self)
             .lanewise_unary(f)
@@ -534,6 +552,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement lanewise unary cast methods.
+    #[inline]
     fn lanewise_unary_cast<T: IntoLanes, U>(self, f: impl Fn(T) -> U) -> Self
     where
         U: ReinterpretAs<T>,
@@ -544,6 +563,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement lanewise binary methods.
+    #[inline]
     fn lanewise_binary<T: IntoLanes>(lhs: Self, rhs: Self, f: impl Fn(T, T) -> T) -> Self {
         let lhs = <<T as IntoLanes>::Lanes>::from_v128(lhs);
         let rhs = <<T as IntoLanes>::Lanes>::from_v128(rhs);
@@ -551,6 +571,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement lanewise ternary methods.
+    #[inline]
     fn lanewise_ternary<T: IntoLanes>(a: Self, b: Self, c: Self, f: impl Fn(T, T, T) -> T) -> Self {
         let a = <<T as IntoLanes>::Lanes>::from_v128(a);
         let b = <<T as IntoLanes>::Lanes>::from_v128(b);
@@ -559,6 +580,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement lanewise comparison methods.
+    #[inline]
     fn lanewise_comparison<T: IntoLanes>(lhs: Self, rhs: Self, f: impl Fn(T, T) -> bool) -> Self {
         let lhs = <<T as IntoLanes>::Lanes>::from_v128(lhs);
         let rhs = <<T as IntoLanes>::Lanes>::from_v128(rhs);
@@ -566,16 +588,19 @@ impl V128 {
     }
 
     /// Convenience method to help implement lanewise reduce methods.
+    #[inline]
     fn lanewise_reduce<T: IntoLanes, V>(self, acc: V, f: impl Fn(T, V) -> V) -> V {
         self.lanewise_reduce_enumerate::<T, V>(acc, |_, v: T, acc: V| f(v, acc))
     }
 
     /// Convenience method to help implement lanewise reduce methods with a loop-index.
+    #[inline]
     fn lanewise_reduce_enumerate<T: IntoLanes, V>(self, acc: V, f: impl Fn(u8, T, V) -> V) -> V {
         <<T as IntoLanes>::Lanes>::from_v128(self).lanewise_reduce(acc, f)
     }
 
     /// Convenience method to help implement pairwise unary methods.
+    #[inline]
     fn pairwise_unary<Narrow: IntoLanes, Wide: IntoLanes>(
         self,
         f: impl Fn(Narrow, Narrow) -> Wide,
@@ -608,6 +633,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement extend-low unary methods.
+    #[inline]
     fn low_unary<Narrow: IntoLanes, Wide: IntoLanes>(self, f: impl Fn(Narrow) -> Wide) -> Self
     where
         <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
@@ -620,6 +646,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement extend-high unary methods.
+    #[inline]
     fn high_unary<Narrow: IntoLanes, Wide: IntoLanes>(self, f: impl Fn(Narrow) -> Wide) -> Self
     where
         <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
@@ -632,6 +659,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement extend-low binary methods.
+    #[inline]
     fn from_low_binary<Narrow: IntoLanes, Wide: IntoLanes>(
         lhs: Self,
         rhs: Self,
@@ -649,6 +677,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement extend-high binary methods.
+    #[inline]
     fn from_high_binary<Narrow: IntoLanes, Wide: IntoLanes>(
         lhs: Self,
         rhs: Self,
@@ -666,6 +695,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement narrowing low-high methods.
+    #[inline]
     fn from_low_high<Narrow: IntoLanes, Wide: IntoLanes>(
         lhs: Self,
         rhs: Self,
@@ -683,6 +713,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement narrowing low-or methods.
+    #[inline]
     fn low_or<Narrow: IntoLanes, Wide: IntoLanes>(
         self,
         high: impl Fn() -> Narrow,
@@ -709,6 +740,7 @@ macro_rules! impl_splat_for {
     ( $( fn $name:ident(value: $ty:ty) -> V128; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(value: $ty) -> V128 {
                 V128::splat(value)
             }
@@ -728,6 +760,7 @@ macro_rules! impl_extract_for {
     ( $( fn $name:ident(v128: V128, lane: $lane_ty:ty) -> $ret_ty:ty = $convert:expr; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(v128: V128, lane: $lane_ty) -> $ret_ty {
                 ($convert)(v128.extract_lane(lane))
             }
@@ -749,6 +782,7 @@ macro_rules! impl_replace_for {
     ( $( fn $name:ident(v128: V128, lane: $lane_ty:ty, item: $item_ty:ty) -> V128; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(v128: V128, lane: $lane_ty, item: $item_ty) -> V128 {
                 v128.replace_lane(lane, item)
             }
@@ -765,6 +799,7 @@ impl_replace_for! {
 }
 
 /// Executes a Wasm `i8x16.shuffle` instruction.
+#[inline]
 pub fn i8x16_shuffle(a: V128, b: V128, s: [ImmLaneIdx32; 16]) -> V128 {
     let a = I8x16::from_v128(a).0;
     let b = I8x16::from_v128(b).0;
@@ -776,6 +811,7 @@ pub fn i8x16_shuffle(a: V128, b: V128, s: [ImmLaneIdx32; 16]) -> V128 {
 }
 
 /// Executes a Wasm `i8x16.swizzle` instruction.
+#[inline]
 pub fn i8x16_swizzle(a: V128, s: V128) -> V128 {
     let a = U8x16::from_v128(a).0;
     let s = U8x16::from_v128(s).0;
@@ -790,6 +826,7 @@ macro_rules! impl_unary_for {
     ( $( fn $name:ident(v128: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(v128: V128) -> V128 {
                 V128::lanewise_unary(v128, $lanewise_expr)
             }
@@ -801,6 +838,7 @@ macro_rules! impl_unary_cast_for {
     ( $( fn $name:ident(v128: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(v128: V128) -> V128 {
                 V128::lanewise_unary_cast(v128, $lanewise_expr)
             }
@@ -842,6 +880,7 @@ macro_rules! impl_binary_for {
     ( $( fn $name:ident(lhs: V128, rhs: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(lhs: V128, rhs: V128) -> V128 {
                 V128::lanewise_binary(lhs, rhs, $lanewise_expr)
             }
@@ -956,6 +995,7 @@ macro_rules! impl_comparison_for {
     ( $( fn $name:ident(lhs: V128, rhs: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(lhs: V128, rhs: V128) -> V128 {
                 V128::lanewise_comparison(lhs, rhs, $lanewise_expr)
             }
@@ -1024,6 +1064,7 @@ macro_rules! impl_widen_low_unary {
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(v128: V128) -> V128 {
                 v128.low_unary($convert)
             }
@@ -1049,6 +1090,7 @@ macro_rules! impl_widen_high_unary {
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(v128: V128) -> V128 {
                 v128.high_unary($convert)
             }
@@ -1080,6 +1122,7 @@ macro_rules! impl_ext_binary_low {
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($extmul_low), "` instruction.")]
+            #[inline]
             pub fn $name(lhs: V128, rhs: V128) -> V128 {
                 V128::from_low_binary(lhs, rhs, $f)
             }
@@ -1101,6 +1144,7 @@ macro_rules! impl_ext_binary_high {
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($extmul_low), "` instruction.")]
+            #[inline]
             pub fn $name(lhs: V128, rhs: V128) -> V128 {
                 V128::from_high_binary(lhs, rhs, $f)
             }
@@ -1122,6 +1166,7 @@ macro_rules! impl_extadd_pairwise {
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(v128: V128) -> V128 {
                 fn extadd_pairwise(a: $narrow, b: $narrow) -> $wide {
                     let a = <$wide>::from(a);
@@ -1146,6 +1191,7 @@ macro_rules! impl_shift_ops {
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(v128: V128, rhs: u32) -> V128 {
                 v128.lanewise_unary(|v| $lanewise_expr(v, rhs))
             }
@@ -1173,6 +1219,7 @@ macro_rules! impl_narrowing_low_high_ops {
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(low: V128, high: V128) -> V128 {
                 V128::from_low_high(low, high, $f)
             }
@@ -1212,6 +1259,7 @@ macro_rules! impl_narrowing_low_high_ops {
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(low: V128) -> V128 {
                 V128::low_or(low, $high, $f)
             }
@@ -1233,6 +1281,7 @@ macro_rules! impl_all_true_ops {
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(v128: V128) -> bool {
                 v128.lanewise_reduce(true, $f)
             }
@@ -1255,6 +1304,7 @@ macro_rules! impl_bitmask_ops {
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[inline]
             pub fn $name(v128: V128) -> u32 {
                 v128.lanewise_reduce_enumerate(0_i32, $f) as _
             }
@@ -1269,11 +1319,13 @@ impl_bitmask_ops! {
 }
 
 /// Executes a Wasm `v128.any_true` instruction.
+#[inline]
 pub fn v128_any_true(v128: V128) -> bool {
     v128.as_u128() != 0
 }
 
 /// Executes a Wasm `i32x4.dot_i16x8_s` instruction.
+#[inline]
 pub fn i32x4_dot_i16x8_s(lhs: V128, rhs: V128) -> V128 {
     fn dot(a: [i16; 2], b: [i16; 2]) -> i32 {
         let a = a.map(i32::from);
@@ -1290,6 +1342,7 @@ pub fn i32x4_dot_i16x8_s(lhs: V128, rhs: V128) -> V128 {
 /// # Note
 ///
 /// This is part of the `relaxed-simd` Wasm proposal.
+#[inline]
 pub fn i16x8_relaxed_dot_i8x16_i7x16_s(lhs: V128, rhs: V128) -> V128 {
     fn dot(a: [i8; 2], b: [i8; 2]) -> i16 {
         let a = a.map(i16::from);
@@ -1306,6 +1359,7 @@ pub fn i16x8_relaxed_dot_i8x16_i7x16_s(lhs: V128, rhs: V128) -> V128 {
 /// # Note
 ///
 /// This is part of the `relaxed-simd` Wasm proposal.
+#[inline]
 pub fn i32x4_relaxed_dot_i8x16_i7x16_add_s(lhs: V128, rhs: V128, c: V128) -> V128 {
     let dot = i16x8_relaxed_dot_i8x16_i7x16_s(lhs, rhs);
     let ext = i32x4_extadd_pairwise_i16x8_s(dot);
@@ -1313,6 +1367,7 @@ pub fn i32x4_relaxed_dot_i8x16_i7x16_add_s(lhs: V128, rhs: V128, c: V128) -> V12
 }
 
 /// Executes a Wasm `v128.bitselect` instruction.
+#[inline]
 pub fn v128_bitselect(v1: V128, v2: V128, c: V128) -> V128 {
     simd::v128_or(simd::v128_and(v1, c), simd::v128_andnot(v2, c))
 }
@@ -1333,6 +1388,7 @@ macro_rules! impl_ternary_for {
             #[doc = "# Note"]
             #[doc = ""]
             #[doc = "This is part of the `relaxed-simd` Wasm proposal."]
+            #[inline]
             pub fn $name(a: V128, b: V128, c: V128) -> V128 {
                 V128::lanewise_ternary(a, b, c, $lanewise_expr)
             }
@@ -1352,6 +1408,7 @@ impl_ternary_for! {
 ///
 /// - If `ptr + offset` overflows.
 /// - If `ptr + offset` stores out of bounds from `memory`.
+#[inline]
 pub fn v128_store(memory: &mut [u8], ptr: u64, offset: u64, value: V128) -> Result<(), TrapCode> {
     memory::store(memory, ptr, offset, value.as_u128())
 }
@@ -1361,6 +1418,7 @@ pub fn v128_store(memory: &mut [u8], ptr: u64, offset: u64, value: V128) -> Resu
 /// # Errors
 ///
 /// If `address` stores out of bounds from `memory`.
+#[inline]
 pub fn v128_store_at(memory: &mut [u8], address: usize, value: V128) -> Result<(), TrapCode> {
     memory::store_at(memory, address, value.as_u128())
 }
@@ -1385,6 +1443,7 @@ macro_rules! impl_v128_storeN_lane {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` stores out of bounds from `memory`.
+            #[inline]
             pub fn $name(memory: &mut [u8], ptr: u64, offset: u64, value: V128, imm: $lane_idx) -> Result<(), TrapCode> {
                 memory::store(memory, ptr, offset, value.extract_lane::<$store_ty>(imm))
             }
@@ -1435,6 +1494,7 @@ macro_rules! impl_v128_storeN_lane_at {
             /// # Errors
             ///
             /// If `address` stores out of bounds from `memory`.
+            #[inline]
             pub fn $name(memory: &mut [u8], address: usize, value: V128, imm: $lane_idx) -> Result<(), TrapCode> {
                 memory::store_at(memory, address, value.extract_lane::<$store_ty>(imm))
             }
@@ -1462,6 +1522,7 @@ impl_v128_storeN_lane_at! {
 ///
 /// - If `ptr + offset` overflows.
 /// - If `ptr + offset` loads out of bounds from `memory`.
+#[inline]
 pub fn v128_load(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> {
     memory::load::<u128>(memory, ptr, offset).map(V128::from)
 }
@@ -1471,6 +1532,7 @@ pub fn v128_load(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode>
 /// # Errors
 ///
 /// If `address` loads out of bounds from `memory`.
+#[inline]
 pub fn v128_load_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
     memory::load_at::<u128>(memory, address).map(V128::from)
 }
@@ -1483,6 +1545,7 @@ macro_rules! impl_v128_lowN_zero_for {
             #[doc = concat!("Executes a Wasmi specific `", stringify!($name), "` instruction.")]
             #[doc = ""]
             #[doc = concat!("Returns a [`V128`] value with the first `", stringify!($bits_ty), "` lane set to `bits` and all others to zero.")]
+            #[inline]
             pub fn $name(bits: $bits_ty) -> V128 {
                 V128::splat::<$bits_ty>(0).replace_lane::<$bits_ty>(<$bits_ty as IntoLaneIdx>::LaneIdx::zero(), bits)
             }
@@ -1505,6 +1568,7 @@ macro_rules! impl_v128_loadN_zero_for {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` loads out of bounds from `memory`.
+            #[inline]
             pub fn $name(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> {
                 let bits = memory::load::<$ty>(memory, ptr, offset)?;
                 Ok(V128::splat::<$ty>(0).replace_lane::<$ty>(<$ty as IntoLaneIdx>::LaneIdx::zero(), bits))
@@ -1527,6 +1591,7 @@ macro_rules! impl_v128_loadN_zero_at_for {
             /// # Errors
             ///
             /// If `address` loads out of bounds from `memory`.
+            #[inline]
             pub fn $name(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
                 let bits = memory::load_at::<$ty>(memory, address)?;
                 Ok(V128::splat::<$ty>(0).replace_lane::<$ty>(<$ty as IntoLaneIdx>::LaneIdx::zero(), bits))
@@ -1550,6 +1615,7 @@ macro_rules! impl_v128_loadN_splat_for {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` loads out of bounds from `memory`.
+            #[inline]
             pub fn $name(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> {
                 memory::load::<$ty>(memory, ptr, offset).map(V128::splat)
             }
@@ -1573,6 +1639,7 @@ macro_rules! impl_v128_loadN_splat_at_for {
             /// # Errors
             ///
             /// If `address` loads out of bounds from `memory`.
+            #[inline]
             pub fn $name(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
                 memory::load_at::<$ty>(memory, address).map(V128::splat)
             }
@@ -1604,6 +1671,7 @@ macro_rules! impl_v128_loadN_lane_for {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` loads out of bounds from `memory`.
+            #[inline]
             pub fn $name(memory: &[u8], ptr: u64, offset: u64, x: V128, lane: $lane_idx) -> Result<V128, TrapCode> {
                 memory::load::<$ty>(memory, ptr, offset).map(|value| x.replace_lane(lane, value))
             }
@@ -1627,6 +1695,7 @@ macro_rules! impl_v128_loadN_lane_at_for {
             /// # Errors
             ///
             /// If `address` loads out of bounds from `memory`.
+            #[inline]
             pub fn $name(memory: &[u8], address: usize, x: V128, lane: $lane_idx) -> Result<V128, TrapCode> {
                 memory::load_at::<$ty>(memory, address).map(|value| x.replace_lane(lane, value))
             }
@@ -1657,6 +1726,7 @@ macro_rules! impl_split_into_for {
             impl SplitInto<$ty> for u64 {
                 type Output = [$ty; core::mem::size_of::<u64>() / core::mem::size_of::<$ty>()];
 
+                #[inline]
                 fn split_into(self) -> Self::Output {
                     let bytes = self.to_ne_bytes();
                     array::from_fn(|i| {
@@ -1719,6 +1789,7 @@ macro_rules! impl_v128_widen_mxn {
             #[doc = " # Note"]
             #[doc = ""]
             #[doc = concat!("The `bits` argument is reinterpreted as array of `", stringify!($n), "`.")]
+            #[inline]
             pub fn $name(bits: u64) -> V128 {
                 V128::widen_nxm::<$n, $w>(bits)
             }
@@ -1745,6 +1816,7 @@ macro_rules! impl_v128_load_mxn {
             ///
             /// - If `ptr + offset` overflows.
             /// - If `ptr + offset` loads out of bounds from `memory`.
+            #[inline]
             pub fn $name(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> {
                 memory::load::<u64>(memory, ptr, offset).map(V128::widen_nxm::<$n, $w>)
             }
@@ -1770,6 +1842,7 @@ macro_rules! impl_v128_load_mxn_at {
             /// # Errors
             ///
             /// If `address` loads out of bounds from `memory`.
+            #[inline]
             pub fn $name(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
                 memory::load_at::<u64>(memory, address).map(V128::widen_nxm::<$n, $w>)
             }
@@ -1800,6 +1873,7 @@ macro_rules! impl_forwarding_relaxed_ops {
             #[doc = "# Note"]
             #[doc = ""]
             #[doc = "This is part of the `relaxed-simd` Wasm proposal."]
+            #[inline]
             pub fn $name( $( $param_name: $param_ty ),* ) -> $ret_ty {
                 $forward_fn( $( $param_name ),* )
             }

@@ -305,6 +305,7 @@ impl<const N: usize> Display for DisplayDecode<&'_ GenericOp<N>> {
                         {fields}\n\
             {indent}}}\n\
             {indent}impl Decode for {camel_ident} {{\n\
+            {indent}    #[inline]\n\
             {indent}    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {{\n\
             {indent}        Ok(Self {{\n\
                                 {constructors}\n\
