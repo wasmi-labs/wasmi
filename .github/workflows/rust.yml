@@ -204,6 +204,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
+      - name: Build tests
+        env:
+          CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
+        run: >-
+          cargo test
+          -p wasmi_wast
+          --release
+          --locked
+          --no-default-features
+          --features stable
+          --no-run
       - name: Test (full wasmi_wast suite, tail-call dispatch, multi codegen-units)
         env:
           CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
