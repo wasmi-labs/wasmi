@@ -758,6 +758,7 @@ pub fn update_instance(
     (new_instance, mem0, mem0_len)
 }
 
+#[inline]
 pub fn call_func_entry(
     state: &mut VmState,
     caller_ip: Ip,
@@ -803,6 +804,7 @@ pub fn call_wasm(
     Control::Continue((callee_ip, callee_sp))
 }
 
+#[inline]
 pub fn return_call_func_entry(
     state: &mut VmState,
     params: BoundedSlotSpan,
