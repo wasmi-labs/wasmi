@@ -1758,11 +1758,16 @@ trait ExtendArray<T> {
 
 impl<const N: usize, Ext, T> ExtendArray<Ext> for [T; N]
 where
-    T: ExtendInto<Ext>,
+    T: Copy + ExtendInto<Ext>,
 {
     type Output = [Ext; N];
+
+    #[inline]
     fn extend_array(self) -> Self::Output {
-        self.map(<T as ExtendInto<Ext>>::extend_into)
+        // Note: we use `from_fn` instead of `map` to keep this fully inlinable into the SIMD widen handlers.
+        //       This is required so their operator dispatch becomes a tail call even with `codegen-units > 1`.
+        //       This can be reverted once or if Rust `array::map` is marked as `#[inline]`.
+        array::from_fn(|i| <T as ExtendInto<Ext>>::extend_into(self[i]))
     }
 }
 
