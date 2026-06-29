@@ -1147,6 +1147,40 @@ impl FuncTranslator {
         debug_assert!(len > 1);
         let span = self.copy_operands_to_temp(len, fuel_pos)?;
         Ok(Self::make_return_span(span))
+
+    /// Preserves all pure local operands up to a depth of `n`.
+    ///
+    /// # Note
+    ///
+    /// - A local operand is pure if it isn't hold in an accumulator register.
+    /// - Preserved operands are copied to their temporary stack slots.
+    fn preserve_pure_locals(
+        &mut self,
+        n: u16,
+        fuel_pos: Option<Pos<ir::BlockFuel>>,
+    ) -> Result<(), Error> {
+        for depth in 0..n {
+            let depth = usize::from(depth);
+            let value = self.stack.peek(depth);
+            let Operand::Local(local) = value else {
+                // No local -> no preservation.
+                continue;
+            };
+            if local.in_reg() {
+                // No need to preserve locals that are cached in accumulator registers.
+                continue;
+            }
+            let moved = self.stack.operand_to_temp(depth);
+            debug_assert!(!moved.in_reg());
+            debug_assert!(moved.is_same(&value));
+            let result = local.temp_slots().head();
+            let value = self.layout.local_to_slot(local.local_index())?;
+            let op = Self::select_copy_ss_op(result, value, local.ty())
+                .expect("must yield `Some` since `value` is a `local`");
+            self.instrs
+                .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+        }
+        Ok(())
     }
 
     /// Translates the end of a Wasm `block` control frame.
