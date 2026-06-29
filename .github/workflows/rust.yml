@@ -183,6 +183,27 @@ jobs:
         env:
           RUSTFLAGS: "-C debug-assertions"
         run: cargo test --bench benches --release --locked
+      # Regression guard for https://github.com/wasmi-labs/wasmi/issues/1942:
+      # Without `portable-dispatch` Wasmi relies on LLVM tail-calling its operator dispatch. This
+      # runs the `[return_]call[_indirect]` spec tests on that tail-call path with the default
+      # (multi-unit) `codegen-units` — the configuration that previously overflowed the native
+      # stack. `CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16` keeps the guard effective even if a
+      # `codegen-units = 1` release override is ever re-introduced.
+      - name: Test (release, tail-call dispatch, multi codegen-units)
+        env:
+          CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
+        run: >-
+          cargo test
+          -p wasmi_wast
+          --release
+          --locked
+          --no-default-features
+          --features stable
+          --
+          spec_call
+          spec_call_indirect
+          spec_return_call
+          spec_return_call_indirect
 
   fmt:
     name: Formatting
