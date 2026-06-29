@@ -34,8 +34,6 @@ Alternatively, build and install the `wasmi` binary from the latest release on `
 cargo install wasmi_cli
 ```
 
-**NOTE:** `codegen-units = 1` is required to avoid stack overflows when _not_ using `wasmi`'s [`portable-dispatch` feature](#crate-features). This configuration is preset in Wasmi's `release` profile.
-
 ## Usage
 
 ```bash
