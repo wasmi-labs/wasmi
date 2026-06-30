@@ -180,6 +180,14 @@ pub trait Float: Sized {
     fn nearest(self) -> Self;
     /// Takes the square root of a number.
     fn sqrt(self) -> Self;
+    /// Returns the `add(lhs, rhs)` result.
+    fn add(lhs: Self, rhs: Self) -> Self;
+    /// Returns the `sub(lhs, rhs)` result.
+    fn sub(lhs: Self, rhs: Self) -> Self;
+    /// Returns the `mul(lhs, rhs)` result.
+    fn mul(lhs: Self, rhs: Self) -> Self;
+    /// Returns the `div(lhs, rhs)` result.
+    fn div(lhs: Self, rhs: Self) -> Self;
     /// Returns the minimum of the two numbers.
     fn min(lhs: Self, rhs: Self) -> Self;
     /// Returns the maximum of the two numbers.
@@ -392,6 +400,26 @@ macro_rules! impl_float {
                     return qnan;
                 }
                 WasmFloatExt::sqrt(self)
+            }
+
+            #[inline]
+            fn add(lhs: Self, rhs: Self) -> Self {
+                lhs + rhs
+            }
+
+            #[inline]
+            fn sub(lhs: Self, rhs: Self) -> Self {
+                lhs - rhs
+            }
+
+            #[inline]
+            fn mul(lhs: Self, rhs: Self) -> Self {
+                lhs * rhs
+            }
+
+            #[inline]
+            fn div(lhs: Self, rhs: Self) -> Self {
+                lhs / rhs
             }
 
             #[inline]

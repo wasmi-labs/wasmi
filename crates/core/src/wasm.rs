@@ -204,14 +204,14 @@ impl_rawval_val! {
     fn f32_sqrt(value: f32) -> f32 = Float::sqrt;
     fn f64_sqrt(value: f64) -> f64 = Float::sqrt;
 
-    fn f32_add(lhs: f32, rhs: f32) -> f32 = op!(+);
-    fn f64_add(lhs: f64, rhs: f64) -> f64 = op!(+);
-    fn f32_sub(lhs: f32, rhs: f32) -> f32 = op!(-);
-    fn f64_sub(lhs: f64, rhs: f64) -> f64 = op!(-);
-    fn f32_mul(lhs: f32, rhs: f32) -> f32 = op!(*);
-    fn f64_mul(lhs: f64, rhs: f64) -> f64 = op!(*);
-    fn f32_div(lhs: f32, rhs: f32) -> f32 = op!(/);
-    fn f64_div(lhs: f64, rhs: f64) -> f64 = op!(/);
+    fn f32_add(lhs: f32, rhs: f32) -> f32 = Float::add;
+    fn f64_add(lhs: f64, rhs: f64) -> f64 = Float::add;
+    fn f32_sub(lhs: f32, rhs: f32) -> f32 = Float::sub;
+    fn f64_sub(lhs: f64, rhs: f64) -> f64 = Float::sub;
+    fn f32_mul(lhs: f32, rhs: f32) -> f32 = Float::mul;
+    fn f64_mul(lhs: f64, rhs: f64) -> f64 = Float::mul;
+    fn f32_div(lhs: f32, rhs: f32) -> f32 = Float::div;
+    fn f64_div(lhs: f64, rhs: f64) -> f64 = Float::div;
     fn f32_min(lhs: f32, rhs: f32) -> f32 = Float::min;
     fn f64_min(lhs: f64, rhs: f64) -> f64 = Float::min;
     fn f32_max(lhs: f32, rhs: f32) -> f32 = Float::max;
