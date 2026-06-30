@@ -76,7 +76,12 @@ add_dependencies(wasmi wasmi-crate)
 # Handle platform-specific settings for linking
 if(BUILD_SHARED_LIBS)
     if(NOT WASMI_TARGET MATCHES "windows")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
+        # `$ORIGIN` is a Linux/ELF feature that macOS `dyld` does not expand, so it is only
+        # added on non-Apple platforms. Consumers of the shared library on macOS set their
+        # own rpath (e.g. `-Wl,-rpath,@loader_path`). See #1297.
+        if(NOT WASMI_TARGET MATCHES "darwin")
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
+        endif()
     endif()
     list(GET WASMI_SHARED_FILES 0 WASMI_SHARED_LIB_TO_LINK)
     target_link_libraries(wasmi INTERFACE ${WASMI_SHARED_LIB_TO_LINK})
