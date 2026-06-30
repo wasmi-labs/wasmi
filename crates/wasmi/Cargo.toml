@@ -57,7 +57,7 @@ memory64 = ["wasmi_core/memory64", "wasmi_ir/memory64"]
 validate = ["wasmparser/validate", "wasmparser/features"]
 stable = []
 unstable = []
-deterministic = ["wasmi_core/canonicalize_nan"]
+deterministic = ["wasmi_core/deterministic"]
 
 # Enables a portable dispatch scheme that avoids tail-call reliance.
 # Recommended for targets without stable or guaranteed tail-call support.
