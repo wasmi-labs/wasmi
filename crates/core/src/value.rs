@@ -535,7 +535,7 @@ macro_rules! impl_into_quiet_nan {
                 #[inline]
                 fn into_quiet_nan(self) -> Option<Self> {
                     const QUIET_BIT: $bits = $mask;
-                    if unlikely(!self.is_nan()) {
+                    if likely(!self.is_nan()) {
                         return None;
                     }
                     Some(Self::from_bits(self.to_bits() | QUIET_BIT))
