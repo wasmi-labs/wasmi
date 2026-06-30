@@ -164,41 +164,6 @@ impl Unsigned for i64 {
     type Uint = u64;
 }
 
-/// Float-point value.
-pub trait Float: Sized {
-    /// Negate `self`.
-    fn neg(self) -> Self;
-    /// Get absolute value.
-    fn abs(self) -> Self;
-    /// Returns the largest integer less than or equal to a number.
-    fn floor(self) -> Self;
-    /// Returns the smallest integer greater than or equal to a number.
-    fn ceil(self) -> Self;
-    /// Returns the integer part of a number.
-    fn trunc(self) -> Self;
-    /// Returns the nearest integer to a number. Ties are round to even number.
-    fn nearest(self) -> Self;
-    /// Takes the square root of a number.
-    fn sqrt(self) -> Self;
-    /// Returns the `add(lhs, rhs)` result.
-    fn add(lhs: Self, rhs: Self) -> Self;
-    /// Returns the `sub(lhs, rhs)` result.
-    fn sub(lhs: Self, rhs: Self) -> Self;
-    /// Returns the `mul(lhs, rhs)` result.
-    fn mul(lhs: Self, rhs: Self) -> Self;
-    /// Returns the `div(lhs, rhs)` result.
-    fn div(lhs: Self, rhs: Self) -> Self;
-    /// Returns the minimum of the two numbers.
-    fn min(lhs: Self, rhs: Self) -> Self;
-    /// Returns the maximum of the two numbers.
-    fn max(lhs: Self, rhs: Self) -> Self;
-    /// Sets sign of this value to the sign of other value.
-    fn copysign(lhs: Self, rhs: Self) -> Self;
-    /// Fused multiply-add with a single rounding error.
-    #[cfg(feature = "simd")]
-    fn mul_add(a: Self, b: Self, c: Self) -> Self;
-}
-
 macro_rules! impl_try_truncate_into {
     (@primitive $from: ident, $into: ident, $rmin:literal, $rmax:literal) => {
         impl TryTruncateInto<$into, TrapCode> for $from {
@@ -345,6 +310,41 @@ macro_rules! impl_integer {
 }
 impl_integer!(i32);
 impl_integer!(i64);
+
+/// Float-point value.
+pub trait Float: Sized {
+    /// Negate `self`.
+    fn neg(self) -> Self;
+    /// Get absolute value.
+    fn abs(self) -> Self;
+    /// Returns the largest integer less than or equal to a number.
+    fn floor(self) -> Self;
+    /// Returns the smallest integer greater than or equal to a number.
+    fn ceil(self) -> Self;
+    /// Returns the integer part of a number.
+    fn trunc(self) -> Self;
+    /// Returns the nearest integer to a number. Ties are round to even number.
+    fn nearest(self) -> Self;
+    /// Takes the square root of a number.
+    fn sqrt(self) -> Self;
+    /// Returns the `add(lhs, rhs)` result.
+    fn add(lhs: Self, rhs: Self) -> Self;
+    /// Returns the `sub(lhs, rhs)` result.
+    fn sub(lhs: Self, rhs: Self) -> Self;
+    /// Returns the `mul(lhs, rhs)` result.
+    fn mul(lhs: Self, rhs: Self) -> Self;
+    /// Returns the `div(lhs, rhs)` result.
+    fn div(lhs: Self, rhs: Self) -> Self;
+    /// Returns the minimum of the two numbers.
+    fn min(lhs: Self, rhs: Self) -> Self;
+    /// Returns the maximum of the two numbers.
+    fn max(lhs: Self, rhs: Self) -> Self;
+    /// Sets sign of this value to the sign of other value.
+    fn copysign(lhs: Self, rhs: Self) -> Self;
+    /// Fused multiply-add with a single rounding error.
+    #[cfg(feature = "simd")]
+    fn mul_add(a: Self, b: Self, c: Self) -> Self;
+}
 
 // We cannot call the math functions directly, because they are not all available in `core`.
 // In no-std cases we instead rely on `libm`.
