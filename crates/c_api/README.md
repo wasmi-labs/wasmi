@@ -25,6 +25,23 @@ These commands will produce the following files:
 - `artifacts/include/**.h`:
     The header files for interfacing with Wasmi from C or C++.
 
+### Build Features
+
+By default Wasmi's operator dispatch relies on LLVM tail-calling, which is only
+guaranteed in optimized builds. Unoptimized **Debug** builds
+(`-DCMAKE_BUILD_TYPE=Debug`) can therefore cause stackoverflows. To avoid this,
+the CMake build **automatically enables the `portable-dispatch` feature for Debug
+builds**, which selects a portable (loop-based) dispatch scheme that does not rely on
+tail calls. Release builds keep the faster tail-call dispatch.
+
+You can enable `portable-dispatch` (or any other Cargo feature) for any build by
+passing additional cargo flags via `WASMI_USER_CARGO_BUILD_OPTIONS`:
+
+```shell
+cmake -S crates/c_api -B target/c_api \
+    -DWASMI_USER_CARGO_BUILD_OPTIONS="--features portable-dispatch"
+```
+
 ## Usage in a Rust Project
 
 If you have a Rust crate that uses a C or C++ library that uses Wasmi, you can link to the Wasmi C API as follows:
