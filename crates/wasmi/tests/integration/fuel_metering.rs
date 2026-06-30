@@ -94,17 +94,17 @@ fn run_test(mode: CompilationMode, final_fuel: u64) {
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
 fn metered_i32_add_eager() {
-    run_test(CompilationMode::Eager, 97)
+    run_test(CompilationMode::Eager, 96)
 }
 
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
 fn metered_i32_add_lazy_translation() {
-    run_test(CompilationMode::LazyTranslation, 48)
+    run_test(CompilationMode::LazyTranslation, 47)
 }
 
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
 fn metered_i32_add_lazy() {
-    run_test(CompilationMode::Lazy, 34)
+    run_test(CompilationMode::Lazy, 33)
 }

@@ -13,7 +13,6 @@ use crate::build::{
         GlobalSetOp,
         LoadOp,
         ReplaceLaneOp,
-        ReturnOp,
         SelectOp,
         StoreOp,
         TableGetOp,
@@ -107,7 +106,6 @@ macro_rules! impl_display_encode {
     };
 }
 impl_display_encode! {
-    ReturnOp,
     UnaryOp,
     BinaryOp,
     TernaryOp,

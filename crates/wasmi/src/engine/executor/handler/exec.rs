@@ -30,7 +30,6 @@ use crate::{
                 call_func_entry,
                 call_wasm_or_host,
                 exec_copy_span,
-                exec_copy_span_asc,
                 exec_return,
                 extract_mem0,
                 fetch_data,
@@ -55,7 +54,7 @@ use crate::{
         utils::unreachable_unchecked,
     },
     errors::{FuelError, MemoryError, TableError},
-    ir::{self, BoundedSlotSpan, Slot, SlotSpan, index},
+    ir::{self, BoundedSlotSpan, index},
     store::StoreError,
 };
 use core::{cmp, ptr};
@@ -426,60 +425,6 @@ execution_handler! {
     ) -> Done = {
         exec_return(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
     }
-}
-
-execution_handler! {
-    fn return_span(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let (_ip, crate::ir::decode::ReturnSpan { values }) = unsafe { decode_op(ip) };
-        let dst = SlotSpan::new(Slot::from(0));
-        let src = values.span();
-        let len = values.len();
-        exec_copy_span_asc(sp, dst, src, len);
-        exec_return(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-    }
-}
-
-macro_rules! handler_return {
-    ( $( fn $handler:ident($op:ident) = $eval:expr );* $(;)? ) => {
-        $(
-            execution_handler! {
-                fn $handler(
-                    state: &mut VmState,
-                    ip: Ip,
-                    sp: Sp,
-                    mem0: Mem0Ptr,
-                    mem0_len: Mem0Len,
-                    instance: Inst,
-                    ireg: Ireg,
-                    freg32: Freg32,
-                    freg64: Freg64,
-                ) -> Done = {
-                    let (_ip, crate::ir::decode::$op { value }) = unsafe { decode_op(ip) };
-                    let value = get_value(value, sp, ireg, freg32, freg64);
-                    set_value!(Slot::from(0), $eval(value), sp, ireg, freg32, freg64);
-                    exec_return(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
-                }
-            }
-        )*
-    };
-}
-handler_return! {
-    fn return_u64_r(ReturnU64_R) = identity::<u64>;
-    fn return_u64_s(ReturnU64_S) = identity::<u64>;
-    fn return_u32_i(ReturnU32_I) = identity::<u32>;
-    fn return_u64_i(ReturnU64_I) = identity::<u64>;
-    fn return_f32_r(ReturnF32_R) = identity::<f32>;
-    fn return_f64_r(ReturnF64_R) = identity::<f64>;
 }
 
 execution_handler! {

@@ -17,7 +17,6 @@ use crate::build::{
         LoadOp,
         Op,
         ReplaceLaneOp,
-        ReturnOp,
         SelectOp,
         StoreOp,
         TableGetOp,
@@ -176,7 +175,6 @@ macro_rules! impl_display_variant {
     };
 }
 impl_display_variant! {
-    ReturnOp,
     UnaryOp,
     BinaryOp,
     TernaryOp,
