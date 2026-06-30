@@ -14,6 +14,11 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 - Added support for the Wasm deterministic profile. [#1947]
   - Enable Wasm deterministic profile by enabling the new `deterministic` crate feature.
+- Added the `portable-dispatch` crate feature to the Wasmi C-API. [#1921]
+  - The `wasmi_c_api_impl` (and `wasmi_c_api`) crates now forward a `portable-dispatch`
+    feature to the underlying `wasmi` crate, so C-API users can opt into the portable
+    (loop-based) operator dispatch that does not rely on tail calls.
+  - This automatically enables the `portable-dispatch` feature for `CMAKE_BUILD_TYPE=Debug`.
 
 ### Fixed
 
@@ -37,6 +42,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - The `wasmi_wast` test runner verifies NaN canonicalization when built with the `deterministic` feature. [#1947]
   - This requires `nan:arithmetic` results to match the canonical NaN.
 
+[#1921]: https://github.com/wasmi-labs/wasmi/issues/1921
 [#1942]: https://github.com/wasmi-labs/wasmi/pull/1946
 [#1947]: https://github.com/wasmi-labs/wasmi/pull/1947
 
