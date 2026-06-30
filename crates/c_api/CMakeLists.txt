@@ -19,6 +19,11 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(WASMI_BUILD_TYPE "debug")
     set(CARGO_PROFILE_PANIC CARGO_PROFILE_DEBUG_PANIC)
+    # Debug builds are unoptimized, so LLVM does not guarantee the tail calls that
+    # Wasmi's default operator dispatch relies on, which can otherwise overflow the
+    # native stack. Enable the portable (loop-based) dispatch backend that does not
+    # rely on tail calls. Release builds keep the faster tail-call dispatch.
+    set(WASMI_FEATURES --features portable-dispatch)
 else()
     set(WASMI_BUILD_TYPE_FLAG "--profile" "bench")
     set(WASMI_BUILD_TYPE "release")
