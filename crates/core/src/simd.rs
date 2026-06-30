@@ -1375,7 +1375,7 @@ pub fn v128_bitselect(v1: V128, v2: V128, c: V128) -> V128 {
 /// Computes the negative `mul_add`: `-(a * b) + c`
 fn neg_mul_add<T>(a: T, b: T, c: T) -> T
 where
-    T: Float + Neg<Output = T>,
+    T: Float,
 {
     <T as Float>::mul_add(a.neg(), b, c)
 }

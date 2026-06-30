@@ -9,7 +9,6 @@ use crate::{
     TryTruncateInto,
     memory,
 };
-use core::ops::Neg;
 
 macro_rules! op {
     ( $operator:tt ) => {{
@@ -192,8 +191,8 @@ impl_rawval_val! {
 
     fn f32_abs(value: f32) -> f32 = Float::abs;
     fn f64_abs(value: f64) -> f64 = Float::abs;
-    fn f32_neg(value: f32) -> f32 = Neg::neg;
-    fn f64_neg(value: f64) -> f64 = Neg::neg;
+    fn f32_neg(value: f32) -> f32 = Float::neg;
+    fn f64_neg(value: f64) -> f64 = Float::neg;
     fn f32_ceil(value: f32) -> f32 = Float::ceil;
     fn f64_ceil(value: f64) -> f64 = Float::ceil;
     fn f32_floor(value: f32) -> f32 = Float::floor;

@@ -3,6 +3,7 @@ use crate::{
     TrapCode,
     hint::{likely, unlikely},
 };
+use core::ops::Neg;
 
 /// Type of a value.
 ///
@@ -165,6 +166,8 @@ impl Unsigned for i64 {
 
 /// Float-point value.
 pub trait Float: Sized {
+    /// Negate `self`.
+    fn neg(self) -> Self;
     /// Get absolute value.
     fn abs(self) -> Self;
     /// Returns the largest integer less than or equal to a number.
@@ -341,6 +344,10 @@ impl_integer!(i64);
 macro_rules! impl_float {
     ($ty:ty) => {
         impl Float for $ty {
+            #[inline]
+            fn neg(self) -> Self {
+                Neg::neg(self)
+            }
             #[inline]
             fn abs(self) -> Self {
                 WasmFloatExt::abs(self)
