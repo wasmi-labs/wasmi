@@ -555,6 +555,17 @@ pub trait CanonicalizeNan: Sized {
     fn canonicalize_nan(self) -> Self;
 }
 
+/// Extension trait for `f32` and `f64` to turn any NaN value into the canonical NaN if `canonicalize_nan` is enabled.
+pub trait CanonicalizeNanIfEnabled: Sized {
+    /// Returns the canonical NaN if `self` is a NaN and `canonicalize_nan` is enabled.
+    /// 
+    /// Otherwise returns `self` unchanged.
+    #[inline]
+    fn canonicalize_nan_if_enabled(self) -> Self {
+        self
+    }
+}
+
 macro_rules! impl_canonicalize_nan {
     ( $( ($float:ty, $bits:ty, $canonical:literal) );* $(;)? ) => {
         $(
@@ -567,6 +578,14 @@ macro_rules! impl_canonicalize_nan {
                         return self;
                     }
                     Self::from_bits(CANONICAL_NAN)
+                }
+            }
+
+            impl CanonicalizeNanIfEnabled for $float {
+                #[inline]
+                #[cfg(feature = "canonicalize_nan")]
+                fn canonicalize_nan_if_enabled(self) -> Self {
+                    <Self as CanonicalizeNan>::canonicalize_nan(self)
                 }
             }
         )*
