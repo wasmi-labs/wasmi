@@ -46,7 +46,7 @@ use crate::{
     FuncType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, RawRef, RawVal, Typed, TypedRawVal},
+    core::{FuelCostsProvider, IndexType, RawVal, Typed, TypedRawVal},
     engine::{
         BlockType,
         CompiledFuncEntry,
@@ -64,7 +64,7 @@ use crate::{
                 op::BinaryOpRhs,
                 stack::{Allocation, BranchParams, PreservedRegs, RegKind},
             },
-            utils::{ToBits, WasmInteger, required_cells_for_ty},
+            utils::{WasmInteger, required_cells_for_ty},
         },
     },
     ir::{
@@ -1068,14 +1068,6 @@ impl FuncTranslator {
         self.instrs.pad_to_op_alignment()?;
         let (pos, _) = self.instrs.encode_branch(dst, op, fuel_pos, 0)?;
         Ok(pos)
-    }
-
-    /// Returns [`Op::return_span`] if `returned` needs to be copied or otherwise [`Op::return`].
-    fn make_return_span(returned: BoundedSlotSpan) -> Op {
-        match returned.head() != Slot::from(0) {
-            true => Op::return_span(returned),
-            false => Op::r#return(),
-        }
     }
 
     /// Encodes a generic return operator.
