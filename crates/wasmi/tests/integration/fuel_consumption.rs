@@ -37,6 +37,7 @@ fn default_test_setup(wasm: &[u8]) -> (Store<()>, Func) {
 ///
 /// We just check if the call succeeded, not if the results are correct.
 /// That is to be determined by another kind of test.
+#[track_caller]
 fn assert_success(call_result: Result<i32, Error>) {
     assert!(call_result.is_ok());
     assert_eq!(call_result.unwrap(), -1);
@@ -75,5 +76,5 @@ fn check_fuel_consumption(given_fuel: u64, consumed_fuel: u64) {
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
 fn fuel_consumption_01() {
-    check_fuel_consumption(4, 4);
+    check_fuel_consumption(5, 5);
 }
