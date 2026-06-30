@@ -943,14 +943,14 @@ impl_binary_for! {
     fn f64x2_pmin(lhs: V128, rhs: V128) -> V128 = pmin::<f64>;
     fn f32x4_pmax(lhs: V128, rhs: V128) -> V128 = pmax::<f32>;
     fn f64x2_pmax(lhs: V128, rhs: V128) -> V128 = pmax::<f64>;
-    fn f32x4_add(lhs: V128, rhs: V128) -> V128 = op!(f32, +);
-    fn f64x2_add(lhs: V128, rhs: V128) -> V128 = op!(f64, +);
-    fn f32x4_sub(lhs: V128, rhs: V128) -> V128 = op!(f32, -);
-    fn f64x2_sub(lhs: V128, rhs: V128) -> V128 = op!(f64, -);
-    fn f32x4_div(lhs: V128, rhs: V128) -> V128 = op!(f32, /);
-    fn f64x2_div(lhs: V128, rhs: V128) -> V128 = op!(f64, /);
-    fn f32x4_mul(lhs: V128, rhs: V128) -> V128 = op!(f32, *);
-    fn f64x2_mul(lhs: V128, rhs: V128) -> V128 = op!(f64, *);
+    fn f32x4_add(lhs: V128, rhs: V128) -> V128 = wasm::f32_add;
+    fn f64x2_add(lhs: V128, rhs: V128) -> V128 = wasm::f64_add;
+    fn f32x4_sub(lhs: V128, rhs: V128) -> V128 = wasm::f32_sub;
+    fn f64x2_sub(lhs: V128, rhs: V128) -> V128 = wasm::f64_sub;
+    fn f32x4_div(lhs: V128, rhs: V128) -> V128 = wasm::f32_div;
+    fn f64x2_div(lhs: V128, rhs: V128) -> V128 = wasm::f64_div;
+    fn f32x4_mul(lhs: V128, rhs: V128) -> V128 = wasm::f32_mul;
+    fn f64x2_mul(lhs: V128, rhs: V128) -> V128 = wasm::f64_mul;
 }
 
 impl_unary_for! {

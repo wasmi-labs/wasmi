@@ -365,7 +365,7 @@ macro_rules! impl_float {
             #[inline]
             fn floor(self) -> Self {
                 if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
+                    return qnan.canonicalize_nan_if_enabled();
                 }
                 WasmFloatExt::floor(self)
             }
@@ -373,7 +373,7 @@ macro_rules! impl_float {
             #[inline]
             fn ceil(self) -> Self {
                 if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
+                    return qnan.canonicalize_nan_if_enabled();
                 }
                 WasmFloatExt::ceil(self)
             }
@@ -381,7 +381,7 @@ macro_rules! impl_float {
             #[inline]
             fn trunc(self) -> Self {
                 if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
+                    return qnan.canonicalize_nan_if_enabled();
                 }
                 WasmFloatExt::trunc(self)
             }
@@ -389,7 +389,7 @@ macro_rules! impl_float {
             #[inline]
             fn nearest(self) -> Self {
                 if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
+                    return qnan.canonicalize_nan_if_enabled();
                 }
                 WasmFloatExt::nearest(self)
             }
@@ -397,7 +397,7 @@ macro_rules! impl_float {
             #[inline]
             fn sqrt(self) -> Self {
                 if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
+                    return qnan.canonicalize_nan_if_enabled();
                 }
                 WasmFloatExt::sqrt(self).canonicalize_nan_if_enabled()
             }
