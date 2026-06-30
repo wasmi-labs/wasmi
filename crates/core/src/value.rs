@@ -550,13 +550,13 @@ impl_into_quiet_nan! {
 }
 
 /// Extension trait for `f32` and `f64` to turn any NaN value into the canonical NaN.
-pub trait CanonicalizeNan: Sized {
+trait CanonicalizeNan: Sized {
     /// Returns the canonical NaN if `self` is a NaN, otherwise returns `self` unchanged.
     fn canonicalize_nan(self) -> Self;
 }
 
 /// Extension trait for `f32` and `f64` to turn any NaN value into the canonical NaN if `canonicalize_nan` is enabled.
-pub trait CanonicalizeNanIfEnabled: Sized {
+trait CanonicalizeNanIfEnabled: Sized {
     /// Returns the canonical NaN if `self` is a NaN and `canonicalize_nan` is enabled.
     /// 
     /// Otherwise returns `self` unchanged.
