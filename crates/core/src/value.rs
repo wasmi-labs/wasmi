@@ -602,6 +602,7 @@ impl_into_quiet_nan! {
 }
 
 /// Extension trait for `f32` and `f64` to turn any NaN value into the canonical NaN.
+#[cfg(feature = "canonicalize_nan")]
 trait CanonicalizeNan: Sized {
     /// Returns the canonical NaN if `self` is a NaN, otherwise returns `self` unchanged.
     fn canonicalize_nan(self) -> Self;
@@ -621,6 +622,7 @@ trait CanonicalizeNanIfEnabled: Sized {
 macro_rules! impl_canonicalize_nan {
     ( $( ($float:ty, $bits:ty, $canonical:literal) );* $(;)? ) => {
         $(
+            #[cfg(feature = "canonicalize_nan")]
             impl CanonicalizeNan for $float {
                 #[inline]
                 fn canonicalize_nan(self) -> Self {
