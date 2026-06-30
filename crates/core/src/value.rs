@@ -1,4 +1,4 @@
-use crate::{RefType, TrapCode, hint::unlikely};
+use crate::{RefType, TrapCode, hint::{likely, unlikely}};
 
 /// Type of a value.
 ///
@@ -547,6 +547,34 @@ macro_rules! impl_into_quiet_nan {
 impl_into_quiet_nan! {
     (f32, u32, 0x0040_0000);
     (f64, u64, 0x0008_0000_0000_0000);
+}
+
+/// Extension trait for `f32` and `f64` to turn any NaN value into the canonical NaN.
+pub trait CanonicalizeNan: Sized {
+    /// Returns the canonical NaN if `self` is a NaN, otherwise returns `self` unchanged.
+    fn canonicalize_nan(self) -> Self;
+}
+
+macro_rules! impl_canonicalize_nan {
+    ( $( ($float:ty, $bits:ty, $canonical:literal) );* $(;)? ) => {
+        $(
+            impl CanonicalizeNan for $float {
+                #[inline]
+                fn canonicalize_nan(self) -> Self {
+                    /// Canonical NaN: sign 0, exponent all ones, mantissa MSB set, rest zero.
+                    const CANONICAL_NAN: $bits = $canonical;
+                    if likely(!self.is_nan()) {
+                        return self;
+                    }
+                    Self::from_bits(CANONICAL_NAN)
+                }
+            }
+        )*
+    };
+}
+impl_canonicalize_nan! {
+    (f32, u32, 0x7FC0_0000);
+    (f64, u64, 0x7FF8_0000_0000_0000);
 }
 
 #[cfg(not(any(not(feature = "std"), feature = "libm")))]
