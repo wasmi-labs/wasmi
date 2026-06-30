@@ -29,3 +29,4 @@ wasmi_c_api_impl = { workspace = true }
 default = ["std"]
 std = ["wasmi_c_api_impl/std"]
 simd = ["wasmi_c_api_impl/simd"]
+portable-dispatch = ["wasmi_c_api_impl/portable-dispatch"]
