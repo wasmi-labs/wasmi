@@ -1081,58 +1081,23 @@ impl FuncTranslator {
     /// Encodes a generic return operator.
     fn encode_return(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Pos<Op>, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
-        let op = match len_results {
-            0 => Op::Return {},
+        match len_results {
+            0 => {}
             1 => self.prepare_return_1_op(fuel_pos)?,
             n => self.prepare_return_n_op(n, fuel_pos)?,
         };
         let pos = self
             .instrs
-            .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+            .encode_op(Op::r#return(), fuel_pos, FuelCostsProvider::base)?;
         Ok(pos)
     }
 
     /// Prepares to encode a return operator returning a single value.
-    fn prepare_return_1_op(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Op, Error> {
-        let return_slot_for_ty = |ty: ValType, slot: Slot| match ty {
-            ValType::V128 => {
-                let returned = BoundedSlotSpan::new(SlotSpan::new(slot), 2);
-                Self::make_return_span(returned)
-            }
-            _ => Op::return_u64_s(slot),
-        };
+    fn prepare_return_1_op(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<(), Error> {
         let value = self.stack.peek(0);
-        let ty = value.ty();
-        let op = match value.resolve(&self.layout)? {
-            ResolvedOperand::Reg(ty) => match ty {
-                | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
-                    Op::return_u64_r()
-                }
-                | ValType::F32 => Op::return_f32_r(),
-                | ValType::F64 => Op::return_f64_r(),
-                | ValType::V128 => {
-                    // Note: `v128` values may not occupy register operands for now.
-                    unreachable!()
-                }
-            },
-            ResolvedOperand::Slot(value) => return_slot_for_ty(ty, value),
-            ResolvedOperand::Immediate(value) => match value.ty() {
-                ValType::I32 => Op::return_u32_i(i32::from(value).to_bits()),
-                ValType::I64 => Op::return_u64_i(i64::from(value).to_bits()),
-                ValType::F32 => Op::return_u32_i(f32::from(value).to_bits()),
-                ValType::F64 => Op::return_u64_i(f64::from(value).to_bits()),
-                ValType::FuncRef | ValType::ExternRef => {
-                    Op::return_u32_i(u32::from(RawRef::from(value.raw())))
-                }
-                ValType::V128 => {
-                    let value = self.stack.peek(0);
-                    let temp_slot = self.copy_operand_to_temp(value, fuel_pos)?;
-                    let returned = BoundedSlotSpan::new(SlotSpan::new(temp_slot), 2);
-                    Self::make_return_span(returned)
-                }
-            },
-        };
-        Ok(op)
+        let result = Slot::from(0);
+        self.encode_copy_sx_op(result, value, fuel_pos)?;
+        Ok(())
     }
 
     /// Prepares to encode a return operator returning `n` (`n > 1`) values.
@@ -1143,12 +1108,12 @@ impl FuncTranslator {
         &mut self,
         len: u16,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<Op, Error> {
+    ) -> Result<(), Error> {
         debug_assert!(len > 1);
         self.preserve_pure_locals(len, fuel_pos)?;
         let dst = SlotSpan::new(Slot::from(0));
         self.copy_operands_to_dst(dst, len, 0, fuel_pos)?;
-        Ok(Op::r#return())
+        Ok(())
     }
 
     /// Preserves all pure local operands up to a depth of `n`.
