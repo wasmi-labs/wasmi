@@ -8,36 +8,49 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## Unreleased
+## `2.0.0-beta.4` - 2026-07-01
 
 ### Added
 
 - Added support for the Wasm deterministic profile. [#1947]
   - Enable Wasm deterministic profile by enabling the new `deterministic` crate feature.
+- Added support to enable or disable `memory64` support. [#1934]
+  - Disabling `memory64` slightly reduces the artifact binary size
+    and may improve execution performance, especially on embedded targets.
 - Added the `portable-dispatch` crate feature to the Wasmi C-API. [#1950]
   - The `wasmi_c_api_impl` (and `wasmi_c_api`) crates now forward a `portable-dispatch`
     feature to the underlying `wasmi` crate, so C-API users can opt into the portable
     (loop-based) operator dispatch that does not rely on tail calls.
   - This automatically enables the `portable-dispatch` feature for `CMAKE_BUILD_TYPE=Debug`.
+- Added more optimizations and improvements for the Wasmi IR and codegen:
+  - Added `fcopysign` lowerings to `fabs` and `fnabs`. [#1917]
+  - Emit better optimized copy operators in more places. [#1924]
+  - Added highly specialized and optimized `u64_copy_sNsM` operators. [#1935]
+  - Improved `multi-value` return codegen. [#1944]
+  - Unify Wasmi IR `return` operators. [#1948]
 - Expanded the configurable crate features of the Wasmi C-API. [#1951]
   - The `wasmi_c_api_impl` and `wasmi_c_api` crates now forward most features exposed by `wasmi`.
   - Fixed a bug that the `std` feature was not forwarded to `wasmi`.
 
 ### Fixed
 
-- Fixed native stack overflows in the `call`, `call_indirect`, `return_call`, `return_call_indirect`
-  and SIMD operators when Wasmi is built without the `portable-dispatch` feature and with
-  `codegen-units > 1`. [#1942]
-  - These operator handlers used to prevent LLVM from tail-calling Wasmi's operator dispatch (the
-    call operators only at `codegen-units > 1`, the SIMD operators regardless), which accumulated
-    native stack frames and could overflow the stack on hot loops or deep (tail-)recursion. Their
-    helper functions are now inlined so the operator dispatch stays a tail call.
-  - As a result `codegen-units = 1` is no longer required in the `release` profile to avoid these
-    overflows, and SIMD-heavy loops no longer leak a native stack frame per executed operator.
+- Fixed a stackoverflow issue when compiling Wasmi without `portable-dispatch`. [#1942]
+  - Previously Wasmi was required to be compiled with at least `opt-level = 3` and `codegen-units = 1`
+    to avoid the stackoverflow issue.
+  - With this update a mere `opt-level = 2` is enough to make LLVM generate the tail-call dispatch
+    for all but `memory.grow` and `table.grow` operators.
+  - Users who want tail calls even for those 2 remaining operators can compile Wasmi with a `nightly`
+    toolchain and use the `unstable` crate feature to make Wasmi use Rust's unstable `become` keyword.
+- Fixed a bug that caused Wasmi's compile-time to explode when using `indirect-dispatch`. [#1939]
+  - Users were able to circumvent this LLVM codegen bug by using `llvm-args=--switch-to-lookup=true`.
+    However, with this fix, that is no longer needed and Wasmi compile-times are back to normal again.
+  - This bug also negatively affected the execution performance of Wasmi which is fixed as well.
 - Fixed an incorrect macOS linker flag in the C-API CMake build. [#1952]
   - Shared-library builds added a Linux-only `$ORIGIN` rpath on macOS, which `dyld` does not expand.
     It is now omitted on macOS (matching Wasmtime). Consumers of the shared `libwasmi.dylib` on
     macOS should add their own rpath (e.g. `-Wl,-rpath,@loader_path`) to locate it at runtime.
+- Fixed Wasmi C-API `no_std` support. [#1915]
+- Fixed a bug in the lowering of `isub` with immediate `rhs` to `iadd`. [#1914]
 
 ### Internal
 
@@ -48,12 +61,31 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     overflows the native stack and fails CI.
 - The `wasmi_wast` test runner verifies NaN canonicalization when built with the `deterministic` feature. [#1947]
   - This requires `nan:arithmetic` results to match the canonical NaN.
+- Simplify SIMD specific load operator IR and translation. [#1922]
+- Remove `copy_span` operators from Wasmi IR. [#1929]
+  - Now all copies are always copying single values.
+  - Benchmarks showed that this is actually executing faster.
+- Add `cfg`-guard badges to docs rendered at `docs.rs`. [#1913]
+- Update the `nightly` Rust toolchain used for the Wasmi CI. [#1936]
 
 [#1952]: https://github.com/wasmi-labs/wasmi/pull/1952
 [#1950]: https://github.com/wasmi-labs/wasmi/pull/1950
-[#1942]: https://github.com/wasmi-labs/wasmi/pull/1946
+[#1946]: https://github.com/wasmi-labs/wasmi/pull/1946
 [#1947]: https://github.com/wasmi-labs/wasmi/pull/1947
 [#1951]: https://github.com/wasmi-labs/wasmi/pull/1951
+[#1913]: https://github.com/wasmi-labs/wasmi/pull/1913
+[#1914]: https://github.com/wasmi-labs/wasmi/pull/1914
+[#1915]: https://github.com/wasmi-labs/wasmi/pull/1915
+[#1917]: https://github.com/wasmi-labs/wasmi/pull/1917
+[#1922]: https://github.com/wasmi-labs/wasmi/pull/1922
+[#1924]: https://github.com/wasmi-labs/wasmi/pull/1924
+[#1929]: https://github.com/wasmi-labs/wasmi/pull/1929
+[#1934]: https://github.com/wasmi-labs/wasmi/pull/1934
+[#1935]: https://github.com/wasmi-labs/wasmi/pull/1935
+[#1936]: https://github.com/wasmi-labs/wasmi/pull/1936
+[#1939]: https://github.com/wasmi-labs/wasmi/pull/1939
+[#1944]: https://github.com/wasmi-labs/wasmi/pull/1944
+[#1948]: https://github.com/wasmi-labs/wasmi/pull/1948
 
 ## `2.0.0-beta.3` - 2026-06-22
 
