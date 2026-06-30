@@ -155,7 +155,6 @@ impl Op {
     /// Returns `true` if `self` has a `Slot` result field.
     pub fn result_loc(&self) -> Option<Location> {
         match self {
-            Op::Return(_) => None,
             Op::Unary(op) => op.result.result_loc(),
             Op::Binary(op) => op.result.result_loc(),
             Op::Ternary(_) => Some(Location::Slot),

@@ -180,7 +180,6 @@ define_ident!(
     ConsumeFuel: consume_fuel,
     Fuel: fuel,
     Return: r#return,
-    ReturnSpan: return_span,
     Values: values,
     Value: value,
     Result: result,

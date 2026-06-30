@@ -14,7 +14,6 @@ use self::op::{
     LoadAtOp,
     LoadOp,
     LoadOpMem0Offset16,
-    ReturnOp,
     SelectOp,
     StoreAtOp,
     StoreOp,

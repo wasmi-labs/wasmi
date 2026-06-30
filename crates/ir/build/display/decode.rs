@@ -20,7 +20,6 @@ use crate::build::{
         OffsetOperand,
         OperandKind,
         ReplaceLaneOp,
-        ReturnOp,
         SelectOp,
         StoreOp,
         TableGetOp,
@@ -62,14 +61,6 @@ impl Display for DisplayDecode<&'_ Isa> {
                 .map(|op| DisplayDecode::new(op, indent)),
         );
         impls.fmt(f)
-    }
-}
-
-impl Display for DisplayDecode<&'_ ReturnOp> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let camel_ident = DisplayIdent::camel(self.value);
-        let value_ty = self.value.value_field().ty;
-        writeln!(f, "pub type {camel_ident} = ReturnOp<{value_ty}>;")
     }
 }
 

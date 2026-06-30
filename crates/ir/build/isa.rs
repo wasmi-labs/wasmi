@@ -20,7 +20,6 @@ use crate::build::{
         OffsetOperand,
         OperandKind,
         ReplaceLaneOp,
-        ReturnOp,
         SelectOp,
         StoreKind,
         StoreOp,
@@ -500,22 +499,7 @@ fn add_store_ops(isa: &mut Isa) {
 }
 
 fn add_return_ops(isa: &mut Isa) {
-    let ops = [
-        Op::from(GenericOp::new(Ident::Return, [])),
-        Op::from(ReturnOp::new(Ty::U64, OperandKind::Reg)),
-        Op::from(ReturnOp::new(Ty::U64, OperandKind::Slot)),
-        Op::from(ReturnOp::new(Ty::U64, OperandKind::Immediate)),
-        Op::from(ReturnOp::new(Ty::U32, OperandKind::Immediate)),
-        Op::from(ReturnOp::new(Ty::F32, OperandKind::Reg)),
-        Op::from(ReturnOp::new(Ty::F64, OperandKind::Reg)),
-        Op::from(GenericOp::new(
-            Ident::ReturnSpan,
-            [Field::new(Ident::Values, FieldTy::BoundedSlotSpan)],
-        )),
-    ];
-    for op in ops {
-        isa.push_op(op);
-    }
+    isa.push_op(GenericOp::new(Ident::Return, []));
 }
 
 fn add_control_ops(isa: &mut Isa) {
