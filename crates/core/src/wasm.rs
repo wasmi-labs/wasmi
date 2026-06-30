@@ -8,6 +8,7 @@ use crate::{
     TruncateSaturateInto,
     TryTruncateInto,
     memory,
+    value::{demote_f64, promote_f32},
 };
 
 macro_rules! op {
@@ -226,8 +227,8 @@ impl_rawval_val! {
     fn i32_wrap_i64(value: i64) -> i32 = |v| v as i32;
     fn i64_extend_i32_s(value: i32) -> i64 = i64::from;
     fn i64_extend_i32_u(value: u32) -> u64 = u64::from;
-    fn f32_demote_f64(value: f64) -> f32 = |v| v as f32;
-    fn f64_promote_f32(value: f32) -> f64 = f64::from;
+    fn f32_demote_f64(value: f64) -> f32 = demote_f64;
+    fn f64_promote_f32(value: f32) -> f64 = promote_f32;
 
     /// - [`TrapCode::BadConversionToInteger`]: if `value` is NaN
     /// - [`TrapCode::IntegerOverflow`]: if `value` exceeds the bounds of an `i32` value

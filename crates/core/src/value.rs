@@ -650,6 +650,24 @@ impl_canonicalize_nan! {
     (f64, u64, 0x7FF8_0000_0000_0000);
 }
 
+/// Demotes an [`f64`] to an [`f32`], canonicalizing a resulting NaN if `canonicalize_nan` is enabled.
+///
+/// Demotion is a `nans`-based (arithmetic) operation, so its NaN result is canonicalized
+/// under the deterministic profile. Kept here so [`CanonicalizeNanIfEnabled`] stays private.
+#[inline]
+pub(crate) fn demote_f64(value: f64) -> f32 {
+    (value as f32).canonicalize_nan_if_enabled()
+}
+
+/// Promotes an [`f32`] to an [`f64`], canonicalizing a resulting NaN if `canonicalize_nan` is enabled.
+///
+/// Promotion is a `nans`-based (arithmetic) operation, so its NaN result is canonicalized
+/// under the deterministic profile. Kept here so [`CanonicalizeNanIfEnabled`] stays private.
+#[inline]
+pub(crate) fn promote_f32(value: f32) -> f64 {
+    f64::from(value).canonicalize_nan_if_enabled()
+}
+
 #[cfg(not(any(not(feature = "std"), feature = "libm")))]
 macro_rules! impl_wasm_float {
     ($ty:ty) => {
