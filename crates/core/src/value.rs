@@ -348,10 +348,12 @@ macro_rules! impl_float {
             fn neg(self) -> Self {
                 Neg::neg(self)
             }
+
             #[inline]
             fn abs(self) -> Self {
                 WasmFloatExt::abs(self)
             }
+
             #[inline]
             fn floor(self) -> Self {
                 if let Some(qnan) = self.into_quiet_nan() {
@@ -359,6 +361,7 @@ macro_rules! impl_float {
                 }
                 WasmFloatExt::floor(self)
             }
+
             #[inline]
             fn ceil(self) -> Self {
                 if let Some(qnan) = self.into_quiet_nan() {
@@ -366,6 +369,7 @@ macro_rules! impl_float {
                 }
                 WasmFloatExt::ceil(self)
             }
+
             #[inline]
             fn trunc(self) -> Self {
                 if let Some(qnan) = self.into_quiet_nan() {
@@ -373,6 +377,7 @@ macro_rules! impl_float {
                 }
                 WasmFloatExt::trunc(self)
             }
+
             #[inline]
             fn nearest(self) -> Self {
                 if let Some(qnan) = self.into_quiet_nan() {
@@ -380,6 +385,7 @@ macro_rules! impl_float {
                 }
                 WasmFloatExt::nearest(self)
             }
+
             #[inline]
             fn sqrt(self) -> Self {
                 if let Some(qnan) = self.into_quiet_nan() {
@@ -387,6 +393,7 @@ macro_rules! impl_float {
                 }
                 WasmFloatExt::sqrt(self)
             }
+
             #[inline]
             fn min(lhs: Self, rhs: Self) -> Self {
                 // Note: equal to the unstable `f32::minimum` method.
@@ -407,6 +414,7 @@ macro_rules! impl_float {
                     lhs + rhs
                 }
             }
+
             #[inline]
             fn max(lhs: Self, rhs: Self) -> Self {
                 // Note: equal to the unstable `f32::maximum` method.
@@ -427,10 +435,12 @@ macro_rules! impl_float {
                     lhs + rhs
                 }
             }
+
             #[inline]
             fn copysign(lhs: Self, rhs: Self) -> Self {
                 WasmFloatExt::copysign(lhs, rhs)
             }
+
             #[inline]
             #[cfg(feature = "simd")]
             fn mul_add(a: Self, b: Self, c: Self) -> Self {
