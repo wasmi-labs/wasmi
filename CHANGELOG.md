@@ -49,7 +49,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - The `wasmi_wast` test runner verifies NaN canonicalization when built with the `deterministic` feature. [#1947]
   - This requires `nan:arithmetic` results to match the canonical NaN.
 
-[#1297]: https://github.com/wasmi-labs/wasmi/issues/1297
+[#1297]: https://github.com/wasmi-labs/wasmi/pull/1952
 [#1921]: https://github.com/wasmi-labs/wasmi/issues/1921
 [#1942]: https://github.com/wasmi-labs/wasmi/pull/1946
 [#1947]: https://github.com/wasmi-labs/wasmi/pull/1947
