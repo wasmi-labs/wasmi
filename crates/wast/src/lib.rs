@@ -683,44 +683,15 @@ fn i64_matches_or_err(actual: &i64, expected: &i64) -> Result<()> {
 
 /// Returns `Err` if `actual` does not match `expected`.
 fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> Result<()> {
-    let actual_bits = actual.to_bits();
-    let actual_value = f32::from_bits(actual_bits);
     match expected {
-        NanPattern::CanonicalNan => {
-            // Properties of canonical NaNs:
-            //
-            // - The sign bit is unspecified.
-            // - The 11-bits exponent are all set to 1.
-            // - The MSB of the payload is set to 1 (quieted NaN) and all others to 0.
-            //
-            // Fore more information visit:
-            // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
-            const CANONICAL_NAN: u32 = 0x7FC0_0000;
-            let is_canonical_nan = (actual_bits & 0x7FFF_FFFF) == CANONICAL_NAN;
-            if !is_canonical_nan {
-                bail!(
-                    "expected canonical NaN but found {actual_value} (bits = 0x{actual_bits:08X})."
-                )
-            }
-        }
-        NanPattern::ArithmeticNan => {
-            // Properties of arithmetic NaNs:
-            //
-            // - Same as canonical NaNs but one of more of the payload (besides MSB) may be set to 1.
-            //
-            // For more information visit:
-            // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
-            const EXPONENT_MASK: u32 = 0x7F80_0000_u32;
-            const QUIET_BIT: u32 = 0x0040_0000_u32;
-            let is_nan = (actual_bits & EXPONENT_MASK) == EXPONENT_MASK;
-            let is_quiet = (actual_bits & QUIET_BIT) == QUIET_BIT;
-            if !(is_nan && is_quiet) {
-                bail!(
-                    "expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:08X})."
-                )
-            }
-        }
+        NanPattern::CanonicalNan => f32_expect_canonical_nan(actual),
+        NanPattern::ArithmeticNan => match cfg!(feature = "deterministic") {
+            true => f32_expect_canonical_nan(actual),
+            false => f32_expect_arithmetic_nan(actual),
+        },
         NanPattern::Value(expected) => {
+            let actual_bits = actual.to_bits();
+            let actual_value = f32::from_bits(actual_bits);
             if actual_bits != expected.bits {
                 let expected_value = f32::from_bits(expected.bits);
                 let expected_bits = expected.bits;
@@ -728,51 +699,60 @@ fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> 
                     "expected {expected_value:?} (bits = 0x{expected_bits:08X}) but found {actual_value:?} (bits = 0x{actual_bits:08X})."
                 )
             }
+            Ok(())
         }
+    }
+}
+
+fn f32_expect_canonical_nan(actual: &F32) -> Result<()> {
+    // Properties of canonical NaNs:
+    //
+    // - The sign bit is unspecified.
+    // - The 11-bits exponent are all set to 1.
+    // - The MSB of the payload is set to 1 (quieted NaN) and all others to 0.
+    //
+    // Fore more information visit:
+    // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
+    const CANONICAL_NAN: u32 = 0x7FC0_0000;
+    let actual_bits = actual.to_bits();
+    let actual_value = f32::from_bits(actual_bits);
+    let is_canonical_nan = (actual_bits & 0x7FFF_FFFF) == CANONICAL_NAN;
+    if !is_canonical_nan {
+        bail!("expected canonical NaN but found {actual_value} (bits = 0x{actual_bits:08X}).")
+    }
+    Ok(())
+}
+
+fn f32_expect_arithmetic_nan(actual: &F32) -> Result<()> {
+    // Properties of arithmetic NaNs:
+    //
+    // - Same as canonical NaNs but one of more of the payload (besides MSB) may be set to 1.
+    //
+    // For more information visit:
+    // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
+    const EXPONENT_MASK: u32 = 0x7F80_0000_u32;
+    const QUIET_BIT: u32 = 0x0040_0000_u32;
+    let actual_bits = actual.to_bits();
+    let actual_value = f32::from_bits(actual_bits);
+    let is_nan = (actual_bits & EXPONENT_MASK) == EXPONENT_MASK;
+    let is_quiet = (actual_bits & QUIET_BIT) == QUIET_BIT;
+    if !(is_nan && is_quiet) {
+        bail!("expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:08X}).")
     }
     Ok(())
 }
 
 /// Returns `Err` if `actual` does not match `expected`.
 fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> Result<()> {
-    let actual_bits = actual.to_bits();
-    let actual_value = f64::from_bits(actual_bits);
     match expected {
-        NanPattern::CanonicalNan => {
-            // Properties of canonical NaNs:
-            //
-            // - The sign bit is unspecified.
-            // - The 11-bits exponent are all set to 1.
-            // - The MSB of the payload is set to 1 (quieted NaN) and all others to 0.
-            //
-            // Fore more information visit:
-            // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
-            const CANONICAL_NAN: u64 = 0x7ff8_0000_0000_0000;
-            let is_canonical_nan = (actual_bits & 0x7fff_ffff_ffff_ffff) == CANONICAL_NAN;
-            if !is_canonical_nan {
-                bail!(
-                    "expected canonical NaN but found {actual_value} (bits = 0x{actual_bits:016X})."
-                )
-            }
-        }
-        NanPattern::ArithmeticNan => {
-            // Properties of arithmetic NaNs:
-            //
-            // - Same as canonical NaNs but one of more of the payload (besides MSB) may be set to 1.
-            //
-            // For more information visit:
-            // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
-            const EXPONENT_MASK: u64 = 0x7FF0_0000_0000_0000_u64;
-            const QUIET_BIT: u64 = 0x0008_0000_0000_0000_u64;
-            let is_nan = (actual_bits & EXPONENT_MASK) == EXPONENT_MASK;
-            let is_quiet = (actual_bits & QUIET_BIT) == QUIET_BIT;
-            if !(is_nan && is_quiet) {
-                bail!(
-                    "expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:016X})."
-                )
-            }
-        }
+        NanPattern::CanonicalNan => f64_expect_canonical_nan(actual),
+        NanPattern::ArithmeticNan => match cfg!(feature = "deterministic") {
+            true => f64_expect_canonical_nan(actual),
+            false => f64_expect_arithmetic_nan(actual),
+        },
         NanPattern::Value(expected) => {
+            let actual_bits = actual.to_bits();
+            let actual_value = f64::from_bits(actual_bits);
             if actual.to_bits() != expected.bits {
                 let expected_value = f64::from_bits(expected.bits);
                 let expected_bits = expected.bits;
@@ -780,7 +760,45 @@ fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> 
                     "expected {expected_value:?} (bits = 0x{expected_bits:016X}) but found {actual_value:?} (bits = 0x{actual_bits:016X})."
                 )
             }
+            Ok(())
         }
+    }
+}
+
+fn f64_expect_canonical_nan(actual: &F64) -> Result<()> {
+    // Properties of canonical NaNs:
+    //
+    // - The sign bit is unspecified.
+    // - The 11-bits exponent are all set to 1.
+    // - The MSB of the payload is set to 1 (quieted NaN) and all others to 0.
+    //
+    // Fore more information visit:
+    // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
+    const CANONICAL_NAN: u64 = 0x7ff8_0000_0000_0000;
+    let actual_bits = actual.to_bits();
+    let actual_value = f64::from_bits(actual_bits);
+    let is_canonical_nan = (actual_bits & 0x7fff_ffff_ffff_ffff) == CANONICAL_NAN;
+    if !is_canonical_nan {
+        bail!("expected canonical NaN but found {actual_value} (bits = 0x{actual_bits:016X}).")
+    }
+    Ok(())
+}
+
+fn f64_expect_arithmetic_nan(actual: &F64) -> Result<()> {
+    // Properties of arithmetic NaNs:
+    //
+    // - Same as canonical NaNs but one of more of the payload (besides MSB) may be set to 1.
+    //
+    // For more information visit:
+    // https://webassembly.github.io/spec/core/syntax/values.html#floating-point
+    const EXPONENT_MASK: u64 = 0x7FF0_0000_0000_0000_u64;
+    const QUIET_BIT: u64 = 0x0008_0000_0000_0000_u64;
+    let actual_bits = actual.to_bits();
+    let actual_value = f64::from_bits(actual_bits);
+    let is_nan = (actual_bits & EXPONENT_MASK) == EXPONENT_MASK;
+    let is_quiet = (actual_bits & QUIET_BIT) == QUIET_BIT;
+    if !(is_nan && is_quiet) {
+        bail!("expected arithmetic NaN but found {actual_value} (bits = 0x{actual_bits:016X}).")
     }
     Ok(())
 }
