@@ -26,7 +26,15 @@ path = "lib.rs"
 wasmi_c_api_impl = { workspace = true }
 
 [features]
-default = ["std"]
+default = ["std", "memory64"]
 std = ["wasmi_c_api_impl/std"]
+memory64 = ["wasmi_c_api_impl/memory64"]
 simd = ["wasmi_c_api_impl/simd"]
 portable-dispatch = ["wasmi_c_api_impl/portable-dispatch"]
+indirect-dispatch = ["wasmi_c_api_impl/indirect-dispatch"]
+extra-checks = ["wasmi_c_api_impl/extra-checks"]
+hash-collections = ["wasmi_c_api_impl/hash-collections"]
+prefer-btree-collections = ["wasmi_c_api_impl/prefer-btree-collections"]
+deterministic = ["wasmi_c_api_impl/deterministic"]
+libm = ["wasmi_c_api_impl/libm"]
+prefix-symbols = ["wasmi_c_api_impl/prefix-symbols"]
