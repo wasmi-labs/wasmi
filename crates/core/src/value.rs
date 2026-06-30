@@ -354,7 +354,7 @@ macro_rules! impl_float {
         impl Float for $ty {
             #[inline]
             fn neg(self) -> Self {
-                Neg::neg(self)
+                Neg::neg(self).canonicalize_nan_if_enabled()
             }
 
             #[inline]
@@ -399,27 +399,27 @@ macro_rules! impl_float {
                 if let Some(qnan) = self.into_quiet_nan() {
                     return qnan;
                 }
-                WasmFloatExt::sqrt(self)
+                WasmFloatExt::sqrt(self).canonicalize_nan_if_enabled()
             }
 
             #[inline]
             fn add(lhs: Self, rhs: Self) -> Self {
-                lhs + rhs
+                (lhs + rhs).canonicalize_nan_if_enabled()
             }
 
             #[inline]
             fn sub(lhs: Self, rhs: Self) -> Self {
-                lhs - rhs
+                (lhs - rhs).canonicalize_nan_if_enabled()
             }
 
             #[inline]
             fn mul(lhs: Self, rhs: Self) -> Self {
-                lhs * rhs
+                (lhs * rhs).canonicalize_nan_if_enabled()
             }
 
             #[inline]
             fn div(lhs: Self, rhs: Self) -> Self {
-                lhs / rhs
+                (lhs / rhs).canonicalize_nan_if_enabled()
             }
 
             #[inline]
@@ -439,7 +439,7 @@ macro_rules! impl_float {
                     }
                 } else {
                     // At least one input is NaN. Use `+` to perform NaN propagation and quieting.
-                    lhs + rhs
+                    (lhs + rhs).canonicalize_nan_if_enabled()
                 }
             }
 
@@ -460,19 +460,19 @@ macro_rules! impl_float {
                     }
                 } else {
                     // At least one input is NaN. Use `+` to perform NaN propagation and quieting.
-                    lhs + rhs
+                    (lhs + rhs).canonicalize_nan_if_enabled()
                 }
             }
 
             #[inline]
             fn copysign(lhs: Self, rhs: Self) -> Self {
-                WasmFloatExt::copysign(lhs, rhs)
+                WasmFloatExt::copysign(lhs, rhs).canonicalize_nan_if_enabled()
             }
 
             #[inline]
             #[cfg(feature = "simd")]
             fn mul_add(a: Self, b: Self, c: Self) -> Self {
-                WasmFloatExt::mul_add(a, b, c)
+                WasmFloatExt::mul_add(a, b, c).canonicalize_nan_if_enabled()
             }
         }
     };
