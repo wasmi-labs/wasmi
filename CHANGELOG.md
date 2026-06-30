@@ -10,6 +10,11 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ## Unreleased
 
+### Added
+
+- Added support for the Wasm deterministic profile. [#1947]
+  - Enable Wasm deterministic profile by enabling the new `deterministic` crate feature.
+
 ### Fixed
 
 - Fixed native stack overflows in the `call`, `call_indirect`, `return_call`, `return_call_indirect`
@@ -29,8 +34,11 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     non-`portable-dispatch` path at `codegen-units > 1`, plus a new `wasmi_torture` test that loops
     every Wasm operator category under a small `RUST_MIN_STACK` so any handler that stops tail-calling
     overflows the native stack and fails CI.
+- The `wasmi_wast` test runner verifies NaN canonicalization when built with the `deterministic` feature. [#1947]
+  - This requires `nan:arithmetic` results to match the canonical NaN.
 
 [#1942]: https://github.com/wasmi-labs/wasmi/pull/1946
+[#1947]: https://github.com/wasmi-labs/wasmi/pull/1947
 
 ## `2.0.0-beta.3` - 2026-06-22
 

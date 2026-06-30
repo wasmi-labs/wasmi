@@ -8,8 +8,8 @@ use crate::{
     TruncateSaturateInto,
     TryTruncateInto,
     memory,
+    value::{demote_f64, promote_f32},
 };
-use core::ops::Neg;
 
 macro_rules! op {
     ( $operator:tt ) => {{
@@ -192,8 +192,8 @@ impl_rawval_val! {
 
     fn f32_abs(value: f32) -> f32 = Float::abs;
     fn f64_abs(value: f64) -> f64 = Float::abs;
-    fn f32_neg(value: f32) -> f32 = Neg::neg;
-    fn f64_neg(value: f64) -> f64 = Neg::neg;
+    fn f32_neg(value: f32) -> f32 = Float::neg;
+    fn f64_neg(value: f64) -> f64 = Float::neg;
     fn f32_ceil(value: f32) -> f32 = Float::ceil;
     fn f64_ceil(value: f64) -> f64 = Float::ceil;
     fn f32_floor(value: f32) -> f32 = Float::floor;
@@ -205,14 +205,14 @@ impl_rawval_val! {
     fn f32_sqrt(value: f32) -> f32 = Float::sqrt;
     fn f64_sqrt(value: f64) -> f64 = Float::sqrt;
 
-    fn f32_add(lhs: f32, rhs: f32) -> f32 = op!(+);
-    fn f64_add(lhs: f64, rhs: f64) -> f64 = op!(+);
-    fn f32_sub(lhs: f32, rhs: f32) -> f32 = op!(-);
-    fn f64_sub(lhs: f64, rhs: f64) -> f64 = op!(-);
-    fn f32_mul(lhs: f32, rhs: f32) -> f32 = op!(*);
-    fn f64_mul(lhs: f64, rhs: f64) -> f64 = op!(*);
-    fn f32_div(lhs: f32, rhs: f32) -> f32 = op!(/);
-    fn f64_div(lhs: f64, rhs: f64) -> f64 = op!(/);
+    fn f32_add(lhs: f32, rhs: f32) -> f32 = Float::add;
+    fn f64_add(lhs: f64, rhs: f64) -> f64 = Float::add;
+    fn f32_sub(lhs: f32, rhs: f32) -> f32 = Float::sub;
+    fn f64_sub(lhs: f64, rhs: f64) -> f64 = Float::sub;
+    fn f32_mul(lhs: f32, rhs: f32) -> f32 = Float::mul;
+    fn f64_mul(lhs: f64, rhs: f64) -> f64 = Float::mul;
+    fn f32_div(lhs: f32, rhs: f32) -> f32 = Float::div;
+    fn f64_div(lhs: f64, rhs: f64) -> f64 = Float::div;
     fn f32_min(lhs: f32, rhs: f32) -> f32 = Float::min;
     fn f64_min(lhs: f64, rhs: f64) -> f64 = Float::min;
     fn f32_max(lhs: f32, rhs: f32) -> f32 = Float::max;
@@ -227,8 +227,8 @@ impl_rawval_val! {
     fn i32_wrap_i64(value: i64) -> i32 = |v| v as i32;
     fn i64_extend_i32_s(value: i32) -> i64 = i64::from;
     fn i64_extend_i32_u(value: u32) -> u64 = u64::from;
-    fn f32_demote_f64(value: f64) -> f32 = |v| v as f32;
-    fn f64_promote_f32(value: f32) -> f64 = f64::from;
+    fn f32_demote_f64(value: f64) -> f32 = demote_f64;
+    fn f64_promote_f32(value: f32) -> f64 = promote_f32;
 
     /// - [`TrapCode::BadConversionToInteger`]: if `value` is NaN
     /// - [`TrapCode::IntegerOverflow`]: if `value` exceeds the bounds of an `i32` value
