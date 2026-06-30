@@ -1,4 +1,8 @@
-use crate::{RefType, TrapCode, hint::{likely, unlikely}};
+use crate::{
+    RefType,
+    TrapCode,
+    hint::{likely, unlikely},
+};
 
 /// Type of a value.
 ///
