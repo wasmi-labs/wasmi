@@ -354,7 +354,7 @@ macro_rules! impl_float {
         impl Float for $ty {
             #[inline]
             fn neg(self) -> Self {
-                Neg::neg(self).canonicalize_nan_if_enabled()
+                Neg::neg(self)
             }
 
             #[inline]
@@ -466,7 +466,7 @@ macro_rules! impl_float {
 
             #[inline]
             fn copysign(lhs: Self, rhs: Self) -> Self {
-                WasmFloatExt::copysign(lhs, rhs).canonicalize_nan_if_enabled()
+                WasmFloatExt::copysign(lhs, rhs)
             }
 
             #[inline]
