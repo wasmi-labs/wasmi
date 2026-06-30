@@ -594,9 +594,12 @@ impl FuncTranslator {
         if result == value {
             return None;
         }
-        #[cfg(feature = "simd")]
-        if matches!(ty, ValType::V128) {
-            return Some(Op::v128_copy_ss(result, value));
+        match ty {
+            #[cfg(feature = "simd")]
+            ValType::V128 => {
+                return Some(Op::v128_copy_ss(result, value));
+            }
+            _ => {}
         }
         let r = u16::from(result);
         let v = u16::from(value);
