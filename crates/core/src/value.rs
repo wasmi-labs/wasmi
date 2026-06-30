@@ -354,22 +354,37 @@ macro_rules! impl_float {
             }
             #[inline]
             fn floor(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 WasmFloatExt::floor(self)
             }
             #[inline]
             fn ceil(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 WasmFloatExt::ceil(self)
             }
             #[inline]
             fn trunc(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 WasmFloatExt::trunc(self)
             }
             #[inline]
             fn nearest(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 WasmFloatExt::nearest(self)
             }
             #[inline]
             fn sqrt(self) -> Self {
+                if let Some(qnan) = self.into_quiet_nan() {
+                    return qnan;
+                }
                 WasmFloatExt::sqrt(self)
             }
             #[inline]
@@ -466,33 +481,21 @@ macro_rules! impl_wasm_float {
 
             #[inline]
             fn ceil(self) -> Self {
-                if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
-                }
                 <libm::Libm<Self>>::ceil(self)
             }
 
             #[inline]
             fn floor(self) -> Self {
-                if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
-                }
                 <libm::Libm<Self>>::floor(self)
             }
 
             #[inline]
             fn trunc(self) -> Self {
-                if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
-                }
                 <libm::Libm<Self>>::trunc(self)
             }
 
             #[inline]
             fn nearest(self) -> Self {
-                if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
-                }
                 <libm::Libm<Self>>::roundeven(self)
             }
 
@@ -618,41 +621,26 @@ macro_rules! impl_wasm_float {
 
             #[inline]
             fn ceil(self) -> Self {
-                if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
-                }
                 self.ceil()
             }
 
             #[inline]
             fn floor(self) -> Self {
-                if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
-                }
                 self.floor()
             }
 
             #[inline]
             fn trunc(self) -> Self {
-                if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
-                }
                 self.trunc()
             }
 
             #[inline]
             fn nearest(self) -> Self {
-                if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
-                }
                 self.round_ties_even()
             }
 
             #[inline]
             fn sqrt(self) -> Self {
-                if let Some(qnan) = self.into_quiet_nan() {
-                    return qnan;
-                }
                 self.sqrt()
             }
 
