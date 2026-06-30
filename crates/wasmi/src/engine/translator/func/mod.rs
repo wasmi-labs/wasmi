@@ -712,21 +712,6 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Convert the [`Operand`] at `depth` into an [`Operand::Temp`] by copying if necessary.
-    ///
-    /// # Note
-    ///
-    /// Does nothing if the [`Operand`] is already an [`Operand::Temp`].
-    fn copy_operand_to_temp(
-        &mut self,
-        operand: Operand,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<Slot, Error> {
-        let result = operand.temp_slots().head();
-        self.encode_copy_sx_op(result, operand, fuel_pos)?;
-        Ok(result)
-    }
-
     /// Copies the top `len` operands on the stack to their respective stack slots.
     ///
     /// Returns a [`BoundedSlotSpan`] of the stack slots holding the copy results.
