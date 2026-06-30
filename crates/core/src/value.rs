@@ -558,7 +558,7 @@ trait CanonicalizeNan: Sized {
 /// Extension trait for `f32` and `f64` to turn any NaN value into the canonical NaN if `canonicalize_nan` is enabled.
 trait CanonicalizeNanIfEnabled: Sized {
     /// Returns the canonical NaN if `self` is a NaN and `canonicalize_nan` is enabled.
-    /// 
+    ///
     /// Otherwise returns `self` unchanged.
     #[inline]
     fn canonicalize_nan_if_enabled(self) -> Self {
