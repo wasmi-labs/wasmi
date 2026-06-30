@@ -72,6 +72,9 @@
 //! | `extra-checks` | `wasmi` | Enables extra runtime checks in the Wasmi executor. Expected execution overhead is ~20%. Enable this if your focus is on safety. Disable this for maximum execution performance. <br><br> Disabled by default. |
 //! | `validate` | `wasmi`<br>`wasmi_cli` | Enable Wasm validation support. Turning this off allows user with control over their inputs to slim down Wasmi's binary size significantly. <br><br> Enabled by default. |
 //! | `memory64` | `wasmi`<br>`wasmi_core`<br>`wasmi_ir` | Controls Wasm `memory64` support at compile-time. Disabling this feature may have positive effects on load/store operator codegen and encoding. Embedded users will likely see the most benefits by disabling this feature. <br><br> Enabled by default. |
+//! | `deterministic` | `wasmi`<br>`wasmi_core`<br>`wasmi_cli`<br>`wasmi_wast` | Enables support for the [Wasm 3.0 deterministic profile]. <br><br> Disabled by default. |
+//!
+//! [Wasm 3.0 deterministic profile]: https://webassembly.github.io/spec/core/appendix/profiles.html#deterministic-profile-small-mathrm-det
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
