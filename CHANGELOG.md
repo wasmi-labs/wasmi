@@ -19,6 +19,9 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     feature to the underlying `wasmi` crate, so C-API users can opt into the portable
     (loop-based) operator dispatch that does not rely on tail calls.
   - This automatically enables the `portable-dispatch` feature for `CMAKE_BUILD_TYPE=Debug`.
+- Expanded the configurable crate features of the Wasmi C-API. [#1951]
+  - The `wasmi_c_api_impl` and `wasmi_c_api` crates now forward most features exposed by `wasmi`.
+  - Fixed a bug that the `std` feature was not forwarded to `wasmi`.
 
 ### Fixed
 
@@ -45,6 +48,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#1921]: https://github.com/wasmi-labs/wasmi/issues/1921
 [#1942]: https://github.com/wasmi-labs/wasmi/pull/1946
 [#1947]: https://github.com/wasmi-labs/wasmi/pull/1947
+[#1951]: https://github.com/wasmi-labs/wasmi/pull/1951
 
 ## `2.0.0-beta.3` - 2026-06-22
 

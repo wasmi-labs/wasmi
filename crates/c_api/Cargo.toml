@@ -24,8 +24,15 @@ test = false
 doctest = false
 
 [features]
-default = ["std", "wasmi/memory64"]
-std = []
-prefix-symbols = []
+default = ["std", "memory64"]
+std = ["wasmi/std"]
+memory64 = ["wasmi/memory64"]
 simd = ["wasmi/simd"]
 portable-dispatch = ["wasmi/portable-dispatch"]
+indirect-dispatch = ["wasmi/indirect-dispatch"]
+extra-checks = ["wasmi/extra-checks"]
+hash-collections = ["wasmi/hash-collections"]
+prefer-btree-collections = ["wasmi/prefer-btree-collections"]
+deterministic = ["wasmi/deterministic"]
+libm = ["wasmi/libm"]
+prefix-symbols = []
