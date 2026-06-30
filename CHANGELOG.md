@@ -14,7 +14,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 - Added support for the Wasm deterministic profile. [#1947]
   - Enable Wasm deterministic profile by enabling the new `deterministic` crate feature.
-- Added the `portable-dispatch` crate feature to the Wasmi C-API. [#1921]
+- Added the `portable-dispatch` crate feature to the Wasmi C-API. [#1950]
   - The `wasmi_c_api_impl` (and `wasmi_c_api`) crates now forward a `portable-dispatch`
     feature to the underlying `wasmi` crate, so C-API users can opt into the portable
     (loop-based) operator dispatch that does not rely on tail calls.
@@ -34,7 +34,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     helper functions are now inlined so the operator dispatch stays a tail call.
   - As a result `codegen-units = 1` is no longer required in the `release` profile to avoid these
     overflows, and SIMD-heavy loops no longer leak a native stack frame per executed operator.
-- Fixed an incorrect macOS linker flag in the C-API CMake build. [#1297]
+- Fixed an incorrect macOS linker flag in the C-API CMake build. [#1952]
   - Shared-library builds added a Linux-only `$ORIGIN` rpath on macOS, which `dyld` does not expand.
     It is now omitted on macOS (matching Wasmtime). Consumers of the shared `libwasmi.dylib` on
     macOS should add their own rpath (e.g. `-Wl,-rpath,@loader_path`) to locate it at runtime.
@@ -49,8 +49,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - The `wasmi_wast` test runner verifies NaN canonicalization when built with the `deterministic` feature. [#1947]
   - This requires `nan:arithmetic` results to match the canonical NaN.
 
-[#1297]: https://github.com/wasmi-labs/wasmi/pull/1952
-[#1921]: https://github.com/wasmi-labs/wasmi/issues/1921
+[#1952]: https://github.com/wasmi-labs/wasmi/pull/1952
+[#1950]: https://github.com/wasmi-labs/wasmi/pull/1950
 [#1942]: https://github.com/wasmi-labs/wasmi/pull/1946
 [#1947]: https://github.com/wasmi-labs/wasmi/pull/1947
 [#1951]: https://github.com/wasmi-labs/wasmi/pull/1951
