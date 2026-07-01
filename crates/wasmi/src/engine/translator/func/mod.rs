@@ -835,14 +835,14 @@ impl FuncTranslator {
     ///
     /// Returns `None` otherwise.
     fn fuse_copy_sr(&self, result: Slot, input_ty: ValType) -> Option<Op> {
-        if !RegKind::Ireg.matches_ty(input_ty) {
-            // This check is required to filter out incorrect fusions
-            // where input is not originating from the staged operator.
-            //
-            // Today, all fused operators have an `ireg` result.
-            // We need to change this logic if we add more fused operators later.
-            return None;
+        match RegKind::new(input_ty)? {
+            RegKind::Ireg => self.fuse_copy_sr_ireg(result),
+            RegKind::Freg32 => self.fuse_copy_sr_freg32(result),
+            RegKind::Freg64 => self.fuse_copy_sr_freg64(result),
         }
+    }
+
+    fn fuse_copy_sr_ireg(&self, result: Slot) -> Option<Op> {
         let result = SlotAndReg::from(result);
         let staged_op = self.instrs.peek_staged()?;
         let op = match staged_op {
@@ -856,6 +856,53 @@ impl FuncTranslator {
             Op::I64Add_Rri { rhs, .. } => Op::i64_add_rs_ri(result, rhs),
             Op::I64Add_Rss { lhs, rhs, .. } => Op::i64_add_rs_ss(result, lhs, rhs),
             Op::I64Add_Rsi { lhs, rhs, .. } => Op::i64_add_rs_si(result, lhs, rhs),
+            // load
+            Op::U32LoadMem0Offset16_Rr { offset, .. } => Op::u32_load_mem0_offset16_rs_r(result, offset),
+            Op::U32LoadMem0Offset16_Rs { ptr, offset, .. } => Op::u32_load_mem0_offset16_rs_s(result, ptr, offset),
+            Op::U64LoadMem0Offset16_Rr { offset, .. } => Op::u64_load_mem0_offset16_rs_r(result, offset),
+            Op::U64LoadMem0Offset16_Rs { ptr, offset, .. } => Op::u64_load_mem0_offset16_rs_s(result, ptr, offset),
+            Op::I32LoadExtend8Mem0Offset16_Rr { offset, .. } => Op::i32_load_extend8_mem0_offset16_rs_r(result, offset),
+            Op::I32LoadExtend8Mem0Offset16_Rs { ptr, offset, .. } => Op::i32_load_extend8_mem0_offset16_rs_s(result, ptr, offset),
+            Op::U32LoadExtend8Mem0Offset16_Rr { offset, .. } => Op::i32_load_extend16_mem0_offset16_rs_r(result, offset),
+            Op::U32LoadExtend8Mem0Offset16_Rs { ptr, offset, .. } => Op::i32_load_extend16_mem0_offset16_rs_s(result, ptr, offset),
+            Op::I32LoadExtend16Mem0Offset16_Rr { offset, .. } => Op::u32_load_extend8_mem0_offset16_rs_r(result, offset),
+            Op::I32LoadExtend16Mem0Offset16_Rs { ptr, offset, .. } => Op::u32_load_extend8_mem0_offset16_rs_s(result, ptr, offset),
+            Op::U32LoadExtend16Mem0Offset16_Rr { offset, .. } => Op::u32_load_extend16_mem0_offset16_rs_r(result, offset),
+            Op::U32LoadExtend16Mem0Offset16_Rs { ptr, offset, .. } => Op::u32_load_extend16_mem0_offset16_rs_s(result, ptr, offset),
+            Op::I64LoadExtend8Mem0Offset16_Rr { offset, .. } => Op::i64_load_extend8_mem0_offset16_rs_r(result, offset),
+            Op::I64LoadExtend8Mem0Offset16_Rs { ptr, offset, .. } => Op::i64_load_extend8_mem0_offset16_rs_s(result, ptr, offset),
+            Op::U64LoadExtend8Mem0Offset16_Rr { offset, .. } => Op::i64_load_extend16_mem0_offset16_rs_r(result, offset),
+            Op::U64LoadExtend8Mem0Offset16_Rs { ptr, offset, .. } => Op::i64_load_extend16_mem0_offset16_rs_s(result, ptr, offset),
+            Op::I64LoadExtend16Mem0Offset16_Rr { offset, .. } => Op::i64_load_extend32_mem0_offset16_rs_r(result, offset),
+            Op::I64LoadExtend16Mem0Offset16_Rs { ptr, offset, .. } => Op::i64_load_extend32_mem0_offset16_rs_s(result, ptr, offset),
+            Op::U64LoadExtend16Mem0Offset16_Rr { offset, .. } => Op::u64_load_extend8_mem0_offset16_rs_r(result, offset),
+            Op::U64LoadExtend16Mem0Offset16_Rs { ptr, offset, .. } => Op::u64_load_extend8_mem0_offset16_rs_s(result, ptr, offset),
+            Op::I64LoadExtend32Mem0Offset16_Rr { offset, .. } => Op::u64_load_extend16_mem0_offset16_rs_r(result, offset),
+            Op::I64LoadExtend32Mem0Offset16_Rs { ptr, offset, .. } => Op::u64_load_extend16_mem0_offset16_rs_s(result, ptr, offset),
+            Op::U64LoadExtend32Mem0Offset16_Rr { offset, .. } => Op::u64_load_extend32_mem0_offset16_rs_r(result, offset),
+            Op::U64LoadExtend32Mem0Offset16_Rs { ptr, offset, .. } => Op::u64_load_extend32_mem0_offset16_rs_s(result, ptr, offset),
+            _ => return None,
+        };
+        Some(op)
+    }
+
+    fn fuse_copy_sr_freg32(&self, result: Slot) -> Option<Op> {
+        let result = SlotAndReg::from(result);
+        let staged_op = self.instrs.peek_staged()?;
+        let op = match staged_op {
+            Op::F32LoadMem0Offset16_Rr { offset, .. } => Op::f32_load_mem0_offset16_rs_r(result, offset),
+            Op::F32LoadMem0Offset16_Rs { ptr, offset, .. } => Op::f32_load_mem0_offset16_rs_s(result, ptr, offset),
+            _ => return None,
+        };
+        Some(op)
+    }
+
+    fn fuse_copy_sr_freg64(&self, result: Slot) -> Option<Op> {
+        let result = SlotAndReg::from(result);
+        let staged_op = self.instrs.peek_staged()?;
+        let op = match staged_op {
+            Op::F64LoadMem0Offset16_Rr { offset, .. } => Op::f64_load_mem0_offset16_rs_r(result, offset),
+            Op::F64LoadMem0Offset16_Rs { ptr, offset, .. } => Op::f64_load_mem0_offset16_rs_s(result, ptr, offset),
             _ => return None,
         };
         Some(op)
