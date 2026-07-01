@@ -476,7 +476,7 @@ handler_load! {
     fn v128_load_ss(V128Load_Ss) = simd::v128_load;
 }
 
-handler_load_mem0_offset16_ss! {
+handler_load_mem0_offset16! {
     fn v128_load_mem0_offset16_sr(V128LoadMem0Offset16_Sr) = simd::v128_load;
     fn v128_load_mem0_offset16_ss(V128LoadMem0Offset16_Ss) = simd::v128_load;
 }

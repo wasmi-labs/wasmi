@@ -155,7 +155,7 @@ macro_rules! handler_load {
     };
 }
 
-macro_rules! handler_load_mem0_offset16_ss {
+macro_rules! handler_load_mem0_offset16 {
     ( $( fn $handler:ident($decode:ident) = $load:expr );* $(;)? ) => {
         $(
             execution_handler! {

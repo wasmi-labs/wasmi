@@ -2333,7 +2333,7 @@ handler_load_ri! {
     fn u64_load_extend32_ri(U64LoadExtend32_Ri) = wasm::i64_load32_u_at;
 }
 
-handler_load_mem0_offset16_ss! {
+handler_load_mem0_offset16! {
     // reg results
     fn u32_load_mem0_offset16_rr(U32LoadMem0Offset16_Rr) = wasm::load_u32;
     fn u32_load_mem0_offset16_rs(U32LoadMem0Offset16_Rs) = wasm::load_u32;
