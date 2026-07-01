@@ -66,6 +66,19 @@ macro_rules! out_of_fuel {
     }};
 }
 
+macro_rules! out_of_fuel_v2 {
+    ($state:expr, $args:expr, $required_fuel:expr) => {{
+        $state.stack.sync_ip($args.ip);
+        $state
+            .stack
+            .sync_regs($args.ireg, $args.freg32, $args.freg64);
+        done!(
+            $state,
+            $crate::engine::executor::handler::DoneReason::out_of_fuel($required_fuel),
+        )
+    }};
+}
+
 pub fn compile_or_get_func_entry(
     state: &mut VmState,
     func: &FuncEntry,
