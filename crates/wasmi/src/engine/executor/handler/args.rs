@@ -1,5 +1,3 @@
-#![expect(dead_code)] // TODO: remove
-
 use crate::{
     engine::executor::handler::{
         exec,
