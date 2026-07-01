@@ -134,9 +134,11 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (_new_ip, crate::ir::decode::Branch { offset }) = unsafe { decode_op(ip) };
-        let ip = offset_ip(ip, offset);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::Branch { offset } = unsafe { args.decode_op() };
+        args.set_ip(ip);
+        args.offset_ip(offset);
+        dispatch_v2!(state, args)
     }
 }
 
