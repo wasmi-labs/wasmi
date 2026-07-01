@@ -201,21 +201,19 @@ macro_rules! handler_store {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        crate::ir::decode::$decode {
-                            ptr,
-                            offset,
-                            value,
-                            memory,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let ptr = get_value(ptr, sp, ireg, freg32, freg64);
-                    let offset = get_value(offset, sp, ireg, freg32, freg64);
-                    let value: $hint = get_value(value, sp, ireg, freg32, freg64);
-                    let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(memory, mem0, mem0_len, instance, state);
-                    $store(mem_bytes, ptr, offset, value.into()).into_control()?;
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$decode {
+                        ptr,
+                        offset,
+                        value,
+                        memory,
+                    } = unsafe { args.decode_op() };
+                    let ptr = args.get(ptr);
+                    let offset = args.get(offset);
+                    let value: $hint = args.get(value);
+                    let bytes = args.fetch_memory(state, memory);
+                    $store(bytes, ptr, offset, value.into()).into_control()?;
+                    dispatch_v2!(state, args)
                 }
             }
         )*
@@ -237,20 +235,18 @@ macro_rules! handler_store_mem0_offset16 {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        crate::ir::decode::$decode {
-                            ptr,
-                            offset,
-                            value,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let ptr = get_value(ptr, sp, ireg, freg32, freg64);
-                    let offset = get_value(offset, sp, ireg, freg32, freg64);
-                    let value: $hint = get_value(value, sp, ireg, freg32, freg64);
-                    let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
-                    $store(mem_bytes, ptr, u64::from(offset), value.into()).into_control()?;
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$decode {
+                        ptr,
+                        offset,
+                        value,
+                    } = unsafe { args.decode_op() };
+                    let ptr = args.get(ptr);
+                    let offset = args.get(offset);
+                    let value: $hint = args.get(value);
+                    let bytes = args.fetch_default_memory();
+                    $store(bytes, ptr, u64::from(offset), value.into()).into_control()?;
+                    dispatch_v2!(state, args)
                 }
             }
         )*
