@@ -1,3 +1,5 @@
+#![expect(dead_code)] // TODO: remove
+
 use crate::{
     engine::executor::handler::{
         exec,
@@ -5,7 +7,7 @@ use crate::{
         utils::{self, GetValue, SetValue, get_value, set_value},
     },
     ir,
-    ir::index,
+    ir::{BranchOffset, index},
 };
 
 /// Utility type to store the arguments of an execution handler and provide a clean API.
@@ -80,6 +82,18 @@ impl Args {
     {
         (self.ireg, self.freg32, self.freg64) =
             set_value(dst, src, self.sp, self.ireg, self.freg32, self.freg64);
+    }
+
+    /// Updates the [`Ip`] of `self` with `new_ip`.
+    #[inline]
+    pub fn set_ip(&mut self, new_ip: Ip) {
+        self.ip = new_ip;
+    }
+
+    /// Offsets the [`Ip`] of `self` by `offset`.
+    #[inline]
+    pub fn offset_ip(&mut self, offset: BranchOffset) {
+        self.ip = unsafe { self.ip.offset(i32::from(offset) as isize) };
     }
 
     /// Returns the bytes of the `memory`.
