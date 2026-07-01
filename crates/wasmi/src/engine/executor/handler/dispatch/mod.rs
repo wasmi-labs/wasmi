@@ -12,6 +12,22 @@ use crate::{
 };
 use core::ops::ControlFlow;
 
+macro_rules! dispatch_v2 {
+    ($state:expr, $args:expr) => {
+        dispatch!(
+            $state,
+            $args.ip,
+            $args.sp,
+            $args.mem0_ptr,
+            $args.mem0_len,
+            $args.instance,
+            $args.ireg,
+            $args.freg32,
+            $args.freg64
+        )
+    };
+}
+
 #[inline(always)]
 pub fn control_break<T>() -> Control<T> {
     Control::Break(Break::WithReason)
