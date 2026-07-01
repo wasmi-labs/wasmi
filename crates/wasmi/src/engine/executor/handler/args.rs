@@ -1,10 +1,11 @@
 use crate::{
     engine::executor::handler::{
         exec,
-        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp},
-        utils::{GetValue, SetValue, get_value, set_value},
+        state::{self, Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
+        utils::{self, GetValue, SetValue, get_value, set_value},
     },
     ir,
+    ir::index,
 };
 
 /// Utility type to store the arguments of an execution handler and provide a clean API.
@@ -79,5 +80,15 @@ impl Args {
     {
         (self.ireg, self.freg32, self.freg64) =
             set_value(dst, src, self.sp, self.ireg, self.freg32, self.freg64);
+    }
+
+    /// Returns the bytes of the `memory`.
+    #[inline]
+    pub fn fetch_memory<'a>(&self, state: &'a mut VmState, memory: index::Memory) -> &'a mut [u8] {
+        if memory.is_default() {
+            return state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len);
+        }
+        let memory = utils::fetch_memory(self.instance, memory);
+        utils::resolve_memory_mut(state.store, &memory).data_mut()
     }
 }
