@@ -1,8 +1,9 @@
 use crate::{
+    core::CoreGlobal,
     engine::executor::handler::{
         exec,
         state::{self, Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-        utils::{self, GetValue, SetValue, get_value, set_value},
+        utils::{self, GetValue, SetValue, fetch_global, get_value, resolve_global_mut, set_value},
     },
     ir,
     ir::{BranchOffset, index},
@@ -108,5 +109,16 @@ impl Args {
     #[inline]
     pub fn fetch_default_memory<'a>(&self) -> &'a mut [u8] {
         state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len)
+    }
+
+    /// Returns an exclusive reference to the global at `index`.
+    #[inline]
+    pub fn fetch_global<'a>(
+        &mut self,
+        state: &'a mut VmState,
+        index: index::Global,
+    ) -> &'a mut CoreGlobal {
+        let global = fetch_global(self.instance, index);
+        resolve_global_mut(state.store, &global)
     }
 }
