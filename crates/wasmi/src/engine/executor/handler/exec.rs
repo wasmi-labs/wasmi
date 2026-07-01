@@ -107,16 +107,18 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (next_ip, crate::ir::decode::ConsumeFuel { fuel }) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::ConsumeFuel { fuel } = unsafe { args.decode_op() };
         let consumption_result = state
             .store
             .inner_mut()
             .fuel_mut()
             .consume_fuel_unchecked(u64::from(fuel));
         if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
-            out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+            args.set_ip(ip);
+            out_of_fuel_v2!(state, args, required_fuel)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch_v2!(state, args)
     }
 }
 
