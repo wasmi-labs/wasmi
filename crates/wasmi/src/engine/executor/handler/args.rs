@@ -5,8 +5,7 @@ use crate::{
         state::{self, Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
         utils::{self, GetValue, SetValue, fetch_global, get_value, resolve_global_mut, set_value},
     },
-    ir,
-    ir::{BranchOffset, index},
+    ir::{self, BranchOffset, index},
 };
 
 /// Utility type to store the arguments of an execution handler and provide a clean API.
