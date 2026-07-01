@@ -481,12 +481,12 @@ handler_load_mem0_offset16! {
     fn v128_load_mem0_offset16_ss(V128LoadMem0Offset16_Ss) = simd::v128_load;
 }
 
-handler_store_sx! {
+handler_store! {
     fn v128_store_rs(V128Store_Rs, V128) = simd::v128_store;
     fn v128_store_ss(V128Store_Ss, V128) = simd::v128_store;
 }
 
-handler_store_mem0_offset16_sx! {
+handler_store_mem0_offset16! {
     fn v128_store_mem0_offset16_rs(V128StoreMem0Offset16_Rs, V128) = simd::v128_store;
     fn v128_store_mem0_offset16_ss(V128StoreMem0Offset16_Ss, V128) = simd::v128_store;
 }

@@ -186,7 +186,7 @@ macro_rules! handler_load_mem0_offset16 {
     };
 }
 
-macro_rules! handler_store_sx {
+macro_rules! handler_store {
     ( $( fn $handler:ident($decode:ident, $hint:ty) = $store:expr );* $(;)? ) => {
         $(
             execution_handler! {
@@ -222,7 +222,7 @@ macro_rules! handler_store_sx {
     };
 }
 
-macro_rules! handler_store_mem0_offset16_sx {
+macro_rules! handler_store_mem0_offset16 {
     ( $( fn $handler:ident($decode:ident, $hint:ty) = $store:expr );* $(;)? ) => {
         $(
             execution_handler! {

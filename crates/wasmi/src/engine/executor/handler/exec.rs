@@ -2394,7 +2394,7 @@ handler_load_mem0_offset16! {
     fn u64_load_extend32_mem0_offset16_rs_s(U64LoadExtend32Mem0Offset16_Rs_s) = wasm::i64_load32_u;
 }
 
-handler_store_sx! {
+handler_store! {
     fn u32_store_rs(U32Store_Rs, u32) = wasm::store32;
     fn u32_store_ri(U32Store_Ri, u32) = wasm::store32;
     fn u32_store_sr(U32Store_Sr, u32) = wasm::store32;
@@ -2509,7 +2509,7 @@ handler_store_ix! {
     fn i64_store_wrap32_ii(I64StoreWrap32_Ii, i32) = wasm::i64_store32_at;
 }
 
-handler_store_mem0_offset16_sx! {
+handler_store_mem0_offset16! {
     fn u32_store_mem0_offset16_rs(U32StoreMem0Offset16_Rs, u32) = wasm::store32;
     fn u32_store_mem0_offset16_ri(U32StoreMem0Offset16_Ri, u32) = wasm::store32;
     fn u32_store_mem0_offset16_sr(U32StoreMem0Offset16_Sr, u32) = wasm::store32;
