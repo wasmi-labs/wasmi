@@ -8,6 +8,7 @@ mod simd;
 pub use self::simd::*;
 
 use super::{
+    Args,
     dispatch::Done,
     state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
     utils::{fetch_func, get_value, memory_bytes, offset_ip},
@@ -59,7 +60,7 @@ use crate::{
 use core::{cmp, ptr};
 
 #[inline(always)]
-unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
+pub unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
     let (new_ip, op) = unsafe { decode_op_no_align(ip) };
     (new_ip.align_relative_to(ip), op)
 }

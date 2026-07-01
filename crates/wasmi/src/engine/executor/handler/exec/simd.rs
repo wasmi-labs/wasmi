@@ -6,6 +6,7 @@ use crate::{
         simd::{ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8, ImmLaneIdx16},
     },
     engine::executor::handler::{
+        Args,
         dispatch::Done,
         exec::decode_op,
         state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
