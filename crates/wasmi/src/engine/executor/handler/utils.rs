@@ -20,7 +20,7 @@ use crate::{
         executor::{
             LoadFromCellsByValue,
             StoreToCells,
-            handler::{Break, Control, Done, DoneReason},
+            handler::{Break, Control, DoneReason},
         },
         utils::unreachable_unchecked,
     },
@@ -523,29 +523,6 @@ macro_rules! set_value {
             )
         };
     };
-}
-
-#[expect(clippy::too_many_arguments)]
-pub fn exec_return(
-    state: &mut VmState,
-    _ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
-) -> Done {
-    let Some((ip, sp, mem0, mem0_len, instance)) =
-        state.stack.pop_frame(state.store, mem0, mem0_len, instance)
-    else {
-        // No more frames on the call stack -> break out of execution!
-        done!(state, DoneReason::Return(sp))
-    };
-    dispatch!(
-        state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64
-    )
 }
 
 pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {

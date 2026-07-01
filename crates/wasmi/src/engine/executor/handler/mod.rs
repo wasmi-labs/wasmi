@@ -25,6 +25,6 @@ pub use self::{
     state::{Inst, Stack},
 };
 use self::{
-    dispatch::{Break, Control, Done},
+    dispatch::{Break, Control},
     state::DoneReason,
 };
