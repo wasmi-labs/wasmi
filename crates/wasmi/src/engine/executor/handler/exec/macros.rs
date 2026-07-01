@@ -106,12 +106,13 @@ macro_rules! handler_binary {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, $crate::ir::decode::$decode { result, lhs, rhs }) = unsafe { decode_op(ip) };
-                    let lhs = get_value(lhs, sp, ireg, freg32, freg64);
-                    let rhs = get_value(rhs, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let $crate::ir::decode::$decode { result, lhs, rhs } = unsafe { args.decode_op() };
+                    let lhs = args.get(lhs);
+                    let rhs = args.get(rhs);
                     let value = $eval(lhs, rhs).into_control()?;
-                    set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(result, value);
+                    dispatch_v2!(state, args)
                 }
             }
         )*
