@@ -91,4 +91,10 @@ impl Args {
         let memory = utils::fetch_memory(self.instance, memory);
         utils::resolve_memory_mut(state.store, &memory).data_mut()
     }
+
+    /// Returns the bytes of the default memory at index 0.
+    #[inline]
+    pub fn fetch_default_memory<'a>(&self) -> &'a mut [u8] {
+        state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len)
+    }
 }
