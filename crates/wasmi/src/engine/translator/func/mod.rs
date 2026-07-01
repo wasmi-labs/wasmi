@@ -845,6 +845,7 @@ impl FuncTranslator {
     fn fuse_copy_sr_ireg(&self, result: Slot) -> Option<Op> {
         let result = SlotAndReg::from(result);
         let staged_op = self.instrs.peek_staged()?;
+        #[rustfmt::skip]
         let op = match staged_op {
             // i32
             Op::I32Add_Rrs { rhs, .. } => Op::i32_add_rs_rs(result, rhs),
@@ -890,8 +891,12 @@ impl FuncTranslator {
         let result = SlotAndReg::from(result);
         let staged_op = self.instrs.peek_staged()?;
         let op = match staged_op {
-            Op::F32LoadMem0Offset16_Rr { offset, .. } => Op::f32_load_mem0_offset16_rs_r(result, offset),
-            Op::F32LoadMem0Offset16_Rs { ptr, offset, .. } => Op::f32_load_mem0_offset16_rs_s(result, ptr, offset),
+            Op::F32LoadMem0Offset16_Rr { offset, .. } => {
+                Op::f32_load_mem0_offset16_rs_r(result, offset)
+            }
+            Op::F32LoadMem0Offset16_Rs { ptr, offset, .. } => {
+                Op::f32_load_mem0_offset16_rs_s(result, ptr, offset)
+            }
             _ => return None,
         };
         Some(op)
@@ -901,8 +906,12 @@ impl FuncTranslator {
         let result = SlotAndReg::from(result);
         let staged_op = self.instrs.peek_staged()?;
         let op = match staged_op {
-            Op::F64LoadMem0Offset16_Rr { offset, .. } => Op::f64_load_mem0_offset16_rs_r(result, offset),
-            Op::F64LoadMem0Offset16_Rs { ptr, offset, .. } => Op::f64_load_mem0_offset16_rs_s(result, ptr, offset),
+            Op::F64LoadMem0Offset16_Rr { offset, .. } => {
+                Op::f64_load_mem0_offset16_rs_r(result, offset)
+            }
+            Op::F64LoadMem0Offset16_Rs { ptr, offset, .. } => {
+                Op::f64_load_mem0_offset16_rs_s(result, ptr, offset)
+            }
             _ => return None,
         };
         Some(op)

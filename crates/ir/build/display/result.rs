@@ -1,5 +1,9 @@
 use crate::build::{
-    display::{Indent, ident::DisplayIdent, utils::{DisplayConcat, DisplaySequence}},
+    display::{
+        Indent,
+        ident::DisplayIdent,
+        utils::{DisplayConcat, DisplaySequence},
+    },
     ident::Ident,
     isa::Isa,
     op::{GenericOp, Op, OperandKind},
@@ -58,7 +62,10 @@ impl Display for DisplayResultMut<&'_ Isa> {
                 .iter()
                 .filter(|op| op.has_result_slot_and_reg())
                 .map(|op| {
-                    (DisplayResultMut::new(op, indent.inc_by(3)), " => &result.slot,")
+                    (
+                        DisplayResultMut::new(op, indent.inc_by(3)),
+                        " => &result.slot,",
+                    )
                 })
                 .map(DisplayConcat),
         );
@@ -69,7 +76,10 @@ impl Display for DisplayResultMut<&'_ Isa> {
                 .iter()
                 .filter(|op| op.has_result_slot_and_reg())
                 .map(|op| {
-                    (DisplayResultMut::new(op, indent.inc_by(3)), " => &mut result.slot,")
+                    (
+                        DisplayResultMut::new(op, indent.inc_by(3)),
+                        " => &mut result.slot,",
+                    )
                 })
                 .map(DisplayConcat),
         );
