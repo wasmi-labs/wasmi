@@ -1,5 +1,5 @@
 use crate::build::{
-    display::{Indent, ident::DisplayIdent, utils::DisplaySequence},
+    display::{Indent, ident::DisplayIdent, utils::{DisplayConcat, DisplaySequence}},
     ident::Ident,
     isa::Isa,
     op::{GenericOp, Op, OperandKind},
@@ -51,13 +51,27 @@ impl Display for DisplayResultMut<&'_ Isa> {
                 .filter(|op| op.has_result_slot())
                 .map(|op| DisplayResultMut::new(op, indent.inc_by(3))),
         );
-        let variants_slot_and_reg = DisplaySequence::new(
+        let variants_slot_and_reg_ref = DisplaySequence::new(
             "\n",
             self.value
                 .ops
                 .iter()
                 .filter(|op| op.has_result_slot_and_reg())
-                .map(|op| DisplayResultMut::new(op, indent.inc_by(3))),
+                .map(|op| {
+                    (DisplayResultMut::new(op, indent.inc_by(3)), " => &result.slot,")
+                })
+                .map(DisplayConcat),
+        );
+        let variants_slot_and_reg_mut = DisplaySequence::new(
+            "\n",
+            self.value
+                .ops
+                .iter()
+                .filter(|op| op.has_result_slot_and_reg())
+                .map(|op| {
+                    (DisplayResultMut::new(op, indent.inc_by(3)), " => &mut result.slot,")
+                })
+                .map(DisplayConcat),
         );
         let variants_loc = DisplaySequence::new(
             "\n",
@@ -83,7 +97,7 @@ impl Display for DisplayResultMut<&'_ Isa> {
             {indent}    pub fn result_ref(&self) -> Option<&Slot> {{\n\
             {indent}        let res = match self {{\n\
                                 {variants_slot} => result,\n\
-                                {variants_slot_and_reg} => &result.slot,\n\
+                                {variants_slot_and_reg_ref}\n\
             {indent}            _ => return None,\n\
             {indent}        }};\n\
             {indent}        Some(res)\n\
@@ -93,7 +107,7 @@ impl Display for DisplayResultMut<&'_ Isa> {
             {indent}    pub fn result_mut(&mut self) -> Option<&mut Slot> {{\n\
             {indent}        let res = match self {{\n\
                                 {variants_slot} => result,\n\
-                                {variants_slot_and_reg} => &mut result.slot,\n\
+                                {variants_slot_and_reg_mut}\n\
             {indent}            _ => return None,\n\
             {indent}        }};\n\
             {indent}        Some(res)\n\

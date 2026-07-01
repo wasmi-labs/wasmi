@@ -437,14 +437,16 @@ fn add_load_ops(isa: &mut Isa) {
                 OffsetOperand::Offset,
             ));
             if matches!(ptr, OperandKind::Reg | OperandKind::Slot) {
-                isa.push_op(LoadOp::new(
-                    kind,
-                    result_ty,
-                    OperandKind::Reg,
-                    ptr,
-                    MemoryOperand::Mem0,
-                    OffsetOperand::Offset16,
-                ));
+                for result in [OperandKind::Reg, OperandKind::SlotAndReg] {
+                    isa.push_op(LoadOp::new(
+                        kind,
+                        result_ty,
+                        result,
+                        ptr,
+                        MemoryOperand::Mem0,
+                        OffsetOperand::Offset16,
+                    ));
+                }
             }
         }
     }
