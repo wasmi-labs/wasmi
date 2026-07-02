@@ -10,7 +10,7 @@ mod state;
 
 use self::{
     args::Args,
-    dispatch::{Break, Control, Done},
+    dispatch::{Break, Control},
     state::DoneReason,
 };
 pub use self::{
