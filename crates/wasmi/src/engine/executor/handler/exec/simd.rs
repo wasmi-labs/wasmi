@@ -6,10 +6,10 @@ use crate::{
         simd::{ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8, ImmLaneIdx16},
     },
     engine::executor::handler::{
+        Args,
         dispatch::Done,
-        exec::decode_op,
         state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-        utils::{IntoControl as _, get_value},
+        utils::IntoControl as _,
     },
 };
 use core::convert::identity;
@@ -29,23 +29,21 @@ macro_rules! execution_handler_for_v128_select {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        crate::ir::decode::$camel_name {
-                            result,
-                            condition,
-                            true_val,
-                            false_val,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let condition: bool = get_value(condition, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name {
+                        result,
+                        condition,
+                        true_val,
+                        false_val,
+                    } = unsafe { args.decode_op() };
+                    let condition: bool = args.get(condition);
                     let selected = match condition {
                         true => true_val,
                         false => false_val,
                     };
-                    let selected: V128 = get_value(selected, sp, ireg, freg32, freg64);
-                    set_value!(result, selected, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let selected: V128 = args.get(selected);
+                    args.set(result, selected);
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -334,18 +332,16 @@ macro_rules! handler_extract_lane {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        crate::ir::decode::$op {
-                            result,
-                            value,
-                            lane,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let value = get_value(value, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$op {
+                        result,
+                        value,
+                        lane,
+                    } = unsafe { args.decode_op() };
+                    let value = args.get(value);
                     let extracted = $eval(value, lane);
-                    set_value!(result, extracted, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(result, extracted);
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -396,20 +392,18 @@ macro_rules! handler_extract_lane {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        crate::ir::decode::$op {
-                            result,
-                            v128,
-                            value,
-                            lane,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let v128 = get_value(v128, sp, ireg, freg32, freg64);
-                    let value = get_value(value, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$op {
+                        result,
+                        v128,
+                        value,
+                        lane,
+                    } = unsafe { args.decode_op() };
+                    let v128 = args.get(v128);
+                    let value = args.get(value);
                     let replaced = $eval(v128, lane, value);
-                    set_value!(result, replaced, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(result, replaced);
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -447,13 +441,14 @@ macro_rules! handler_ternary {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, $crate::ir::decode::$decode { result, $v0, $v1, $v2 }) = unsafe { decode_op(ip) };
-                    let $v0 = get_value($v0, sp, ireg, freg32, freg64);
-                    let $v1 = get_value($v1, sp, ireg, freg32, freg64);
-                    let $v2 = get_value($v2, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let $crate::ir::decode::$decode { result, $v0, $v1, $v2 } = unsafe { args.decode_op() };
+                    let $v0 = args.get($v0);
+                    let $v1 = args.get($v1);
+                    let $v2 = args.get($v2);
                     let value = $eval($v0, $v1, $v2).into_control()?;
-                    set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(result, value);
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -475,17 +470,17 @@ handler_load! {
     fn v128_load_ss(V128Load_Ss) = simd::v128_load;
 }
 
-handler_load_mem0_offset16_ss! {
+handler_load_mem0_offset16! {
     fn v128_load_mem0_offset16_sr(V128LoadMem0Offset16_Sr) = simd::v128_load;
     fn v128_load_mem0_offset16_ss(V128LoadMem0Offset16_Ss) = simd::v128_load;
 }
 
-handler_store_sx! {
+handler_store! {
     fn v128_store_rs(V128Store_Rs, V128) = simd::v128_store;
     fn v128_store_ss(V128Store_Ss, V128) = simd::v128_store;
 }
 
-handler_store_mem0_offset16_sx! {
+handler_store_mem0_offset16! {
     fn v128_store_mem0_offset16_rs(V128StoreMem0Offset16_Rs, V128) = simd::v128_store;
     fn v128_store_mem0_offset16_ss(V128StoreMem0Offset16_Ss, V128) = simd::v128_store;
 }
@@ -505,18 +500,14 @@ macro_rules! handler_store_lane_ss {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        $crate::ir::decode::$op { ptr, offset, value, memory, lane },
-                    ) = unsafe { decode_op(ip) };
-                    let ptr = get_value(ptr, sp, ireg, freg32, freg64);
-                    let offset = get_value(offset, sp, ireg, freg32, freg64);
-                    let value = get_value(value, sp, ireg, freg32, freg64);
-                    let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(
-                        memory, mem0, mem0_len, instance, state,
-                    );
-                    $eval(mem_bytes, ptr, offset, value, lane).into_control()?;
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let $crate::ir::decode::$op { ptr, offset, value, memory, lane } = unsafe { args.decode_op() };
+                    let ptr = args.get(ptr);
+                    let offset = args.get(offset);
+                    let value = args.get(value);
+                    let bytes = args.fetch_memory_bytes(state, memory);
+                    $eval(bytes, ptr, offset, value, lane).into_control()?;
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -548,16 +539,14 @@ macro_rules! handler_store_lane_mem0_offset16_ss {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        $crate::ir::decode::$op { ptr, offset, value, lane },
-                    ) = unsafe { decode_op(ip) };
-                    let ptr = get_value(ptr, sp, ireg, freg32, freg64);
-                    let offset = get_value(offset, sp, ireg, freg32, freg64);
-                    let value = get_value(value, sp, ireg, freg32, freg64);
-                    let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
-                    $eval(mem_bytes, ptr, u64::from(offset), value, lane).into_control()?;
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let $crate::ir::decode::$op { ptr, offset, value, lane } = unsafe { args.decode_op() };
+                    let ptr = args.get(ptr);
+                    let offset = args.get(offset);
+                    let value = args.get(value);
+                    let bytes = args.fetch_default_memory_bytes();
+                    $eval(bytes, ptr, u64::from(offset), value, lane).into_control()?;
+                    dispatch!(state, args)
                 }
             }
         )*

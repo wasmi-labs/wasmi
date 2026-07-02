@@ -8,15 +8,16 @@ mod simd;
 pub use self::simd::*;
 
 use super::{
+    Args,
     dispatch::Done,
     state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-    utils::{fetch_func, get_value, memory_bytes, offset_ip},
+    utils::fetch_func,
 };
 #[cfg(feature = "simd")]
 use crate::V128;
 use crate::{
     TrapCode,
-    core::{CoreTable, RawRef, ReadAs, wasm},
+    core::{CoreTable, RawRef, ReadAs, WriteAs, wasm},
     engine::{
         FuncEntry,
         eval,
@@ -24,31 +25,7 @@ use crate::{
             Control,
             dispatch::Break,
             state::DoneReason,
-            utils::{
-                GetValue,
-                IntoControl as _,
-                call_func_entry,
-                call_wasm_or_host,
-                exec_copy_span,
-                extract_mem0,
-                fetch_data,
-                fetch_elem,
-                fetch_global,
-                fetch_memory,
-                fetch_table,
-                memory_slice,
-                memory_slice_mut,
-                resolve_data_mut,
-                resolve_elem_mut,
-                resolve_global,
-                resolve_indirect_func,
-                resolve_memory,
-                resolve_table,
-                resolve_table_mut,
-                return_call_func_entry,
-                return_call_wasm_or_host,
-                set_global,
-            },
+            utils::{self, GetValue, IntoControl as _},
         },
         utils::unreachable_unchecked,
     },
@@ -58,21 +35,6 @@ use crate::{
 };
 use core::{cmp, ptr};
 
-#[inline(always)]
-unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
-    let (new_ip, op) = unsafe { decode_op_no_align(ip) };
-    (new_ip.align_relative_to(ip), op)
-}
-
-#[inline(always)]
-unsafe fn decode_op_no_align<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
-    let ip = match cfg!(feature = "indirect-dispatch") {
-        true => unsafe { ip.skip::<ir::OpCode>() },
-        false => unsafe { ip.skip::<::core::primitive::usize>() },
-    };
-    unsafe { ip.decode() }
-}
-
 fn identity<T>(value: T) -> T {
     value
 }
@@ -81,15 +43,16 @@ execution_handler! {
     fn trap(
         _state: &mut VmState,
         ip: Ip,
-        _sp: Sp,
-        _mem0: Mem0Ptr,
-        _mem0_len: Mem0Len,
-        _instance: Inst,
-        _ireg: Ireg,
-        _freg32: Freg32,
-        _freg64: Freg64,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
-        let (_ip, crate::ir::decode::Trap { trap_code }) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::Trap { trap_code } = unsafe { args.decode_op() };
         trap!(trap_code)
     }
 }
@@ -106,16 +69,18 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (next_ip, crate::ir::decode::ConsumeFuel { fuel }) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::ConsumeFuel { fuel } = unsafe { args.decode_op() };
         let consumption_result = state
             .store
             .inner_mut()
             .fuel_mut()
             .consume_fuel_unchecked(u64::from(fuel));
         if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
-            out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+            args.set_ip(ip);
+            out_of_fuel!(state, args, required_fuel)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch!(state, args)
     }
 }
 
@@ -131,9 +96,11 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (_new_ip, crate::ir::decode::Branch { offset }) = unsafe { decode_op(ip) };
-        let ip = offset_ip(ip, offset);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::Branch { offset } = unsafe { args.decode_op() };
+        args.set_ip(ip);
+        args.offset_ip(offset);
+        dispatch!(state, args)
     }
 }
 
@@ -158,12 +125,12 @@ macro_rules! global_get_execution_handler {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$camel_name { global, result }) = unsafe { decode_op(ip) };
-                    let global = fetch_global(instance, global);
-                    let global = resolve_global(state.store, &global);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name { global, result } = unsafe { args.decode_op() };
+                    let global = args.fetch_global(state, global);
                     let value: $ty = global.get_raw().read_as();
-                    set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(result, value);
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -199,10 +166,14 @@ macro_rules! global_set_execution_handler {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$camel_name { global, value }) = unsafe { decode_op(ip) };
-                    let value: $ty = get_value(value, sp, ireg, freg32, freg64);
-                    set_global(global, value, state, instance);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name { global, value } = unsafe { args.decode_op() };
+                    let global = args.fetch_global(state, global);
+                    let value: $ty = args.get(value);
+                    let mut value_ptr = global.get_raw_ptr();
+                    let global_ref = unsafe { value_ptr.as_mut() };
+                    global_ref.write_as(value);
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -224,7 +195,7 @@ execution_handler! {
     fn call_internal(
         state: &mut VmState,
         ip: Ip,
-        _sp: Sp,
+        sp: Sp,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
@@ -232,7 +203,8 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::CallInternal { params, func } = unsafe { args.decode_op() };
         // Safety:
         //
         // `func` is the exposed address of a `FuncEntity` in the engine's append-only `CodeMap`.
@@ -241,8 +213,8 @@ execution_handler! {
         //  - its allocation is never moved or freed while this bytecode runs.
         //  - the `FuncEntry` type mutates only guarded by lock-free atomics.
         let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
-        let (callee_ip, callee_sp) = call_func_entry(state, caller_ip, params, func, None)?;
-        dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        args.call_func_entry(state, func, params, None)?;
+        dispatch!(state, args)
     }
 }
 
@@ -250,7 +222,7 @@ execution_handler! {
     fn call_imported(
         state: &mut VmState,
         ip: Ip,
-        _sp: Sp,
+        sp: Sp,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
@@ -258,11 +230,11 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
-        let func = fetch_func(instance, func);
-        let (ip, sp, mem0, mem0_len, instance) =
-            call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::CallImported { params, func } = unsafe { args.decode_op() };
+        let func = fetch_func(args.instance, func);
+        args.call_wasm_or_host_func(state, func, params)?;
+        dispatch!(state, args)
     }
 }
 
@@ -281,30 +253,16 @@ macro_rules! call_indirect_execution_handler {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        caller_ip,
-                        crate::ir::decode::$camel_name {
-                            table,
-                            func_type,
-                            params,
-                            index,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let func =
-                        resolve_indirect_func(
-                            index,
-                            table,
-                            func_type,
-                            state,
-                            sp,
-                            instance,
-                            ireg,
-                            freg32,
-                            freg64,
-                        ).into_control()?;
-                    let (callee_ip, sp, mem0, mem0_len, instance) =
-                        call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
-                    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name {
+                        table,
+                        func_type,
+                        params,
+                        index,
+                    } = unsafe { args.decode_op() };
+                    let func = args.resolve_indirect_func(state, index, table, func_type)?;
+                    args.call_wasm_or_host_func(state, func, params)?;
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -319,7 +277,7 @@ execution_handler! {
     fn return_call_internal(
         state: &mut VmState,
         ip: Ip,
-        _sp: Sp,
+        sp: Sp,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
@@ -327,7 +285,8 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (_, crate::ir::decode::ReturnCallInternal { params, func }) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::ReturnCallInternal { params, func } = unsafe { args.decode_op() };
         // Safety:
         //
         // `func` is the exposed address of a `FuncEntity` in the engine's append-only `CodeMap`.
@@ -336,8 +295,8 @@ execution_handler! {
         //  - its allocation is never moved or freed while this bytecode runs.
         //  - the `FuncEntry` type mutates only guarded by lock-free atomics.
         let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
-        let (callee_ip, callee_sp) = return_call_func_entry(state, params, func, None)?;
-        dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        args.return_call_func_entry(state, func, params, None)?;
+        dispatch!(state, args)
     }
 }
 
@@ -345,7 +304,7 @@ execution_handler! {
     fn return_call_imported(
         state: &mut VmState,
         ip: Ip,
-        _sp: Sp,
+        sp: Sp,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
@@ -353,11 +312,11 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (_, crate::ir::decode::ReturnCallImported { params, func }) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::ReturnCallImported { params, func } = unsafe { args.decode_op() };
         let func = fetch_func(instance, func);
-        let (callee_ip, sp, mem0, mem0_len, instance) =
-            return_call_wasm_or_host(state, func, params, mem0, mem0_len, instance)?;
-        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        args.return_call_wasm_or_host_func(state, func, params)?;
+        dispatch!(state, args)
     }
 }
 
@@ -376,30 +335,16 @@ macro_rules! return_call_indirect_execution_handler {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        _,
-                        crate::ir::decode::$camel_name {
-                            params,
-                            index,
-                            func_type,
-                            table,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let func =
-                        resolve_indirect_func(
-                            index,
-                            table,
-                            func_type,
-                            state,
-                            sp,
-                            instance,
-                            ireg,
-                            freg32,
-                            freg64,
-                        ).into_control()?;
-                    let (callee_ip, sp, mem0, mem0_len, instance) =
-                        return_call_wasm_or_host(state, func, params, mem0, mem0_len, instance)?;
-                    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name {
+                        params,
+                        index,
+                        func_type,
+                        table,
+                    } = unsafe { args.decode_op() };
+                    let func = args.resolve_indirect_func(state, index, table, func_type)?;
+                    args.return_call_wasm_or_host_func(state, func, params)?;
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -413,7 +358,7 @@ return_call_indirect_execution_handler! {
 execution_handler! {
     fn r#return(
         state: &mut VmState,
-        _ip: Ip,
+        ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
@@ -422,15 +367,9 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let Some((ip, sp, mem0, mem0_len, instance)) =
-            state.stack.pop_frame(state.store, mem0, mem0_len, instance)
-        else {
-            // No more frames on the call stack -> break out of execution!
-            done!(state, DoneReason::Return(sp))
-        };
-        dispatch!(
-            state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64
-        )
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        args.pop_frame(state)?;
+        dispatch!(state, args)
     }
 }
 
@@ -446,11 +385,11 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (ip, crate::ir::decode::MemorySize { memory, result }) = unsafe { decode_op(ip) };
-        let memory = fetch_memory(instance, memory);
-        let size = resolve_memory(state.store, &memory).size();
-        set_value!(result, size, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::MemorySize { memory, result } = unsafe { args.decode_op() };
+        let size = args.fetch_memory(state, memory).size();
+        args.set(result, size);
+        dispatch!(state, args)
     }
 }
 
@@ -466,39 +405,36 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::MemoryGrow {
-                memory,
-                result,
-                delta,
-            },
-        ) = unsafe { decode_op(ip) };
-        let delta: u64 = get_value(delta, sp, ireg, freg32, freg64);
-        let memref = fetch_memory(instance, memory);
-        let mut mem0 = mem0;
-        let mut mem0_len = mem0_len;
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::MemoryGrow {
+            memory,
+            result,
+            delta,
+        } = unsafe { args.decode_op() };
+        let delta: u64 = args.get(delta);
+        let memref = utils::fetch_memory(instance, memory);
         let return_value = match state.store.grow_memory(&memref, delta) {
             Ok(return_value) => {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
                 if memory.is_default() {
-                    (mem0, mem0_len) = extract_mem0(state.store, instance);
+                    args.reload_mem0(state);
                 }
                 return_value
             }
             Err(StoreError::External(
                 MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory,
             )) => {
-                let memory_ty = resolve_memory(state.store, &memref).ty();
+                let memory_ty = utils::resolve_memory(state.store, &memref).ty();
                 match memory_ty.is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),
                 }
             }
             Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
-                out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+                args.set_ip(ip);
+                out_of_fuel!(state, args, required_fuel)
             }
             Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
                 trap!(TrapCode::GrowthOperationLimited);
@@ -510,8 +446,8 @@ execution_handler! {
                 panic!("`memory.grow`: internal interpreter error: {error}")
             }
         };
-        set_value!(result, return_value, sp, ireg, freg32, freg64);
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        args.set(result, return_value);
+        dispatch!(state, args)
     }
 }
 
@@ -527,19 +463,17 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::MemoryCopy {
-                dst_memory,
-                src_memory,
-                dst,
-                src,
-                len,
-            },
-        ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
-        let src: u64 = get_value(src, sp, ireg, freg32, freg64);
-        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::MemoryCopy {
+            dst_memory,
+            src_memory,
+            dst,
+            src,
+            len,
+        } = unsafe { args.decode_op() };
+        let dst: u64 = args.get(dst);
+        let src: u64 = args.get(src);
+        let len: u64 = args.get(len);
         let Ok(dst_index) = usize::try_from(dst) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
@@ -550,51 +484,45 @@ execution_handler! {
             trap!(TrapCode::MemoryOutOfBounds)
         };
         if dst_memory == src_memory {
-            memory_copy_within(state, ip, instance, ireg, freg32, freg64, dst_memory, dst_index, src_index, len)?;
-            dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+            memory_copy_within(state, &mut args, ip, dst_memory, dst_index, src_index, len)?;
+            dispatch!(state, args)
         }
-        let dst_memory = fetch_memory(instance, dst_memory);
-        let src_memory = fetch_memory(instance, src_memory);
+        let dst_memory = utils::fetch_memory(instance, dst_memory);
+        let src_memory = utils::fetch_memory(instance, src_memory);
         let (src_memory, dst_memory, fuel) = state
             .store
             .inner_mut()
             .resolve_memory_pair_and_fuel(&src_memory, &dst_memory);
         // These accesses just perform the bounds checks required by the Wasm spec.
-        let src_bytes = memory_slice(src_memory, src_index, len).into_control()?;
-        let dst_bytes = memory_slice_mut(dst_memory, dst_index, len).into_control()?;
+        let src_bytes = utils::memory_slice(src_memory, src_index, len).into_control()?;
+        let dst_bytes = utils::memory_slice_mut(dst_memory, dst_index, len).into_control()?;
         consume_fuel!(
             state,
             ip,
-            ireg,
-            freg32,
-            freg64,
+            args,
             fuel,
             |costs| costs.fuel_for_copying_values::<u8>(len as u64),
         );
         dst_bytes.copy_from_slice(src_bytes);
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch!(state, args)
     }
 }
 
-#[expect(clippy::too_many_arguments)]
 fn memory_copy_within(
     state: &mut VmState<'_>,
+    args: &mut Args,
     ip: Ip,
-    instance: Inst,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
     dst_memory: index::Memory,
     dst_index: usize,
     src_index: usize,
     len: usize,
 ) -> Control<(), Break> {
-    let memory = fetch_memory(instance, dst_memory);
+    let memory = utils::fetch_memory(args.instance, dst_memory);
     let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
     // These accesses just perform the bounds checks required by the Wasm spec.
-    memory_slice(memory, src_index, len).into_control()?;
-    memory_slice(memory, dst_index, len).into_control()?;
-    consume_fuel!(state, ip, ireg, freg32, freg64, fuel, |costs| costs
+    utils::memory_slice(memory, src_index, len).into_control()?;
+    utils::memory_slice(memory, dst_index, len).into_control()?;
+    consume_fuel!(state, ip, args, fuel, |costs| costs
         .fuel_for_copying_values::<u8>(len as u64));
     memory
         .data_mut()
@@ -614,31 +542,28 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::MemoryFill {
-                memory,
-                dst,
-                len,
-                value,
-            },
-        ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
-        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
-        let value: u8 = get_value(value, sp, ireg, freg32, freg64);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::MemoryFill {
+            memory,
+            dst,
+            len,
+            value,
+        } = unsafe { args.decode_op() };
+        let dst: u64 = args.get(dst);
+        let len: u64 = args.get(len);
+        let value: u8 = args.get(value);
         let Ok(dst) = usize::try_from(dst) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
         let Ok(len) = usize::try_from(len) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
-        let memory = fetch_memory(instance, memory);
+        let memory = utils::fetch_memory(instance, memory);
         let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
-        let slice = memory_slice_mut(memory, dst, len).into_control()?;
-        consume_fuel!(state, ip, ireg, freg32, freg64, fuel, |costs| costs
-            .fuel_for_copying_values::<u8>(len as u64));
+        let slice = utils::memory_slice_mut(memory, dst, len).into_control()?;
+        consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         slice.fill(value);
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch!(state, args)
     }
 }
 
@@ -654,19 +579,17 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::MemoryInit {
-                memory,
-                data,
-                dst,
-                src,
-                len,
-            },
-        ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
-        let src: u32 = get_value(src, sp, ireg, freg32, freg64);
-        let len: u32 = get_value(len, sp, ireg, freg32, freg64);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::MemoryInit {
+            memory,
+            data,
+            dst,
+            src,
+            len,
+        } = unsafe { args.decode_op() };
+        let dst: u64 = args.get(dst);
+        let src: u32 = args.get(src);
+        let len: u32 = args.get(len);
         let Ok(dst_index) = usize::try_from(dst) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
@@ -679,8 +602,11 @@ execution_handler! {
         let (memory, data, fuel) = state
             .store
             .inner_mut()
-            .resolve_memory_init_params(&fetch_memory(instance, memory), &fetch_data(instance, data));
-        let memory = memory_slice_mut(memory, dst_index, len).into_control()?;
+            .resolve_memory_init_params(
+                &utils::fetch_memory(instance, memory),
+                &utils::fetch_data(instance, data),
+            );
+        let memory = utils::memory_slice_mut(memory, dst_index, len).into_control()?;
         let Some(data) = data
             .bytes()
             .get(src_index..)
@@ -688,10 +614,9 @@ execution_handler! {
         else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
-        consume_fuel!(state, ip, ireg, freg32, freg64, fuel, |costs| costs
-            .fuel_for_copying_values::<u8>(len as u64));
+        consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         memory.copy_from_slice(data);
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch!(state, args)
     }
 }
 
@@ -707,10 +632,10 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (ip, crate::ir::decode::DataDrop { data }) = unsafe { decode_op(ip) };
-        let data = fetch_data(instance, data);
-        resolve_data_mut(state.store, &data).drop_bytes();
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::DataDrop { data } = unsafe { args.decode_op() };
+        args.fetch_data(state, data).drop_bytes();
+        dispatch!(state, args)
     }
 }
 
@@ -726,11 +651,11 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (ip, crate::ir::decode::TableSize { table, result }) = unsafe { decode_op(ip) };
-        let table = fetch_table(instance, table);
-        let size = resolve_table(state.store, &table).size();
-        set_value!(result, size, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::TableSize { table, result } = unsafe { args.decode_op() };
+        let size = args.fetch_table(state, table).size();
+        args.set(result, size);
+        dispatch!(state, args)
     }
 }
 
@@ -746,22 +671,20 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            ip,
-            crate::ir::decode::TableGrow {
-                table,
-                result,
-                delta,
-                value,
-            },
-        ) = unsafe { decode_op(ip) };
-        let table = fetch_table(instance, table);
-        let delta = get_value(delta, sp, ireg, freg32, freg64);
-        let value = get_value(value, sp, ireg, freg32, freg64);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::TableGrow {
+            table,
+            result,
+            delta,
+            value,
+        } = unsafe { args.decode_op() };
+        let table = utils::fetch_table(instance, table);
+        let delta = args.get(delta);
+        let value = args.get(value);
         let return_value = match state.store.grow_table(&table, delta, value) {
             Ok(return_value) => return_value,
             Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
-                let table = resolve_table(state.store, &table);
+                let table = utils::resolve_table(state.store, &table);
                 match table.ty().is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),
@@ -780,8 +703,8 @@ execution_handler! {
                 panic!("`table.grow`: internal interpreter error: {error}")
             }
         };
-        set_value!(result, return_value, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        args.set(result, return_value);
+        dispatch!(state, args)
     }
 }
 
@@ -797,39 +720,38 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::TableCopy {
-                dst_table,
-                src_table,
-                dst,
-                src,
-                len,
-            },
-        ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
-        let src: u64 = get_value(src, sp, ireg, freg32, freg64);
-        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::TableCopy {
+            dst_table,
+            src_table,
+            dst,
+            src,
+            len,
+        } = unsafe { args.decode_op() };
+        let dst: u64 = args.get(dst);
+        let src: u64 = args.get(src);
+        let len: u64 = args.get(len);
         if dst_table == src_table {
             // Case: copy within the same table
-            let table = fetch_table(instance, dst_table);
+            let table = utils::fetch_table(instance, dst_table);
             let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
             if let Err(error) = table.copy_within(dst, src, len, Some(fuel)) {
                 let trap_code = match error {
                     TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
                     TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                     TableError::OutOfFuel { required_fuel } => {
-                        out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+                        args.set_ip(ip);
+                        out_of_fuel!(state, args, required_fuel)
                     }
                     _ => panic!("table.copy: unexpected error: {error:?}"),
                 };
                 trap!(trap_code)
             }
-            dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+            dispatch!(state, args)
         }
         // Case: copy between two different tables
-        let dst_table = fetch_table(instance, dst_table);
-        let src_table = fetch_table(instance, src_table);
+        let dst_table = utils::fetch_table(instance, dst_table);
+        let src_table = utils::fetch_table(instance, src_table);
         let (dst_table, src_table, fuel) = state
             .store
             .inner_mut()
@@ -839,13 +761,14 @@ execution_handler! {
                 TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::OutOfFuel { required_fuel } => {
-                    out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+                    args.set_ip(ip);
+                    out_of_fuel!(state, args, required_fuel)
                 }
                 _ => panic!("table.copy: unexpected error: {error:?}"),
             };
             trap!(trap_code)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch!(state, args)
     }
 }
 
@@ -861,32 +784,31 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::TableFill {
-                table,
-                dst,
-                len,
-                value,
-            },
-        ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
-        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
-        let value: RawRef = get_value(value, sp, ireg, freg32, freg64);
-        let table = fetch_table(instance, table);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::TableFill {
+            table,
+            dst,
+            len,
+            value,
+        } = unsafe { args.decode_op() };
+        let dst: u64 = args.get(dst);
+        let len: u64 = args.get(len);
+        let value: RawRef = args.get(value);
+        let table = utils::fetch_table(instance, table);
         let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
         if let Err(error) = table.fill_raw(dst, value, len, Some(fuel)) {
             let trap_code = match error {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::FillOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfFuel { required_fuel } => {
-                    out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+                    args.set_ip(ip);
+                    out_of_fuel!(state, args, required_fuel)
                 }
                 _ => panic!("table.fill: unexpected error: {error:?}"),
             };
             trap!(trap_code)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch!(state, args)
     }
 }
 
@@ -902,21 +824,19 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::TableInit {
-                table,
-                elem,
-                dst,
-                src,
-                len,
-            },
-        ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
-        let src: u32 = get_value(src, sp, ireg, freg32, freg64);
-        let len: u32 = get_value(len, sp, ireg, freg32, freg64);
-        let table = fetch_table(instance, table);
-        let elem = fetch_elem(instance, elem);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::TableInit {
+            table,
+            elem,
+            dst,
+            src,
+            len,
+        } = unsafe { args.decode_op() };
+        let dst: u64 = args.get(dst);
+        let src: u32 = args.get(src);
+        let len: u32 = args.get(len);
+        let table = utils::fetch_table(args.instance, table);
+        let elem = utils::fetch_elem(args.instance, elem);
         let (table, element, fuel) = state
             .store
             .inner_mut()
@@ -926,13 +846,14 @@ execution_handler! {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::InitOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfFuel { required_fuel } => {
-                    out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+                    args.set_ip(ip);
+                    out_of_fuel!(state, args, required_fuel)
                 }
                 _ => panic!("table.init: unexpected error: {error:?}"),
             };
             trap!(trap_code)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch!(state, args)
     }
 }
 
@@ -948,10 +869,10 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (ip, crate::ir::decode::ElemDrop { elem }) = unsafe { decode_op(ip) };
-        let elem = fetch_elem(instance, elem);
-        resolve_elem_mut(state.store, &elem).drop_items();
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::ElemDrop { elem } = unsafe { args.decode_op() };
+        args.fetch_elem(state, elem).drop_items();
+        dispatch!(state, args)
     }
 }
 
@@ -970,16 +891,15 @@ macro_rules! impl_table_get {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$op { table, result, index }) = unsafe { decode_op(ip) };
-                    let table = fetch_table(instance, table);
-                    let table = resolve_table(state.store, &table);
-                    let index = $ext(get_value(index, sp, ireg, freg32, freg64));
-                    let value = match table.get(index) {
-                        Some(value) => value.raw(),
-                        None => trap!(TrapCode::TableOutOfBounds)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$op { table, result, index } = unsafe { args.decode_op() };
+                    let table = args.fetch_table(state, table);
+                    let index = $ext(args.get(index));
+                    let Some(value) = table.get(index) else {
+                        trap!(TrapCode::TableOutOfBounds)
                     };
-                    set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(result, value.raw());
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -1006,15 +926,15 @@ macro_rules! impl_table_set {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$op { table, index, value }) = unsafe { decode_op(ip) };
-                    let table = fetch_table(instance, table);
-                    let table = resolve_table_mut(state.store, &table);
-                    let index = $ext(get_value(index, sp, ireg, freg32, freg64));
-                    let value: u32 = get_value(value, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$op { table, index, value } = unsafe { args.decode_op() };
+                    let table = args.fetch_table(state, table);
+                    let index = $ext(args.get(index));
+                    let value: u32 = args.get(value);
                     if let Err(TableError::SetOutOfBounds) = table.set_raw(index, RawRef::from(value)) {
                         trap!(TrapCode::TableOutOfBounds)
                     };
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -1043,13 +963,14 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (ip, crate::ir::decode::RefFunc { func, result }) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::RefFunc { func, result } = unsafe { args.decode_op() };
         let func = fetch_func(instance, func);
         let Some(rawref) = func.unwrap_raw(&*state.store) else {
             unsafe { unreachable_unchecked!("store mismatch with: {func:?}") }
         };
-        set_value!(result, rawref, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        args.set(result, rawref);
+        dispatch!(state, args)
     }
 }
 
@@ -1070,16 +991,17 @@ macro_rules! impl_i64_binop128 {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$op { results, lhs_lo, lhs_hi, rhs_lo, rhs_hi }) = unsafe { decode_op(ip) };
-                    let lhs_lo: i64 = get_value(lhs_lo, sp, ireg, freg32, freg64);
-                    let lhs_hi: i64 = get_value(lhs_hi, sp, ireg, freg32, freg64);
-                    let rhs_lo: i64 = get_value(rhs_lo, sp, ireg, freg32, freg64);
-                    let rhs_hi: i64 = get_value(rhs_hi, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$op { results, lhs_lo, lhs_hi, rhs_lo, rhs_hi } = unsafe { args.decode_op() };
+                    let lhs_lo: i64 = args.get(lhs_lo);
+                    let lhs_hi: i64 = args.get(lhs_hi);
+                    let rhs_lo: i64 = args.get(rhs_lo);
+                    let rhs_hi: i64 = args.get(rhs_hi);
                     let results = results.to_array();
                     let (result_lo, result_hi) = $eval(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
-                    set_value!(results[0], result_lo, sp, ireg, freg32, freg64);
-                    set_value!(results[1], result_hi, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(results[0], result_lo);
+                    args.set(results[1], result_hi);
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -1107,14 +1029,15 @@ macro_rules! impl_i64_mul_wide {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$op { results, lhs, rhs }) = unsafe { decode_op(ip) };
-                    let lhs: i64 = get_value(lhs, sp, ireg, freg32, freg64);
-                    let rhs: i64 = get_value(rhs, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$op { results, lhs, rhs } = unsafe { args.decode_op() };
+                    let lhs: i64 = args.get(lhs);
+                    let rhs: i64 = args.get(rhs);
                     let (result_lo, result_hi) = $eval(lhs, rhs);
                     let results = results.to_array();
-                    set_value!(results[0], result_lo, sp, ireg, freg32, freg64);
-                    set_value!(results[1], result_hi, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(results[0], result_lo);
+                    args.set(results[1], result_hi);
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -1127,77 +1050,54 @@ impl_i64_mul_wide! {
 
 /// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
 #[inline]
-fn fetch_branch_table_target<Index>(
-    sp: Sp,
-    index: Index,
-    len_targets: u32,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
-) -> usize
+fn fetch_branch_table_target<Idx>(args: &Args, index: Idx, len_targets: u32) -> usize
 where
-    Index: GetValue<u32>,
+    Idx: GetValue<u32>,
 {
-    let index: u32 = get_value(index, sp, ireg, freg32, freg64);
+    let index: u32 = args.get(index);
     let max_index = len_targets - 1;
     cmp::min(index, max_index) as usize
 }
 
 /// Executes a generic branch table operator that does not any copy values.
 #[inline]
-#[expect(clippy::too_many_arguments)]
-fn exec_branch_table<Index>(
-    index: Index,
-    len_targets: u32,
-    _values: (),
-    ip: Ip,
-    sp: Sp,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
-) -> Ip
+fn exec_branch_table<Idx>(args: &mut Args, index: Idx, len_targets: u32, _values: ())
 where
-    Index: GetValue<u32>,
+    Idx: GetValue<u32>,
 {
-    let chosen_target = fetch_branch_table_target(sp, index, len_targets, ireg, freg32, freg64);
+    let chosen_target = fetch_branch_table_target(args, index, len_targets);
     let target_offset = 4 * chosen_target;
-    let ip = unsafe { ip.add(target_offset) };
-    let (_, offset) = unsafe { ip.decode::<ir::BranchOffset>() };
-    offset_ip(ip, offset)
+    args.set_ip(unsafe { args.ip.add(target_offset) });
+    let (_, offset) = unsafe { args.ip.decode::<ir::BranchOffset>() };
+    args.offset_ip(offset);
 }
 
 /// Executes a generic branch table operator that does not any copy values.
 #[inline]
-#[expect(clippy::too_many_arguments)]
-fn exec_branch_table_with_copies<Index>(
-    index: Index,
+fn exec_branch_table_with_copies<Idx>(
+    args: &mut Args,
+    index: Idx,
     len_targets: u32,
     values: BoundedSlotSpan,
-    ip: Ip,
-    sp: Sp,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
-) -> Ip
-where
-    Index: GetValue<u32>,
+) where
+    Idx: GetValue<u32>,
 {
-    let chosen_target = fetch_branch_table_target(sp, index, len_targets, ireg, freg32, freg64);
+    let chosen_target = fetch_branch_table_target(args, index, len_targets);
     let len_encoded_target = match cfg!(feature = "indirect-dispatch") {
         // TODO: add and use `Encode` trait assoc constants
         true => 6,
         false => 8,
     };
     let target_offset = len_encoded_target * chosen_target;
-    let ip = unsafe { ip.add(target_offset) };
+    args.set_ip(unsafe { args.ip.add(target_offset) });
     let (_, ir::BranchTableTarget { results, offset }) =
-        unsafe { ip.decode::<ir::BranchTableTarget>() };
+        unsafe { args.ip.decode::<ir::BranchTableTarget>() };
     let values_len = values.len();
     let values = values.span();
     if results != values {
-        exec_copy_span(sp, results, values, values_len);
+        utils::exec_copy_span(args.sp, results, values, values_len);
     }
-    offset_ip(ip, offset)
+    args.offset_ip(offset);
 }
 
 macro_rules! impl_branch_table_exec_handler {
@@ -1217,9 +1117,10 @@ macro_rules! impl_branch_table_exec_handler {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$camel_case { len_targets, index, values }) = unsafe { decode_op_no_align(ip) };
-                    let ip = $exec(index, len_targets, values, ip, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_case { len_targets, index, values } = unsafe { args.decode() };
+                    $exec(&mut args, index, len_targets, values);
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -1921,14 +1822,15 @@ macro_rules! handler_cmp_branch {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (next_ip, $crate::ir::decode::$decode { offset, lhs, rhs }) = unsafe { decode_op(ip) };
-                    let lhs = get_value(lhs, sp, ireg, freg32, freg64);
-                    let rhs = get_value(rhs, sp, ireg, freg32, freg64);
-                    let ip = match $eval(lhs, rhs) {
-                        true => offset_ip(ip, offset),
-                        false => next_ip,
-                    };
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let $crate::ir::decode::$decode { offset, lhs, rhs } = unsafe { args.decode_op() };
+                    let lhs = args.get(lhs);
+                    let rhs = args.get(rhs);
+                    if $eval(lhs, rhs) {
+                        args.set_ip(ip);
+                        args.offset_ip(offset);
+                    }
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -2157,24 +2059,20 @@ macro_rules! handler_select {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        $crate::ir::decode::$decode {
-                            result,
-                            condition,
-                            true_val,
-                            false_val,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let condition: i32 = get_value(condition, sp, ireg, freg32, freg64);
-                    let true_val: $width = get_value(true_val, sp, ireg, freg32, freg64);
-                    let false_val: $width = get_value(false_val, sp, ireg, freg32, freg64);
-                    let selected = match condition {
-                        0 => get_value(false_val, sp, ireg, freg32, freg64),
-                        _ => get_value(true_val, sp, ireg, freg32, freg64),
-                    };
-                    set_value!(result, selected, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let $crate::ir::decode::$decode {
+                        result,
+                        condition,
+                        true_val,
+                        false_val,
+                    } = unsafe { args.decode_op() };
+                    let condition: i32 = args.get(condition);
+                    let true_val: $width = args.get(true_val);
+                    let false_val: $width = args.get(false_val);
+                    let selected = if condition != 0 { true_val } else { false_val };
+                    let selected = args.get(selected);
+                    args.set(result, selected);
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -2297,19 +2195,17 @@ macro_rules! handler_load_ri {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        crate::ir::decode::$decode {
-                            result,
-                            address,
-                            memory,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let address = get_value(address, sp, ireg, freg32, freg64);
-                    let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                    let loaded = $load(mem_bytes, usize::from(address)).into_control()?;
-                    set_value!(result, loaded, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$decode {
+                        result,
+                        address,
+                        memory,
+                    } = unsafe { args.decode_op() };
+                    let address = args.get(address);
+                    let bytes = args.fetch_memory_bytes(state, memory);
+                    let loaded = $load(bytes, usize::from(address)).into_control()?;
+                    args.set(result, loaded);
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -2332,7 +2228,7 @@ handler_load_ri! {
     fn u64_load_extend32_ri(U64LoadExtend32_Ri) = wasm::i64_load32_u_at;
 }
 
-handler_load_mem0_offset16_ss! {
+handler_load_mem0_offset16! {
     // reg results
     fn u32_load_mem0_offset16_rr(U32LoadMem0Offset16_Rr) = wasm::load_u32;
     fn u32_load_mem0_offset16_rs(U32LoadMem0Offset16_Rs) = wasm::load_u32;
@@ -2393,7 +2289,7 @@ handler_load_mem0_offset16_ss! {
     fn u64_load_extend32_mem0_offset16_rs_s(U64LoadExtend32Mem0Offset16_Rs_s) = wasm::i64_load32_u;
 }
 
-handler_store_sx! {
+handler_store! {
     fn u32_store_rs(U32Store_Rs, u32) = wasm::store32;
     fn u32_store_ri(U32Store_Ri, u32) = wasm::store32;
     fn u32_store_sr(U32Store_Sr, u32) = wasm::store32;
@@ -2457,19 +2353,17 @@ macro_rules! handler_store_ix {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        crate::ir::decode::$decode {
-                            address,
-                            value,
-                            memory,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let address = get_value(address, sp, ireg, freg32, freg64);
-                    let value: $hint = get_value(value, sp, ireg, freg32, freg64);
-                    let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                    $store(mem_bytes, usize::from(address), value.into()).into_control()?;
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$decode {
+                        address,
+                        value,
+                        memory,
+                    } = unsafe { args.decode_op() };
+                    let address = args.get(address);
+                    let value: $hint = args.get(value);
+                    let bytes = args.fetch_memory_bytes(state, memory);
+                    $store(bytes, usize::from(address), value.into()).into_control()?;
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -2508,7 +2402,7 @@ handler_store_ix! {
     fn i64_store_wrap32_ii(I64StoreWrap32_Ii, i32) = wasm::i64_store32_at;
 }
 
-handler_store_mem0_offset16_sx! {
+handler_store_mem0_offset16! {
     fn u32_store_mem0_offset16_rs(U32StoreMem0Offset16_Rs, u32) = wasm::store32;
     fn u32_store_mem0_offset16_ri(U32StoreMem0Offset16_Ri, u32) = wasm::store32;
     fn u32_store_mem0_offset16_sr(U32StoreMem0Offset16_Sr, u32) = wasm::store32;

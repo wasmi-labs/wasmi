@@ -1,4 +1,4 @@
-use super::state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState, mem0_bytes};
+use super::state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState};
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
@@ -12,7 +12,7 @@ use crate::{
     Table,
     TrapCode,
     V128,
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal, ShiftAmount, WriteAs},
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal, ShiftAmount},
     engine::{
         DedupFuncType,
         EngineFunc,
@@ -20,17 +20,16 @@ use crate::{
         executor::{
             LoadFromCellsByValue,
             StoreToCells,
-            handler::{Break, Control, DoneReason},
+            handler::{Break, Control, DoneReason, args::Args},
         },
         utils::unreachable_unchecked,
     },
     func::{FuncEntity, HostFuncEntity},
     instance::InstanceEntity,
-    ir,
     ir::{
+        self,
         Address,
         BoundedSlotSpan,
-        BranchOffset,
         Local,
         Offset,
         Offset16,
@@ -45,24 +44,27 @@ use crate::{
 };
 use core::num::NonZero;
 
-macro_rules! consume_fuel {
-    ($state:expr, $ip:expr, $ireg:expr, $freg32:expr, $freg64:expr, $fuel:expr, $eval:expr $(,)? ) => {{
-        if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
-            $fuel.consume_fuel_if($eval)
-        {
-            out_of_fuel!($state, $ip, $ireg, $freg32, $freg64, required_fuel)
-        }
-    }};
-}
-
 macro_rules! out_of_fuel {
-    ($state:expr, $ip:expr, $ireg:expr, $freg32:expr, $freg64:expr, $required_fuel:expr) => {{
-        $state.stack.sync_ip($ip);
-        $state.stack.sync_regs($ireg, $freg32, $freg64);
+    ($state:expr, $args:expr, $required_fuel:expr) => {{
+        $state.stack.sync_ip($args.ip);
+        $state
+            .stack
+            .sync_regs($args.ireg, $args.freg32, $args.freg64);
         done!(
             $state,
             $crate::engine::executor::handler::DoneReason::out_of_fuel($required_fuel),
         )
+    }};
+}
+
+macro_rules! consume_fuel {
+    ($state:expr, $ip:expr, $args:expr, $fuel:expr, $eval:expr $(,)? ) => {{
+        if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
+            $fuel.consume_fuel_if($eval)
+        {
+            $args.set_ip($ip);
+            out_of_fuel!($state, $args, required_fuel)
+        }
     }};
 }
 
@@ -511,20 +513,6 @@ where
     <T as SetValue<V>>::set_value(dst, src, sp, ireg, freg32, freg64)
 }
 
-macro_rules! set_value {
-    ($dst:expr, $src:expr, $sp:expr, $ireg:ident, $freg32:ident, $freg64:ident) => {
-        let ($ireg, $freg32, $freg64): (
-            $crate::engine::executor::handler::state::Ireg,
-            $crate::engine::executor::handler::state::Freg32,
-            $crate::engine::executor::handler::state::Freg64,
-        ) = {
-            $crate::engine::executor::handler::utils::set_value(
-                $dst, $src, $sp, $ireg, $freg32, $freg64,
-            )
-        };
-    };
-}
-
 pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     debug_assert_ne!(dst, src);
     debug_assert!(len > 0);
@@ -574,20 +562,6 @@ pub fn extract_mem0(store: &mut PrunedStore, instance: Inst) -> (Mem0Ptr, Mem0Le
     (Mem0Ptr::from(mem0_ptr), Mem0Len::from(mem0_len))
 }
 
-pub fn memory_bytes<'a>(
-    memory: index::Memory,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-    state: &'a mut VmState,
-) -> &'a mut [u8] {
-    if memory.is_default() {
-        return mem0_bytes::<'a>(mem0, mem0_len);
-    }
-    let memory = fetch_memory(instance, memory);
-    resolve_memory_mut(state.store, &memory).data_mut()
-}
-
 pub fn memory_slice(memory: &CoreMemory, pos: usize, len: usize) -> Result<&[u8], TrapCode> {
     memory
         .data()
@@ -606,10 +580,6 @@ pub fn memory_slice_mut(
         .get_mut(pos..)
         .and_then(|memory| memory.get_mut(..len))
         .ok_or(TrapCode::MemoryOutOfBounds)
-}
-
-pub fn offset_ip(ip: Ip, offset: BranchOffset) -> Ip {
-    unsafe { ip.offset(i32::from(offset) as isize) }
 }
 
 macro_rules! impl_fetch_from_instance {
@@ -667,7 +637,7 @@ macro_rules! impl_resolve_from_store {
 impl_resolve_from_store! {
     // fn resolve_elem(elem: &ElementSegment) -> &'a CoreElementSegment = StoreInner::try_resolve_element;
     fn resolve_func(func: &Func) -> &'a FuncEntity = StoreInner::try_resolve_func;
-    fn resolve_global(global: &Global) -> &'a CoreGlobal = StoreInner::try_resolve_global;
+    // fn resolve_global(global: &Global) -> &'a CoreGlobal = StoreInner::try_resolve_global;
     fn resolve_memory(memory: &Memory) -> &'a CoreMemory = StoreInner::try_resolve_memory;
     fn resolve_table(table: &Table) -> &'a CoreTable = StoreInner::try_resolve_table;
     fn resolve_instance(func: &Instance) -> &'a InstanceEntity = StoreInner::try_resolve_instance;
@@ -680,45 +650,30 @@ impl_resolve_from_store! {
     fn resolve_table_mut(table: &Table) -> &'a mut CoreTable = StoreInner::try_resolve_table_mut;
 }
 
-#[expect(clippy::too_many_arguments)]
+#[inline]
 pub fn resolve_indirect_func<I>(
     index: I,
     table: index::Table,
     func_type: index::FuncType,
     state: &mut VmState<'_>,
-    sp: Sp,
-    instance: Inst,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
+    args: &Args,
 ) -> Result<Func, TrapCode>
 where
     I: GetValue<u64>,
 {
-    let index = get_value(index, sp, ireg, freg32, freg64);
-    let table = fetch_table(instance, table);
+    let index = get_value(index, args.sp, args.ireg, args.freg32, args.freg64);
+    let table = fetch_table(args.instance, table);
     let table = resolve_table(state.store, &table);
     let rawref = table.get(index).ok_or(TrapCode::TableOutOfBounds)?;
     debug_assert!(matches!(rawref.ty(), RefType::Func));
     let funcref = <Nullable<Func>>::from_raw_parts(rawref.raw(), &*state.store);
     let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;
     let actual_fnty = resolve_func(state.store, func).ty_dedup();
-    let expected_fnty = fetch_func_type(instance, func_type);
+    let expected_fnty = fetch_func_type(args.instance, func_type);
     if expected_fnty.ne(actual_fnty) {
         return Err(TrapCode::BadSignature);
     }
     Ok(*func)
-}
-
-pub fn set_global<V>(global: index::Global, value: V, state: &mut VmState, instance: Inst)
-where
-    RawVal: WriteAs<V>,
-{
-    let global = fetch_global(instance, global);
-    let global = resolve_global_mut(state.store, &global);
-    let mut value_ptr = global.get_raw_ptr();
-    let global_ref = unsafe { value_ptr.as_mut() };
-    global_ref.write_as(value);
 }
 
 pub fn update_instance(
