@@ -689,7 +689,7 @@ execution_handler! {
         else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
-        consume_fuel_v2!(state, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
+        consume_fuel_v2!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         memory.copy_from_slice(data);
         dispatch_v2!(state, args)
     }
