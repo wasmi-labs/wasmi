@@ -74,7 +74,7 @@ impl Args {
     /// Decodes and returns an [`Op`] of type `T` using `self`.
     ///
     /// Aligns `self.ip` to [`Op`] bounds if `indirect-dispatch` is disabled.
-    /// 
+    ///
     /// [`Op`]: crate::ir::Op
     #[inline]
     pub unsafe fn decode_op<T: ir::Decode>(&mut self) -> T {
