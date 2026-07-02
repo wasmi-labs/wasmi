@@ -513,20 +513,6 @@ where
     <T as SetValue<V>>::set_value(dst, src, sp, ireg, freg32, freg64)
 }
 
-macro_rules! set_value {
-    ($dst:expr, $src:expr, $sp:expr, $ireg:ident, $freg32:ident, $freg64:ident) => {
-        let ($ireg, $freg32, $freg64): (
-            $crate::engine::executor::handler::state::Ireg,
-            $crate::engine::executor::handler::state::Freg32,
-            $crate::engine::executor::handler::state::Freg64,
-        ) = {
-            $crate::engine::executor::handler::utils::set_value(
-                $dst, $src, $sp, $ireg, $freg32, $freg64,
-            )
-        };
-    };
-}
-
 pub fn exec_copy_span(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     debug_assert_ne!(dst, src);
     debug_assert!(len > 0);
