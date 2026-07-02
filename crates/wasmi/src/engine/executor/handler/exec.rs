@@ -730,11 +730,11 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (ip, crate::ir::decode::TableSize { table, result }) = unsafe { decode_op(ip) };
-        let table = fetch_table(instance, table);
-        let size = resolve_table(state.store, &table).size();
-        set_value!(result, size, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::TableSize { table, result } = unsafe { args.decode_op() };
+        let size = args.fetch_table(state, table).size();
+        args.set(result, size);
+        dispatch_v2!(state, args)
     }
 }
 
@@ -750,18 +750,16 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            ip,
-            crate::ir::decode::TableGrow {
-                table,
-                result,
-                delta,
-                value,
-            },
-        ) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::TableGrow {
+            table,
+            result,
+            delta,
+            value,
+        } = unsafe { args.decode_op() };
         let table = fetch_table(instance, table);
-        let delta = get_value(delta, sp, ireg, freg32, freg64);
-        let value = get_value(value, sp, ireg, freg32, freg64);
+        let delta = args.get(delta);
+        let value = args.get(value);
         let return_value = match state.store.grow_table(&table, delta, value) {
             Ok(return_value) => return_value,
             Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
@@ -784,8 +782,8 @@ execution_handler! {
                 panic!("`table.grow`: internal interpreter error: {error}")
             }
         };
-        set_value!(result, return_value, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        args.set(result, return_value);
+        dispatch_v2!(state, args)
     }
 }
 
@@ -801,19 +799,17 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::TableCopy {
-                dst_table,
-                src_table,
-                dst,
-                src,
-                len,
-            },
-        ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
-        let src: u64 = get_value(src, sp, ireg, freg32, freg64);
-        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::TableCopy {
+            dst_table,
+            src_table,
+            dst,
+            src,
+            len,
+        } = unsafe { args.decode_op() };
+        let dst: u64 = args.get(dst);
+        let src: u64 = args.get(src);
+        let len: u64 = args.get(len);
         if dst_table == src_table {
             // Case: copy within the same table
             let table = fetch_table(instance, dst_table);
@@ -823,13 +819,14 @@ execution_handler! {
                     TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
                     TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                     TableError::OutOfFuel { required_fuel } => {
-                        out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+                        args.set_ip(ip);
+                        out_of_fuel_v2!(state, args, required_fuel)
                     }
                     _ => panic!("table.copy: unexpected error: {error:?}"),
                 };
                 trap!(trap_code)
             }
-            dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+            dispatch_v2!(state, args)
         }
         // Case: copy between two different tables
         let dst_table = fetch_table(instance, dst_table);
@@ -843,13 +840,14 @@ execution_handler! {
                 TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::OutOfFuel { required_fuel } => {
-                    out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+                    args.set_ip(ip);
+                    out_of_fuel_v2!(state, args, required_fuel)
                 }
                 _ => panic!("table.copy: unexpected error: {error:?}"),
             };
             trap!(trap_code)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch_v2!(state, args)
     }
 }
 
@@ -865,18 +863,16 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::TableFill {
-                table,
-                dst,
-                len,
-                value,
-            },
-        ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
-        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
-        let value: RawRef = get_value(value, sp, ireg, freg32, freg64);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::TableFill {
+            table,
+            dst,
+            len,
+            value,
+        } = unsafe { args.decode_op() };
+        let dst: u64 = args.get(dst);
+        let len: u64 = args.get(len);
+        let value: RawRef = args.get(value);
         let table = fetch_table(instance, table);
         let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
         if let Err(error) = table.fill_raw(dst, value, len, Some(fuel)) {
@@ -890,7 +886,7 @@ execution_handler! {
             };
             trap!(trap_code)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch_v2!(state, args)
     }
 }
 
@@ -906,21 +902,19 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::TableInit {
-                table,
-                elem,
-                dst,
-                src,
-                len,
-            },
-        ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
-        let src: u32 = get_value(src, sp, ireg, freg32, freg64);
-        let len: u32 = get_value(len, sp, ireg, freg32, freg64);
-        let table = fetch_table(instance, table);
-        let elem = fetch_elem(instance, elem);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::TableInit {
+            table,
+            elem,
+            dst,
+            src,
+            len,
+        } = unsafe { args.decode_op() };
+        let dst: u64 = args.get(dst);
+        let src: u32 = args.get(src);
+        let len: u32 = args.get(len);
+        let table = fetch_table(args.instance, table);
+        let elem = fetch_elem(args.instance, elem);
         let (table, element, fuel) = state
             .store
             .inner_mut()
@@ -930,13 +924,14 @@ execution_handler! {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::InitOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfFuel { required_fuel } => {
-                    out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+                    args.set_ip(ip);
+                    out_of_fuel_v2!(state, args, required_fuel)
                 }
                 _ => panic!("table.init: unexpected error: {error:?}"),
             };
             trap!(trap_code)
         }
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch_v2!(state, args)
     }
 }
 
