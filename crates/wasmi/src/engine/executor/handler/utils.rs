@@ -34,7 +34,7 @@ use crate::{
 };
 use core::num::NonZero;
 
-macro_rules! consume_fuel_v2 {
+macro_rules! consume_fuel {
     ($state:expr, $ip:expr, $args:expr, $fuel:expr, $eval:expr $(,)? ) => {{
         if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
             $fuel.consume_fuel_if($eval)

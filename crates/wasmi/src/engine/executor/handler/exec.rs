@@ -563,7 +563,7 @@ execution_handler! {
         // These accesses just perform the bounds checks required by the Wasm spec.
         let src_bytes = memory_slice(src_memory, src_index, len).into_control()?;
         let dst_bytes = memory_slice_mut(dst_memory, dst_index, len).into_control()?;
-        consume_fuel_v2!(
+        consume_fuel!(
             state,
             ip,
             args,
@@ -589,7 +589,7 @@ fn memory_copy_within(
     // These accesses just perform the bounds checks required by the Wasm spec.
     memory_slice(memory, src_index, len).into_control()?;
     memory_slice(memory, dst_index, len).into_control()?;
-    consume_fuel_v2!(state, ip, args, fuel, |costs| costs
+    consume_fuel!(state, ip, args, fuel, |costs| costs
         .fuel_for_copying_values::<u8>(len as u64));
     memory
         .data_mut()
@@ -628,7 +628,7 @@ execution_handler! {
         let memory = fetch_memory(instance, memory);
         let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
         let slice = memory_slice_mut(memory, dst, len).into_control()?;
-        consume_fuel_v2!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
+        consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         slice.fill(value);
         dispatch_v2!(state, args)
     }
@@ -678,7 +678,7 @@ execution_handler! {
         else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
-        consume_fuel_v2!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
+        consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         memory.copy_from_slice(data);
         dispatch_v2!(state, args)
     }
