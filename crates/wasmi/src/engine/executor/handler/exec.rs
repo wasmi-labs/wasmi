@@ -1150,7 +1150,6 @@ where
 {
     let chosen_target = fetch_branch_table_target(args, index, len_targets);
     let target_offset = 4 * chosen_target;
-    // args.offset_ip(target_offset);
     args.set_ip(unsafe { args.ip.add(target_offset) });
     let (_, offset) = unsafe { args.ip.decode::<ir::BranchOffset>() };
     args.offset_ip(offset);
