@@ -28,7 +28,6 @@ use crate::{
             utils::{
                 GetValue,
                 IntoControl as _,
-                call_func_entry,
                 call_wasm_or_host,
                 exec_copy_span,
                 extract_mem0,
@@ -230,7 +229,7 @@ execution_handler! {
     fn call_internal(
         state: &mut VmState,
         ip: Ip,
-        _sp: Sp,
+        sp: Sp,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
@@ -238,7 +237,8 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (caller_ip, crate::ir::decode::CallInternal { params, func }) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::CallInternal { params, func } = unsafe { args.decode_op() };
         // Safety:
         //
         // `func` is the exposed address of a `FuncEntity` in the engine's append-only `CodeMap`.
@@ -247,8 +247,8 @@ execution_handler! {
         //  - its allocation is never moved or freed while this bytecode runs.
         //  - the `FuncEntry` type mutates only guarded by lock-free atomics.
         let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
-        let (callee_ip, callee_sp) = call_func_entry(state, caller_ip, params, func, None)?;
-        dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        args.call_func_entry(state, func, params, None)?;
+        dispatch_v2!(state, args)
     }
 }
 
