@@ -26,6 +26,7 @@ use crate::{
             dispatch::Break,
             state::DoneReason,
             utils::{
+                self,
                 GetValue,
                 IntoControl as _,
                 exec_copy_span,
@@ -33,8 +34,6 @@ use crate::{
                 fetch_elem,
                 fetch_memory,
                 fetch_table,
-                memory_slice,
-                memory_slice_mut,
                 resolve_memory,
                 resolve_table,
             },
@@ -506,8 +505,8 @@ execution_handler! {
             .inner_mut()
             .resolve_memory_pair_and_fuel(&src_memory, &dst_memory);
         // These accesses just perform the bounds checks required by the Wasm spec.
-        let src_bytes = memory_slice(src_memory, src_index, len).into_control()?;
-        let dst_bytes = memory_slice_mut(dst_memory, dst_index, len).into_control()?;
+        let src_bytes = utils::memory_slice(src_memory, src_index, len).into_control()?;
+        let dst_bytes = utils::memory_slice_mut(dst_memory, dst_index, len).into_control()?;
         consume_fuel!(
             state,
             ip,
@@ -532,8 +531,8 @@ fn memory_copy_within(
     let memory = fetch_memory(args.instance, dst_memory);
     let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
     // These accesses just perform the bounds checks required by the Wasm spec.
-    memory_slice(memory, src_index, len).into_control()?;
-    memory_slice(memory, dst_index, len).into_control()?;
+    utils::memory_slice(memory, src_index, len).into_control()?;
+    utils::memory_slice(memory, dst_index, len).into_control()?;
     consume_fuel!(state, ip, args, fuel, |costs| costs
         .fuel_for_copying_values::<u8>(len as u64));
     memory
@@ -572,7 +571,7 @@ execution_handler! {
         };
         let memory = fetch_memory(instance, memory);
         let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
-        let slice = memory_slice_mut(memory, dst, len).into_control()?;
+        let slice = utils::memory_slice_mut(memory, dst, len).into_control()?;
         consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         slice.fill(value);
         dispatch!(state, args)
@@ -615,7 +614,7 @@ execution_handler! {
             .store
             .inner_mut()
             .resolve_memory_init_params(&fetch_memory(instance, memory), &fetch_data(instance, data));
-        let memory = memory_slice_mut(memory, dst_index, len).into_control()?;
+        let memory = utils::memory_slice_mut(memory, dst_index, len).into_control()?;
         let Some(data) = data
             .bytes()
             .get(src_index..)
