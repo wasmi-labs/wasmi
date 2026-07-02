@@ -39,7 +39,6 @@ use crate::{
                 resolve_indirect_func,
                 resolve_memory,
                 resolve_table,
-                return_call_func_entry,
                 return_call_wasm_or_host,
             },
         },
@@ -314,7 +313,7 @@ execution_handler! {
     fn return_call_internal(
         state: &mut VmState,
         ip: Ip,
-        _sp: Sp,
+        sp: Sp,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
@@ -322,7 +321,8 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (_, crate::ir::decode::ReturnCallInternal { params, func }) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::ReturnCallInternal { params, func } = unsafe { args.decode_op() };
         // Safety:
         //
         // `func` is the exposed address of a `FuncEntity` in the engine's append-only `CodeMap`.
@@ -331,8 +331,8 @@ execution_handler! {
         //  - its allocation is never moved or freed while this bytecode runs.
         //  - the `FuncEntry` type mutates only guarded by lock-free atomics.
         let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
-        let (callee_ip, callee_sp) = return_call_func_entry(state, params, func, None)?;
-        dispatch!(state, callee_ip, callee_sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        args.return_call_func_entry(state, func, params, None)?;
+        dispatch_v2!(state, args)
     }
 }
 
