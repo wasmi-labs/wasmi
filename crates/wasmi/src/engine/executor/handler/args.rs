@@ -1,5 +1,5 @@
 use crate::{
-    core::CoreGlobal,
+    core::{CoreGlobal, CoreTable},
     engine::{
         code_map::FuncEntry,
         executor::handler::{
@@ -11,8 +11,10 @@ use crate::{
                 GetValue,
                 SetValue,
                 fetch_global,
+                fetch_table,
                 get_value,
                 resolve_global_mut,
+                resolve_table_mut,
                 set_value,
             },
         },
@@ -141,6 +143,17 @@ impl Args {
     ) -> &'a mut CoreGlobal {
         let global = fetch_global(self.instance, index);
         resolve_global_mut(state.store, &global)
+    }
+
+    /// Returns an exclusive reference to the table at `index`.
+    #[inline]
+    pub fn fetch_table<'a>(
+        &mut self,
+        state: &'a mut VmState,
+        index: index::Table,
+    ) -> &'a mut CoreTable {
+        let table = fetch_table(self.instance, index);
+        resolve_table_mut(state.store, &table)
     }
 
     /// Calls `func` with `params` on `instance` with `state` using `self`.
