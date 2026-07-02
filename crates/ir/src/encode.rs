@@ -217,6 +217,7 @@ macro_rules! for_tuple {
 macro_rules! impl_encode_for_tuple {
     ( $t0:ident $(, $t:ident)* $(,)? ) => {
         impl<$t0: Encode $(, $t: Encode)*> Encode for ($t0, $($t,)*) {
+            #[inline(always)]
             fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<E::Pos, E::Error> {
                 #[allow(non_snake_case)]
                 let ($t0, $($t,)*) = self;
