@@ -393,20 +393,18 @@ macro_rules! handler_extract_lane {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        crate::ir::decode::$op {
-                            result,
-                            v128,
-                            value,
-                            lane,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let v128 = get_value(v128, sp, ireg, freg32, freg64);
-                    let value = get_value(value, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$op {
+                        result,
+                        v128,
+                        value,
+                        lane,
+                    } = unsafe { args.decode_op() };
+                    let v128 = args.get(v128);
+                    let value = args.get(value);
                     let replaced = $eval(v128, lane, value);
-                    set_value!(result, replaced, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(result, replaced);
+                    dispatch_v2!(state, args)
                 }
             }
         )*
