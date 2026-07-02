@@ -17,7 +17,7 @@ use super::{
 use crate::V128;
 use crate::{
     TrapCode,
-    core::{CoreTable, RawRef, ReadAs, wasm},
+    core::{CoreTable, RawRef, ReadAs, WriteAs, wasm},
     engine::{
         FuncEntry,
         eval,
@@ -46,7 +46,6 @@ use crate::{
                 resolve_table_mut,
                 return_call_func_entry,
                 return_call_wasm_or_host,
-                set_global,
             },
         },
         utils::unreachable_unchecked,
@@ -202,10 +201,14 @@ macro_rules! global_set_execution_handler {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$camel_name { global, value }) = unsafe { decode_op(ip) };
-                    let value: $ty = get_value(value, sp, ireg, freg32, freg64);
-                    set_global(global, value, state, instance);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name { global, value } = unsafe { args.decode_op() };
+                    let global = args.fetch_global(state, global);
+                    let value: $ty = args.get(value);
+                    let mut value_ptr = global.get_raw_ptr();
+                    let global_ref = unsafe { value_ptr.as_mut() };
+                    global_ref.write_as(value);
+                    dispatch_v2!(state, args)
                 }
             }
         )*
