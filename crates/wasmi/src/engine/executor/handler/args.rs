@@ -197,4 +197,10 @@ impl Args {
         (self.ip, self.sp) = utils::call_func_entry(state, self.ip, params, func, instance)?;
         Control::Continue(())
     }
+
+    /// Reloads the data pointer and length of the default memory at index 0 from `state`.
+    #[inline]
+    pub fn reload_mem0(&mut self, state: &mut VmState) {
+        (self.mem0_ptr, self.mem0_len) = utils::extract_mem0(state.store, self.instance);
+    }
 }
