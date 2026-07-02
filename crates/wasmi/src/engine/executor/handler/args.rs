@@ -93,7 +93,7 @@ impl Args {
     /// Aligns `self.ip` to [`Op`] bounds if `indirect-dispatch` is disabled.
     ///
     /// [`Op`]: crate::ir::Op
-    #[inline(always)]
+    #[inline]
     pub unsafe fn decode_op<T: ir::Decode>(&mut self) -> T {
         let old_ip = self.ip;
         let op = unsafe { self.decode::<T>() };
@@ -102,7 +102,7 @@ impl Args {
     }
 
     /// Decodes and returns a value of type `T` using `self`.
-    #[inline(always)]
+    #[inline]
     pub unsafe fn decode<T: ir::Decode>(&mut self) -> T {
         let ip = match cfg!(feature = "indirect-dispatch") {
             true => unsafe { self.ip.skip::<ir::OpCode>() },
