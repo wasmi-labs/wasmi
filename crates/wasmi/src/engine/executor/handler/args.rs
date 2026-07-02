@@ -1,6 +1,6 @@
 use crate::{
     DataSegmentEntity,
-    core::{CoreElementSegment, CoreGlobal, CoreTable},
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable},
     engine::{
         code_map::FuncEntry,
         executor::handler::{
@@ -14,11 +14,13 @@ use crate::{
                 fetch_data,
                 fetch_elem,
                 fetch_global,
+                fetch_memory,
                 fetch_table,
                 get_value,
                 resolve_data_mut,
                 resolve_elem_mut,
                 resolve_global_mut,
+                resolve_memory_mut,
                 resolve_table_mut,
                 set_value,
             },
@@ -143,6 +145,17 @@ impl Args {
     #[inline]
     pub fn fetch_default_memory_bytes<'a>(&self) -> &'a mut [u8] {
         state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len)
+    }
+
+    /// Returns an exclusive reference to the memory at `index`.
+    #[inline]
+    pub fn fetch_memory<'a>(
+        &mut self,
+        state: &'a mut VmState,
+        index: index::Memory,
+    ) -> &'a mut CoreMemory {
+        let global = fetch_memory(self.instance, index);
+        resolve_memory_mut(state.store, &global)
     }
 
     /// Returns an exclusive reference to the global at `index`.
