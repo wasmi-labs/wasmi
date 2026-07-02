@@ -865,7 +865,8 @@ execution_handler! {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::FillOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfFuel { required_fuel } => {
-                    out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+                    args.set_ip(ip);
+                    out_of_fuel_v2!(state, args, required_fuel)
                 }
                 _ => panic!("table.fill: unexpected error: {error:?}"),
             };
