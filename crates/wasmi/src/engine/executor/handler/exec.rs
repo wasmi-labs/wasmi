@@ -49,21 +49,6 @@ use crate::{
 };
 use core::{cmp, ptr};
 
-#[inline(always)]
-pub unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
-    let (new_ip, op) = unsafe { decode_op_no_align(ip) };
-    (new_ip.align_relative_to(ip), op)
-}
-
-#[inline(always)]
-pub unsafe fn decode_op_no_align<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
-    let ip = match cfg!(feature = "indirect-dispatch") {
-        true => unsafe { ip.skip::<ir::OpCode>() },
-        false => unsafe { ip.skip::<::core::primitive::usize>() },
-    };
-    unsafe { ip.decode() }
-}
-
 fn identity<T>(value: T) -> T {
     value
 }

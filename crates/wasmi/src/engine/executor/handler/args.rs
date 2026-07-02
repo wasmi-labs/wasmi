@@ -6,7 +6,6 @@ use crate::{
         code_map::FuncEntry,
         executor::handler::{
             dispatch::{Break, Control},
-            exec,
             state::{
                 self,
                 DoneReason,
@@ -63,6 +62,21 @@ pub struct Args {
     pub freg64: Freg64,
 }
 
+#[inline(always)]
+unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
+    let (new_ip, op) = unsafe { decode_op_no_align(ip) };
+    (new_ip.align_relative_to(ip), op)
+}
+
+#[inline(always)]
+unsafe fn decode_op_no_align<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
+    let ip = match cfg!(feature = "indirect-dispatch") {
+        true => unsafe { ip.skip::<ir::OpCode>() },
+        false => unsafe { ip.skip::<::core::primitive::usize>() },
+    };
+    unsafe { ip.decode() }
+}
+
 impl Args {
     /// Creates a new [`Args`] from its parts.
     #[inline]
@@ -96,7 +110,7 @@ impl Args {
     /// [`Op`]: crate::ir::Op
     #[inline]
     pub unsafe fn decode_op<T: ir::Decode>(&mut self) -> T {
-        let (new_ip, op) = unsafe { exec::decode_op::<T>(self.ip) };
+        let (new_ip, op) = unsafe { decode_op::<T>(self.ip) };
         self.ip = new_ip;
         op
     }
@@ -104,7 +118,7 @@ impl Args {
     /// Decodes and returns a value of type `T` using `self`.
     #[inline]
     pub unsafe fn decode<T: ir::Decode>(&mut self) -> T {
-        let (new_ip, op) = unsafe { exec::decode_op_no_align::<T>(self.ip) };
+        let (new_ip, op) = unsafe { decode_op_no_align::<T>(self.ip) };
         self.ip = new_ip;
         op
     }
