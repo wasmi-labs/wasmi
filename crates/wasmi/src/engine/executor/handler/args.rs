@@ -62,21 +62,6 @@ pub struct Args {
     pub freg64: Freg64,
 }
 
-#[inline(always)]
-unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
-    let (new_ip, op) = unsafe { decode_op_no_align(ip) };
-    (new_ip.align_relative_to(ip), op)
-}
-
-#[inline(always)]
-unsafe fn decode_op_no_align<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
-    let ip = match cfg!(feature = "indirect-dispatch") {
-        true => unsafe { ip.skip::<ir::OpCode>() },
-        false => unsafe { ip.skip::<::core::primitive::usize>() },
-    };
-    unsafe { ip.decode() }
-}
-
 impl Args {
     /// Creates a new [`Args`] from its parts.
     #[inline]
@@ -108,17 +93,22 @@ impl Args {
     /// Aligns `self.ip` to [`Op`] bounds if `indirect-dispatch` is disabled.
     ///
     /// [`Op`]: crate::ir::Op
-    #[inline]
+    #[inline(always)]
     pub unsafe fn decode_op<T: ir::Decode>(&mut self) -> T {
-        let (new_ip, op) = unsafe { decode_op::<T>(self.ip) };
-        self.ip = new_ip;
+        let old_ip = self.ip;
+        let op = unsafe { self.decode::<T>() };
+        self.ip = self.ip.align_relative_to(old_ip);
         op
     }
 
     /// Decodes and returns a value of type `T` using `self`.
-    #[inline]
+    #[inline(always)]
     pub unsafe fn decode<T: ir::Decode>(&mut self) -> T {
-        let (new_ip, op) = unsafe { decode_op_no_align::<T>(self.ip) };
+        let ip = match cfg!(feature = "indirect-dispatch") {
+            true => unsafe { self.ip.skip::<ir::OpCode>() },
+            false => unsafe { self.ip.skip::<::core::primitive::usize>() },
+        };
+        let (new_ip, op) = unsafe { ip.decode() };
         self.ip = new_ip;
         op
     }
