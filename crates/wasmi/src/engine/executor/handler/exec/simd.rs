@@ -442,13 +442,14 @@ macro_rules! handler_ternary {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, $crate::ir::decode::$decode { result, $v0, $v1, $v2 }) = unsafe { decode_op(ip) };
-                    let $v0 = get_value($v0, sp, ireg, freg32, freg64);
-                    let $v1 = get_value($v1, sp, ireg, freg32, freg64);
-                    let $v2 = get_value($v2, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let $crate::ir::decode::$decode { result, $v0, $v1, $v2 } = unsafe { args.decode_op() };
+                    let $v0 = args.get($v0);
+                    let $v1 = args.get($v1);
+                    let $v2 = args.get($v2);
                     let value = $eval($v0, $v1, $v2).into_control()?;
-                    set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(result, value);
+                    dispatch_v2!(state, args)
                 }
             }
         )*
