@@ -1,4 +1,4 @@
-use super::state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState, mem0_bytes};
+use super::state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState};
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 use crate::{
@@ -560,20 +560,6 @@ pub fn extract_mem0(store: &mut PrunedStore, instance: Inst) -> (Mem0Ptr, Mem0Le
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
     (Mem0Ptr::from(mem0_ptr), Mem0Len::from(mem0_len))
-}
-
-pub fn memory_bytes<'a>(
-    memory: index::Memory,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-    state: &'a mut VmState,
-) -> &'a mut [u8] {
-    if memory.is_default() {
-        return mem0_bytes::<'a>(mem0, mem0_len);
-    }
-    let memory = fetch_memory(instance, memory);
-    resolve_memory_mut(state.store, &memory).data_mut()
 }
 
 pub fn memory_slice(memory: &CoreMemory, pos: usize, len: usize) -> Result<&[u8], TrapCode> {
