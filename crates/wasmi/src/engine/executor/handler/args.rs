@@ -89,6 +89,21 @@ impl Args {
         }
     }
 
+    /// Consume `self` to return its parts.
+    #[inline]
+    pub fn into_parts(self) -> (Ip, Sp, Mem0Ptr, Mem0Len, Inst, Ireg, Freg32, Freg64) {
+        (
+            self.ip,
+            self.sp,
+            self.mem0_ptr,
+            self.mem0_len,
+            self.instance,
+            self.ireg,
+            self.freg32,
+            self.freg64,
+        )
+    }
+
     /// Decodes and returns an [`Op`] of type `T` using `self`.
     ///
     /// Aligns `self.ip` to [`Op`] bounds if `indirect-dispatch` is disabled.
