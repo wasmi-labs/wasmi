@@ -448,11 +448,11 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (ip, crate::ir::decode::MemorySize { memory, result }) = unsafe { decode_op(ip) };
-        let memory = fetch_memory(instance, memory);
-        let size = resolve_memory(state.store, &memory).size();
-        set_value!(result, size, sp, ireg, freg32, freg64);
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::MemorySize { memory, result } = unsafe { args.decode_op() };
+        let size = args.fetch_memory(state, memory).size();
+        args.set(result, size);
+        dispatch_v2!(state, args)
     }
 }
 
