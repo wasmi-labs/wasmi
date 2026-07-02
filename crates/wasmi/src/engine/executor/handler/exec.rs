@@ -72,15 +72,16 @@ execution_handler! {
     fn trap(
         _state: &mut VmState,
         ip: Ip,
-        _sp: Sp,
-        _mem0: Mem0Ptr,
-        _mem0_len: Mem0Len,
-        _instance: Inst,
-        _ireg: Ireg,
-        _freg32: Freg32,
-        _freg64: Freg64,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
     ) -> Done = {
-        let (_ip, crate::ir::decode::Trap { trap_code }) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::Trap { trap_code } = unsafe { args.decode_op() };
         trap!(trap_code)
     }
 }
