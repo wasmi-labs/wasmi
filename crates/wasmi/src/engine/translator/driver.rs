@@ -48,7 +48,7 @@ where
         mut self,
         finalize: impl FnOnce(CompiledFuncEntry),
     ) -> Result<T::Allocations, Error> {
-        if self.translator.setup(self.bytes)? {
+        if self.translator.setup(self.bytes)? || T::SETUP_ONLY {
             let allocations = self.translator.finish(finalize)?;
             return Ok(allocations);
         }
