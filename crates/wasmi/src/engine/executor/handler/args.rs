@@ -6,7 +6,19 @@ use crate::{
         executor::handler::{
             dispatch::{Break, Control},
             exec,
-            state::{self, Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
+            state::{
+                self,
+                DoneReason,
+                Freg32,
+                Freg64,
+                Inst,
+                Ip,
+                Ireg,
+                Mem0Len,
+                Mem0Ptr,
+                Sp,
+                VmState,
+            },
             utils::{
                 self,
                 GetValue,
@@ -219,5 +231,24 @@ impl Args {
     #[inline]
     pub fn reload_mem0(&mut self, state: &mut VmState) {
         (self.mem0_ptr, self.mem0_len) = utils::extract_mem0(state.store, self.instance);
+    }
+
+    /// Pops the top-most frame from the call stack.
+    #[inline]
+    pub fn pop_frame(&mut self, state: &mut VmState) -> Control<(), Break> {
+        let Some((ip, sp, mem0_ptr, mem0_len, instance)) =
+            state
+                .stack
+                .pop_frame(state.store, self.mem0_ptr, self.mem0_len, self.instance)
+        else {
+            // No more frames on the call stack -> break out of execution!
+            done!(state, DoneReason::Return(self.sp))
+        };
+        self.ip = ip;
+        self.sp = sp;
+        self.mem0_ptr = mem0_ptr;
+        self.mem0_len = mem0_len;
+        self.instance = instance;
+        Control::Continue(())
     }
 }
