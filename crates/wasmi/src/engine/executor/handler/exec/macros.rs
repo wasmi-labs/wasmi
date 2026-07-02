@@ -84,7 +84,7 @@ macro_rules! handler_unary {
                     let value = args.get(value);
                     let value = $eval(value).into_control()?;
                     args.set(result, value);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -112,7 +112,7 @@ macro_rules! handler_binary {
                     let rhs = args.get(rhs);
                     let value = $eval(lhs, rhs).into_control()?;
                     args.set(result, value);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -146,7 +146,7 @@ macro_rules! handler_load {
                     let bytes = args.fetch_memory_bytes(state, memory);
                     let loaded = $load(bytes, ptr, offset).into_control()?;
                     args.set(result, loaded);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -179,7 +179,7 @@ macro_rules! handler_load_mem0_offset16 {
                     let bytes = args.fetch_default_memory_bytes();
                     let loaded = $load(bytes, ptr, u64::from(offset)).into_control()?;
                     args.set(result, loaded);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -213,7 +213,7 @@ macro_rules! handler_store {
                     let value: $hint = args.get(value);
                     let bytes = args.fetch_memory_bytes(state, memory);
                     $store(bytes, ptr, offset, value.into()).into_control()?;
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -246,7 +246,7 @@ macro_rules! handler_store_mem0_offset16 {
                     let value: $hint = args.get(value);
                     let bytes = args.fetch_default_memory_bytes();
                     $store(bytes, ptr, u64::from(offset), value.into()).into_control()?;
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*

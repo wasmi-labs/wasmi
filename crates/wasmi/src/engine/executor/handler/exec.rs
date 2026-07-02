@@ -92,7 +92,7 @@ execution_handler! {
             args.set_ip(ip);
             out_of_fuel!(state, args, required_fuel)
         }
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -112,7 +112,7 @@ execution_handler! {
         let crate::ir::decode::Branch { offset } = unsafe { args.decode_op() };
         args.set_ip(ip);
         args.offset_ip(offset);
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -142,7 +142,7 @@ macro_rules! global_get_execution_handler {
                     let global = args.fetch_global(state, global);
                     let value: $ty = global.get_raw().read_as();
                     args.set(result, value);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -185,7 +185,7 @@ macro_rules! global_set_execution_handler {
                     let mut value_ptr = global.get_raw_ptr();
                     let global_ref = unsafe { value_ptr.as_mut() };
                     global_ref.write_as(value);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -226,7 +226,7 @@ execution_handler! {
         //  - the `FuncEntry` type mutates only guarded by lock-free atomics.
         let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
         args.call_func_entry(state, func, params, None)?;
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -246,7 +246,7 @@ execution_handler! {
         let crate::ir::decode::CallImported { params, func } = unsafe { args.decode_op() };
         let func = fetch_func(args.instance, func);
         args.call_wasm_or_host_func(state, func, params)?;
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -274,7 +274,7 @@ macro_rules! call_indirect_execution_handler {
                     } = unsafe { args.decode_op() };
                     let func = args.resolve_indirect_func(state, index, table, func_type)?;
                     args.call_wasm_or_host_func(state, func, params)?;
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -308,7 +308,7 @@ execution_handler! {
         //  - the `FuncEntry` type mutates only guarded by lock-free atomics.
         let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
         args.return_call_func_entry(state, func, params, None)?;
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -328,7 +328,7 @@ execution_handler! {
         let crate::ir::decode::ReturnCallImported { params, func } = unsafe { args.decode_op() };
         let func = fetch_func(instance, func);
         args.return_call_wasm_or_host_func(state, func, params)?;
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -356,7 +356,7 @@ macro_rules! return_call_indirect_execution_handler {
                     } = unsafe { args.decode_op() };
                     let func = args.resolve_indirect_func(state, index, table, func_type)?;
                     args.return_call_wasm_or_host_func(state, func, params)?;
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -381,7 +381,7 @@ execution_handler! {
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         args.pop_frame(state)?;
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -401,7 +401,7 @@ execution_handler! {
         let crate::ir::decode::MemorySize { memory, result } = unsafe { args.decode_op() };
         let size = args.fetch_memory(state, memory).size();
         args.set(result, size);
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -459,7 +459,7 @@ execution_handler! {
             }
         };
         args.set(result, return_value);
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -497,7 +497,7 @@ execution_handler! {
         };
         if dst_memory == src_memory {
             memory_copy_within(state, &mut args, ip, dst_memory, dst_index, src_index, len)?;
-            dispatch_v2!(state, args)
+            dispatch!(state, args)
         }
         let dst_memory = fetch_memory(instance, dst_memory);
         let src_memory = fetch_memory(instance, src_memory);
@@ -516,7 +516,7 @@ execution_handler! {
             |costs| costs.fuel_for_copying_values::<u8>(len as u64),
         );
         dst_bytes.copy_from_slice(src_bytes);
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -575,7 +575,7 @@ execution_handler! {
         let slice = memory_slice_mut(memory, dst, len).into_control()?;
         consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         slice.fill(value);
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -625,7 +625,7 @@ execution_handler! {
         };
         consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         memory.copy_from_slice(data);
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -644,7 +644,7 @@ execution_handler! {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::DataDrop { data } = unsafe { args.decode_op() };
         args.fetch_data(state, data).drop_bytes();
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -664,7 +664,7 @@ execution_handler! {
         let crate::ir::decode::TableSize { table, result } = unsafe { args.decode_op() };
         let size = args.fetch_table(state, table).size();
         args.set(result, size);
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -713,7 +713,7 @@ execution_handler! {
             }
         };
         args.set(result, return_value);
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -756,7 +756,7 @@ execution_handler! {
                 };
                 trap!(trap_code)
             }
-            dispatch_v2!(state, args)
+            dispatch!(state, args)
         }
         // Case: copy between two different tables
         let dst_table = fetch_table(instance, dst_table);
@@ -777,7 +777,7 @@ execution_handler! {
             };
             trap!(trap_code)
         }
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -817,7 +817,7 @@ execution_handler! {
             };
             trap!(trap_code)
         }
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -862,7 +862,7 @@ execution_handler! {
             };
             trap!(trap_code)
         }
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -881,7 +881,7 @@ execution_handler! {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::ElemDrop { elem } = unsafe { args.decode_op() };
         args.fetch_elem(state, elem).drop_items();
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -908,7 +908,7 @@ macro_rules! impl_table_get {
                         trap!(TrapCode::TableOutOfBounds)
                     };
                     args.set(result, value.raw());
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -943,7 +943,7 @@ macro_rules! impl_table_set {
                     if let Err(TableError::SetOutOfBounds) = table.set_raw(index, RawRef::from(value)) {
                         trap!(TrapCode::TableOutOfBounds)
                     };
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -979,7 +979,7 @@ execution_handler! {
             unsafe { unreachable_unchecked!("store mismatch with: {func:?}") }
         };
         args.set(result, rawref);
-        dispatch_v2!(state, args)
+        dispatch!(state, args)
     }
 }
 
@@ -1010,7 +1010,7 @@ macro_rules! impl_i64_binop128 {
                     let (result_lo, result_hi) = $eval(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
                     args.set(results[0], result_lo);
                     args.set(results[1], result_hi);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -1046,7 +1046,7 @@ macro_rules! impl_i64_mul_wide {
                     let results = results.to_array();
                     args.set(results[0], result_lo);
                     args.set(results[1], result_hi);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -1129,7 +1129,7 @@ macro_rules! impl_branch_table_exec_handler {
                     let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
                     let crate::ir::decode::$camel_case { len_targets, index, values } = unsafe { args.decode() };
                     $exec(&mut args, index, len_targets, values);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -1839,7 +1839,7 @@ macro_rules! handler_cmp_branch {
                         args.set_ip(ip);
                         args.offset_ip(offset);
                     }
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -2081,7 +2081,7 @@ macro_rules! handler_select {
                     let selected = if condition != 0 { true_val } else { false_val };
                     let selected = args.get(selected);
                     args.set(result, selected);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -2214,7 +2214,7 @@ macro_rules! handler_load_ri {
                     let bytes = args.fetch_memory_bytes(state, memory);
                     let loaded = $load(bytes, usize::from(address)).into_control()?;
                     args.set(result, loaded);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -2372,7 +2372,7 @@ macro_rules! handler_store_ix {
                     let value: $hint = args.get(value);
                     let bytes = args.fetch_memory_bytes(state, memory);
                     $store(bytes, usize::from(address), value.into()).into_control()?;
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*

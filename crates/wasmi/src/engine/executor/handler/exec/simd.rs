@@ -43,7 +43,7 @@ macro_rules! execution_handler_for_v128_select {
                     };
                     let selected: V128 = args.get(selected);
                     args.set(result, selected);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -341,7 +341,7 @@ macro_rules! handler_extract_lane {
                     let value = args.get(value);
                     let extracted = $eval(value, lane);
                     args.set(result, extracted);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -403,7 +403,7 @@ macro_rules! handler_extract_lane {
                     let value = args.get(value);
                     let replaced = $eval(v128, lane, value);
                     args.set(result, replaced);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -448,7 +448,7 @@ macro_rules! handler_ternary {
                     let $v2 = args.get($v2);
                     let value = $eval($v0, $v1, $v2).into_control()?;
                     args.set(result, value);
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -507,7 +507,7 @@ macro_rules! handler_store_lane_ss {
                     let value = args.get(value);
                     let bytes = args.fetch_memory_bytes(state, memory);
                     $eval(bytes, ptr, offset, value, lane).into_control()?;
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
@@ -546,7 +546,7 @@ macro_rules! handler_store_lane_mem0_offset16_ss {
                     let value = args.get(value);
                     let bytes = args.fetch_default_memory_bytes();
                     $eval(bytes, ptr, u64::from(offset), value, lane).into_control()?;
-                    dispatch_v2!(state, args)
+                    dispatch!(state, args)
                 }
             }
         )*
