@@ -1,4 +1,5 @@
 use crate::{
+    DataSegmentEntity,
     core::{CoreElementSegment, CoreGlobal, CoreTable},
     engine::{
         code_map::FuncEntry,
@@ -10,10 +11,12 @@ use crate::{
                 self,
                 GetValue,
                 SetValue,
+                fetch_data,
                 fetch_elem,
                 fetch_global,
                 fetch_table,
                 get_value,
+                resolve_data_mut,
                 resolve_elem_mut,
                 resolve_global_mut,
                 resolve_table_mut,
@@ -169,6 +172,17 @@ impl Args {
     ) -> &'a mut CoreElementSegment {
         let elem = fetch_elem(self.instance, index);
         resolve_elem_mut(state.store, &elem)
+    }
+
+    /// Returns an exclusive reference to the data segment at `index`.
+    #[inline]
+    pub fn fetch_data<'a>(
+        &mut self,
+        state: &'a mut VmState,
+        index: index::Data,
+    ) -> &'a mut DataSegmentEntity {
+        let elem = fetch_data(self.instance, index);
+        resolve_data_mut(state.store, &elem)
     }
 
     /// Calls `func` with `params` on `instance` with `state` using `self`.
