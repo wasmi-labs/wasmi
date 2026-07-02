@@ -678,6 +678,7 @@ impl_resolve_from_store! {
     fn resolve_table_mut(table: &Table) -> &'a mut CoreTable = StoreInner::try_resolve_table_mut;
 }
 
+#[inline]
 pub fn resolve_indirect_func<I>(
     index: I,
     table: index::Table,
