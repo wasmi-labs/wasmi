@@ -20,14 +20,24 @@ use crate::{
         executor::{
             LoadFromCellsByValue,
             StoreToCells,
-            handler::{Break, Control, DoneReason},
+            handler::{Break, Control, DoneReason, args::Args},
         },
         utils::unreachable_unchecked,
     },
     func::{FuncEntity, HostFuncEntity},
     instance::InstanceEntity,
-    ir,
-    ir::{Address, BoundedSlotSpan, Local, Offset, Offset16, Slot, SlotAndReg, SlotSpan, index},
+    ir::{
+        self,
+        Address,
+        BoundedSlotSpan,
+        Local,
+        Offset,
+        Offset16,
+        Slot,
+        SlotAndReg,
+        SlotSpan,
+        index,
+    },
     memory::{DataSegment, DataSegmentEntity},
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
     table::ElementSegment,
@@ -668,30 +678,25 @@ impl_resolve_from_store! {
     fn resolve_table_mut(table: &Table) -> &'a mut CoreTable = StoreInner::try_resolve_table_mut;
 }
 
-#[expect(clippy::too_many_arguments)]
 pub fn resolve_indirect_func<I>(
     index: I,
     table: index::Table,
     func_type: index::FuncType,
     state: &mut VmState<'_>,
-    sp: Sp,
-    instance: Inst,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
+    args: &Args,
 ) -> Result<Func, TrapCode>
 where
     I: GetValue<u64>,
 {
-    let index = get_value(index, sp, ireg, freg32, freg64);
-    let table = fetch_table(instance, table);
+    let index = get_value(index, args.sp, args.ireg, args.freg32, args.freg64);
+    let table = fetch_table(args.instance, table);
     let table = resolve_table(state.store, &table);
     let rawref = table.get(index).ok_or(TrapCode::TableOutOfBounds)?;
     debug_assert!(matches!(rawref.ty(), RefType::Func));
     let funcref = <Nullable<Func>>::from_raw_parts(rawref.raw(), &*state.store);
     let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;
     let actual_fnty = resolve_func(state.store, func).ty_dedup();
-    let expected_fnty = fetch_func_type(instance, func_type);
+    let expected_fnty = fetch_func_type(args.instance, func_type);
     if expected_fnty.ne(actual_fnty) {
         return Err(TrapCode::BadSignature);
     }
