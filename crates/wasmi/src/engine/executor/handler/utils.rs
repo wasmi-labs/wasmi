@@ -34,16 +34,6 @@ use crate::{
 };
 use core::num::NonZero;
 
-macro_rules! consume_fuel {
-    ($state:expr, $ip:expr, $ireg:expr, $freg32:expr, $freg64:expr, $fuel:expr, $eval:expr $(,)? ) => {{
-        if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
-            $fuel.consume_fuel_if($eval)
-        {
-            out_of_fuel!($state, $ip, $ireg, $freg32, $freg64, required_fuel)
-        }
-    }};
-}
-
 macro_rules! consume_fuel_v2 {
     ($state:expr, $ip:expr, $args:expr, $fuel:expr, $eval:expr $(,)? ) => {{
         if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
