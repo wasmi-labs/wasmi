@@ -38,7 +38,6 @@ use crate::{
                 memory_slice,
                 memory_slice_mut,
                 resolve_data_mut,
-                resolve_elem_mut,
                 resolve_indirect_func,
                 resolve_memory,
                 resolve_table,
@@ -953,10 +952,10 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (ip, crate::ir::decode::ElemDrop { elem }) = unsafe { decode_op(ip) };
-        let elem = fetch_elem(instance, elem);
-        resolve_elem_mut(state.store, &elem).drop_items();
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::ElemDrop { elem } = unsafe { args.decode_op() };
+        args.fetch_elem(state, elem).drop_items();
+        dispatch_v2!(state, args)
     }
 }
 
