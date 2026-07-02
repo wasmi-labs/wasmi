@@ -415,7 +415,7 @@ return_call_indirect_execution_handler! {
 execution_handler! {
     fn r#return(
         state: &mut VmState,
-        _ip: Ip,
+        ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
@@ -424,15 +424,9 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let Some((ip, sp, mem0, mem0_len, instance)) =
-            state.stack.pop_frame(state.store, mem0, mem0_len, instance)
-        else {
-            // No more frames on the call stack -> break out of execution!
-            done!(state, DoneReason::Return(sp))
-        };
-        dispatch!(
-            state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64
-        )
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        args.pop_frame(state)?;
+        dispatch_v2!(state, args)
     }
 }
 
