@@ -1,11 +1,23 @@
 use crate::{
     core::CoreGlobal,
-    engine::executor::handler::{
-        exec,
-        state::{self, Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-        utils::{self, GetValue, SetValue, fetch_global, get_value, resolve_global_mut, set_value},
+    engine::{
+        code_map::FuncEntry,
+        executor::handler::{
+            dispatch::{Break, Control},
+            exec,
+            state::{self, Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
+            utils::{
+                self,
+                GetValue,
+                SetValue,
+                fetch_global,
+                get_value,
+                resolve_global_mut,
+                set_value,
+            },
+        },
     },
-    ir::{self, BranchOffset, index},
+    ir::{self, BoundedSlotSpan, BranchOffset, index},
 };
 
 /// Utility type to store the arguments of an execution handler and provide a clean API.
@@ -119,5 +131,18 @@ impl Args {
     ) -> &'a mut CoreGlobal {
         let global = fetch_global(self.instance, index);
         resolve_global_mut(state.store, &global)
+    }
+
+    /// Calls `func` with `params` on `instance` with `state` using `self`.
+    #[inline]
+    pub fn call_func_entry(
+        &mut self,
+        state: &mut VmState,
+        func: &FuncEntry,
+        params: BoundedSlotSpan,
+        instance: Option<Inst>,
+    ) -> Control<(), Break> {
+        (self.ip, self.sp) = utils::call_func_entry(state, self.ip, params, func, instance)?;
+        Control::Continue(())
     }
 }
