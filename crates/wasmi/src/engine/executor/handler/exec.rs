@@ -26,7 +26,6 @@ use crate::{
             dispatch::Break,
             state::DoneReason,
             utils::{
-                self,
                 GetValue,
                 IntoControl as _,
                 exec_copy_span,
@@ -273,14 +272,7 @@ macro_rules! call_indirect_execution_handler {
                         params,
                         index,
                     } = unsafe { args.decode_op() };
-                    let func =
-                        utils::resolve_indirect_func(
-                            index,
-                            table,
-                            func_type,
-                            state,
-                            &args,
-                        ).into_control()?;
+                    let func = args.resolve_indirect_func(state, index, table, func_type)?;
                     args.call_wasm_or_host_func(state, func, params)?;
                     dispatch_v2!(state, args)
                 }
@@ -362,14 +354,7 @@ macro_rules! return_call_indirect_execution_handler {
                         func_type,
                         table,
                     } = unsafe { args.decode_op() };
-                    let func =
-                        utils::resolve_indirect_func(
-                            index,
-                            table,
-                            func_type,
-                            state,
-                            &args,
-                        ).into_control()?;
+                    let func = args.resolve_indirect_func(state, index, table, func_type)?;
                     args.return_call_wasm_or_host_func(state, func, params)?;
                     dispatch_v2!(state, args)
                 }

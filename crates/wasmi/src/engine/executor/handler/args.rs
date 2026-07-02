@@ -22,6 +22,7 @@ use crate::{
             utils::{
                 self,
                 GetValue,
+                IntoControl as _,
                 SetValue,
                 fetch_data,
                 fetch_elem,
@@ -249,6 +250,21 @@ impl Args {
     ) -> Control<(), Break> {
         (self.ip, self.sp) = utils::return_call_func_entry(state, params, func, instance)?;
         Control::Continue(())
+    }
+
+    /// Resolves the [`Func`] at `table[index]` of type `func_type` using `state`.
+    #[inline]
+    pub fn resolve_indirect_func<Idx>(
+        &self,
+        state: &mut VmState<'_>,
+        index: Idx,
+        table: index::Table,
+        func_type: index::FuncType,
+    ) -> Control<Func, Break>
+    where
+        Idx: GetValue<u64>,
+    {
+        utils::resolve_indirect_func(index, table, func_type, state, self).into_control()
     }
 
     /// Calls `func` with `params` with `state` using `self`.
