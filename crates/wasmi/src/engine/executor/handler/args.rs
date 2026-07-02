@@ -260,6 +260,31 @@ impl Args {
         Control::Continue(())
     }
 
+    /// Tail-calls `func` with `params` with `state` using `self`.
+    #[inline]
+    pub fn return_call_wasm_or_host_func(
+        &mut self,
+        state: &mut VmState,
+        func: Func,
+        params: BoundedSlotSpan,
+    ) -> Control<(), Break> {
+        (
+            self.ip,
+            self.sp,
+            self.mem0_ptr,
+            self.mem0_len,
+            self.instance,
+        ) = utils::return_call_wasm_or_host(
+            state,
+            func,
+            params,
+            self.mem0_ptr,
+            self.mem0_len,
+            self.instance,
+        )?;
+        Control::Continue(())
+    }
+
     /// Pops the top-most frame from the call stack.
     #[inline]
     pub fn pop_frame(&mut self, state: &mut VmState) -> Control<(), Break> {
