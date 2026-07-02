@@ -25,18 +25,7 @@ use crate::{
             Control,
             dispatch::Break,
             state::DoneReason,
-            utils::{
-                self,
-                GetValue,
-                IntoControl as _,
-                exec_copy_span,
-                fetch_data,
-                fetch_elem,
-                fetch_memory,
-                fetch_table,
-                resolve_memory,
-                resolve_table,
-            },
+            utils::{self, GetValue, IntoControl as _},
         },
         utils::unreachable_unchecked,
     },
@@ -423,7 +412,7 @@ execution_handler! {
             delta,
         } = unsafe { args.decode_op() };
         let delta: u64 = args.get(delta);
-        let memref = fetch_memory(instance, memory);
+        let memref = utils::fetch_memory(instance, memory);
         let return_value = match state.store.grow_memory(&memref, delta) {
             Ok(return_value) => {
                 // The `memory.grow` operation might have invalidated the cached
@@ -437,7 +426,7 @@ execution_handler! {
             Err(StoreError::External(
                 MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory,
             )) => {
-                let memory_ty = resolve_memory(state.store, &memref).ty();
+                let memory_ty = utils::resolve_memory(state.store, &memref).ty();
                 match memory_ty.is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),
@@ -498,8 +487,8 @@ execution_handler! {
             memory_copy_within(state, &mut args, ip, dst_memory, dst_index, src_index, len)?;
             dispatch!(state, args)
         }
-        let dst_memory = fetch_memory(instance, dst_memory);
-        let src_memory = fetch_memory(instance, src_memory);
+        let dst_memory = utils::fetch_memory(instance, dst_memory);
+        let src_memory = utils::fetch_memory(instance, src_memory);
         let (src_memory, dst_memory, fuel) = state
             .store
             .inner_mut()
@@ -528,7 +517,7 @@ fn memory_copy_within(
     src_index: usize,
     len: usize,
 ) -> Control<(), Break> {
-    let memory = fetch_memory(args.instance, dst_memory);
+    let memory = utils::fetch_memory(args.instance, dst_memory);
     let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
     // These accesses just perform the bounds checks required by the Wasm spec.
     utils::memory_slice(memory, src_index, len).into_control()?;
@@ -569,7 +558,7 @@ execution_handler! {
         let Ok(len) = usize::try_from(len) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
-        let memory = fetch_memory(instance, memory);
+        let memory = utils::fetch_memory(instance, memory);
         let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
         let slice = utils::memory_slice_mut(memory, dst, len).into_control()?;
         consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
@@ -613,7 +602,10 @@ execution_handler! {
         let (memory, data, fuel) = state
             .store
             .inner_mut()
-            .resolve_memory_init_params(&fetch_memory(instance, memory), &fetch_data(instance, data));
+            .resolve_memory_init_params(
+                &utils::fetch_memory(instance, memory),
+                &utils::fetch_data(instance, data),
+            );
         let memory = utils::memory_slice_mut(memory, dst_index, len).into_control()?;
         let Some(data) = data
             .bytes()
@@ -686,13 +678,13 @@ execution_handler! {
             delta,
             value,
         } = unsafe { args.decode_op() };
-        let table = fetch_table(instance, table);
+        let table = utils::fetch_table(instance, table);
         let delta = args.get(delta);
         let value = args.get(value);
         let return_value = match state.store.grow_table(&table, delta, value) {
             Ok(return_value) => return_value,
             Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
-                let table = resolve_table(state.store, &table);
+                let table = utils::resolve_table(state.store, &table);
                 match table.ty().is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),
@@ -741,7 +733,7 @@ execution_handler! {
         let len: u64 = args.get(len);
         if dst_table == src_table {
             // Case: copy within the same table
-            let table = fetch_table(instance, dst_table);
+            let table = utils::fetch_table(instance, dst_table);
             let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
             if let Err(error) = table.copy_within(dst, src, len, Some(fuel)) {
                 let trap_code = match error {
@@ -758,8 +750,8 @@ execution_handler! {
             dispatch!(state, args)
         }
         // Case: copy between two different tables
-        let dst_table = fetch_table(instance, dst_table);
-        let src_table = fetch_table(instance, src_table);
+        let dst_table = utils::fetch_table(instance, dst_table);
+        let src_table = utils::fetch_table(instance, src_table);
         let (dst_table, src_table, fuel) = state
             .store
             .inner_mut()
@@ -802,7 +794,7 @@ execution_handler! {
         let dst: u64 = args.get(dst);
         let len: u64 = args.get(len);
         let value: RawRef = args.get(value);
-        let table = fetch_table(instance, table);
+        let table = utils::fetch_table(instance, table);
         let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
         if let Err(error) = table.fill_raw(dst, value, len, Some(fuel)) {
             let trap_code = match error {
@@ -843,8 +835,8 @@ execution_handler! {
         let dst: u64 = args.get(dst);
         let src: u32 = args.get(src);
         let len: u32 = args.get(len);
-        let table = fetch_table(args.instance, table);
-        let elem = fetch_elem(args.instance, elem);
+        let table = utils::fetch_table(args.instance, table);
+        let elem = utils::fetch_elem(args.instance, elem);
         let (table, element, fuel) = state
             .store
             .inner_mut()
@@ -1103,7 +1095,7 @@ fn exec_branch_table_with_copies<Idx>(
     let values_len = values.len();
     let values = values.span();
     if results != values {
-        exec_copy_span(args.sp, results, values, values_len);
+        utils::exec_copy_span(args.sp, results, values, values_len);
     }
     args.offset_ip(offset);
 }
