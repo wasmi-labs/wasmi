@@ -11,7 +11,7 @@ use super::{
     Args,
     dispatch::Done,
     state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-    utils::{fetch_func, get_value, memory_bytes, offset_ip},
+    utils::{fetch_func, get_value, offset_ip},
 };
 #[cfg(feature = "simd")]
 use crate::V128;
@@ -2458,19 +2458,17 @@ macro_rules! handler_store_ix {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        crate::ir::decode::$decode {
-                            address,
-                            value,
-                            memory,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let address = get_value(address, sp, ireg, freg32, freg64);
-                    let value: $hint = get_value(value, sp, ireg, freg32, freg64);
-                    let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                    $store(mem_bytes, usize::from(address), value.into()).into_control()?;
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$decode {
+                        address,
+                        value,
+                        memory,
+                    } = unsafe { args.decode_op() };
+                    let address = args.get(address);
+                    let value: $hint = args.get(value);
+                    let bytes = args.fetch_memory(state, memory);
+                    $store(bytes, usize::from(address), value.into()).into_control()?;
+                    dispatch_v2!(state, args)
                 }
             }
         )*
