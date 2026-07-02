@@ -44,6 +44,23 @@ macro_rules! consume_fuel {
     }};
 }
 
+macro_rules! consume_fuel_v2 {
+    ($state:expr, $args:expr, $fuel:expr, $eval:expr $(,)? ) => {{
+        if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
+            $fuel.consume_fuel_if($eval)
+        {
+            out_of_fuel!(
+                $state,
+                $args.ip,
+                $args.ireg,
+                $args.freg32,
+                $args.freg64,
+                required_fuel
+            )
+        }
+    }};
+}
+
 macro_rules! out_of_fuel {
     ($state:expr, $ip:expr, $ireg:expr, $freg32:expr, $freg64:expr, $required_fuel:expr) => {{
         $state.stack.sync_ip($ip);
