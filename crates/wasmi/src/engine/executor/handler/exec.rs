@@ -2300,19 +2300,17 @@ macro_rules! handler_load_ri {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        crate::ir::decode::$decode {
-                            result,
-                            address,
-                            memory,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let address = get_value(address, sp, ireg, freg32, freg64);
-                    let mem_bytes = memory_bytes(memory, mem0, mem0_len, instance, state);
-                    let loaded = $load(mem_bytes, usize::from(address)).into_control()?;
-                    set_value!(result, loaded, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$decode {
+                        result,
+                        address,
+                        memory,
+                    } = unsafe { args.decode_op() };
+                    let address = args.get(address);
+                    let bytes = args.fetch_memory(state, memory);
+                    let loaded = $load(bytes, usize::from(address)).into_control()?;
+                    args.set(result, loaded);
+                    dispatch_v2!(state, args)
                 }
             }
         )*
