@@ -1,5 +1,6 @@
 use crate::{
     DataSegmentEntity,
+    Func,
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable},
     engine::{
         code_map::FuncEntry,
@@ -230,6 +231,32 @@ impl Args {
         instance: Option<Inst>,
     ) -> Control<(), Break> {
         (self.ip, self.sp) = utils::call_func_entry(state, self.ip, params, func, instance)?;
+        Control::Continue(())
+    }
+
+    /// Calls `func` with `params` with `state` using `self`.
+    #[inline]
+    pub fn call_wasm_or_host_func(
+        &mut self,
+        state: &mut VmState,
+        func: Func,
+        params: BoundedSlotSpan,
+    ) -> Control<(), Break> {
+        (
+            self.ip,
+            self.sp,
+            self.mem0_ptr,
+            self.mem0_len,
+            self.instance,
+        ) = utils::call_wasm_or_host(
+            state,
+            self.ip,
+            func,
+            params,
+            self.mem0_ptr,
+            self.mem0_len,
+            self.instance,
+        )?;
         Control::Continue(())
     }
 
