@@ -8,9 +8,8 @@ use crate::{
     engine::executor::handler::{
         Args,
         dispatch::Done,
-        exec::decode_op,
         state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-        utils::{IntoControl as _, get_value},
+        utils::IntoControl as _,
     },
 };
 use core::convert::identity;
@@ -540,16 +539,14 @@ macro_rules! handler_store_lane_mem0_offset16_ss {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        $crate::ir::decode::$op { ptr, offset, value, lane },
-                    ) = unsafe { decode_op(ip) };
-                    let ptr = get_value(ptr, sp, ireg, freg32, freg64);
-                    let offset = get_value(offset, sp, ireg, freg32, freg64);
-                    let value = get_value(value, sp, ireg, freg32, freg64);
-                    let mem_bytes = $crate::engine::executor::handler::state::mem0_bytes(mem0, mem0_len);
-                    $eval(mem_bytes, ptr, u64::from(offset), value, lane).into_control()?;
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let $crate::ir::decode::$op { ptr, offset, value, lane } = unsafe { args.decode_op() };
+                    let ptr = args.get(ptr);
+                    let offset = args.get(offset);
+                    let value = args.get(value);
+                    let bytes = args.fetch_default_memory_bytes();
+                    $eval(bytes, ptr, u64::from(offset), value, lane).into_control()?;
+                    dispatch_v2!(state, args)
                 }
             }
         )*
