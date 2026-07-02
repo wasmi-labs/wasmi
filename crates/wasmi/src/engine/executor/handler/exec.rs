@@ -42,7 +42,6 @@ use crate::{
                 resolve_indirect_func,
                 resolve_memory,
                 resolve_table,
-                resolve_table_mut,
                 return_call_func_entry,
                 return_call_wasm_or_host,
             },
@@ -1012,15 +1011,15 @@ macro_rules! impl_table_set {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$op { table, index, value }) = unsafe { decode_op(ip) };
-                    let table = fetch_table(instance, table);
-                    let table = resolve_table_mut(state.store, &table);
-                    let index = $ext(get_value(index, sp, ireg, freg32, freg64));
-                    let value: u32 = get_value(value, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$op { table, index, value } = unsafe { args.decode_op() };
+                    let table = args.fetch_table(state, table);
+                    let index = $ext(args.get(index));
+                    let value: u32 = args.get(value);
                     if let Err(TableError::SetOutOfBounds) = table.set_raw(index, RawRef::from(value)) {
                         trap!(TrapCode::TableOutOfBounds)
                     };
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    dispatch_v2!(state, args)
                 }
             }
         )*
