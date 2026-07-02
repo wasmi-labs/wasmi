@@ -27,18 +27,7 @@ use crate::{
     func::{FuncEntity, HostFuncEntity},
     instance::InstanceEntity,
     ir,
-    ir::{
-        Address,
-        BoundedSlotSpan,
-        BranchOffset,
-        Local,
-        Offset,
-        Offset16,
-        Slot,
-        SlotAndReg,
-        SlotSpan,
-        index,
-    },
+    ir::{Address, BoundedSlotSpan, Local, Offset, Offset16, Slot, SlotAndReg, SlotSpan, index},
     memory::{DataSegment, DataSegmentEntity},
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
     table::ElementSegment,
@@ -619,10 +608,6 @@ pub fn memory_slice_mut(
         .get_mut(pos..)
         .and_then(|memory| memory.get_mut(..len))
         .ok_or(TrapCode::MemoryOutOfBounds)
-}
-
-pub fn offset_ip(ip: Ip, offset: BranchOffset) -> Ip {
-    unsafe { ip.offset(i32::from(offset) as isize) }
 }
 
 macro_rules! impl_fetch_from_instance {
