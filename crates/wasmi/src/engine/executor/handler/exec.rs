@@ -26,9 +26,9 @@ use crate::{
             dispatch::Break,
             state::DoneReason,
             utils::{
+                self,
                 GetValue,
                 IntoControl as _,
-                call_wasm_or_host,
                 exec_copy_span,
                 fetch_data,
                 fetch_elem,
@@ -283,30 +283,23 @@ macro_rules! call_indirect_execution_handler {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        caller_ip,
-                        crate::ir::decode::$camel_name {
-                            table,
-                            func_type,
-                            params,
-                            index,
-                        },
-                    ) = unsafe { decode_op(ip) };
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name {
+                        table,
+                        func_type,
+                        params,
+                        index,
+                    } = unsafe { args.decode_op() };
                     let func =
-                        resolve_indirect_func(
+                        utils::resolve_indirect_func(
                             index,
                             table,
                             func_type,
                             state,
-                            sp,
-                            instance,
-                            ireg,
-                            freg32,
-                            freg64,
+                            &args,
                         ).into_control()?;
-                    let (callee_ip, sp, mem0, mem0_len, instance) =
-                        call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
-                    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.call_wasm_or_host_func(state, func, params)?;
+                    dispatch_v2!(state, args)
                 }
             }
         )*
@@ -378,30 +371,23 @@ macro_rules! return_call_indirect_execution_handler {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        _,
-                        crate::ir::decode::$camel_name {
-                            params,
-                            index,
-                            func_type,
-                            table,
-                        },
-                    ) = unsafe { decode_op(ip) };
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name {
+                        params,
+                        index,
+                        func_type,
+                        table,
+                    } = unsafe { args.decode_op() };
                     let func =
                         resolve_indirect_func(
                             index,
                             table,
                             func_type,
                             state,
-                            sp,
-                            instance,
-                            ireg,
-                            freg32,
-                            freg64,
+                            &args,
                         ).into_control()?;
-                    let (callee_ip, sp, mem0, mem0_len, instance) =
-                        return_call_wasm_or_host(state, func, params, mem0, mem0_len, instance)?;
-                    dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.return_call_wasm_or_host_func(state, func, params)?;
+                    dispatch_v2!(state, args)
                 }
             }
         )*
