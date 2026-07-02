@@ -67,10 +67,20 @@ impl Args {
         }
     }
 
-    /// Decodes and returns a value of type `T` using `self`.
+    /// Decodes and returns an [`Op`] of type `T` using `self`.
+    ///
+    /// Aligns `self.ip` to [`Op`] bounds if `indirect-dispatch` is disabled.
     #[inline]
     pub unsafe fn decode_op<T: ir::Decode>(&mut self) -> T {
         let (new_ip, op) = unsafe { exec::decode_op::<T>(self.ip) };
+        self.ip = new_ip;
+        op
+    }
+
+    /// Decodes and returns a value of type `T` using `self`.
+    #[inline]
+    pub unsafe fn decode<T: ir::Decode>(&mut self) -> T {
+        let (new_ip, op) = unsafe { exec::decode_op_no_align::<T>(self.ip) };
         self.ip = new_ip;
         op
     }

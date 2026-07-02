@@ -11,7 +11,7 @@ use super::{
     Args,
     dispatch::Done,
     state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-    utils::{fetch_func, get_value, offset_ip},
+    utils::{fetch_func, get_value},
 };
 #[cfg(feature = "simd")]
 use crate::V128;
@@ -62,7 +62,7 @@ pub unsafe fn decode_op<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
 }
 
 #[inline(always)]
-unsafe fn decode_op_no_align<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
+pub unsafe fn decode_op_no_align<Op: ir::Decode>(ip: Ip) -> (Ip, Op) {
     let ip = match cfg!(feature = "indirect-dispatch") {
         true => unsafe { ip.skip::<ir::OpCode>() },
         false => unsafe { ip.skip::<::core::primitive::usize>() },
@@ -1133,77 +1133,55 @@ impl_i64_mul_wide! {
 
 /// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
 #[inline]
-fn fetch_branch_table_target<Index>(
-    sp: Sp,
-    index: Index,
-    len_targets: u32,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
-) -> usize
+fn fetch_branch_table_target<Idx>(args: &Args, index: Idx, len_targets: u32) -> usize
 where
-    Index: GetValue<u32>,
+    Idx: GetValue<u32>,
 {
-    let index: u32 = get_value(index, sp, ireg, freg32, freg64);
+    let index: u32 = args.get(index);
     let max_index = len_targets - 1;
     cmp::min(index, max_index) as usize
 }
 
 /// Executes a generic branch table operator that does not any copy values.
 #[inline]
-#[expect(clippy::too_many_arguments)]
-fn exec_branch_table<Index>(
-    index: Index,
-    len_targets: u32,
-    _values: (),
-    ip: Ip,
-    sp: Sp,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
-) -> Ip
+fn exec_branch_table<Idx>(args: &mut Args, index: Idx, len_targets: u32, _values: ())
 where
-    Index: GetValue<u32>,
+    Idx: GetValue<u32>,
 {
-    let chosen_target = fetch_branch_table_target(sp, index, len_targets, ireg, freg32, freg64);
+    let chosen_target = fetch_branch_table_target(args, index, len_targets);
     let target_offset = 4 * chosen_target;
-    let ip = unsafe { ip.add(target_offset) };
-    let (_, offset) = unsafe { ip.decode::<ir::BranchOffset>() };
-    offset_ip(ip, offset)
+    // args.offset_ip(target_offset);
+    args.set_ip(unsafe { args.ip.add(target_offset) });
+    let (_, offset) = unsafe { args.ip.decode::<ir::BranchOffset>() };
+    args.offset_ip(offset);
 }
 
 /// Executes a generic branch table operator that does not any copy values.
 #[inline]
-#[expect(clippy::too_many_arguments)]
-fn exec_branch_table_with_copies<Index>(
-    index: Index,
+fn exec_branch_table_with_copies<Idx>(
+    args: &mut Args,
+    index: Idx,
     len_targets: u32,
     values: BoundedSlotSpan,
-    ip: Ip,
-    sp: Sp,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
-) -> Ip
-where
-    Index: GetValue<u32>,
+) where
+    Idx: GetValue<u32>,
 {
-    let chosen_target = fetch_branch_table_target(sp, index, len_targets, ireg, freg32, freg64);
+    let chosen_target = fetch_branch_table_target(args, index, len_targets);
     let len_encoded_target = match cfg!(feature = "indirect-dispatch") {
         // TODO: add and use `Encode` trait assoc constants
         true => 6,
         false => 8,
     };
     let target_offset = len_encoded_target * chosen_target;
-    let ip = unsafe { ip.add(target_offset) };
+    args.set_ip(unsafe { args.ip.add(target_offset) });
     let (_, ir::BranchTableTarget { results, offset }) =
-        unsafe { ip.decode::<ir::BranchTableTarget>() };
+        unsafe { args.ip.decode::<ir::BranchTableTarget>() };
     let values_len = values.len();
     let values = values.span();
     if results != values {
-        exec_copy_span(sp, results, values, values_len);
+        exec_copy_span(args.sp, results, values, values_len);
     }
-    offset_ip(ip, offset)
+    args.offset_ip(offset);
 }
 
 macro_rules! impl_branch_table_exec_handler {
@@ -1223,9 +1201,10 @@ macro_rules! impl_branch_table_exec_handler {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$camel_case { len_targets, index, values }) = unsafe { decode_op_no_align(ip) };
-                    let ip = $exec(index, len_targets, values, ip, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_case { len_targets, index, values } = unsafe { args.decode() };
+                    $exec(&mut args, index, len_targets, values);
+                    dispatch_v2!(state, args)
                 }
             }
         )*
