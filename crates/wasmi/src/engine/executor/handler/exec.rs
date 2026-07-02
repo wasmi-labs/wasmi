@@ -2163,24 +2163,20 @@ macro_rules! handler_select {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        $crate::ir::decode::$decode {
-                            result,
-                            condition,
-                            true_val,
-                            false_val,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let condition: i32 = get_value(condition, sp, ireg, freg32, freg64);
-                    let true_val: $width = get_value(true_val, sp, ireg, freg32, freg64);
-                    let false_val: $width = get_value(false_val, sp, ireg, freg32, freg64);
-                    let selected = match condition {
-                        0 => get_value(false_val, sp, ireg, freg32, freg64),
-                        _ => get_value(true_val, sp, ireg, freg32, freg64),
-                    };
-                    set_value!(result, selected, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let $crate::ir::decode::$decode {
+                        result,
+                        condition,
+                        true_val,
+                        false_val,
+                    } = unsafe { args.decode_op() };
+                    let condition: i32 = args.get(condition);
+                    let true_val: $width = args.get(true_val);
+                    let false_val: $width = args.get(false_val);
+                    let selected = if condition != 0 { true_val } else { false_val };
+                    let selected = args.get(selected);
+                    args.set(result, selected);
+                    dispatch_v2!(state, args)
                 }
             }
         )*
