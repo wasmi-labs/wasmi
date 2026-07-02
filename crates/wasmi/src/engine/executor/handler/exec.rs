@@ -11,7 +11,7 @@ use super::{
     Args,
     dispatch::Done,
     state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-    utils::{fetch_func, get_value},
+    utils::fetch_func,
 };
 #[cfg(feature = "simd")]
 use crate::V128;
@@ -30,7 +30,6 @@ use crate::{
                 IntoControl as _,
                 call_wasm_or_host,
                 exec_copy_span,
-                extract_mem0,
                 fetch_data,
                 fetch_elem,
                 fetch_memory,
@@ -469,25 +468,21 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::MemoryGrow {
-                memory,
-                result,
-                delta,
-            },
-        ) = unsafe { decode_op(ip) };
-        let delta: u64 = get_value(delta, sp, ireg, freg32, freg64);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::MemoryGrow {
+            memory,
+            result,
+            delta,
+        } = unsafe { args.decode_op() };
+        let delta: u64 = args.get(delta);
         let memref = fetch_memory(instance, memory);
-        let mut mem0 = mem0;
-        let mut mem0_len = mem0_len;
         let return_value = match state.store.grow_memory(&memref, delta) {
             Ok(return_value) => {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
                 if memory.is_default() {
-                    (mem0, mem0_len) = extract_mem0(state.store, instance);
+                    args.reload_mem0(state);
                 }
                 return_value
             }
@@ -501,7 +496,8 @@ execution_handler! {
                 }
             }
             Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
-                out_of_fuel!(state, ip, ireg, freg32, freg64, required_fuel)
+                args.set_ip(ip);
+                out_of_fuel_v2!(state, args, required_fuel)
             }
             Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
                 trap!(TrapCode::GrowthOperationLimited);
@@ -513,8 +509,8 @@ execution_handler! {
                 panic!("`memory.grow`: internal interpreter error: {error}")
             }
         };
-        set_value!(result, return_value, sp, ireg, freg32, freg64);
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        args.set(result, return_value);
+        dispatch_v2!(state, args)
     }
 }
 
