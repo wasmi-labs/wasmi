@@ -252,7 +252,7 @@ execution_handler! {
     fn call_imported(
         state: &mut VmState,
         ip: Ip,
-        _sp: Sp,
+        sp: Sp,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
@@ -260,11 +260,11 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (caller_ip, crate::ir::decode::CallImported { params, func }) = unsafe { decode_op(ip) };
-        let func = fetch_func(instance, func);
-        let (ip, sp, mem0, mem0_len, instance) =
-            call_wasm_or_host(state, caller_ip, func, params, mem0, mem0_len, instance)?;
-        dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::CallImported { params, func } = unsafe { args.decode_op() };
+        let func = fetch_func(args.instance, func);
+        args.call_wasm_or_host_func(state, func, params)?;
+        dispatch_v2!(state, args)
     }
 }
 
