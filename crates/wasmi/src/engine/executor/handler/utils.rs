@@ -49,14 +49,8 @@ macro_rules! consume_fuel_v2 {
         if let ::core::result::Result::Err($crate::errors::FuelError::OutOfFuel { required_fuel }) =
             $fuel.consume_fuel_if($eval)
         {
-            out_of_fuel!(
-                $state,
-                $ip,
-                $args.ireg,
-                $args.freg32,
-                $args.freg64,
-                required_fuel
-            )
+            $args.set_ip($ip);
+            out_of_fuel_v2!($state, $args, required_fuel)
         }
     }};
 }
