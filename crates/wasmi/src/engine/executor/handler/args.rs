@@ -234,6 +234,19 @@ impl Args {
         Control::Continue(())
     }
 
+    /// Tail-calls `func` with `params` on `instance` with `state` using `self`.
+    #[inline]
+    pub fn return_call_func_entry(
+        &mut self,
+        state: &mut VmState,
+        func: &FuncEntry,
+        params: BoundedSlotSpan,
+        instance: Option<Inst>,
+    ) -> Control<(), Break> {
+        (self.ip, self.sp) = utils::return_call_func_entry(state, params, func, instance)?;
+        Control::Continue(())
+    }
+
     /// Calls `func` with `params` with `state` using `self`.
     #[inline]
     pub fn call_wasm_or_host_func(
