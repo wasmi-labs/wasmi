@@ -30,23 +30,21 @@ macro_rules! execution_handler_for_v128_select {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        crate::ir::decode::$camel_name {
-                            result,
-                            condition,
-                            true_val,
-                            false_val,
-                        },
-                    ) = unsafe { decode_op(ip) };
-                    let condition: bool = get_value(condition, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name {
+                        result,
+                        condition,
+                        true_val,
+                        false_val,
+                    } = unsafe { args.decode_op() };
+                    let condition: bool = args.get(condition);
                     let selected = match condition {
                         true => true_val,
                         false => false_val,
                     };
-                    let selected: V128 = get_value(selected, sp, ireg, freg32, freg64);
-                    set_value!(result, selected, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let selected: V128 = args.get(selected);
+                    args.set(result, selected);
+                    dispatch_v2!(state, args)
                 }
             }
         )*
