@@ -127,7 +127,11 @@ impl Args {
 
     /// Returns the bytes of the `memory`.
     #[inline]
-    pub fn fetch_memory<'a>(&self, state: &'a mut VmState, memory: index::Memory) -> &'a mut [u8] {
+    pub fn fetch_memory_bytes<'a>(
+        &self,
+        state: &'a mut VmState,
+        memory: index::Memory,
+    ) -> &'a mut [u8] {
         if memory.is_default() {
             return state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len);
         }
@@ -137,7 +141,7 @@ impl Args {
 
     /// Returns the bytes of the default memory at index 0.
     #[inline]
-    pub fn fetch_default_memory<'a>(&self) -> &'a mut [u8] {
+    pub fn fetch_default_memory_bytes<'a>(&self) -> &'a mut [u8] {
         state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len)
     }
 
