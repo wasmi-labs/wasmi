@@ -45,17 +45,6 @@ macro_rules! consume_fuel {
     }};
 }
 
-macro_rules! out_of_fuel {
-    ($state:expr, $ip:expr, $ireg:expr, $freg32:expr, $freg64:expr, $required_fuel:expr) => {{
-        $state.stack.sync_ip($ip);
-        $state.stack.sync_regs($ireg, $freg32, $freg64);
-        done!(
-            $state,
-            $crate::engine::executor::handler::DoneReason::out_of_fuel($required_fuel),
-        )
-    }};
-}
-
 macro_rules! out_of_fuel_v2 {
     ($state:expr, $args:expr, $required_fuel:expr) => {{
         $state.stack.sync_ip($args.ip);
