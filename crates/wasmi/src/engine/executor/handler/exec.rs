@@ -617,18 +617,16 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::MemoryFill {
-                memory,
-                dst,
-                len,
-                value,
-            },
-        ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
-        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
-        let value: u8 = get_value(value, sp, ireg, freg32, freg64);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::MemoryFill {
+            memory,
+            dst,
+            len,
+            value,
+        } = unsafe { args.decode_op() };
+        let dst: u64 = args.get(dst);
+        let len: u64 = args.get(len);
+        let value: u8 = args.get(value);
         let Ok(dst) = usize::try_from(dst) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
@@ -638,10 +636,9 @@ execution_handler! {
         let memory = fetch_memory(instance, memory);
         let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
         let slice = memory_slice_mut(memory, dst, len).into_control()?;
-        consume_fuel!(state, ip, ireg, freg32, freg64, fuel, |costs| costs
-            .fuel_for_copying_values::<u8>(len as u64));
+        consume_fuel_v2!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         slice.fill(value);
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch_v2!(state, args)
     }
 }
 
