@@ -1076,16 +1076,17 @@ macro_rules! impl_i64_binop128 {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$op { results, lhs_lo, lhs_hi, rhs_lo, rhs_hi }) = unsafe { decode_op(ip) };
-                    let lhs_lo: i64 = get_value(lhs_lo, sp, ireg, freg32, freg64);
-                    let lhs_hi: i64 = get_value(lhs_hi, sp, ireg, freg32, freg64);
-                    let rhs_lo: i64 = get_value(rhs_lo, sp, ireg, freg32, freg64);
-                    let rhs_hi: i64 = get_value(rhs_hi, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$op { results, lhs_lo, lhs_hi, rhs_lo, rhs_hi } = unsafe { args.decode_op() };
+                    let lhs_lo: i64 = args.get(lhs_lo);
+                    let lhs_hi: i64 = args.get(lhs_hi);
+                    let rhs_lo: i64 = args.get(rhs_lo);
+                    let rhs_hi: i64 = args.get(rhs_hi);
                     let results = results.to_array();
                     let (result_lo, result_hi) = $eval(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
-                    set_value!(results[0], result_lo, sp, ireg, freg32, freg64);
-                    set_value!(results[1], result_hi, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(results[0], result_lo);
+                    args.set(results[1], result_hi);
+                    dispatch_v2!(state, args)
                 }
             }
         )*
@@ -1113,14 +1114,15 @@ macro_rules! impl_i64_mul_wide {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$op { results, lhs, rhs }) = unsafe { decode_op(ip) };
-                    let lhs: i64 = get_value(lhs, sp, ireg, freg32, freg64);
-                    let rhs: i64 = get_value(rhs, sp, ireg, freg32, freg64);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$op { results, lhs, rhs } = unsafe { args.decode_op() };
+                    let lhs: i64 = args.get(lhs);
+                    let rhs: i64 = args.get(rhs);
                     let (result_lo, result_hi) = $eval(lhs, rhs);
                     let results = results.to_array();
-                    set_value!(results[0], result_lo, sp, ireg, freg32, freg64);
-                    set_value!(results[1], result_hi, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(results[0], result_lo);
+                    args.set(results[1], result_hi);
+                    dispatch_v2!(state, args)
                 }
             }
         )*
