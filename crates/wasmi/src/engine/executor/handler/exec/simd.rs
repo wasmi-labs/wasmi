@@ -501,18 +501,14 @@ macro_rules! handler_store_lane_ss {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (
-                        ip,
-                        $crate::ir::decode::$op { ptr, offset, value, memory, lane },
-                    ) = unsafe { decode_op(ip) };
-                    let ptr = get_value(ptr, sp, ireg, freg32, freg64);
-                    let offset = get_value(offset, sp, ireg, freg32, freg64);
-                    let value = get_value(value, sp, ireg, freg32, freg64);
-                    let mem_bytes = $crate::engine::executor::handler::utils::memory_bytes(
-                        memory, mem0, mem0_len, instance, state,
-                    );
-                    $eval(mem_bytes, ptr, offset, value, lane).into_control()?;
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let $crate::ir::decode::$op { ptr, offset, value, memory, lane } = unsafe { args.decode_op() };
+                    let ptr = args.get(ptr);
+                    let offset = args.get(offset);
+                    let value = args.get(value);
+                    let bytes = args.fetch_memory_bytes(state, memory);
+                    $eval(bytes, ptr, offset, value, lane).into_control()?;
+                    dispatch_v2!(state, args)
                 }
             }
         )*
