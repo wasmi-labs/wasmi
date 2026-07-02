@@ -530,19 +530,17 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (
-            next_ip,
-            crate::ir::decode::MemoryCopy {
-                dst_memory,
-                src_memory,
-                dst,
-                src,
-                len,
-            },
-        ) = unsafe { decode_op(ip) };
-        let dst: u64 = get_value(dst, sp, ireg, freg32, freg64);
-        let src: u64 = get_value(src, sp, ireg, freg32, freg64);
-        let len: u64 = get_value(len, sp, ireg, freg32, freg64);
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::MemoryCopy {
+            dst_memory,
+            src_memory,
+            dst,
+            src,
+            len,
+        } = unsafe { args.decode_op() };
+        let dst: u64 = args.get(dst);
+        let src: u64 = args.get(src);
+        let len: u64 = args.get(len);
         let Ok(dst_index) = usize::try_from(dst) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
@@ -553,8 +551,8 @@ execution_handler! {
             trap!(TrapCode::MemoryOutOfBounds)
         };
         if dst_memory == src_memory {
-            memory_copy_within(state, ip, instance, ireg, freg32, freg64, dst_memory, dst_index, src_index, len)?;
-            dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+            memory_copy_within(state, &mut args, ip, dst_memory, dst_index, src_index, len)?;
+            dispatch_v2!(state, args)
         }
         let dst_memory = fetch_memory(instance, dst_memory);
         let src_memory = fetch_memory(instance, src_memory);
@@ -565,39 +563,33 @@ execution_handler! {
         // These accesses just perform the bounds checks required by the Wasm spec.
         let src_bytes = memory_slice(src_memory, src_index, len).into_control()?;
         let dst_bytes = memory_slice_mut(dst_memory, dst_index, len).into_control()?;
-        consume_fuel!(
+        consume_fuel_v2!(
             state,
             ip,
-            ireg,
-            freg32,
-            freg64,
+            args,
             fuel,
             |costs| costs.fuel_for_copying_values::<u8>(len as u64),
         );
         dst_bytes.copy_from_slice(src_bytes);
-        dispatch!(state, next_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        dispatch_v2!(state, args)
     }
 }
 
-#[expect(clippy::too_many_arguments)]
 fn memory_copy_within(
     state: &mut VmState<'_>,
+    args: &mut Args,
     ip: Ip,
-    instance: Inst,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
     dst_memory: index::Memory,
     dst_index: usize,
     src_index: usize,
     len: usize,
 ) -> Control<(), Break> {
-    let memory = fetch_memory(instance, dst_memory);
+    let memory = fetch_memory(args.instance, dst_memory);
     let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
     // These accesses just perform the bounds checks required by the Wasm spec.
     memory_slice(memory, src_index, len).into_control()?;
     memory_slice(memory, dst_index, len).into_control()?;
-    consume_fuel!(state, ip, ireg, freg32, freg64, fuel, |costs| costs
+    consume_fuel_v2!(state, ip, args, fuel, |costs| costs
         .fuel_for_copying_values::<u8>(len as u64));
     memory
         .data_mut()
