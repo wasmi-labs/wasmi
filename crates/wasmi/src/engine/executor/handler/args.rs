@@ -1,5 +1,5 @@
 use crate::{
-    core::{CoreGlobal, CoreTable},
+    core::{CoreElementSegment, CoreGlobal, CoreTable},
     engine::{
         code_map::FuncEntry,
         executor::handler::{
@@ -10,9 +10,11 @@ use crate::{
                 self,
                 GetValue,
                 SetValue,
+                fetch_elem,
                 fetch_global,
                 fetch_table,
                 get_value,
+                resolve_elem_mut,
                 resolve_global_mut,
                 resolve_table_mut,
                 set_value,
@@ -154,6 +156,17 @@ impl Args {
     ) -> &'a mut CoreTable {
         let table = fetch_table(self.instance, index);
         resolve_table_mut(state.store, &table)
+    }
+
+    /// Returns an exclusive reference to the element segment at `index`.
+    #[inline]
+    pub fn fetch_elem<'a>(
+        &mut self,
+        state: &'a mut VmState,
+        index: index::Elem,
+    ) -> &'a mut CoreElementSegment {
+        let elem = fetch_elem(self.instance, index);
+        resolve_elem_mut(state.store, &elem)
     }
 
     /// Calls `func` with `params` on `instance` with `state` using `self`.
