@@ -36,7 +36,6 @@ use crate::{
                 fetch_table,
                 memory_slice,
                 memory_slice_mut,
-                resolve_indirect_func,
                 resolve_memory,
                 resolve_table,
             },
@@ -364,7 +363,7 @@ macro_rules! return_call_indirect_execution_handler {
                         table,
                     } = unsafe { args.decode_op() };
                     let func =
-                        resolve_indirect_func(
+                        utils::resolve_indirect_func(
                             index,
                             table,
                             func_type,
