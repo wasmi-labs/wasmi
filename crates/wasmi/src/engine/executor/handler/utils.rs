@@ -12,7 +12,7 @@ use crate::{
     Table,
     TrapCode,
     V128,
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal, ShiftAmount, WriteAs},
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal, ShiftAmount},
     engine::{
         DedupFuncType,
         EngineFunc,
@@ -721,17 +721,6 @@ where
         return Err(TrapCode::BadSignature);
     }
     Ok(*func)
-}
-
-pub fn set_global<V>(global: index::Global, value: V, state: &mut VmState, instance: Inst)
-where
-    RawVal: WriteAs<V>,
-{
-    let global = fetch_global(instance, global);
-    let global = resolve_global_mut(state.store, &global);
-    let mut value_ptr = global.get_raw_ptr();
-    let global_ref = unsafe { value_ptr.as_mut() };
-    global_ref.write_as(value);
 }
 
 pub fn update_instance(
