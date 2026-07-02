@@ -152,7 +152,7 @@ impl Args {
         memory: index::Memory,
     ) -> &'a mut [u8] {
         if memory.is_default() {
-            return state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len);
+            return self.fetch_default_memory_bytes();
         }
         let memory = utils::fetch_memory(self.instance, memory);
         utils::resolve_memory_mut(state.store, &memory).data_mut()
