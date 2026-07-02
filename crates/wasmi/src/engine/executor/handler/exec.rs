@@ -39,7 +39,6 @@ use crate::{
                 resolve_indirect_func,
                 resolve_memory,
                 resolve_table,
-                return_call_wasm_or_host,
             },
         },
         utils::unreachable_unchecked,
@@ -340,7 +339,7 @@ execution_handler! {
     fn return_call_imported(
         state: &mut VmState,
         ip: Ip,
-        _sp: Sp,
+        sp: Sp,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
@@ -348,11 +347,11 @@ execution_handler! {
         freg32: Freg32,
         freg64: Freg64,
     ) -> Done = {
-        let (_, crate::ir::decode::ReturnCallImported { params, func }) = unsafe { decode_op(ip) };
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        let crate::ir::decode::ReturnCallImported { params, func } = unsafe { args.decode_op() };
         let func = fetch_func(instance, func);
-        let (callee_ip, sp, mem0, mem0_len, instance) =
-            return_call_wasm_or_host(state, func, params, mem0, mem0_len, instance)?;
-        dispatch!(state, callee_ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+        args.return_call_wasm_or_host_func(state, func, params)?;
+        dispatch_v2!(state, args)
     }
 }
 
