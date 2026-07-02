@@ -34,14 +34,12 @@ use crate::{
                 extract_mem0,
                 fetch_data,
                 fetch_elem,
-                fetch_global,
                 fetch_memory,
                 fetch_table,
                 memory_slice,
                 memory_slice_mut,
                 resolve_data_mut,
                 resolve_elem_mut,
-                resolve_global,
                 resolve_indirect_func,
                 resolve_memory,
                 resolve_table,
@@ -163,12 +161,12 @@ macro_rules! global_get_execution_handler {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$camel_name { global, result }) = unsafe { decode_op(ip) };
-                    let global = fetch_global(instance, global);
-                    let global = resolve_global(state.store, &global);
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name { global, result } = unsafe { args.decode_op() };
+                    let global = args.fetch_global(state, global);
                     let value: $ty = global.get_raw().read_as();
-                    set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(result, value);
+                    dispatch_v2!(state, args)
                 }
             }
         )*
