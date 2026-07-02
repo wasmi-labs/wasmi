@@ -47,20 +47,11 @@ pub fn control_continue(
 }
 
 macro_rules! dispatch {
-    (
-        $state:expr,
-        $ip:expr,
-        $sp:expr,
-        $mem0:expr,
-        $mem0_len:expr,
-        $instance:expr,
-        $ireg:expr,
-        $freg32:expr,
-        $freg64:expr $(,)?
-    ) => {{
+    ( $state:expr, $args:expr $(,)? ) => {{
         let _: &mut VmState = $state;
+        let (ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64) = $args.into_parts();
         return $crate::engine::executor::handler::dispatch::backend::control_continue(
-            $ip, $sp, $mem0, $mem0_len, $instance, $ireg, $freg32, $freg64,
+            ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64,
         );
     }};
 }
