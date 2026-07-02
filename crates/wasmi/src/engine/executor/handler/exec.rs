@@ -975,16 +975,15 @@ macro_rules! impl_table_get {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (ip, crate::ir::decode::$op { table, result, index }) = unsafe { decode_op(ip) };
-                    let table = fetch_table(instance, table);
-                    let table = resolve_table(state.store, &table);
-                    let index = $ext(get_value(index, sp, ireg, freg32, freg64));
-                    let value = match table.get(index) {
-                        Some(value) => value.raw(),
-                        None => trap!(TrapCode::TableOutOfBounds)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$op { table, result, index } = unsafe { args.decode_op() };
+                    let table = args.fetch_table(state, table);
+                    let index = $ext(args.get(index));
+                    let Some(value) = table.get(index) else {
+                        trap!(TrapCode::TableOutOfBounds)
                     };
-                    set_value!(result, value, sp, ireg, freg32, freg64);
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    args.set(result, value.raw());
+                    dispatch_v2!(state, args)
                 }
             }
         )*
