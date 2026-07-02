@@ -40,12 +40,12 @@ macro_rules! consume_fuel {
             $fuel.consume_fuel_if($eval)
         {
             $args.set_ip($ip);
-            out_of_fuel_v2!($state, $args, required_fuel)
+            out_of_fuel!($state, $args, required_fuel)
         }
     }};
 }
 
-macro_rules! out_of_fuel_v2 {
+macro_rules! out_of_fuel {
     ($state:expr, $args:expr, $required_fuel:expr) => {{
         $state.stack.sync_ip($args.ip);
         $state

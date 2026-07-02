@@ -108,7 +108,7 @@ execution_handler! {
             .consume_fuel_unchecked(u64::from(fuel));
         if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
             args.set_ip(ip);
-            out_of_fuel_v2!(state, args, required_fuel)
+            out_of_fuel!(state, args, required_fuel)
         }
         dispatch_v2!(state, args)
     }
@@ -497,7 +497,7 @@ execution_handler! {
             }
             Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
                 args.set_ip(ip);
-                out_of_fuel_v2!(state, args, required_fuel)
+                out_of_fuel!(state, args, required_fuel)
             }
             Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
                 trap!(TrapCode::GrowthOperationLimited);
@@ -801,7 +801,7 @@ execution_handler! {
                     TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                     TableError::OutOfFuel { required_fuel } => {
                         args.set_ip(ip);
-                        out_of_fuel_v2!(state, args, required_fuel)
+                        out_of_fuel!(state, args, required_fuel)
                     }
                     _ => panic!("table.copy: unexpected error: {error:?}"),
                 };
@@ -822,7 +822,7 @@ execution_handler! {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::OutOfFuel { required_fuel } => {
                     args.set_ip(ip);
-                    out_of_fuel_v2!(state, args, required_fuel)
+                    out_of_fuel!(state, args, required_fuel)
                 }
                 _ => panic!("table.copy: unexpected error: {error:?}"),
             };
@@ -862,7 +862,7 @@ execution_handler! {
                 TableError::FillOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfFuel { required_fuel } => {
                     args.set_ip(ip);
-                    out_of_fuel_v2!(state, args, required_fuel)
+                    out_of_fuel!(state, args, required_fuel)
                 }
                 _ => panic!("table.fill: unexpected error: {error:?}"),
             };
@@ -907,7 +907,7 @@ execution_handler! {
                 TableError::InitOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfFuel { required_fuel } => {
                     args.set_ip(ip);
-                    out_of_fuel_v2!(state, args, required_fuel)
+                    out_of_fuel!(state, args, required_fuel)
                 }
                 _ => panic!("table.init: unexpected error: {error:?}"),
             };
