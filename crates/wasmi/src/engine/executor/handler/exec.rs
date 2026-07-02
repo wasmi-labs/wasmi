@@ -1927,14 +1927,15 @@ macro_rules! handler_cmp_branch {
                     freg32: Freg32,
                     freg64: Freg64,
                 ) -> Done = {
-                    let (next_ip, $crate::ir::decode::$decode { offset, lhs, rhs }) = unsafe { decode_op(ip) };
-                    let lhs = get_value(lhs, sp, ireg, freg32, freg64);
-                    let rhs = get_value(rhs, sp, ireg, freg32, freg64);
-                    let ip = match $eval(lhs, rhs) {
-                        true => offset_ip(ip, offset),
-                        false => next_ip,
-                    };
-                    dispatch!(state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64)
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let $crate::ir::decode::$decode { offset, lhs, rhs } = unsafe { args.decode_op() };
+                    let lhs = args.get(lhs);
+                    let rhs = args.get(rhs);
+                    if $eval(lhs, rhs) {
+                        args.set_ip(ip);
+                        args.offset_ip(offset);
+                    }
+                    dispatch_v2!(state, args)
                 }
             }
         )*
