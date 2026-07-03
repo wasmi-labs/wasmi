@@ -31,9 +31,7 @@ impl Clone for Op {
 #[cfg(not(feature = "debug"))]
 impl ::core::fmt::Debug for Op {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        f.debug_struct("Op")
-            .field("code", &self.code())
-            .finish()
+        f.debug_struct("Op").field("code", &self.code()).finish()
     }
 }
 
