@@ -1,15 +1,40 @@
 use crate::{
-    core::Typed,
+    core::{Typed, TypedRawVal},
     engine::translator::utils::{ToBits, Wrap},
     ir::{Address, Offset, Offset16, Op, Slot, index::Memory},
 };
 
 /// Trait implemented by all Wasm operators that can be translated as wrapping store instructions.
-pub trait StoreOp {
+pub trait StoreOp: Sized {
     /// The type of the value to the stored.
-    type Value: Typed;
+    type Value: Typed + From<TypedRawVal>;
     /// The type of immediate values.
     type Immediate;
+
+    /// The virtual table of `Self`'s associated methods.
+    ///
+    /// Passing this to the generic translation routines instead of `Self`
+    /// allows all [`StoreOp`]s to share a single monomorphization,
+    /// avoiding codegen bloat. Immediates cross the vtable boundary as
+    /// [`TypedRawVal`] which type-checks all conversions in debug mode;
+    /// [`StoreOp::into_immediate`] is applied inside the adapted constructors.
+    const VT: StoreOpVt = StoreOpVt {
+        store_rr: Self::store_rr,
+        store_rs: Self::store_rs,
+        store_ri: store_ri_vt::<Self>,
+        store_sr: Self::store_sr,
+        store_ss: Self::store_ss,
+        store_si: store_si_vt::<Self>,
+        store_ir: Self::store_ir,
+        store_is: Self::store_is,
+        store_ii: store_ii_vt::<Self>,
+        store_mem0_offset16_rr: Self::store_mem0_offset16_rr,
+        store_mem0_offset16_rs: Self::store_mem0_offset16_rs,
+        store_mem0_offset16_ri: store_mem0_offset16_ri_vt::<Self>,
+        store_mem0_offset16_sr: Self::store_mem0_offset16_sr,
+        store_mem0_offset16_ss: Self::store_mem0_offset16_ss,
+        store_mem0_offset16_si: store_mem0_offset16_si_vt::<Self>,
+    };
 
     /// Converts the value into the immediate value type.
     ///
@@ -41,6 +66,50 @@ pub trait StoreOp {
     fn store_mem0_offset16_sr(ptr: Slot, offset: Offset16) -> Op;
     fn store_mem0_offset16_ss(ptr: Slot, offset: Offset16, value: Slot) -> Op;
     fn store_mem0_offset16_si(ptr: Slot, offset: Offset16, value: Self::Immediate) -> Op;
+}
+
+/// Virtual table for a [`StoreOp`]. See [`StoreOp::VT`].
+pub struct StoreOpVt {
+    pub store_rr: fn(offset: Offset, memory: Memory) -> Option<Op>,
+    pub store_rs: fn(offset: Offset, value: Slot, memory: Memory) -> Op,
+    pub store_ri: fn(offset: Offset, value: TypedRawVal, memory: Memory) -> Op,
+    pub store_sr: fn(ptr: Slot, offset: Offset, memory: Memory) -> Op,
+    pub store_ss: fn(ptr: Slot, offset: Offset, value: Slot, memory: Memory) -> Op,
+    pub store_si: fn(ptr: Slot, offset: Offset, value: TypedRawVal, memory: Memory) -> Op,
+    pub store_ir: fn(address: Address, memory: Memory) -> Op,
+    pub store_is: fn(address: Address, value: Slot, memory: Memory) -> Op,
+    pub store_ii: fn(address: Address, value: TypedRawVal, memory: Memory) -> Op,
+    pub store_mem0_offset16_rr: fn(offset: Offset16) -> Option<Op>,
+    pub store_mem0_offset16_rs: fn(offset: Offset16, value: Slot) -> Op,
+    pub store_mem0_offset16_ri: fn(offset: Offset16, value: TypedRawVal) -> Op,
+    pub store_mem0_offset16_sr: fn(ptr: Slot, offset: Offset16) -> Op,
+    pub store_mem0_offset16_ss: fn(ptr: Slot, offset: Offset16, value: Slot) -> Op,
+    pub store_mem0_offset16_si: fn(ptr: Slot, offset: Offset16, value: TypedRawVal) -> Op,
+}
+
+/// Adapts [`StoreOp::store_ri`] for [`StoreOpVt`].
+fn store_ri_vt<T: StoreOp>(offset: Offset, value: TypedRawVal, memory: Memory) -> Op {
+    T::store_ri(offset, T::into_immediate(value.into()), memory)
+}
+
+/// Adapts [`StoreOp::store_si`] for [`StoreOpVt`].
+fn store_si_vt<T: StoreOp>(ptr: Slot, offset: Offset, value: TypedRawVal, memory: Memory) -> Op {
+    T::store_si(ptr, offset, T::into_immediate(value.into()), memory)
+}
+
+/// Adapts [`StoreOp::store_ii`] for [`StoreOpVt`].
+fn store_ii_vt<T: StoreOp>(address: Address, value: TypedRawVal, memory: Memory) -> Op {
+    T::store_ii(address, T::into_immediate(value.into()), memory)
+}
+
+/// Adapts [`StoreOp::store_mem0_offset16_ri`] for [`StoreOpVt`].
+fn store_mem0_offset16_ri_vt<T: StoreOp>(offset: Offset16, value: TypedRawVal) -> Op {
+    T::store_mem0_offset16_ri(offset, T::into_immediate(value.into()))
+}
+
+/// Adapts [`StoreOp::store_mem0_offset16_si`] for [`StoreOpVt`].
+fn store_mem0_offset16_si_vt<T: StoreOp>(ptr: Slot, offset: Offset16, value: TypedRawVal) -> Op {
+    T::store_mem0_offset16_si(ptr, offset, T::into_immediate(value.into()))
 }
 
 macro_rules! impl_store_wrap {

@@ -24,6 +24,7 @@ use self::{
         CommutativeBinaryOp,
         CommutativeBinaryOpVt,
         LoadOpVt,
+        StoreOpVt,
         UnaryOp,
         UnaryOpVt,
     },
@@ -2499,11 +2500,7 @@ impl FuncTranslator {
     /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64}.{store, store8, store16, store32}`
-    fn translate_store<T: op::StoreOp>(&mut self, memarg: MemArg) -> Result<(), Error>
-    where
-        T::Value: Copy + From<TypedRawVal>,
-        T::Immediate: Copy,
-    {
+    fn translate_store<T: op::StoreOp>(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
         let (ptr, value) = self.stack.pop2();
         self.encode_store::<T>(memarg, ptr, value)
@@ -2514,12 +2511,28 @@ impl FuncTranslator {
         memarg: MemArg,
         ptr: Operand,
         value: Operand,
-    ) -> Result<(), Error>
-    where
-        T::Value: Copy + From<TypedRawVal>,
-        T::Immediate: Copy,
-    {
-        let op = self.choose_store_op::<T>(memarg, ptr, value)?;
+    ) -> Result<(), Error> {
+        self.encode_store_vt(&T::VT, memarg, ptr, value)
+    }
+
+    /// Encodes a Wasm `store` instruction as Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// All types implementing [`StoreOp`] share this single monomorphization
+    /// via their [`StoreOp::VT`] virtual table to avoid codegen bloat.
+    ///
+    /// [`StoreOp`]: op::StoreOp
+    /// [`StoreOp::VT`]: op::StoreOp::VT
+    #[inline(never)]
+    fn encode_store_vt(
+        &mut self,
+        vt: &StoreOpVt,
+        memarg: MemArg,
+        ptr: Operand,
+        value: Operand,
+    ) -> Result<(), Error> {
+        let op = self.choose_store_op_vt(vt, memarg, ptr, value)?;
         if let Op::Trap { trap_code } = op {
             return self.translate_trap(trap_code);
         }
@@ -2527,17 +2540,14 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Selects which store operator to encode based on type `T`.
-    fn choose_store_op<T: op::StoreOp>(
+    /// Selects which store operator to encode based on the given `vt`.
+    fn choose_store_op_vt(
         &mut self,
+        vt: &StoreOpVt,
         memarg: MemArg,
         ptr: Operand,
         value: Operand,
-    ) -> Result<Op, Error>
-    where
-        T::Value: Copy + From<TypedRawVal>,
-        T::Immediate: Copy,
-    {
+    ) -> Result<Op, Error> {
         use ResolvedOperand as Opd;
         let Some((memory, offset)) = Self::decode_memarg(memarg)? else {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
@@ -2549,25 +2559,25 @@ impl FuncTranslator {
         else {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
-        if let Some(op) = self.choose_store_mem0_offset16_op::<T>(ptr, offset, memory, value)? {
+        if let Some(op) = self.choose_store_mem0_offset16_op_vt(vt, ptr, offset, memory, value)? {
             return Ok(op);
         }
-        let value = self
-            .resolve_operand::<T::Value>(value)?
-            .map(T::into_immediate);
+        let value = self.resolve_operand::<TypedRawVal>(value)?;
         let op = match (ptr, value) {
-            (Opd::Reg(_), Opd::Reg(_)) => match T::store_rr(offset, memory) {
+            (Opd::Reg(_), Opd::Reg(_)) => match (vt.store_rr)(offset, memory) {
                 Some(op) => op,
                 None => unreachable!(),
             },
-            (Opd::Reg(_), Opd::Slot(value)) => T::store_rs(offset, value, memory),
-            (Opd::Reg(_), Opd::Immediate(value)) => T::store_ri(offset, value, memory),
-            (Opd::Slot(ptr), Opd::Reg(_)) => T::store_sr(ptr, offset, memory),
-            (Opd::Slot(ptr), Opd::Slot(value)) => T::store_ss(ptr, offset, value, memory),
-            (Opd::Slot(ptr), Opd::Immediate(value)) => T::store_si(ptr, offset, value, memory),
-            (Opd::Immediate(address), Opd::Reg(_)) => T::store_ir(address, memory),
-            (Opd::Immediate(address), Opd::Slot(value)) => T::store_is(address, value, memory),
-            (Opd::Immediate(address), Opd::Immediate(value)) => T::store_ii(address, value, memory),
+            (Opd::Reg(_), Opd::Slot(value)) => (vt.store_rs)(offset, value, memory),
+            (Opd::Reg(_), Opd::Immediate(value)) => (vt.store_ri)(offset, value, memory),
+            (Opd::Slot(ptr), Opd::Reg(_)) => (vt.store_sr)(ptr, offset, memory),
+            (Opd::Slot(ptr), Opd::Slot(value)) => (vt.store_ss)(ptr, offset, value, memory),
+            (Opd::Slot(ptr), Opd::Immediate(value)) => (vt.store_si)(ptr, offset, value, memory),
+            (Opd::Immediate(address), Opd::Reg(_)) => (vt.store_ir)(address, memory),
+            (Opd::Immediate(address), Opd::Slot(value)) => (vt.store_is)(address, value, memory),
+            (Opd::Immediate(address), Opd::Immediate(value)) => {
+                (vt.store_ii)(address, value, memory)
+            }
         };
         Ok(op)
     }
@@ -2579,17 +2589,14 @@ impl FuncTranslator {
     /// - Returns `Ok(true)` if encoding is available.
     /// - Returns `Ok(false)` if encoding is not available.
     /// - Returns `Err(_)` if an error occurred.
-    fn choose_store_mem0_offset16_op<T: op::StoreOp>(
+    fn choose_store_mem0_offset16_op_vt(
         &mut self,
+        vt: &StoreOpVt,
         ptr: ResolvedOperand<Address>,
         offset: Offset,
         memory: index::Memory,
         value: Operand,
-    ) -> Result<Option<Op>, Error>
-    where
-        T::Value: Copy + From<TypedRawVal>,
-        T::Immediate: Copy,
-    {
+    ) -> Result<Option<Op>, Error> {
         use Location as Loc;
         use ResolvedOperand as Opd;
         if !memory.is_default() {
@@ -2603,23 +2610,21 @@ impl FuncTranslator {
             Opd::Slot(ptr) => Loc::Slot(ptr),
             Opd::Immediate(_) => return Ok(None),
         };
-        let resolved_value = self
-            .resolve_operand::<T::Value>(value)?
-            .map(T::into_immediate);
+        let resolved_value = self.resolve_operand::<TypedRawVal>(value)?;
         let op = match (ptr, resolved_value) {
-            (Loc::Reg(_), Opd::Reg(_)) => match T::store_mem0_offset16_rr(offset) {
+            (Loc::Reg(_), Opd::Reg(_)) => match (vt.store_mem0_offset16_rr)(offset) {
                 Some(op) => op,
                 None => {
                     let value = self.reg_operand_to_slot(value)?;
-                    T::store_mem0_offset16_rs(offset, value)
+                    (vt.store_mem0_offset16_rs)(offset, value)
                 }
             },
-            (Loc::Reg(_), Opd::Slot(value)) => T::store_mem0_offset16_rs(offset, value),
-            (Loc::Reg(_), Opd::Immediate(value)) => T::store_mem0_offset16_ri(offset, value),
-            (Loc::Slot(ptr), Opd::Reg(_)) => T::store_mem0_offset16_sr(ptr, offset),
-            (Loc::Slot(ptr), Opd::Slot(value)) => T::store_mem0_offset16_ss(ptr, offset, value),
+            (Loc::Reg(_), Opd::Slot(value)) => (vt.store_mem0_offset16_rs)(offset, value),
+            (Loc::Reg(_), Opd::Immediate(value)) => (vt.store_mem0_offset16_ri)(offset, value),
+            (Loc::Slot(ptr), Opd::Reg(_)) => (vt.store_mem0_offset16_sr)(ptr, offset),
+            (Loc::Slot(ptr), Opd::Slot(value)) => (vt.store_mem0_offset16_ss)(ptr, offset, value),
             (Loc::Slot(ptr), Opd::Immediate(value)) => {
-                T::store_mem0_offset16_si(ptr, offset, value)
+                (vt.store_mem0_offset16_si)(ptr, offset, value)
             }
         };
         Ok(Some(op))
