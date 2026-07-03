@@ -75,7 +75,7 @@ pub enum StackOperand {
 #[cfg(not(feature = "debug"))]
 impl core::fmt::Debug for StackOperand {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str("StackOperand")?;
+        f.write_str("StackOperand::")?;
         let variant = match self {
             Self::Local { .. } => "Local { .. }",
             Self::Temp { .. } => "Temp { .. }",
