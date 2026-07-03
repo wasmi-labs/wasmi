@@ -6,7 +6,7 @@
 //!
 //! [`s1vm`]: https://github.com/Neopallium/s1vm
 
-use super::FuncIdx;
+use super::{FuncIdx, MaybeDebug};
 use crate::{ExternRef, F32, F64, Func, Nullable, RefType, Val, core::wasm};
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, mem};
@@ -538,7 +538,10 @@ impl ConstExpr {
                             ty: AbstractHeapType::Extern,
                         } => ConstVal::null(RefType::Extern),
                         invalid => {
-                            panic!("invalid heap type for `ref.null`: {invalid:?}")
+                            panic!(
+                                "invalid heap type for `ref.null`: {:?}",
+                                MaybeDebug(&invalid)
+                            )
                         }
                     };
                     Op::constant(value)
@@ -551,7 +554,10 @@ impl ConstExpr {
                 WasmOp::I64Sub => expr_op(&mut stack, wasm::i64_sub),
                 WasmOp::I64Mul => expr_op(&mut stack, wasm::i64_mul),
                 WasmOp::End => break,
-                op => panic!("unexpected Wasm const expression operator: {op:?}"),
+                op => panic!(
+                    "unexpected Wasm const expression operator: {:?}",
+                    MaybeDebug(&op)
+                ),
             };
             stack.push(op);
         }

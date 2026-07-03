@@ -163,7 +163,12 @@ impl From<wasmparser::HeapType> for WasmiRefType {
                 shared: false,
                 ty: AbstractHeapType::Extern,
             } => Self::from(RefType::Extern),
-            unsupported => panic!("encountered unsupported heap type: {unsupported:?}"),
+            unsupported => {
+                panic!(
+                    "encountered unsupported heap type: {:?}",
+                    MaybeDebug(&unsupported)
+                )
+            }
         }
     }
 }
@@ -173,7 +178,12 @@ impl From<wasmparser::RefType> for WasmiRefType {
         match ref_type {
             wasmparser::RefType::FUNCREF => Self::from(RefType::Func),
             wasmparser::RefType::EXTERNREF => Self::from(RefType::Extern),
-            unsupported => panic!("encountered unsupported reference type: {unsupported:?}"),
+            unsupported => {
+                panic!(
+                    "encountered unsupported reference type: {:?}",
+                    MaybeDebug(&unsupported)
+                )
+            }
         }
     }
 }

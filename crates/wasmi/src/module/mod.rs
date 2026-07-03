@@ -18,6 +18,7 @@ use self::{
     global::Global,
     import::{ExternTypeIdx, Import},
     parser::ModuleParser,
+    utils::MaybeDebug,
 };
 pub use self::{
     custom_section::{CustomSection, CustomSectionsIter},
