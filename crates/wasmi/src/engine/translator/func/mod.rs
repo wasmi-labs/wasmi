@@ -18,7 +18,14 @@ use self::{
     labels::{LabelRef, LabelRegistry},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
-    op::{BinaryOp, CommutativeBinaryOp, UnaryOp, UnaryOpVt},
+    op::{
+        BinaryOp,
+        BinaryOpVt,
+        CommutativeBinaryOp,
+        CommutativeBinaryOpVt,
+        UnaryOp,
+        UnaryOpVt,
+    },
     stack::{
         BlockControlFrame,
         ControlFrame,
@@ -1762,7 +1769,7 @@ impl FuncTranslator {
     }
 
     /// Convenience method to tell that there is no custom optimization.
-    fn no_opt_ri<T>(&mut self, _lhs: Operand, _rhs: T) -> Result<bool, Error> {
+    fn no_opt_ri(&mut self, _lhs: Operand, _rhs: TypedRawVal) -> Result<bool, Error> {
         Ok(false)
     }
 
@@ -1824,29 +1831,37 @@ impl FuncTranslator {
     }
 
     /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
-    fn translate_binary_commutative<T: CommutativeBinaryOp>(&mut self) -> Result<(), Error>
-    where
-        T::Input: From<TypedRawVal> + Copy,
-        T::Result: Into<TypedRawVal>,
-    {
+    fn translate_binary_commutative<T: CommutativeBinaryOp>(&mut self) -> Result<(), Error> {
         self.translate_binary_commutative_with_opt::<T>(Self::no_opt_ri)
     }
 
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_commutative_with_opt<T: CommutativeBinaryOp>(
         &mut self,
-        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: T::Input) -> Result<bool, Error>,
-    ) -> Result<(), Error>
-    where
-        T::Input: From<TypedRawVal> + Copy,
-        T::Result: Into<TypedRawVal>,
-    {
+        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error>,
+    ) -> Result<(), Error> {
+        self.translate_binary_commutative_vt(&T::VT, opt_rhs_imm)
+    }
+
+    /// Translates a commutative binary Wasm operator to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// All types implementing [`CommutativeBinaryOp`] share this single
+    /// monomorphization via their [`CommutativeBinaryOp::VT`] virtual table
+    /// to avoid codegen bloat.
+    #[inline(never)]
+    fn translate_binary_commutative_vt(
+        &mut self,
+        vt: &CommutativeBinaryOpVt,
+        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error>,
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
-        let l = self.resolve_operand::<T::Input>(lhs)?;
-        let r = self.resolve_operand::<T::Input>(rhs)?;
+        let l = self.resolve_operand::<TypedRawVal>(lhs)?;
+        let r = self.resolve_operand::<TypedRawVal>(rhs)?;
         if let (ResolvedOperand::Immediate(lhs), ResolvedOperand::Immediate(rhs)) = (l, r) {
-            return self.translate_binary_consteval(lhs, rhs, T::consteval);
+            return self.translate_binary_consteval(lhs, rhs, vt.consteval);
         }
         let (l, r) = ResolvedOperand::sort(l, r);
         if let (_, ResolvedOperand::Immediate(rhs)) = (l, r) {
@@ -1855,51 +1870,56 @@ impl FuncTranslator {
             }
         }
         let operator = match (l, r) {
-            (ResolvedOperand::Reg(_), ResolvedOperand::Reg(_)) => match T::op_rrr() {
+            (ResolvedOperand::Reg(_), ResolvedOperand::Reg(_)) => match (vt.op_rrr)() {
                 Some(op) => op,
                 None => {
                     let rhs_slot = self.reg_operand_to_slot(rhs)?;
-                    T::op_rrs(rhs_slot)
+                    (vt.op_rrs)(rhs_slot)
                 }
             },
-            (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
-            (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
-            (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => T::op_rss(lhs, rhs),
-            (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => T::op_rsi(lhs, rhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => (vt.op_rrs)(rhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => (vt.op_rri)(rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => (vt.op_rss)(lhs, rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => (vt.op_rsi)(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
         };
-        self.stage_op_with_result_reg(<T::Result as Typed>::TY, operator, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(vt.result_ty, operator, FuelCostsProvider::base)?;
         Ok(())
     }
 
     /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
-    fn translate_binary<T: BinaryOp>(&mut self) -> Result<(), Error>
-    where
-        T::Lhs: From<TypedRawVal> + Copy,
-        T::Rhs: Copy,
-        T::Result: Into<TypedRawVal>,
-    {
+    fn translate_binary<T: BinaryOp>(&mut self) -> Result<(), Error> {
         self.translate_binary_with_opt::<T>(Self::no_opt_ri)
     }
 
     /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_with_opt<T: BinaryOp>(
         &mut self,
-        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: T::Rhs) -> Result<bool, Error>,
-    ) -> Result<(), Error>
-    where
-        T::Lhs: From<TypedRawVal> + Copy,
-        T::Rhs: Copy,
-        T::Result: Into<TypedRawVal>,
-    {
+        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error>,
+    ) -> Result<(), Error> {
+        self.translate_binary_vt(&T::VT, opt_rhs_imm)
+    }
+
+    /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// All types implementing [`BinaryOp`] share this single monomorphization
+    /// via their [`BinaryOp::VT`] virtual table to avoid codegen bloat.
+    #[inline(never)]
+    fn translate_binary_vt(
+        &mut self,
+        vt: &BinaryOpVt,
+        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error>,
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
-        let l = self.resolve_operand::<T::Lhs>(lhs)?;
-        let r = self.resolve_operand::<RawVal>(rhs)?;
+        let l = self.resolve_operand::<TypedRawVal>(lhs)?;
+        let r = self.resolve_operand::<TypedRawVal>(rhs)?;
         let r = match r {
             ResolvedOperand::Reg(ty) => ResolvedOperand::Reg(ty),
             ResolvedOperand::Slot(rhs) => ResolvedOperand::Slot(rhs),
-            ResolvedOperand::Immediate(rhs) => match T::decode_rhs(rhs) {
+            ResolvedOperand::Immediate(rhs) => match (vt.decode_rhs)(rhs) {
                 BinaryOpRhs::Value(rhs) => ResolvedOperand::Immediate(rhs),
                 BinaryOpRhs::Trap(trap_code) => return self.translate_trap(trap_code),
                 BinaryOpRhs::ReturnLhs => {
@@ -1909,7 +1929,7 @@ impl FuncTranslator {
             },
         };
         if let (ResolvedOperand::Immediate(lhs), ResolvedOperand::Immediate(rhs)) = (l, r) {
-            return self.translate_binary_consteval(lhs, rhs, T::consteval);
+            return self.translate_binary_consteval(lhs, rhs, vt.consteval);
         }
         if let (_, ResolvedOperand::Immediate(rhs)) = (l, r) {
             if opt_rhs_imm(self, lhs, rhs)? {
@@ -1917,36 +1937,33 @@ impl FuncTranslator {
             }
         }
         let operator = match (l, r) {
-            (ResolvedOperand::Reg(_), ResolvedOperand::Reg(_)) => match T::op_rrr() {
+            (ResolvedOperand::Reg(_), ResolvedOperand::Reg(_)) => match (vt.op_rrr)() {
                 Some(op) => op,
                 None => {
                     let rhs_slot = self.reg_operand_to_slot(rhs)?;
-                    T::op_rrs(rhs_slot)
+                    (vt.op_rrs)(rhs_slot)
                 }
             },
-            (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
-            (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
-            (ResolvedOperand::Slot(lhs), ResolvedOperand::Reg(_)) => T::op_rsr(lhs),
-            (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => T::op_rss(lhs, rhs),
-            (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => T::op_rsi(lhs, rhs),
-            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Reg(_)) => T::op_rir(lhs),
-            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Slot(rhs)) => T::op_ris(lhs, rhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => (vt.op_rrs)(rhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => (vt.op_rri)(rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Reg(_)) => (vt.op_rsr)(lhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => (vt.op_rss)(lhs, rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => (vt.op_rsi)(lhs, rhs),
+            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Reg(_)) => (vt.op_rir)(lhs),
+            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Slot(rhs)) => (vt.op_ris)(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
         };
-        self.stage_op_with_result_reg(<T::Result as Typed>::TY, operator, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(vt.result_ty, operator, FuelCostsProvider::base)?;
         Ok(())
     }
 
     /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
-    fn translate_binary_consteval<Lhs, Rhs, Res>(
+    fn translate_binary_consteval(
         &mut self,
-        lhs: Lhs,
-        rhs: Rhs,
-        consteval: impl FnOnce(Lhs, Rhs) -> Result<Res, TrapCode>,
-    ) -> Result<(), Error>
-    where
-        Res: Into<TypedRawVal>,
-    {
+        lhs: TypedRawVal,
+        rhs: TypedRawVal,
+        consteval: fn(TypedRawVal, TypedRawVal) -> Result<TypedRawVal, TrapCode>,
+    ) -> Result<(), Error> {
         match consteval(lhs, rhs) {
             Ok(value) => {
                 self.stack.push_immediate(value)?;
@@ -2309,7 +2326,7 @@ impl FuncTranslator {
     /// - `Ok(true)` if the intruction fusion was successful.
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
-    pub fn fuse_eqz<T: WasmInteger>(&mut self, lhs: Operand, rhs: T) -> Result<bool, Error> {
+    pub fn fuse_eqz(&mut self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error> {
         self.fuse_commutative_cmp_with(lhs, rhs, NegateCmpInstr::negate_cmp_instr)
     }
 
@@ -2320,7 +2337,7 @@ impl FuncTranslator {
     /// - `Ok(true)` if the intruction fusion was successful.
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
-    pub fn fuse_nez<T: WasmInteger>(&mut self, lhs: Operand, rhs: T) -> Result<bool, Error> {
+    pub fn fuse_nez(&mut self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error> {
         self.fuse_commutative_cmp_with(lhs, rhs, LogicalizeCmpInstr::logicalize_cmp_instr)
     }
 
@@ -2333,13 +2350,18 @@ impl FuncTranslator {
     /// - `Ok(true)` if the intruction fusion was successful.
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
-    fn fuse_commutative_cmp_with<T: WasmInteger>(
+    fn fuse_commutative_cmp_with(
         &mut self,
         lhs: Operand,
-        rhs: T,
+        rhs: TypedRawVal,
         try_fuse: fn(cmp: &Op) -> Option<Op>,
     ) -> Result<bool, Error> {
-        if !rhs.is_zero() {
+        let is_zero = match rhs.ty() {
+            ValType::I32 => i32::from(rhs).is_zero(),
+            ValType::I64 => i64::from(rhs).is_zero(),
+            _ => false,
+        };
+        if !is_zero {
             // Case: cannot fuse with non-zero `rhs`
             return Ok(false);
         }
