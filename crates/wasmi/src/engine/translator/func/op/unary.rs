@@ -1,18 +1,45 @@
 use super::IntoResult as _;
 use crate::{
     TrapCode,
-    core::{Typed, wasm},
+    ValType,
+    core::{Typed, TypedRawVal, wasm},
     ir::{Op, Slot},
 };
 
-pub trait UnaryOp {
-    type Result;
-    type Value: Typed;
+pub trait UnaryOp: Sized {
+    type Result: Typed + Into<TypedRawVal>;
+    type Value: Typed + From<TypedRawVal>;
+
+    /// The virtual table of `Self`'s associated methods.
+    ///
+    /// Passing this to the generic translation routines instead of `Self`
+    /// allows all [`UnaryOp`]s to share a single monomorphization,
+    /// avoiding codegen bloat. Immediates cross the vtable boundary as
+    /// [`TypedRawVal`] which type-checks all conversions in debug mode.
+    const VT: UnaryOpVt = UnaryOpVt {
+        result_ty: <Self::Result as Typed>::TY,
+        consteval: unary_consteval_vt::<Self>,
+        op_rs: Self::op_rs,
+        op_rr: Self::op_rr,
+    };
 
     fn consteval(value: Self::Value) -> Result<Self::Result, TrapCode>;
 
     fn op_rs(value: Slot) -> Op;
     fn op_rr() -> Op;
+}
+
+/// Virtual table for a [`UnaryOp`]. See [`UnaryOp::VT`].
+pub struct UnaryOpVt {
+    pub result_ty: ValType,
+    pub consteval: fn(value: TypedRawVal) -> Result<TypedRawVal, TrapCode>,
+    pub op_rs: fn(value: Slot) -> Op,
+    pub op_rr: fn() -> Op,
+}
+
+/// Adapts [`UnaryOp::consteval`] for [`UnaryOpVt`].
+fn unary_consteval_vt<T: UnaryOp>(value: TypedRawVal) -> Result<TypedRawVal, TrapCode> {
+    T::consteval(value.into()).map(Into::into)
 }
 
 macro_rules! impl_unary_op_for {

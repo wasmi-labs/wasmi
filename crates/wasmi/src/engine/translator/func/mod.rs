@@ -18,7 +18,7 @@ use self::{
     labels::{LabelRef, LabelRegistry},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
-    op::{BinaryOp, CommutativeBinaryOp, UnaryOp},
+    op::{BinaryOp, CommutativeBinaryOp, UnaryOp, UnaryOpVt},
     stack::{
         BlockControlFrame,
         ControlFrame,
@@ -1654,22 +1654,33 @@ impl FuncTranslator {
     fn translate_unary_with_opt<Op: UnaryOp>(
         &mut self,
         try_opt: fn(&mut FuncTranslator, value: Operand) -> Result<bool, Error>,
-    ) -> Result<(), Error>
-    where
-        Op::Value: From<TypedRawVal>,
-        Op::Result: Into<TypedRawVal> + Typed,
-    {
+    ) -> Result<(), Error> {
+        self.translate_unary_vt(&Op::VT, try_opt)
+    }
+
+    /// Translates a unary Wasm instruction to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// All types implementing [`UnaryOp`] share this single monomorphization
+    /// via their [`UnaryOp::VT`] virtual table to avoid codegen bloat.
+    #[inline(never)]
+    fn translate_unary_vt(
+        &mut self,
+        vt: &UnaryOpVt,
+        try_opt: fn(&mut FuncTranslator, value: Operand) -> Result<bool, Error>,
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
         let input = self.stack.pop();
         if try_opt(self, input)? {
             // Case: custom optimization took effect, return early.
             return Ok(());
         }
-        let op = match self.resolve_operand::<Op::Value>(input)? {
-            ResolvedOperand::Reg(_) => Op::op_rr(),
-            ResolvedOperand::Slot(input) => Op::op_rs(input),
+        let op = match self.resolve_operand::<TypedRawVal>(input)? {
+            ResolvedOperand::Reg(_) => (vt.op_rr)(),
+            ResolvedOperand::Slot(input) => (vt.op_rs)(input),
             ResolvedOperand::Immediate(input) => {
-                match Op::consteval(input) {
+                match (vt.consteval)(input) {
                     Ok(result) => {
                         self.stack.push_immediate(result)?;
                     }
@@ -1680,16 +1691,12 @@ impl FuncTranslator {
                 return Ok(());
             }
         };
-        self.stage_op_with_result_reg(<Op::Result>::TY, op, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(vt.result_ty, op, FuelCostsProvider::base)?;
         Ok(())
     }
 
     /// Translates a unary Wasm instruction to Wasmi bytecode.
-    fn translate_unary<Op: UnaryOp>(&mut self) -> Result<(), Error>
-    where
-        Op::Value: From<TypedRawVal>,
-        Op::Result: Into<TypedRawVal> + Typed,
-    {
+    fn translate_unary<Op: UnaryOp>(&mut self) -> Result<(), Error> {
         self.translate_unary_with_opt::<Op>(|_, _| Ok(false))
     }
 
