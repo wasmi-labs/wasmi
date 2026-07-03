@@ -77,7 +77,8 @@ impl<T> ResolvedOperand<Option<T>> {
 }
 
 /// An operand on the [`Stack`].
-#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "debug", derive(Debug))]
+#[derive(Copy, Clone)]
 pub enum Operand {
     /// A local variable operand.
     Local(LocalOperand),
@@ -85,6 +86,19 @@ pub enum Operand {
     Temp(TempOperand),
     /// An immediate value operand.
     Immediate(ImmediateOperand),
+}
+
+#[cfg(not(feature = "debug"))]
+impl core::fmt::Debug for Operand {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("Operand::")?;
+        let variant = match self {
+            Self::Local(_) => "Local(..)",
+            Self::Temp(_) => "Temp(..)",
+            Self::Immediate(_) => "Immediate(..)",
+        };
+        f.write_str(variant)
+    }
 }
 
 impl Operand {
