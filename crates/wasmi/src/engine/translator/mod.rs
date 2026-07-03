@@ -83,6 +83,15 @@ pub trait WasmTranslator<'parser>:
     /// in order to avoid frequent memory allocations and deallocations.
     type Allocations: Default;
 
+    /// Is `true` if [`WasmTranslator::setup`] always returns `Ok(true)`.
+    ///
+    /// # Note
+    ///
+    /// This allows the translation driver to statically eliminate
+    /// its Wasm parsing and operator translation code paths that are
+    /// unreachable for setup-only [`WasmTranslator`]s.
+    const SETUP_ONLY: bool = false;
+
     /// Sets up the translation process for the Wasm `bytes` and Wasm `module` header.
     ///
     /// - Returns `true` if the [`WasmTranslator`] is done with the translation process.
@@ -427,6 +436,8 @@ impl LazyFuncTranslator {
 
 impl WasmTranslator<'_> for LazyFuncTranslator {
     type Allocations = ();
+
+    const SETUP_ONLY: bool = true;
 
     fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error> {
         self.module

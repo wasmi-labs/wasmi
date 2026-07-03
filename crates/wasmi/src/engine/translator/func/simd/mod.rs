@@ -65,6 +65,7 @@ impl FuncTranslator {
     }
 
     /// Generically translate any of the Wasm `simd` splat instructions.
+    #[inline(never)]
     fn translate_simd_splat<T, Wrapped>(
         &mut self,
         op_sr: fn(result: Slot) -> Op,
@@ -94,6 +95,7 @@ impl FuncTranslator {
     }
 
     /// Generically translate any of the Wasm `simd` extract lane instructions.
+    #[inline(never)]
     fn translate_extract_lane<T: IntoLaneIdx, R>(
         &mut self,
         lane: u8,
@@ -123,6 +125,7 @@ impl FuncTranslator {
     }
 
     /// Generically translate a Wasm SIMD replace lane instruction.
+    #[inline(never)]
     fn translate_replace_lane<T: op::SimdReplaceLane>(&mut self, lane: u8) -> Result<(), Error>
     where
         T::Item: IntoLaneIdx + From<RawVal> + Copy,
@@ -155,6 +158,7 @@ impl FuncTranslator {
     }
 
     /// Generically translate a Wasm unary instruction.
+    #[inline(never)]
     fn translate_simd_unary_sx<T>(
         &mut self,
         make_instr: fn(result: Slot, input: Slot) -> Op,
@@ -181,6 +185,7 @@ impl FuncTranslator {
     }
 
     /// Generically translate a Wasm unary instruction.
+    #[inline(never)]
     fn translate_simd_unary_rx<T>(
         &mut self,
         make_instr: fn(input: Slot) -> Op,
@@ -203,6 +208,7 @@ impl FuncTranslator {
     }
 
     /// Generically translate a Wasm binary instruction.
+    #[inline(never)]
     fn translate_simd_binary(
         &mut self,
         make_instr: fn(result: Slot, lhs: Slot, rhs: Slot) -> Op,
@@ -227,6 +233,7 @@ impl FuncTranslator {
     }
 
     /// Generically translate a Wasm ternary instruction.
+    #[inline(never)]
     fn translate_simd_ternary(
         &mut self,
         make_instr: fn(result: Slot, a: Slot, b: Slot, c: Slot) -> Op,
@@ -253,6 +260,7 @@ impl FuncTranslator {
     }
 
     /// Generically translate a Wasm SIMD shift instruction.
+    #[inline(never)]
     fn translate_simd_shift<T>(
         &mut self,
         op_ssr: fn(result: Slot, lhs: Slot) -> Op,
@@ -345,6 +353,7 @@ impl FuncTranslator {
         Ok(())
     }
 
+    #[inline(never)]
     fn translate_v128_load_modify<L: LoadOp>(
         &mut self,
         memarg: MemArg,
@@ -369,6 +378,7 @@ impl FuncTranslator {
         Ok(())
     }
 
+    #[inline(never)]
     fn translate_v128_load_lane<L: LoadOp, T: op::SimdReplaceLane>(
         &mut self,
         memarg: MemArg,
@@ -402,6 +412,7 @@ impl FuncTranslator {
     }
 
     #[expect(clippy::type_complexity, clippy::too_many_arguments)]
+    #[inline(never)]
     fn translate_v128_store_lane<T: IntoLaneIdx>(
         &mut self,
         memarg: MemArg,
