@@ -1,5 +1,32 @@
 use crate::{FuncType, GlobalType, MemoryType, Mutability, RefType, TableType, ValType};
+use core::fmt;
 use wasmparser::AbstractHeapType;
+
+/// Debug-formats the wrapped value if the `debug` crate feature is enabled.
+///
+/// Prints the type name of the wrapped value otherwise.
+///
+/// # Note
+///
+/// This is intended for panic messages that debug-print types which Wasmi
+/// does not control, such as `wasmparser` definitions, where their `Debug`
+/// implementations cannot be replaced by trivial ones when the `debug`
+/// crate feature is disabled.
+pub struct MaybeDebug<'a, T>(pub &'a T);
+
+impl<T: fmt::Debug> fmt::Debug for MaybeDebug<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        #[cfg(feature = "debug")]
+        {
+            fmt::Debug::fmt(self.0, f)
+        }
+        #[cfg(not(feature = "debug"))]
+        {
+            let _ = &self.0;
+            f.write_str(core::any::type_name::<T>())
+        }
+    }
+}
 
 /// Types that can be created from `wasmparser` definitions.
 pub(crate) trait FromWasmparser<T> {
