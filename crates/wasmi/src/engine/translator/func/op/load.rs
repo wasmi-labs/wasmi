@@ -1,4 +1,5 @@
 use crate::{
+    ValType,
     core::Typed,
     ir::{Address, Offset, Offset16, Op, Slot, index::Memory},
 };
@@ -8,11 +9,35 @@ pub trait LoadOp {
     /// The type of the loaded value.
     type Result: Typed;
 
+    /// The virtual table of `Self`'s associated methods.
+    ///
+    /// Passing this to the generic translation routines instead of `Self`
+    /// allows all [`LoadOp`]s to share a single monomorphization,
+    /// avoiding codegen bloat.
+    const VT: LoadOpVt = LoadOpVt {
+        result_ty: <Self::Result as Typed>::TY,
+        op_rr: Self::op_rr,
+        op_rs: Self::op_rs,
+        op_ri: Self::op_ri,
+        op_rr_mem0_offset16: Self::op_rr_mem0_offset16,
+        op_rs_mem0_offset16: Self::op_rs_mem0_offset16,
+    };
+
     fn op_rr(offset: Offset, memory: Memory) -> Op;
     fn op_rs(ptr: Slot, offset: Offset, memory: Memory) -> Op;
     fn op_ri(address: Address, memory: Memory) -> Op;
     fn op_rr_mem0_offset16(offset: Offset16) -> Op;
     fn op_rs_mem0_offset16(ptr: Slot, offset: Offset16) -> Op;
+}
+
+/// Virtual table for a [`LoadOp`]. See [`LoadOp::VT`].
+pub struct LoadOpVt {
+    pub result_ty: ValType,
+    pub op_rr: fn(offset: Offset, memory: Memory) -> Op,
+    pub op_rs: fn(ptr: Slot, offset: Offset, memory: Memory) -> Op,
+    pub op_ri: fn(address: Address, memory: Memory) -> Op,
+    pub op_rr_mem0_offset16: fn(offset: Offset16) -> Op,
+    pub op_rs_mem0_offset16: fn(ptr: Slot, offset: Offset16) -> Op,
 }
 
 macro_rules! impl_load_extend {

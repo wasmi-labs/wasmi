@@ -23,6 +23,7 @@ use self::{
         BinaryOpVt,
         CommutativeBinaryOp,
         CommutativeBinaryOpVt,
+        LoadOpVt,
         UnaryOp,
         UnaryOpVt,
     },
@@ -2405,13 +2406,25 @@ impl FuncTranslator {
     /// - `i32.{load8_s, load8_u, load16_s, load16_u}`
     /// - `i64.{load8_s, load8_u, load16_s, load16_u load32_s, load32_u}`
     fn translate_load<T: op::LoadOp>(&mut self, memarg: MemArg) -> Result<(), Error> {
+        self.translate_load_vt(&T::VT, memarg)
+    }
+
+    /// Translates a Wasm `load` instruction to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// All [`LoadOp`]s share the single monomorphization of this method
+    /// via their [`LoadOp::VT`] virtual table to avoid codegen bloat.
+    ///
+    /// [`LoadOp`]: op::LoadOp
+    /// [`LoadOp::VT`]: op::LoadOp::VT
+    #[inline(never)]
+    fn translate_load_vt(&mut self, vt: &LoadOpVt, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
         let ptr = self.stack.pop();
-        match self.select_load_op::<T>(ptr, memarg)? {
+        match self.select_load_op_vt(vt, ptr, memarg)? {
             Op::Trap { trap_code } => self.translate_trap(trap_code),
-            op => {
-                self.stage_op_with_result_reg(<T::Result as Typed>::TY, op, FuelCostsProvider::load)
-            }
+            op => self.stage_op_with_result_reg(vt.result_ty, op, FuelCostsProvider::load),
         }
     }
 
@@ -2423,7 +2436,25 @@ impl FuncTranslator {
     ///
     /// This chooses the right encoding for the given `load` instruction.
     /// If `ptr+offset` is a constant value the address is pre-calculated.
+    #[cfg(feature = "simd")]
     fn select_load_op<T: op::LoadOp>(&mut self, ptr: Operand, memarg: MemArg) -> Result<Op, Error> {
+        self.select_load_op_vt(&T::VT, ptr, memarg)
+    }
+
+    /// Returns a Wasmi `load` operator for `memarg` and `ptr` if any.
+    ///
+    /// Returns [`Op::Trap`] if `ptr` is known to be out of bounds for the linear memory.
+    ///
+    /// # Note
+    ///
+    /// This chooses the right encoding for the given `load` instruction.
+    /// If `ptr+offset` is a constant value the address is pre-calculated.
+    fn select_load_op_vt(
+        &mut self,
+        vt: &LoadOpVt,
+        ptr: Operand,
+        memarg: MemArg,
+    ) -> Result<Op, Error> {
         let Some((memory, offset)) = Self::decode_memarg(memarg)? else {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
@@ -2438,8 +2469,8 @@ impl FuncTranslator {
                 None => break 'opt,
             };
             let op = match ptr {
-                ResolvedOperand::Reg(_) => T::op_rr_mem0_offset16(offset),
-                ResolvedOperand::Slot(ptr) => T::op_rs_mem0_offset16(ptr, offset),
+                ResolvedOperand::Reg(_) => (vt.op_rr_mem0_offset16)(offset),
+                ResolvedOperand::Slot(ptr) => (vt.op_rs_mem0_offset16)(ptr, offset),
                 ResolvedOperand::Immediate(_) => break 'opt,
             };
             return Ok(op);
@@ -2449,9 +2480,9 @@ impl FuncTranslator {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
         let op = match ptr {
-            ResolvedOperand::Reg(_) => T::op_rr(offset, memory),
-            ResolvedOperand::Slot(ptr) => T::op_rs(ptr, offset, memory),
-            ResolvedOperand::Immediate(address) => T::op_ri(address, memory),
+            ResolvedOperand::Reg(_) => (vt.op_rr)(offset, memory),
+            ResolvedOperand::Slot(ptr) => (vt.op_rs)(ptr, offset, memory),
+            ResolvedOperand::Immediate(address) => (vt.op_ri)(address, memory),
         };
         Ok(op)
     }
