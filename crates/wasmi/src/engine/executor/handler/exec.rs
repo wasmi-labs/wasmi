@@ -743,7 +743,7 @@ execution_handler! {
                         args.set_ip(ip);
                         out_of_fuel!(state, args, required_fuel)
                     }
-                    _ => panic!("table.copy: unexpected error: {error:?}"),
+                    _ => panic!("table.copy: unexpected error: {error}"),
                 };
                 trap!(trap_code)
             }
@@ -764,7 +764,7 @@ execution_handler! {
                     args.set_ip(ip);
                     out_of_fuel!(state, args, required_fuel)
                 }
-                _ => panic!("table.copy: unexpected error: {error:?}"),
+                _ => panic!("table.copy: unexpected error: {error}"),
             };
             trap!(trap_code)
         }
@@ -804,7 +804,7 @@ execution_handler! {
                     args.set_ip(ip);
                     out_of_fuel!(state, args, required_fuel)
                 }
-                _ => panic!("table.fill: unexpected error: {error:?}"),
+                _ => panic!("table.fill: unexpected error: {error}"),
             };
             trap!(trap_code)
         }
@@ -849,7 +849,7 @@ execution_handler! {
                     args.set_ip(ip);
                     out_of_fuel!(state, args, required_fuel)
                 }
-                _ => panic!("table.init: unexpected error: {error:?}"),
+                _ => panic!("table.init: unexpected error: {error}"),
             };
             trap!(trap_code)
         }

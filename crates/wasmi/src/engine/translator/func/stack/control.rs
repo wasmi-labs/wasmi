@@ -560,7 +560,7 @@ impl ControlStack {
 }
 
 /// A Wasm control frame.
-#[derive(Debug)]
+#[cfg_attr(feature = "debug", derive(Debug))]
 pub enum ControlFrame {
     /// A Wasm `block` control frame.
     Block(BlockControlFrame),
@@ -572,6 +572,21 @@ pub enum ControlFrame {
     Else(ElseControlFrame),
     /// A generic unreachable control frame.
     Unreachable(ControlFrameKind),
+}
+
+#[cfg(not(feature = "debug"))]
+impl core::fmt::Debug for ControlFrame {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("ControlFrame::")?;
+        let variant = match self {
+            Self::Block(_) => "Block(..)",
+            Self::Loop(_) => "Loop(..)",
+            Self::If(_) => "If(..)",
+            Self::Else(_) => "Else(..)",
+            Self::Unreachable(_) => "Unreachable(..)",
+        };
+        f.write_str(variant)
+    }
 }
 
 impl From<BlockControlFrame> for ControlFrame {

@@ -28,6 +28,13 @@ impl Clone for Op {
     }
 }
 
+#[cfg(not(feature = "debug"))]
+impl ::core::fmt::Debug for Op {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        f.debug_struct("Op").field("code", &self.code()).finish()
+    }
+}
+
 /// The location of an operand.
 #[derive(Debug, Copy, Clone)]
 pub enum Location {

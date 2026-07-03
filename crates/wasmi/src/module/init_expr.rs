@@ -6,7 +6,7 @@
 //!
 //! [`s1vm`]: https://github.com/Neopallium/s1vm
 
-use super::FuncIdx;
+use super::{FuncIdx, MaybeDebug};
 use crate::{ExternRef, F32, F64, Func, Nullable, RefType, Val, core::wasm};
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, mem};
@@ -406,10 +406,17 @@ impl Eval for Op {
 /// These are used to determine the offsets of memory data
 /// and table element segments as well as the initial value
 /// of global variables.
-#[derive(Debug)]
+#[cfg_attr(feature = "debug", derive(Debug))]
 pub struct ConstExpr {
     /// The root operator of the [`ConstExpr`].
     op: Op,
+}
+
+#[cfg(not(feature = "debug"))]
+impl fmt::Debug for ConstExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("ConstExpr { .. }")
+    }
 }
 
 impl Eval for ConstExpr {
@@ -538,7 +545,10 @@ impl ConstExpr {
                             ty: AbstractHeapType::Extern,
                         } => ConstVal::null(RefType::Extern),
                         invalid => {
-                            panic!("invalid heap type for `ref.null`: {invalid:?}")
+                            panic!(
+                                "invalid heap type for `ref.null`: {:?}",
+                                MaybeDebug(&invalid)
+                            )
                         }
                     };
                     Op::constant(value)
@@ -551,7 +561,10 @@ impl ConstExpr {
                 WasmOp::I64Sub => expr_op(&mut stack, wasm::i64_sub),
                 WasmOp::I64Mul => expr_op(&mut stack, wasm::i64_mul),
                 WasmOp::End => break,
-                op => panic!("unexpected Wasm const expression operator: {op:?}"),
+                op => panic!(
+                    "unexpected Wasm const expression operator: {:?}",
+                    MaybeDebug(&op)
+                ),
             };
             stack.push(op);
         }

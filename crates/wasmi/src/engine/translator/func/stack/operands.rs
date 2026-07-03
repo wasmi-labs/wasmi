@@ -32,7 +32,8 @@ impl From<usize> for StackPos {
 ///
 /// This is the internal version of [`Operand`] with information that shall remain
 /// hidden to the outside.
-#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "debug", derive(Debug))]
+#[derive(Copy, Clone)]
 pub enum StackOperand {
     /// A local variable.
     Local {
@@ -69,6 +70,19 @@ pub enum StackOperand {
         /// The value of the immediate operand.
         val: RawVal,
     },
+}
+
+#[cfg(not(feature = "debug"))]
+impl core::fmt::Debug for StackOperand {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("StackOperand::")?;
+        let variant = match self {
+            Self::Local { .. } => "Local { .. }",
+            Self::Temp { .. } => "Temp { .. }",
+            Self::Immediate { .. } => "Immediate { .. }",
+        };
+        f.write_str(variant)
+    }
 }
 
 impl StackOperand {

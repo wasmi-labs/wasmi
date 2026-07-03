@@ -121,7 +121,7 @@ impl Display for DisplayOp<&'_ Isa> {
             {indent}/// - [`Op::result_mut`]\n\
             {indent}/// - [`Op::code`]\n\
             {indent}#[allow(non_camel_case_types)]\n\
-            {indent}#[derive(Debug)]\n\
+            {indent}#[cfg_attr(feature = \"debug\", derive(Debug))]\n\
             {indent}pub enum Op {{\n\
                         {variants}\n\
             {indent}}}\n\

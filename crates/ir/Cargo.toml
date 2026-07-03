@@ -29,6 +29,7 @@ std = [
 simd = ["wasmi_core/simd"]
 memory64 = []
 slot16 = []
+debug = []
 
 [package.metadata.docs.rs]
 features = ["std", "simd"]

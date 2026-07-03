@@ -16,7 +16,8 @@ pub struct Import {
 }
 
 /// The name or namespace of an imported item.
-#[derive(Debug, Clone)]
+#[cfg_attr(feature = "debug", derive(Debug))]
+#[derive(Clone)]
 pub struct ImportName {
     /// The name of the [`Module`] that defines the imported item.
     ///
@@ -26,6 +27,13 @@ pub struct ImportName {
     ///
     /// [`Module`]: [`super::Module`]
     field: Box<str>,
+}
+
+#[cfg(not(feature = "debug"))]
+impl fmt::Debug for ImportName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        <Self as Display>::fmt(self, f)
+    }
 }
 
 impl Display for ImportName {

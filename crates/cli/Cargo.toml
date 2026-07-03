@@ -48,6 +48,7 @@ stable = ["wasmi/stable"]
 unstable = ["wasmi/unstable"]
 memory64 = ["wasmi/memory64"]
 deterministic = ["wasmi/deterministic"]
+debug = ["wasmi/debug"]
 
 # We need to put this [profile.release] section due to this bug in Cargo:
 # https://github.com/rust-lang/cargo/issues/8264

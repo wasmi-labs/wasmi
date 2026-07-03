@@ -17,6 +17,7 @@ use crate::{
     MemoryType,
     TableType,
     engine::{EnforcedLimitsError, EngineFunc},
+    module::MaybeDebug,
 };
 use alloc::boxed::Box;
 use core::ops::Range;
@@ -552,6 +553,9 @@ impl ModuleParser {
                 return Err(Error::from(error));
             }
         }
-        panic!("encountered unsupported, unexpected or malformed Wasm payload: {payload:?}")
+        panic!(
+            "encountered unsupported, unexpected or malformed Wasm payload: {:?}",
+            MaybeDebug(&payload)
+        )
     }
 }
