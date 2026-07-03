@@ -7,6 +7,7 @@ use crate::{
     Table,
     TableType,
     errors::{MemoryError, TableError},
+    module::ImportName,
 };
 use core::{
     error::Error,
@@ -41,6 +42,8 @@ pub enum InstantiationError {
     },
     /// Returned when a function has a mismatching type.
     FuncTypeMismatch {
+        /// Name and module of the function import.
+        import_name: ImportName,
         /// The expected function type of the function import.
         expected: FuncType,
         /// The actual function type of the function import.
@@ -103,9 +106,15 @@ impl Display for InstantiationError {
                 f,
                 "imported global type mismatch. expected {expected:?} but found {actual:?}"
             ),
-            Self::FuncTypeMismatch { expected, actual } => write!(
+            Self::FuncTypeMismatch {
+                import_name,
+                expected,
+                actual,
+            } => write!(
                 f,
-                "imported function type mismatch. expected {expected:?} but found {actual:?}"
+                "imported function \"{}#{}\" type mismatch. expected {expected:?} but found {actual:?}",
+                import_name.module(),
+                import_name.name()
             ),
             Self::TableTypeMismatch { expected, actual } => write!(
                 f,
