@@ -58,6 +58,7 @@ validate = ["wasmparser/validate", "wasmparser/features"]
 stable = []
 unstable = []
 deterministic = ["wasmi_core/deterministic"]
+debug = ["wasmi_ir/debug"]
 
 # Enables a portable dispatch scheme that avoids tail-call reliance.
 # Recommended for targets without stable or guaranteed tail-call support.
