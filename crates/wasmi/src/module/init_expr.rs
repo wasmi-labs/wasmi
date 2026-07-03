@@ -406,10 +406,17 @@ impl Eval for Op {
 /// These are used to determine the offsets of memory data
 /// and table element segments as well as the initial value
 /// of global variables.
-#[derive(Debug)]
+#[cfg_attr(feature = "debug", derive(Debug))]
 pub struct ConstExpr {
     /// The root operator of the [`ConstExpr`].
     op: Op,
+}
+
+#[cfg(not(feature = "debug"))]
+impl fmt::Debug for ConstExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("ConstExpr { .. }")
+    }
 }
 
 impl Eval for ConstExpr {
