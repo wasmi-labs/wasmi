@@ -96,7 +96,7 @@ pub enum InstantiationError {
 }
 
 impl InstantiationError {
-    /// Creates a new [`InstantiationError`] with [`InstantiationErrorReason::TooManyInstances`] reason.
+    /// Creates a new [`Self::MismatchedNumberOfImports`] from its parts.
     #[cold]
     pub fn mismatched_number_of_imports(expected: usize, actual: usize) -> Self {
         Self::MismatchedNumberOfImports { expected, actual }
