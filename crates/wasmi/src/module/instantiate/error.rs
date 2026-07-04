@@ -33,14 +33,14 @@ pub enum InstantiationError {
         /// The actually found external value for the module import.
         actual: Extern,
     },
-    /// Returned when a global has a mismatching type.
+    /// Returned when an imported global has a mismatching type.
     GlobalTypeMismatch {
         /// The expected global type of the global import.
         expected: GlobalType,
         /// The actual global type of the global import.
         actual: GlobalType,
     },
-    /// Returned when a function has a mismatching type.
+    /// Returned when an imported function has a mismatching type.
     FuncTypeMismatch {
         /// Name and module of the function import.
         import_name: ImportName,
@@ -49,14 +49,14 @@ pub enum InstantiationError {
         /// The actual function type of the function import.
         actual: FuncType,
     },
-    /// Returned when a table has a mismatching type.
+    /// Returned when an imported table has a mismatching type.
     TableTypeMismatch {
         /// The expected table type of the table import.
         expected: TableType,
         /// The actual table type of the table import.
         actual: TableType,
     },
-    /// Returned when a linear memory has a mismatching type.
+    /// Returned when an imported linear memory has a mismatching type.
     MemoryTypeMismatch {
         /// The expected memory type of the memory import.
         expected: MemoryType,
