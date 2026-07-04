@@ -35,32 +35,32 @@ pub enum InstantiationError {
     },
     /// Returned when an imported global has a mismatching type.
     GlobalTypeMismatch {
-        /// The expected global type of the global import.
+        /// The expected global type of the import.
         expected: GlobalType,
-        /// The actual global type of the global import.
+        /// The actual global type of the import.
         actual: GlobalType,
     },
     /// Returned when an imported function has a mismatching type.
     FuncTypeMismatch {
-        /// Name and module of the function import.
+        /// Name and module of the import.
         name: ImportName,
-        /// The expected function type of the function import.
+        /// The expected type of the import.
         expected: FuncType,
-        /// The actual function type of the function import.
+        /// The actual type of the import.
         actual: FuncType,
     },
     /// Returned when an imported table has a mismatching type.
     TableTypeMismatch {
-        /// The expected table type of the table import.
+        /// The expected table type of the import.
         expected: TableType,
-        /// The actual table type of the table import.
+        /// The actual type of the import.
         actual: TableType,
     },
     /// Returned when an imported linear memory has a mismatching type.
     MemoryTypeMismatch {
-        /// The expected memory type of the memory import.
+        /// The expected memory type of the import.
         expected: MemoryType,
-        /// The actual memory type of the memory import.
+        /// The actual memory type of the import.
         actual: MemoryType,
     },
     /// Caused when an element segment does not fit into the specified table instance.
