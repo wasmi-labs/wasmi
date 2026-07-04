@@ -89,6 +89,18 @@ pub enum InstantiationError {
     FailedToInstantiateTable(TableError),
 }
 
+impl InstantiationError {
+    /// Creates a new [`Self::FuncTypeMismatch`] from its parts.
+    #[cold]
+    pub fn func_type_mismatch(name: &ImportName, expected: &FuncType, actual: &FuncType) -> Self {
+        Self::FuncTypeMismatch {
+            name: name.clone(),
+            expected: expected.clone(),
+            actual: actual.clone(),
+        }
+    }
+}
+
 impl Error for InstantiationError {}
 
 impl Display for InstantiationError {
