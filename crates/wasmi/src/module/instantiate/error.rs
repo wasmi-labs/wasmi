@@ -112,9 +112,7 @@ impl Display for InstantiationError {
                 actual,
             } => write!(
                 f,
-                "imported function \"{}#{}\" type mismatch. expected {expected:?} but found {actual:?}",
-                import_name.module(),
-                import_name.name()
+                "imported function {name} type mismatch. expected {expected:?} but found {actual:?}",
             ),
             Self::TableTypeMismatch { expected, actual } => write!(
                 f,
