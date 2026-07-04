@@ -183,10 +183,11 @@ impl Module {
                     builder.push_global(global);
                 }
                 (expected_import, actual_extern_val) => {
-                    return Err(InstantiationError::ImportsExternalsMismatch {
-                        expected: expected_import.clone(),
-                        actual: actual_extern_val,
-                    });
+                    return Err(InstantiationError::import_type_mismatch(
+                        import_name,
+                        expected_import,
+                        &actual_extern_val,
+                    ));
                 }
             }
         }

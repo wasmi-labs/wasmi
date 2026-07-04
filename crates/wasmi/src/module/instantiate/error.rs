@@ -25,9 +25,10 @@ pub enum InstantiationError {
         /// The number of imports given by the faulty Wasm module instantiation.
         given: usize,
     },
-    /// Caused when a given external value does not match the
-    /// type of the required import for module instantiation.
-    ImportsExternalsMismatch {
+    /// Returned when an imported item has a complete type mismatch.
+    ImportTypeMismatch {
+        /// The name of the import.
+        name: ImportName,
         /// The expected external value for the module import.
         expected: ExternType,
         /// The actually found external value for the module import.
@@ -96,6 +97,16 @@ pub enum InstantiationError {
 }
 
 impl InstantiationError {
+    /// Creates a new [`Self::ImportTypeMismatch`] from its parts.
+    #[cold]
+    pub fn import_type_mismatch(name: &ImportName, expected: &ExternType, actual: &Extern) -> Self {
+        Self::ImportTypeMismatch {
+            name: name.clone(),
+            expected: expected.clone(),
+            actual: *actual,
+        }
+    }
+
     /// Creates a new [`Self::GlobalTypeMismatch`] from its parts.
     #[cold]
     pub fn global_type_mismatch(
@@ -158,9 +169,13 @@ impl Display for InstantiationError {
                 f,
                 "invalid number of imports: required = {required}, given = {given}",
             ),
-            Self::ImportsExternalsMismatch { expected, actual } => write!(
+            Self::ImportTypeMismatch {
+                name,
+                expected,
+                actual,
+            } => write!(
                 f,
-                "expected {expected:?} external for import but found {actual:?}",
+                "mismatched {name} import type: expected {expected:?} but found {actual:?}",
             ),
             Self::GlobalTypeMismatch {
                 name,
