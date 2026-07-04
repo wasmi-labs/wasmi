@@ -136,12 +136,13 @@ impl Module {
             });
         }
         for (import, external) in imports.zip(externals) {
+            let import_name = import.import_name();
             match (import.ty(), external) {
                 (ExternType::Func(expected_signature), Extern::Func(func)) => {
                     let actual_signature = &func.ty(&store);
                     if actual_signature != expected_signature {
                         return Err(InstantiationError::func_type_mismatch(
-                            import.import_name(),
+                            import_name,
                             expected_signature,
                             actual_signature,
                         ));
@@ -149,33 +150,35 @@ impl Module {
                     builder.push_func(func);
                 }
                 (ExternType::Table(required), Extern::Table(table)) => {
-                    let imported = table.dynamic_ty(&store);
+                    let imported = &table.dynamic_ty(&store);
                     if !imported.is_subtype_of(required) {
-                        return Err(InstantiationError::TableTypeMismatch {
-                            expected: *required,
-                            actual: imported,
-                        });
+                        return Err(InstantiationError::table_type_mismatch(
+                            import_name,
+                            required,
+                            imported,
+                        ));
                     }
                     builder.push_table(table);
                 }
                 (ExternType::Memory(required), Extern::Memory(memory)) => {
-                    let imported = memory.dynamic_ty(&store);
+                    let imported = &memory.dynamic_ty(&store);
                     if !imported.is_subtype_of(required) {
-                        return Err(InstantiationError::MemoryTypeMismatch {
-                            expected: *required,
-                            actual: imported,
-                        });
+                        return Err(InstantiationError::memory_type_mismatch(
+                            import_name,
+                            required,
+                            imported,
+                        ));
                     }
                     builder.push_memory(memory);
                 }
                 (ExternType::Global(required), Extern::Global(global)) => {
-                    let imported = global.ty(&store);
-                    let required = *required;
+                    let imported = &global.ty(&store);
                     if imported != required {
-                        return Err(InstantiationError::GlobalTypeMismatch {
-                            expected: required,
-                            actual: imported,
-                        });
+                        return Err(InstantiationError::global_type_mismatch(
+                            import_name,
+                            required,
+                            imported,
+                        ));
                     }
                     builder.push_global(global);
                 }
