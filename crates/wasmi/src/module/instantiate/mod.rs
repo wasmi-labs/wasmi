@@ -138,13 +138,13 @@ impl Module {
         for (import, external) in imports.zip(externals) {
             match (import.ty(), external) {
                 (ExternType::Func(expected_signature), Extern::Func(func)) => {
-                    let actual_signature = func.ty(&store);
-                    if &actual_signature != expected_signature {
-                        return Err(InstantiationError::FuncTypeMismatch {
-                            name: import.import_name().clone(),
-                            actual: actual_signature,
-                            expected: expected_signature.clone(),
-                        });
+                    let actual_signature = &func.ty(&store);
+                    if actual_signature != expected_signature {
+                        return Err(InstantiationError::func_type_mismatch(
+                            import.import_name(),
+                            expected_signature,
+                            actual_signature,
+                        ));
                     }
                     builder.push_func(func);
                 }
