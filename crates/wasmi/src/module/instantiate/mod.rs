@@ -129,11 +129,15 @@ impl Module {
     {
         let imports = self.imports();
         let externals = externals.into_iter();
-        if imports.len() != externals.len() {
-            return Err(InstantiationError::InvalidNumberOfImports {
-                required: imports.len(),
-                given: externals.len(),
-            });
+        {
+            let len_expected = imports.len();
+            let len_actual = externals.len();
+            if len_expected != len_actual {
+                return Err(InstantiationError::mismatched_number_of_imports(
+                    len_expected,
+                    len_actual,
+                ));
+            }
         }
         for (import, external) in imports.zip(externals) {
             let import_name = import.import_name();

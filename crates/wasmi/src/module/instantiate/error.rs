@@ -17,13 +17,12 @@ use core::{
 /// An error that may occur upon instantiation of a Wasm module.
 #[derive(Debug)]
 pub enum InstantiationError {
-    /// Encountered when trying to instantiate a Wasm module with
-    /// a non-matching number of external imports.
-    InvalidNumberOfImports {
-        /// The number of imports required by the Wasm module definition.
-        required: usize,
-        /// The number of imports given by the faulty Wasm module instantiation.
-        given: usize,
+    /// Returned when the number of imports does not match the required amount.
+    MismatchedNumberOfImports {
+        /// The expected number of imports required by the Wasm module.
+        expected: usize,
+        /// The actual number of imports given to the Wasm module.
+        actual: usize,
     },
     /// Returned when an imported item has a complete type mismatch.
     ImportTypeMismatch {
@@ -97,6 +96,12 @@ pub enum InstantiationError {
 }
 
 impl InstantiationError {
+    /// Creates a new [`InstantiationError`] with [`InstantiationErrorReason::TooManyInstances`] reason.
+    #[cold]
+    pub fn mismatched_number_of_imports(expected: usize, actual: usize) -> Self {
+        Self::MismatchedNumberOfImports { expected, actual }
+    }
+
     /// Creates a new [`Self::ImportTypeMismatch`] from its parts.
     #[cold]
     pub fn import_type_mismatch(name: &ImportName, expected: &ExternType, actual: &Extern) -> Self {
@@ -165,9 +170,9 @@ impl Error for InstantiationError {}
 impl Display for InstantiationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::InvalidNumberOfImports { required, given } => write!(
+            Self::MismatchedNumberOfImports { expected, actual } => write!(
                 f,
-                "invalid number of imports: required = {required}, given = {given}",
+                "mismatched number of imports: expected {expected} but found {actual}",
             ),
             Self::ImportTypeMismatch {
                 name,
