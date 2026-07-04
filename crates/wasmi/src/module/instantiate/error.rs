@@ -35,6 +35,8 @@ pub enum InstantiationError {
     },
     /// Returned when an imported global has a mismatching type.
     GlobalTypeMismatch {
+        /// Name and module of the import.
+        name: ImportName,
         /// The expected global type of the import.
         expected: GlobalType,
         /// The actual global type of the import.
@@ -51,6 +53,8 @@ pub enum InstantiationError {
     },
     /// Returned when an imported table has a mismatching type.
     TableTypeMismatch {
+        /// Name and module of the import.
+        name: ImportName,
         /// The expected table type of the import.
         expected: TableType,
         /// The actual type of the import.
@@ -58,6 +62,8 @@ pub enum InstantiationError {
     },
     /// Returned when an imported linear memory has a mismatching type.
     MemoryTypeMismatch {
+        /// Name and module of the import.
+        name: ImportName,
         /// The expected memory type of the import.
         expected: MemoryType,
         /// The actual memory type of the import.
@@ -90,6 +96,20 @@ pub enum InstantiationError {
 }
 
 impl InstantiationError {
+    /// Creates a new [`Self::GlobalTypeMismatch`] from its parts.
+    #[cold]
+    pub fn global_type_mismatch(
+        name: &ImportName,
+        expected: &GlobalType,
+        actual: &GlobalType,
+    ) -> Self {
+        Self::GlobalTypeMismatch {
+            name: name.clone(),
+            expected: *expected,
+            actual: *actual,
+        }
+    }
+
     /// Creates a new [`Self::FuncTypeMismatch`] from its parts.
     #[cold]
     pub fn func_type_mismatch(name: &ImportName, expected: &FuncType, actual: &FuncType) -> Self {
@@ -97,6 +117,34 @@ impl InstantiationError {
             name: name.clone(),
             expected: expected.clone(),
             actual: actual.clone(),
+        }
+    }
+
+    /// Creates a new [`Self::TableTypeMismatch`] from its parts.
+    #[cold]
+    pub fn table_type_mismatch(
+        name: &ImportName,
+        expected: &TableType,
+        actual: &TableType,
+    ) -> Self {
+        Self::TableTypeMismatch {
+            name: name.clone(),
+            expected: *expected,
+            actual: *actual,
+        }
+    }
+
+    /// Creates a new [`Self::MemoryTypeMismatch`] from its parts.
+    #[cold]
+    pub fn memory_type_mismatch(
+        name: &ImportName,
+        expected: &MemoryType,
+        actual: &MemoryType,
+    ) -> Self {
+        Self::MemoryTypeMismatch {
+            name: name.clone(),
+            expected: *expected,
+            actual: *actual,
         }
     }
 }
@@ -114,9 +162,13 @@ impl Display for InstantiationError {
                 f,
                 "expected {expected:?} external for import but found {actual:?}",
             ),
-            Self::GlobalTypeMismatch { expected, actual } => write!(
+            Self::GlobalTypeMismatch {
+                name,
+                expected,
+                actual,
+            } => write!(
                 f,
-                "imported global type mismatch. expected {expected:?} but found {actual:?}"
+                "imported global {name} type mismatch. expected {expected:?} but found {actual:?}"
             ),
             Self::FuncTypeMismatch {
                 name,
@@ -126,13 +178,21 @@ impl Display for InstantiationError {
                 f,
                 "imported function {name} type mismatch. expected {expected:?} but found {actual:?}",
             ),
-            Self::TableTypeMismatch { expected, actual } => write!(
+            Self::TableTypeMismatch {
+                name,
+                expected,
+                actual,
+            } => write!(
                 f,
-                "imported table type mismatch. expected {expected:?} but found {actual:?}"
+                "imported table {name} type mismatch. expected {expected:?} but found {actual:?}"
             ),
-            Self::MemoryTypeMismatch { expected, actual } => write!(
+            Self::MemoryTypeMismatch {
+                name,
+                expected,
+                actual,
+            } => write!(
                 f,
-                "imported memory type mismatch. expected {expected:?} but found {actual:?}"
+                "imported memory {name} type mismatch. expected {expected:?} but found {actual:?}"
             ),
             Self::ElementSegmentDoesNotFit {
                 table,
