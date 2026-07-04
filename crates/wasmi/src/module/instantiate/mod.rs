@@ -141,7 +141,7 @@ impl Module {
                     let actual_signature = func.ty(&store);
                     if &actual_signature != expected_signature {
                         return Err(InstantiationError::FuncTypeMismatch {
-                            import_name: import.import_name().clone(),
+                            name: import.import_name().clone(),
                             actual: actual_signature,
                             expected: expected_signature.clone(),
                         });

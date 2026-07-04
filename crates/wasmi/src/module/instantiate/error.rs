@@ -43,7 +43,7 @@ pub enum InstantiationError {
     /// Returned when an imported function has a mismatching type.
     FuncTypeMismatch {
         /// Name and module of the function import.
-        import_name: ImportName,
+        name: ImportName,
         /// The expected function type of the function import.
         expected: FuncType,
         /// The actual function type of the function import.
@@ -107,7 +107,7 @@ impl Display for InstantiationError {
                 "imported global type mismatch. expected {expected:?} but found {actual:?}"
             ),
             Self::FuncTypeMismatch {
-                import_name,
+                name,
                 expected,
                 actual,
             } => write!(
