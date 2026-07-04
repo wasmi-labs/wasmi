@@ -1,7 +1,7 @@
 use super::utils::FromWasmparser as _;
 use crate::{GlobalType, MemoryType, TableType};
 use alloc::boxed::Box;
-use core::fmt::{self, Display};
+use core::fmt::{self, Display, Write};
 use wasmparser::TypeRef;
 
 /// A [`Module`] import item.
@@ -38,9 +38,16 @@ impl fmt::Debug for ImportName {
 
 impl Display for ImportName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let module_name = &*self.module;
-        let field_name = &*self.field;
-        write!(f, "{module_name}::{field_name}")
+        // Note: we use `(`, `,` and `)` to separate the module and field name
+        //       because those symbols are explicitly not allowed to appear in
+        //       Wasm identifiers, thus there is no way to cause ambiguities.
+        let module = self.module();
+        let field = self.name();
+        f.write_char('(')?;
+        module.fmt(f)?;
+        f.write_char(',')?;
+        field.fmt(f)?;
+        f.write_char(')')
     }
 }
 
