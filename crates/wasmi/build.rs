@@ -8,17 +8,17 @@ use std::env;
 ///
 /// - `wasmi_opt_size` (if `opt-level` is "s" or "z")
 /// - `wasmi_opt_speed` (if `opt-level` is 2 or 3)
-/// 
+///
 /// Any other optimization level (e.g. `0` or `1`) does not set
 /// either of the above Wasmi specific `cfg` annotations.
-/// 
+///
 /// Users may combine the above annotations with `cfg_attr` the following built-ins:
-/// 
+///
 /// - `#[inline]`
 /// - `#[inline(never)]`
 /// - `#[inline(always)]`
 /// - `#[cold]`
-/// 
+///
 /// Any other combination is forbidden as it would alter the code paths taken
 /// on different optimization levels which is something we strictly want to avoid
 /// in the Wasmi codebase.
