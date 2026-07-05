@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## Unreleased
+
+### Fixed
+
+- Fixed a `u64` overflow when sizing a 64-bit memory's maximum during translation. [#1964]
+  - A `memory64` declared with the largest allowed maximum (`2^48` pages) turned every
+    non-zero constant load/store address into an unconditional `MemoryOutOfBounds` trap.
+
 ## `2.0.0-beta.4` - 2026-07-01
 
 ### Added
@@ -68,6 +76,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Add `cfg`-guard badges to docs rendered at `docs.rs`. [#1913]
 - Update the `nightly` Rust toolchain used for the Wasmi CI. [#1936]
 
+[#1964]: https://github.com/wasmi-labs/wasmi/pull/1964
 [#1952]: https://github.com/wasmi-labs/wasmi/pull/1952
 [#1950]: https://github.com/wasmi-labs/wasmi/pull/1950
 [#1946]: https://github.com/wasmi-labs/wasmi/pull/1946
