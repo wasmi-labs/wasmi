@@ -2589,8 +2589,11 @@ impl FuncTranslator {
         };
         if let Some(max) = memory_type.maximum() {
             // The memory's maximum size in bytes.
-            let max_size = max << memory_type.page_size_log2();
-            if address > max_size {
+            //
+            // Computed as `u128` because `max << page_size_log2` can exceed `u64`
+            // for 64-bit memories, matching how `wasmi_core` sizes its memories.
+            let max_size = u128::from(max) << memory_type.page_size_log2();
+            if u128::from(address) > max_size {
                 // Case: address overflows the memory's maximum size.
                 return None;
             }
