@@ -1673,7 +1673,8 @@ impl FuncTranslator {
     ///
     /// All types implementing [`UnaryOp`] share this single monomorphization
     /// via their [`UnaryOp::VT`] virtual table to avoid codegen bloat.
-    #[inline(never)]
+    #[cfg_attr(wasmi_opt_size, inline(never))]
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
     fn translate_unary_vt(
         &mut self,
         vt: &UnaryOpVt,
@@ -1852,7 +1853,8 @@ impl FuncTranslator {
     /// All types implementing [`CommutativeBinaryOp`] share this single
     /// monomorphization via their [`CommutativeBinaryOp::VT`] virtual table
     /// to avoid codegen bloat.
-    #[inline(never)]
+    #[cfg_attr(wasmi_opt_size, inline(never))]
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
     fn translate_binary_commutative_vt(
         &mut self,
         vt: &CommutativeBinaryOpVt,
@@ -1908,7 +1910,8 @@ impl FuncTranslator {
     ///
     /// All types implementing [`BinaryOp`] share this single monomorphization
     /// via their [`BinaryOp::VT`] virtual table to avoid codegen bloat.
-    #[inline(never)]
+    #[cfg_attr(wasmi_opt_size, inline(never))]
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
     fn translate_binary_vt(
         &mut self,
         vt: &BinaryOpVt,
@@ -2419,7 +2422,8 @@ impl FuncTranslator {
     ///
     /// [`LoadOp`]: op::LoadOp
     /// [`LoadOp::VT`]: op::LoadOp::VT
-    #[inline(never)]
+    #[cfg_attr(wasmi_opt_size, inline(never))]
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
     fn translate_load_vt(&mut self, vt: &LoadOpVt, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
         let ptr = self.stack.pop();
@@ -2450,6 +2454,7 @@ impl FuncTranslator {
     ///
     /// This chooses the right encoding for the given `load` instruction.
     /// If `ptr+offset` is a constant value the address is pre-calculated.
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
     fn select_load_op_vt(
         &mut self,
         vt: &LoadOpVt,
@@ -2524,7 +2529,8 @@ impl FuncTranslator {
     ///
     /// [`StoreOp`]: op::StoreOp
     /// [`StoreOp::VT`]: op::StoreOp::VT
-    #[inline(never)]
+    #[cfg_attr(wasmi_opt_size, inline(never))]
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
     fn encode_store_vt(
         &mut self,
         vt: &StoreOpVt,
@@ -2541,6 +2547,7 @@ impl FuncTranslator {
     }
 
     /// Selects which store operator to encode based on the given `vt`.
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
     fn choose_store_op_vt(
         &mut self,
         vt: &StoreOpVt,
