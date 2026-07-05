@@ -480,6 +480,9 @@ macro_rules! foreach_test_memory64 {
             fn spec_imports64("wasmi/memory64/imports");
             fn spec_table64("wasmi/memory64/table");
             fn spec_table_copy_mixed("wasmi/memory64/table_copy_mixed");
+
+            // Wasmi specific `memory64` tests:
+            fn wasmi_memory64("wasmi/tests/memory64");
         }
     };
 }
