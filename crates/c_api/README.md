@@ -28,11 +28,12 @@ These commands will produce the following files:
 ### Build Features
 
 By default Wasmi's operator dispatch relies on LLVM tail-calling, which is only
-guaranteed in optimized builds. Unoptimized **Debug** builds
-(`-DCMAKE_BUILD_TYPE=Debug`) can therefore cause stackoverflows. To avoid this,
-the CMake build **automatically enables the `portable-dispatch` feature for Debug
-builds**, which selects a portable (loop-based) dispatch scheme that does not rely on
-tail calls. Release builds keep the faster tail-call dispatch.
+guaranteed on supported targets in optimized builds. The default-enabled
+`auto-dispatch` feature detects both conditions and automatically falls back to a
+portable (loop-based) dispatch scheme on unsupported targets or in unoptimized
+builds, so **Debug** builds and non-tail-call targets do not risk stackoverflows.
+You can still force portable dispatch on any build by enabling the
+`portable-dispatch` feature, which takes precedence over `auto-dispatch`.
 
 You can enable `portable-dispatch` (or any other Cargo feature) for any build by
 passing additional cargo flags via `WASMI_USER_CARGO_BUILD_OPTIONS`:
