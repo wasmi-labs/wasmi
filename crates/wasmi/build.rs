@@ -45,9 +45,6 @@ fn main() {
     println!("cargo::rustc-check-cfg=cfg(wasmi_has_tail_calls)");
     println!("cargo::rustc-check-cfg=cfg(wasmi_use_tail_calls)");
     let opt_level = env::var("OPT_LEVEL").unwrap_or_default();
-    // Whether the build is optimizing enough for LLVM to perform sibling-call
-    // optimization. Kept in sync with the `wasmi_opt_*` arms below on purpose.
-    let is_optimizing = matches!(opt_level.as_str(), "s" | "z" | "2" | "3");
     match opt_level.as_str() {
         "s" | "z" => println!("cargo::rustc-cfg=wasmi_opt_size"),
         "2" | "3" => println!("cargo::rustc-cfg=wasmi_opt_speed"),
@@ -57,6 +54,8 @@ fn main() {
     if has_tail_calls {
         println!("cargo::rustc-cfg=wasmi_has_tail_calls");
     }
+    // Whether the build is optimizing enough for LLVM to perform sibling-call optimization.
+    let is_optimizing = matches!(opt_level.as_str(), "s" | "z" | "2" | "3");
     if has_tail_calls && is_optimizing {
         println!("cargo::rustc-cfg=wasmi_use_tail_calls");
     }
