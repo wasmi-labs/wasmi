@@ -24,10 +24,11 @@ test = false
 doctest = false
 
 [features]
-default = ["std", "memory64"]
+default = ["std", "memory64", "auto-dispatch"]
 std = ["wasmi/std"]
 memory64 = ["wasmi/memory64"]
 simd = ["wasmi/simd"]
+auto-dispatch = ["wasmi/auto-dispatch"]
 portable-dispatch = ["wasmi/portable-dispatch"]
 indirect-dispatch = ["wasmi/indirect-dispatch"]
 extra-checks = ["wasmi/extra-checks"]
