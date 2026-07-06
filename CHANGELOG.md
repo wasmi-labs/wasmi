@@ -8,13 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## Unreleased
+## `2.0.0-beta.5` - 2026-07-06
 
 ### Fixed
 
 - Fixed a `u64` overflow when sizing a 64-bit memory's maximum during translation. [#1964]
   - A `memory64` declared with the largest allowed maximum (`2^48` pages) turned every
     non-zero constant load/store address into an unconditional `MemoryOutOfBounds` trap.
+  - Thanks to [aizu-m](https://github.com/aizu-m) for the fix!
 
 [#1964]: https://github.com/wasmi-labs/wasmi/pull/1964
 
