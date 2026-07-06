@@ -35,7 +35,7 @@ assert_matches = "1.5"
 criterion = { version = "0.5", default-features = false }
 
 [features]
-default = ["stable", "std", "wat", "validate", "memory64"]
+default = ["stable", "std", "wat", "validate", "memory64", "auto-dispatch"]
 std = [
     "wasmi_ir/std",
     "wasmi_core/std",
@@ -60,6 +60,14 @@ unstable = []
 deterministic = ["wasmi_core/deterministic"]
 debug = ["wasmi_ir/debug"]
 
+# Automatically selects the dispatch scheme based on the compilation target.
+#
+# When enabled, Wasmi uses its (faster) tail-call based dispatch only on targets
+# that are known to support LLVM tail calls and are compiled with an optimizing
+# opt-level, and otherwise falls back to the portable dispatch scheme.
+#
+# Enabling `portable-dispatch` always overrides this feature.
+auto-dispatch = []
 # Enables a portable dispatch scheme that avoids tail-call reliance.
 # Recommended for targets without stable or guaranteed tail-call support.
 portable-dispatch = []
