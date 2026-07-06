@@ -1,20 +1,14 @@
 #[cfg_attr(
     any(
         feature = "portable-dispatch",
-        all(
-            feature = "auto-dispatch",
-            not(all(wasmi_has_tail_calls, any(wasmi_opt_speed, wasmi_opt_size)))
-        )
+        all(feature = "auto-dispatch", not(wasmi_use_tail_calls))
     ),
     path = "backend/loop.rs"
 )]
 #[cfg_attr(
     all(
         not(feature = "portable-dispatch"),
-        any(
-            not(feature = "auto-dispatch"),
-            all(wasmi_has_tail_calls, any(wasmi_opt_speed, wasmi_opt_size))
-        )
+        any(not(feature = "auto-dispatch"), wasmi_use_tail_calls)
     ),
     path = "backend/tail.rs"
 )]
