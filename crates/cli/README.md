@@ -138,6 +138,7 @@ conformance validation and regression testing of the Wasmi interpreter.
 | `wasi` | ✅ | Enables WASI support when executing modules via `run`, including environment variables, preopened directories, and socket support. |
 | `simd` | ❌ | Enables support for WebAssembly SIMD proposal for both module execution and script testing. Disabled by default due to significant bloat. |
 | `portable-dispatch` | ❌ | Allows to compile Wasmi universally at the cost of execution performance. Use `--profile bench` to counteract performance regressions to some extend. |
+| `auto-dispatch` | ✅ | Automatically selects the dispatch scheme based on the compilation target: uses the faster tail-call dispatch only on targets known to support LLVM tail calls (in optimized builds) and falls back to `portable-dispatch` otherwise. Overridden by `portable-dispatch`. |
 | `indirect-dispatch` | ❌ | Uses a slightly more compact IR encoding at the cost of execution performance. |
 | `unstable` | ❌ | Enables unstable Rust compiler features in Wasmi. (e.g. `become`) Only usable when disabling default features via `--no-default-features` and requires a nightly Rust compiler. |
 
