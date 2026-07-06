@@ -13,8 +13,26 @@ macro_rules! execution_handler {
             $freg64:ident  : $freg64_ty:ty,
         ) -> $done:ty = $body:tt
     ) => {
-        #[cfg_attr(feature = "portable-dispatch", inline(always))]
-        #[cfg_attr(not(feature = "portable-dispatch"), inline(never))]
+        #[cfg_attr(
+            any(
+                feature = "portable-dispatch",
+                all(
+                    feature = "auto-dispatch",
+                    not(all(wasmi_has_tail_calls, any(wasmi_opt_speed, wasmi_opt_size)))
+                )
+            ),
+            inline(always)
+        )]
+        #[cfg_attr(
+            all(
+                not(feature = "portable-dispatch"),
+                any(
+                    not(feature = "auto-dispatch"),
+                    all(wasmi_has_tail_calls, any(wasmi_opt_speed, wasmi_opt_size))
+                )
+            ),
+            inline(never)
+        )]
         #[allow(improper_ctypes_definitions)] // not used in FFI
         #[allow(clippy::too_many_arguments)] // extern fns are ignored
         pub extern "sysv64" fn $name(
@@ -46,8 +64,26 @@ macro_rules! execution_handler {
             $freg64:ident  : $freg64_ty:ty,
         ) -> $done:ty = $body:tt
     ) => {
-        #[cfg_attr(feature = "portable-dispatch", inline(always))]
-        #[cfg_attr(not(feature = "portable-dispatch"), inline(never))]
+        #[cfg_attr(
+            any(
+                feature = "portable-dispatch",
+                all(
+                    feature = "auto-dispatch",
+                    not(all(wasmi_has_tail_calls, any(wasmi_opt_speed, wasmi_opt_size)))
+                )
+            ),
+            inline(always)
+        )]
+        #[cfg_attr(
+            all(
+                not(feature = "portable-dispatch"),
+                any(
+                    not(feature = "auto-dispatch"),
+                    all(wasmi_has_tail_calls, any(wasmi_opt_speed, wasmi_opt_size))
+                )
+            ),
+            inline(never)
+        )]
         #[allow(improper_ctypes_definitions)] // not used in FFI
         #[expect(clippy::too_many_arguments)]
         pub fn $name(

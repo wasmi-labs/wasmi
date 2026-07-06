@@ -1,5 +1,23 @@
-#[cfg_attr(feature = "portable-dispatch", path = "backend/loop.rs")]
-#[cfg_attr(not(feature = "portable-dispatch"), path = "backend/tail.rs")]
+#[cfg_attr(
+    any(
+        feature = "portable-dispatch",
+        all(
+            feature = "auto-dispatch",
+            not(all(wasmi_has_tail_calls, any(wasmi_opt_speed, wasmi_opt_size)))
+        )
+    ),
+    path = "backend/loop.rs"
+)]
+#[cfg_attr(
+    all(
+        not(feature = "portable-dispatch"),
+        any(
+            not(feature = "auto-dispatch"),
+            all(wasmi_has_tail_calls, any(wasmi_opt_speed, wasmi_opt_size))
+        )
+    ),
+    path = "backend/tail.rs"
+)]
 #[macro_use]
 pub mod backend;
 
