@@ -3,15 +3,32 @@
 use super::IntoResult as _;
 use crate::{
     TrapCode,
-    core::{IntoShiftAmount, RawVal, ShiftAmount, Typed, wasm},
+    ValType,
+    core::{IntoShiftAmount, ShiftAmount, Typed, TypedRawVal, wasm},
     engine::eval,
     ir::{Op, Slot},
 };
 use core::num::NonZero;
 
-pub trait CommutativeBinaryOp {
-    type Result: Typed;
-    type Input: Typed;
+pub trait CommutativeBinaryOp: Sized {
+    type Result: Typed + Into<TypedRawVal>;
+    type Input: Typed + From<TypedRawVal>;
+
+    /// The virtual table of `Self`'s associated methods.
+    ///
+    /// Passing this to the generic translation routines instead of `Self`
+    /// allows all [`CommutativeBinaryOp`]s to share a single monomorphization,
+    /// avoiding codegen bloat. Immediates cross the vtable boundary as
+    /// [`TypedRawVal`] which type-checks all conversions in debug mode.
+    const VT: CommutativeBinaryOpVt = CommutativeBinaryOpVt {
+        result_ty: <Self::Result as Typed>::TY,
+        consteval: commutative_consteval_vt::<Self>,
+        op_rrr: Self::op_rrr,
+        op_rrs: Self::op_rrs,
+        op_rri: commutative_op_rri_vt::<Self>,
+        op_rss: Self::op_rss,
+        op_rsi: commutative_op_rsi_vt::<Self>,
+    };
 
     fn consteval(lhs: Self::Input, rhs: Self::Input) -> Result<Self::Result, TrapCode>;
 
@@ -24,12 +41,61 @@ pub trait CommutativeBinaryOp {
     fn op_rsi(lhs: Slot, rhs: Self::Input) -> Op;
 }
 
-pub trait BinaryOp {
-    type Result: Typed;
-    type Lhs: Typed;
-    type Rhs: Typed;
+/// Virtual table for a [`CommutativeBinaryOp`]. See [`CommutativeBinaryOp::VT`].
+pub struct CommutativeBinaryOpVt {
+    pub result_ty: ValType,
+    pub consteval: fn(lhs: TypedRawVal, rhs: TypedRawVal) -> Result<TypedRawVal, TrapCode>,
+    pub op_rrr: fn() -> Option<Op>,
+    pub op_rrs: fn(rhs: Slot) -> Op,
+    pub op_rri: fn(rhs: TypedRawVal) -> Op,
+    pub op_rss: fn(lhs: Slot, rhs: Slot) -> Op,
+    pub op_rsi: fn(lhs: Slot, rhs: TypedRawVal) -> Op,
+}
 
-    fn decode_rhs(rhs: RawVal) -> BinaryOpRhs<Self::Rhs>;
+/// Adapts [`CommutativeBinaryOp::consteval`] for [`CommutativeBinaryOpVt`].
+fn commutative_consteval_vt<T: CommutativeBinaryOp>(
+    lhs: TypedRawVal,
+    rhs: TypedRawVal,
+) -> Result<TypedRawVal, TrapCode> {
+    T::consteval(lhs.into(), rhs.into()).map(Into::into)
+}
+
+/// Adapts [`CommutativeBinaryOp::op_rri`] for [`CommutativeBinaryOpVt`].
+fn commutative_op_rri_vt<T: CommutativeBinaryOp>(rhs: TypedRawVal) -> Op {
+    T::op_rri(rhs.into())
+}
+
+/// Adapts [`CommutativeBinaryOp::op_rsi`] for [`CommutativeBinaryOpVt`].
+fn commutative_op_rsi_vt<T: CommutativeBinaryOp>(lhs: Slot, rhs: TypedRawVal) -> Op {
+    T::op_rsi(lhs, rhs.into())
+}
+
+pub trait BinaryOp: Sized {
+    type Result: Typed + Into<TypedRawVal>;
+    type Lhs: Typed + From<TypedRawVal>;
+    type Rhs: Typed + RhsImmediate;
+
+    /// The virtual table of `Self`'s associated methods.
+    ///
+    /// Passing this to the generic translation routines instead of `Self`
+    /// allows all [`BinaryOp`]s to share a single monomorphization,
+    /// avoiding codegen bloat. Immediates cross the vtable boundary as
+    /// [`TypedRawVal`] which type-checks all conversions in debug mode.
+    const VT: BinaryOpVt = BinaryOpVt {
+        result_ty: <Self::Result as Typed>::TY,
+        decode_rhs: binary_decode_rhs_vt::<Self>,
+        consteval: binary_consteval_vt::<Self>,
+        op_rrr: Self::op_rrr,
+        op_rrs: Self::op_rrs,
+        op_rri: binary_op_rri_vt::<Self>,
+        op_rsr: Self::op_rsr,
+        op_rss: Self::op_rss,
+        op_rsi: binary_op_rsi_vt::<Self>,
+        op_rir: binary_op_rir_vt::<Self>,
+        op_ris: binary_op_ris_vt::<Self>,
+    };
+
+    fn decode_rhs(rhs: TypedRawVal) -> BinaryOpRhs<Self::Rhs>;
     fn consteval(lhs: Self::Lhs, rhs: Self::Rhs) -> Result<Self::Result, TrapCode>;
 
     fn op_rrr() -> Option<Op> {
@@ -42,6 +108,115 @@ pub trait BinaryOp {
     fn op_rsi(lhs: Slot, rhs: Self::Rhs) -> Op;
     fn op_rir(lhs: Self::Lhs) -> Op;
     fn op_ris(lhs: Self::Lhs, rhs: Slot) -> Op;
+}
+
+/// Virtual table for a [`BinaryOp`]. See [`BinaryOp::VT`].
+///
+/// # Note
+///
+/// Immediate `rhs` values are the *decoded* [`BinaryOp::Rhs`] values
+/// re-encoded as [`TypedRawVal`] via [`RhsImmediate`].
+pub struct BinaryOpVt {
+    pub result_ty: ValType,
+    pub decode_rhs: fn(rhs: TypedRawVal) -> BinaryOpRhs<TypedRawVal>,
+    pub consteval: fn(lhs: TypedRawVal, rhs: TypedRawVal) -> Result<TypedRawVal, TrapCode>,
+    pub op_rrr: fn() -> Option<Op>,
+    pub op_rrs: fn(rhs: Slot) -> Op,
+    pub op_rri: fn(rhs: TypedRawVal) -> Op,
+    pub op_rsr: fn(lhs: Slot) -> Op,
+    pub op_rss: fn(lhs: Slot, rhs: Slot) -> Op,
+    pub op_rsi: fn(lhs: Slot, rhs: TypedRawVal) -> Op,
+    pub op_rir: fn(lhs: TypedRawVal) -> Op,
+    pub op_ris: fn(lhs: TypedRawVal, rhs: Slot) -> Op,
+}
+
+/// Adapts [`BinaryOp::decode_rhs`] for [`BinaryOpVt`].
+fn binary_decode_rhs_vt<T: BinaryOp>(rhs: TypedRawVal) -> BinaryOpRhs<TypedRawVal> {
+    match T::decode_rhs(rhs) {
+        BinaryOpRhs::Value(rhs) => BinaryOpRhs::Value(rhs.into_typed()),
+        BinaryOpRhs::Trap(trap_code) => BinaryOpRhs::Trap(trap_code),
+        BinaryOpRhs::ReturnLhs => BinaryOpRhs::ReturnLhs,
+    }
+}
+
+/// Adapts [`BinaryOp::consteval`] for [`BinaryOpVt`].
+fn binary_consteval_vt<T: BinaryOp>(
+    lhs: TypedRawVal,
+    rhs: TypedRawVal,
+) -> Result<TypedRawVal, TrapCode> {
+    T::consteval(lhs.into(), <T::Rhs as RhsImmediate>::from_typed(rhs)).map(Into::into)
+}
+
+/// Adapts [`BinaryOp::op_rri`] for [`BinaryOpVt`].
+fn binary_op_rri_vt<T: BinaryOp>(rhs: TypedRawVal) -> Op {
+    T::op_rri(<T::Rhs as RhsImmediate>::from_typed(rhs))
+}
+
+/// Adapts [`BinaryOp::op_rsi`] for [`BinaryOpVt`].
+fn binary_op_rsi_vt<T: BinaryOp>(lhs: Slot, rhs: TypedRawVal) -> Op {
+    T::op_rsi(lhs, <T::Rhs as RhsImmediate>::from_typed(rhs))
+}
+
+/// Adapts [`BinaryOp::op_rir`] for [`BinaryOpVt`].
+fn binary_op_rir_vt<T: BinaryOp>(lhs: TypedRawVal) -> Op {
+    T::op_rir(lhs.into())
+}
+
+/// Adapts [`BinaryOp::op_ris`] for [`BinaryOpVt`].
+fn binary_op_ris_vt<T: BinaryOp>(lhs: TypedRawVal, rhs: Slot) -> Op {
+    T::op_ris(lhs.into(), rhs)
+}
+
+/// Decoded [`BinaryOp::Rhs`] immediates crossing the [`BinaryOpVt`] boundary as [`TypedRawVal`].
+pub trait RhsImmediate: Sized {
+    /// Re-encodes the decoded `self` as [`TypedRawVal`].
+    fn into_typed(self) -> TypedRawVal;
+    /// Decodes `value` that was encoded via [`RhsImmediate::into_typed`].
+    fn from_typed(value: TypedRawVal) -> Self;
+}
+
+macro_rules! impl_rhs_immediate_for {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl RhsImmediate for $ty {
+                fn into_typed(self) -> TypedRawVal {
+                    self.into()
+                }
+                fn from_typed(value: TypedRawVal) -> Self {
+                    value.into()
+                }
+            }
+        )*
+    };
+}
+impl_rhs_immediate_for!(i32, u32, i64, u64, f32, f64);
+
+macro_rules! impl_rhs_immediate_for_nonzero {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl RhsImmediate for NonZero<$ty> {
+                fn into_typed(self) -> TypedRawVal {
+                    self.into()
+                }
+                fn from_typed(value: TypedRawVal) -> Self {
+                    match Self::new(<$ty>::from(value)) {
+                        Some(value) => value,
+                        None => unreachable!(),
+                    }
+                }
+            }
+        )*
+    };
+}
+impl_rhs_immediate_for_nonzero!(i32, u32, i64, u64);
+
+impl RhsImmediate for ShiftAmount {
+    fn into_typed(self) -> TypedRawVal {
+        u8::from(self).into()
+    }
+    fn from_typed(value: TypedRawVal) -> Self {
+        Self::from(u8::from(value))
+    }
 }
 
 macro_rules! impl_commutative_binary_op_for {
@@ -126,7 +301,7 @@ macro_rules! impl_binary_op_for {
                 type Lhs = $lhs_ty;
                 type Rhs = $rhs_ty;
 
-                fn decode_rhs(rhs: RawVal) -> BinaryOpRhs<Self::Rhs> {
+                fn decode_rhs(rhs: TypedRawVal) -> BinaryOpRhs<Self::Rhs> {
                     $decode_rhs(rhs)
                 }
 
@@ -1220,7 +1395,7 @@ macro_rules! impl_cmp_op_for {
                 type Lhs = <$binop as BinaryOp>::Lhs;
                 type Rhs = <$binop as BinaryOp>::Rhs;
 
-                fn decode_rhs(rhs: RawVal) -> BinaryOpRhs<<$binop as BinaryOp>::Rhs> {
+                fn decode_rhs(rhs: TypedRawVal) -> BinaryOpRhs<<$binop as BinaryOp>::Rhs> {
                     <$binop as BinaryOp>::decode_rhs(rhs)
                 }
 
@@ -1284,26 +1459,26 @@ pub enum BinaryOpRhs<T> {
     ReturnLhs,
 }
 
-fn decode_rhs_as_value<T>(value: RawVal) -> BinaryOpRhs<T>
+fn decode_rhs_as_value<T>(value: TypedRawVal) -> BinaryOpRhs<T>
 where
-    T: From<RawVal>,
+    T: From<TypedRawVal>,
 {
     BinaryOpRhs::Value(T::from(value))
 }
 
-fn decode_rhs_as_divisor<T: DecodeRhsAsDivisor>(value: RawVal) -> BinaryOpRhs<T> {
+fn decode_rhs_as_divisor<T: DecodeRhsAsDivisor>(value: TypedRawVal) -> BinaryOpRhs<T> {
     DecodeRhsAsDivisor::decode_rhs_as_divisor(value)
 }
 
 trait DecodeRhsAsDivisor: Sized {
-    fn decode_rhs_as_divisor(value: RawVal) -> BinaryOpRhs<Self>;
+    fn decode_rhs_as_divisor(value: TypedRawVal) -> BinaryOpRhs<Self>;
 }
 
 macro_rules! impl_decode_rhs_as_divisor_for {
     ( $($ty:ty),* $(,)? ) => {
         $(
             impl DecodeRhsAsDivisor for NonZero<$ty> {
-                fn decode_rhs_as_divisor(value: RawVal) -> BinaryOpRhs<Self> {
+                fn decode_rhs_as_divisor(value: TypedRawVal) -> BinaryOpRhs<Self> {
                     match Self::new(<$ty>::from(value)) {
                         Some(value) => BinaryOpRhs::Value(value),
                         None => BinaryOpRhs::Trap(TrapCode::IntegerDivisionByZero),
@@ -1315,9 +1490,9 @@ macro_rules! impl_decode_rhs_as_divisor_for {
 }
 impl_decode_rhs_as_divisor_for!(i32, i64, u32, u64);
 
-fn decode_rhs_as_shift_amount<T>(value: RawVal) -> BinaryOpRhs<ShiftAmount>
+fn decode_rhs_as_shift_amount<T>(value: TypedRawVal) -> BinaryOpRhs<ShiftAmount>
 where
-    T: IntoShiftAmount<ShiftSource: From<RawVal>>,
+    T: IntoShiftAmount<ShiftSource: From<TypedRawVal>>,
 {
     let shift_source = <<T as IntoShiftAmount>::ShiftSource>::from(value);
     match <T as IntoShiftAmount>::into_shift_amount(shift_source) {

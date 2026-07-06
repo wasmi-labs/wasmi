@@ -18,7 +18,16 @@ use self::{
     labels::{LabelRef, LabelRegistry},
     layout::{StackLayout, StackSpace},
     locals::{LocalIdx, LocalsRegistry},
-    op::{BinaryOp, CommutativeBinaryOp, UnaryOp},
+    op::{
+        BinaryOp,
+        BinaryOpVt,
+        CommutativeBinaryOp,
+        CommutativeBinaryOpVt,
+        LoadOpVt,
+        StoreOpVt,
+        UnaryOp,
+        UnaryOpVt,
+    },
     stack::{
         BlockControlFrame,
         ControlFrame,
@@ -1654,22 +1663,34 @@ impl FuncTranslator {
     fn translate_unary_with_opt<Op: UnaryOp>(
         &mut self,
         try_opt: fn(&mut FuncTranslator, value: Operand) -> Result<bool, Error>,
-    ) -> Result<(), Error>
-    where
-        Op::Value: From<TypedRawVal>,
-        Op::Result: Into<TypedRawVal> + Typed,
-    {
+    ) -> Result<(), Error> {
+        self.translate_unary_vt(&Op::VT, try_opt)
+    }
+
+    /// Translates a unary Wasm instruction to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// All types implementing [`UnaryOp`] share this single monomorphization
+    /// via their [`UnaryOp::VT`] virtual table to avoid codegen bloat.
+    #[cfg_attr(wasmi_opt_size, inline(never))]
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
+    fn translate_unary_vt(
+        &mut self,
+        vt: &UnaryOpVt,
+        try_opt: fn(&mut FuncTranslator, value: Operand) -> Result<bool, Error>,
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
         let input = self.stack.pop();
         if try_opt(self, input)? {
             // Case: custom optimization took effect, return early.
             return Ok(());
         }
-        let op = match self.resolve_operand::<Op::Value>(input)? {
-            ResolvedOperand::Reg(_) => Op::op_rr(),
-            ResolvedOperand::Slot(input) => Op::op_rs(input),
+        let op = match self.resolve_operand::<TypedRawVal>(input)? {
+            ResolvedOperand::Reg(_) => (vt.op_rr)(),
+            ResolvedOperand::Slot(input) => (vt.op_rs)(input),
             ResolvedOperand::Immediate(input) => {
-                match Op::consteval(input) {
+                match (vt.consteval)(input) {
                     Ok(result) => {
                         self.stack.push_immediate(result)?;
                     }
@@ -1680,16 +1701,12 @@ impl FuncTranslator {
                 return Ok(());
             }
         };
-        self.stage_op_with_result_reg(<Op::Result>::TY, op, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(vt.result_ty, op, FuelCostsProvider::base)?;
         Ok(())
     }
 
     /// Translates a unary Wasm instruction to Wasmi bytecode.
-    fn translate_unary<Op: UnaryOp>(&mut self) -> Result<(), Error>
-    where
-        Op::Value: From<TypedRawVal>,
-        Op::Result: Into<TypedRawVal> + Typed,
-    {
+    fn translate_unary<Op: UnaryOp>(&mut self) -> Result<(), Error> {
         self.translate_unary_with_opt::<Op>(|_, _| Ok(false))
     }
 
@@ -1755,7 +1772,7 @@ impl FuncTranslator {
     }
 
     /// Convenience method to tell that there is no custom optimization.
-    fn no_opt_ri<T>(&mut self, _lhs: Operand, _rhs: T) -> Result<bool, Error> {
+    fn no_opt_ri(&mut self, _lhs: Operand, _rhs: TypedRawVal) -> Result<bool, Error> {
         Ok(false)
     }
 
@@ -1817,29 +1834,38 @@ impl FuncTranslator {
     }
 
     /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
-    fn translate_binary_commutative<T: CommutativeBinaryOp>(&mut self) -> Result<(), Error>
-    where
-        T::Input: From<TypedRawVal> + Copy,
-        T::Result: Into<TypedRawVal>,
-    {
+    fn translate_binary_commutative<T: CommutativeBinaryOp>(&mut self) -> Result<(), Error> {
         self.translate_binary_commutative_with_opt::<T>(Self::no_opt_ri)
     }
 
     /// Translates a commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_commutative_with_opt<T: CommutativeBinaryOp>(
         &mut self,
-        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: T::Input) -> Result<bool, Error>,
-    ) -> Result<(), Error>
-    where
-        T::Input: From<TypedRawVal> + Copy,
-        T::Result: Into<TypedRawVal>,
-    {
+        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error>,
+    ) -> Result<(), Error> {
+        self.translate_binary_commutative_vt(&T::VT, opt_rhs_imm)
+    }
+
+    /// Translates a commutative binary Wasm operator to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// All types implementing [`CommutativeBinaryOp`] share this single
+    /// monomorphization via their [`CommutativeBinaryOp::VT`] virtual table
+    /// to avoid codegen bloat.
+    #[cfg_attr(wasmi_opt_size, inline(never))]
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
+    fn translate_binary_commutative_vt(
+        &mut self,
+        vt: &CommutativeBinaryOpVt,
+        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error>,
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
-        let l = self.resolve_operand::<T::Input>(lhs)?;
-        let r = self.resolve_operand::<T::Input>(rhs)?;
+        let l = self.resolve_operand::<TypedRawVal>(lhs)?;
+        let r = self.resolve_operand::<TypedRawVal>(rhs)?;
         if let (ResolvedOperand::Immediate(lhs), ResolvedOperand::Immediate(rhs)) = (l, r) {
-            return self.translate_binary_consteval(lhs, rhs, T::consteval);
+            return self.translate_binary_consteval(lhs, rhs, vt.consteval);
         }
         let (l, r) = ResolvedOperand::sort(l, r);
         if let (_, ResolvedOperand::Immediate(rhs)) = (l, r) {
@@ -1848,51 +1874,57 @@ impl FuncTranslator {
             }
         }
         let operator = match (l, r) {
-            (ResolvedOperand::Reg(_), ResolvedOperand::Reg(_)) => match T::op_rrr() {
+            (ResolvedOperand::Reg(_), ResolvedOperand::Reg(_)) => match (vt.op_rrr)() {
                 Some(op) => op,
                 None => {
                     let rhs_slot = self.reg_operand_to_slot(rhs)?;
-                    T::op_rrs(rhs_slot)
+                    (vt.op_rrs)(rhs_slot)
                 }
             },
-            (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
-            (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
-            (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => T::op_rss(lhs, rhs),
-            (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => T::op_rsi(lhs, rhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => (vt.op_rrs)(rhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => (vt.op_rri)(rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => (vt.op_rss)(lhs, rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => (vt.op_rsi)(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
         };
-        self.stage_op_with_result_reg(<T::Result as Typed>::TY, operator, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(vt.result_ty, operator, FuelCostsProvider::base)?;
         Ok(())
     }
 
     /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
-    fn translate_binary<T: BinaryOp>(&mut self) -> Result<(), Error>
-    where
-        T::Lhs: From<TypedRawVal> + Copy,
-        T::Rhs: Copy,
-        T::Result: Into<TypedRawVal>,
-    {
+    fn translate_binary<T: BinaryOp>(&mut self) -> Result<(), Error> {
         self.translate_binary_with_opt::<T>(Self::no_opt_ri)
     }
 
     /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
     fn translate_binary_with_opt<T: BinaryOp>(
         &mut self,
-        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: T::Rhs) -> Result<bool, Error>,
-    ) -> Result<(), Error>
-    where
-        T::Lhs: From<TypedRawVal> + Copy,
-        T::Rhs: Copy,
-        T::Result: Into<TypedRawVal>,
-    {
+        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error>,
+    ) -> Result<(), Error> {
+        self.translate_binary_vt(&T::VT, opt_rhs_imm)
+    }
+
+    /// Translates a non-commutative binary Wasm operator to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// All types implementing [`BinaryOp`] share this single monomorphization
+    /// via their [`BinaryOp::VT`] virtual table to avoid codegen bloat.
+    #[cfg_attr(wasmi_opt_size, inline(never))]
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
+    fn translate_binary_vt(
+        &mut self,
+        vt: &BinaryOpVt,
+        opt_rhs_imm: fn(this: &mut Self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error>,
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (lhs, rhs) = self.stack.pop2();
-        let l = self.resolve_operand::<T::Lhs>(lhs)?;
-        let r = self.resolve_operand::<RawVal>(rhs)?;
+        let l = self.resolve_operand::<TypedRawVal>(lhs)?;
+        let r = self.resolve_operand::<TypedRawVal>(rhs)?;
         let r = match r {
             ResolvedOperand::Reg(ty) => ResolvedOperand::Reg(ty),
             ResolvedOperand::Slot(rhs) => ResolvedOperand::Slot(rhs),
-            ResolvedOperand::Immediate(rhs) => match T::decode_rhs(rhs) {
+            ResolvedOperand::Immediate(rhs) => match (vt.decode_rhs)(rhs) {
                 BinaryOpRhs::Value(rhs) => ResolvedOperand::Immediate(rhs),
                 BinaryOpRhs::Trap(trap_code) => return self.translate_trap(trap_code),
                 BinaryOpRhs::ReturnLhs => {
@@ -1902,7 +1934,7 @@ impl FuncTranslator {
             },
         };
         if let (ResolvedOperand::Immediate(lhs), ResolvedOperand::Immediate(rhs)) = (l, r) {
-            return self.translate_binary_consteval(lhs, rhs, T::consteval);
+            return self.translate_binary_consteval(lhs, rhs, vt.consteval);
         }
         if let (_, ResolvedOperand::Immediate(rhs)) = (l, r) {
             if opt_rhs_imm(self, lhs, rhs)? {
@@ -1910,36 +1942,33 @@ impl FuncTranslator {
             }
         }
         let operator = match (l, r) {
-            (ResolvedOperand::Reg(_), ResolvedOperand::Reg(_)) => match T::op_rrr() {
+            (ResolvedOperand::Reg(_), ResolvedOperand::Reg(_)) => match (vt.op_rrr)() {
                 Some(op) => op,
                 None => {
                     let rhs_slot = self.reg_operand_to_slot(rhs)?;
-                    T::op_rrs(rhs_slot)
+                    (vt.op_rrs)(rhs_slot)
                 }
             },
-            (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => T::op_rrs(rhs),
-            (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => T::op_rri(rhs),
-            (ResolvedOperand::Slot(lhs), ResolvedOperand::Reg(_)) => T::op_rsr(lhs),
-            (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => T::op_rss(lhs, rhs),
-            (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => T::op_rsi(lhs, rhs),
-            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Reg(_)) => T::op_rir(lhs),
-            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Slot(rhs)) => T::op_ris(lhs, rhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Slot(rhs)) => (vt.op_rrs)(rhs),
+            (ResolvedOperand::Reg(_), ResolvedOperand::Immediate(rhs)) => (vt.op_rri)(rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Reg(_)) => (vt.op_rsr)(lhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Slot(rhs)) => (vt.op_rss)(lhs, rhs),
+            (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => (vt.op_rsi)(lhs, rhs),
+            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Reg(_)) => (vt.op_rir)(lhs),
+            (ResolvedOperand::Immediate(lhs), ResolvedOperand::Slot(rhs)) => (vt.op_ris)(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
         };
-        self.stage_op_with_result_reg(<T::Result as Typed>::TY, operator, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(vt.result_ty, operator, FuelCostsProvider::base)?;
         Ok(())
     }
 
     /// Evaluates `consteval(lhs, rhs)` and pushed either its result or tranlates a `trap`.
-    fn translate_binary_consteval<Lhs, Rhs, Res>(
+    fn translate_binary_consteval(
         &mut self,
-        lhs: Lhs,
-        rhs: Rhs,
-        consteval: impl FnOnce(Lhs, Rhs) -> Result<Res, TrapCode>,
-    ) -> Result<(), Error>
-    where
-        Res: Into<TypedRawVal>,
-    {
+        lhs: TypedRawVal,
+        rhs: TypedRawVal,
+        consteval: fn(TypedRawVal, TypedRawVal) -> Result<TypedRawVal, TrapCode>,
+    ) -> Result<(), Error> {
         match consteval(lhs, rhs) {
             Ok(value) => {
                 self.stack.push_immediate(value)?;
@@ -2302,7 +2331,7 @@ impl FuncTranslator {
     /// - `Ok(true)` if the intruction fusion was successful.
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
-    pub fn fuse_eqz<T: WasmInteger>(&mut self, lhs: Operand, rhs: T) -> Result<bool, Error> {
+    pub fn fuse_eqz(&mut self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error> {
         self.fuse_commutative_cmp_with(lhs, rhs, NegateCmpInstr::negate_cmp_instr)
     }
 
@@ -2313,7 +2342,7 @@ impl FuncTranslator {
     /// - `Ok(true)` if the intruction fusion was successful.
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
-    pub fn fuse_nez<T: WasmInteger>(&mut self, lhs: Operand, rhs: T) -> Result<bool, Error> {
+    pub fn fuse_nez(&mut self, lhs: Operand, rhs: TypedRawVal) -> Result<bool, Error> {
         self.fuse_commutative_cmp_with(lhs, rhs, LogicalizeCmpInstr::logicalize_cmp_instr)
     }
 
@@ -2326,13 +2355,18 @@ impl FuncTranslator {
     /// - `Ok(true)` if the intruction fusion was successful.
     /// - `Ok(false)` if instruction fusion could not be applied.
     /// - `Err(_)` if an error occurred.
-    fn fuse_commutative_cmp_with<T: WasmInteger>(
+    fn fuse_commutative_cmp_with(
         &mut self,
         lhs: Operand,
-        rhs: T,
+        rhs: TypedRawVal,
         try_fuse: fn(cmp: &Op) -> Option<Op>,
     ) -> Result<bool, Error> {
-        if !rhs.is_zero() {
+        let is_zero = match rhs.ty() {
+            ValType::I32 => i32::from(rhs).is_zero(),
+            ValType::I64 => i64::from(rhs).is_zero(),
+            _ => false,
+        };
+        if !is_zero {
             // Case: cannot fuse with non-zero `rhs`
             return Ok(false);
         }
@@ -2376,13 +2410,26 @@ impl FuncTranslator {
     /// - `i32.{load8_s, load8_u, load16_s, load16_u}`
     /// - `i64.{load8_s, load8_u, load16_s, load16_u load32_s, load32_u}`
     fn translate_load<T: op::LoadOp>(&mut self, memarg: MemArg) -> Result<(), Error> {
+        self.translate_load_vt(&T::VT, memarg)
+    }
+
+    /// Translates a Wasm `load` instruction to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// All [`LoadOp`]s share the single monomorphization of this method
+    /// via their [`LoadOp::VT`] virtual table to avoid codegen bloat.
+    ///
+    /// [`LoadOp`]: op::LoadOp
+    /// [`LoadOp::VT`]: op::LoadOp::VT
+    #[cfg_attr(wasmi_opt_size, inline(never))]
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
+    fn translate_load_vt(&mut self, vt: &LoadOpVt, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
         let ptr = self.stack.pop();
-        match self.select_load_op::<T>(ptr, memarg)? {
+        match self.select_load_op_vt(vt, ptr, memarg)? {
             Op::Trap { trap_code } => self.translate_trap(trap_code),
-            op => {
-                self.stage_op_with_result_reg(<T::Result as Typed>::TY, op, FuelCostsProvider::load)
-            }
+            op => self.stage_op_with_result_reg(vt.result_ty, op, FuelCostsProvider::load),
         }
     }
 
@@ -2394,7 +2441,26 @@ impl FuncTranslator {
     ///
     /// This chooses the right encoding for the given `load` instruction.
     /// If `ptr+offset` is a constant value the address is pre-calculated.
+    #[cfg(feature = "simd")]
     fn select_load_op<T: op::LoadOp>(&mut self, ptr: Operand, memarg: MemArg) -> Result<Op, Error> {
+        self.select_load_op_vt(&T::VT, ptr, memarg)
+    }
+
+    /// Returns a Wasmi `load` operator for `memarg` and `ptr` if any.
+    ///
+    /// Returns [`Op::Trap`] if `ptr` is known to be out of bounds for the linear memory.
+    ///
+    /// # Note
+    ///
+    /// This chooses the right encoding for the given `load` instruction.
+    /// If `ptr+offset` is a constant value the address is pre-calculated.
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
+    fn select_load_op_vt(
+        &mut self,
+        vt: &LoadOpVt,
+        ptr: Operand,
+        memarg: MemArg,
+    ) -> Result<Op, Error> {
         let Some((memory, offset)) = Self::decode_memarg(memarg)? else {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
@@ -2409,8 +2475,8 @@ impl FuncTranslator {
                 None => break 'opt,
             };
             let op = match ptr {
-                ResolvedOperand::Reg(_) => T::op_rr_mem0_offset16(offset),
-                ResolvedOperand::Slot(ptr) => T::op_rs_mem0_offset16(ptr, offset),
+                ResolvedOperand::Reg(_) => (vt.op_rr_mem0_offset16)(offset),
+                ResolvedOperand::Slot(ptr) => (vt.op_rs_mem0_offset16)(ptr, offset),
                 ResolvedOperand::Immediate(_) => break 'opt,
             };
             return Ok(op);
@@ -2420,9 +2486,9 @@ impl FuncTranslator {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
         let op = match ptr {
-            ResolvedOperand::Reg(_) => T::op_rr(offset, memory),
-            ResolvedOperand::Slot(ptr) => T::op_rs(ptr, offset, memory),
-            ResolvedOperand::Immediate(address) => T::op_ri(address, memory),
+            ResolvedOperand::Reg(_) => (vt.op_rr)(offset, memory),
+            ResolvedOperand::Slot(ptr) => (vt.op_rs)(ptr, offset, memory),
+            ResolvedOperand::Immediate(address) => (vt.op_ri)(address, memory),
         };
         Ok(op)
     }
@@ -2439,11 +2505,7 @@ impl FuncTranslator {
     /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64}.{store, store8, store16, store32}`
-    fn translate_store<T: op::StoreOp>(&mut self, memarg: MemArg) -> Result<(), Error>
-    where
-        T::Value: Copy + From<TypedRawVal>,
-        T::Immediate: Copy,
-    {
+    fn translate_store<T: op::StoreOp>(&mut self, memarg: MemArg) -> Result<(), Error> {
         bail_unreachable!(self);
         let (ptr, value) = self.stack.pop2();
         self.encode_store::<T>(memarg, ptr, value)
@@ -2454,12 +2516,29 @@ impl FuncTranslator {
         memarg: MemArg,
         ptr: Operand,
         value: Operand,
-    ) -> Result<(), Error>
-    where
-        T::Value: Copy + From<TypedRawVal>,
-        T::Immediate: Copy,
-    {
-        let op = self.choose_store_op::<T>(memarg, ptr, value)?;
+    ) -> Result<(), Error> {
+        self.encode_store_vt(&T::VT, memarg, ptr, value)
+    }
+
+    /// Encodes a Wasm `store` instruction as Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// All types implementing [`StoreOp`] share this single monomorphization
+    /// via their [`StoreOp::VT`] virtual table to avoid codegen bloat.
+    ///
+    /// [`StoreOp`]: op::StoreOp
+    /// [`StoreOp::VT`]: op::StoreOp::VT
+    #[cfg_attr(wasmi_opt_size, inline(never))]
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
+    fn encode_store_vt(
+        &mut self,
+        vt: &StoreOpVt,
+        memarg: MemArg,
+        ptr: Operand,
+        value: Operand,
+    ) -> Result<(), Error> {
+        let op = self.choose_store_op_vt(vt, memarg, ptr, value)?;
         if let Op::Trap { trap_code } = op {
             return self.translate_trap(trap_code);
         }
@@ -2467,17 +2546,15 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Selects which store operator to encode based on type `T`.
-    fn choose_store_op<T: op::StoreOp>(
+    /// Selects which store operator to encode based on the given `vt`.
+    #[cfg_attr(wasmi_opt_speed, inline(always))]
+    fn choose_store_op_vt(
         &mut self,
+        vt: &StoreOpVt,
         memarg: MemArg,
         ptr: Operand,
         value: Operand,
-    ) -> Result<Op, Error>
-    where
-        T::Value: Copy + From<TypedRawVal>,
-        T::Immediate: Copy,
-    {
+    ) -> Result<Op, Error> {
         use ResolvedOperand as Opd;
         let Some((memory, offset)) = Self::decode_memarg(memarg)? else {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
@@ -2489,25 +2566,25 @@ impl FuncTranslator {
         else {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
-        if let Some(op) = self.choose_store_mem0_offset16_op::<T>(ptr, offset, memory, value)? {
+        if let Some(op) = self.choose_store_mem0_offset16_op_vt(vt, ptr, offset, memory, value)? {
             return Ok(op);
         }
-        let value = self
-            .resolve_operand::<T::Value>(value)?
-            .map(T::into_immediate);
+        let value = self.resolve_operand::<TypedRawVal>(value)?;
         let op = match (ptr, value) {
-            (Opd::Reg(_), Opd::Reg(_)) => match T::store_rr(offset, memory) {
+            (Opd::Reg(_), Opd::Reg(_)) => match (vt.store_rr)(offset, memory) {
                 Some(op) => op,
                 None => unreachable!(),
             },
-            (Opd::Reg(_), Opd::Slot(value)) => T::store_rs(offset, value, memory),
-            (Opd::Reg(_), Opd::Immediate(value)) => T::store_ri(offset, value, memory),
-            (Opd::Slot(ptr), Opd::Reg(_)) => T::store_sr(ptr, offset, memory),
-            (Opd::Slot(ptr), Opd::Slot(value)) => T::store_ss(ptr, offset, value, memory),
-            (Opd::Slot(ptr), Opd::Immediate(value)) => T::store_si(ptr, offset, value, memory),
-            (Opd::Immediate(address), Opd::Reg(_)) => T::store_ir(address, memory),
-            (Opd::Immediate(address), Opd::Slot(value)) => T::store_is(address, value, memory),
-            (Opd::Immediate(address), Opd::Immediate(value)) => T::store_ii(address, value, memory),
+            (Opd::Reg(_), Opd::Slot(value)) => (vt.store_rs)(offset, value, memory),
+            (Opd::Reg(_), Opd::Immediate(value)) => (vt.store_ri)(offset, value, memory),
+            (Opd::Slot(ptr), Opd::Reg(_)) => (vt.store_sr)(ptr, offset, memory),
+            (Opd::Slot(ptr), Opd::Slot(value)) => (vt.store_ss)(ptr, offset, value, memory),
+            (Opd::Slot(ptr), Opd::Immediate(value)) => (vt.store_si)(ptr, offset, value, memory),
+            (Opd::Immediate(address), Opd::Reg(_)) => (vt.store_ir)(address, memory),
+            (Opd::Immediate(address), Opd::Slot(value)) => (vt.store_is)(address, value, memory),
+            (Opd::Immediate(address), Opd::Immediate(value)) => {
+                (vt.store_ii)(address, value, memory)
+            }
         };
         Ok(op)
     }
@@ -2519,17 +2596,14 @@ impl FuncTranslator {
     /// - Returns `Ok(true)` if encoding is available.
     /// - Returns `Ok(false)` if encoding is not available.
     /// - Returns `Err(_)` if an error occurred.
-    fn choose_store_mem0_offset16_op<T: op::StoreOp>(
+    fn choose_store_mem0_offset16_op_vt(
         &mut self,
+        vt: &StoreOpVt,
         ptr: ResolvedOperand<Address>,
         offset: Offset,
         memory: index::Memory,
         value: Operand,
-    ) -> Result<Option<Op>, Error>
-    where
-        T::Value: Copy + From<TypedRawVal>,
-        T::Immediate: Copy,
-    {
+    ) -> Result<Option<Op>, Error> {
         use Location as Loc;
         use ResolvedOperand as Opd;
         if !memory.is_default() {
@@ -2543,23 +2617,21 @@ impl FuncTranslator {
             Opd::Slot(ptr) => Loc::Slot(ptr),
             Opd::Immediate(_) => return Ok(None),
         };
-        let resolved_value = self
-            .resolve_operand::<T::Value>(value)?
-            .map(T::into_immediate);
+        let resolved_value = self.resolve_operand::<TypedRawVal>(value)?;
         let op = match (ptr, resolved_value) {
-            (Loc::Reg(_), Opd::Reg(_)) => match T::store_mem0_offset16_rr(offset) {
+            (Loc::Reg(_), Opd::Reg(_)) => match (vt.store_mem0_offset16_rr)(offset) {
                 Some(op) => op,
                 None => {
                     let value = self.reg_operand_to_slot(value)?;
-                    T::store_mem0_offset16_rs(offset, value)
+                    (vt.store_mem0_offset16_rs)(offset, value)
                 }
             },
-            (Loc::Reg(_), Opd::Slot(value)) => T::store_mem0_offset16_rs(offset, value),
-            (Loc::Reg(_), Opd::Immediate(value)) => T::store_mem0_offset16_ri(offset, value),
-            (Loc::Slot(ptr), Opd::Reg(_)) => T::store_mem0_offset16_sr(ptr, offset),
-            (Loc::Slot(ptr), Opd::Slot(value)) => T::store_mem0_offset16_ss(ptr, offset, value),
+            (Loc::Reg(_), Opd::Slot(value)) => (vt.store_mem0_offset16_rs)(offset, value),
+            (Loc::Reg(_), Opd::Immediate(value)) => (vt.store_mem0_offset16_ri)(offset, value),
+            (Loc::Slot(ptr), Opd::Reg(_)) => (vt.store_mem0_offset16_sr)(ptr, offset),
+            (Loc::Slot(ptr), Opd::Slot(value)) => (vt.store_mem0_offset16_ss)(ptr, offset, value),
             (Loc::Slot(ptr), Opd::Immediate(value)) => {
-                T::store_mem0_offset16_si(ptr, offset, value)
+                (vt.store_mem0_offset16_si)(ptr, offset, value)
             }
         };
         Ok(Some(op))

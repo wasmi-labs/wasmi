@@ -334,6 +334,28 @@ jobs:
       - name: Check uDeps
         run: cargo udeps --all-targets
 
+  cfg-policy:
+    name: Cfg Policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Install cargo-wasmi-cfg-policy
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-wasmi-cfg-policy was already installed on the CI runner.
+          cargo install cargo-wasmi-cfg-policy || true
+      - name: Check Cfg Policy (default features)
+        run: cargo wasmi-cfg-policy -p wasmi
+      - name: Check Cfg Policy (no default features)
+        run: cargo wasmi-cfg-policy -p wasmi --no-default-features
+      - name: Check Cfg Policy (all features)
+        run: cargo wasmi-cfg-policy -p wasmi --all-features
+
   fuzz:
     name: Fuzz
     runs-on: ubuntu-latest
