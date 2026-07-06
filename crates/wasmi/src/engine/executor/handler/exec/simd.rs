@@ -518,10 +518,6 @@ handler_store_lane_ss! {
     fn v128_store_lane8_ss(V128StoreLane8_Ss) = simd::v128_store8_lane;
     fn v128_store_lane16_rs(V128StoreLane16_Rs) = simd::v128_store16_lane;
     fn v128_store_lane16_ss(V128StoreLane16_Ss) = simd::v128_store16_lane;
-    fn v128_store_lane32_rs(V128StoreLane32_Rs) = simd::v128_store32_lane;
-    fn v128_store_lane32_ss(V128StoreLane32_Ss) = simd::v128_store32_lane;
-    fn v128_store_lane64_rs(V128StoreLane64_Rs) = simd::v128_store64_lane;
-    fn v128_store_lane64_ss(V128StoreLane64_Ss) = simd::v128_store64_lane;
 }
 
 macro_rules! handler_store_lane_mem0_offset16_ss {
@@ -557,8 +553,4 @@ handler_store_lane_mem0_offset16_ss! {
     fn v128_store_lane8_mem0_offset16_ss(V128StoreLane8Mem0Offset16_Ss) = simd::v128_store8_lane;
     fn v128_store_lane16_mem0_offset16_rs(V128StoreLane16Mem0Offset16_Rs) = simd::v128_store16_lane;
     fn v128_store_lane16_mem0_offset16_ss(V128StoreLane16Mem0Offset16_Ss) = simd::v128_store16_lane;
-    fn v128_store_lane32_mem0_offset16_rs(V128StoreLane32Mem0Offset16_Rs) = simd::v128_store32_lane;
-    fn v128_store_lane32_mem0_offset16_ss(V128StoreLane32Mem0Offset16_Ss) = simd::v128_store32_lane;
-    fn v128_store_lane64_mem0_offset16_rs(V128StoreLane64Mem0Offset16_Rs) = simd::v128_store64_lane;
-    fn v128_store_lane64_mem0_offset16_ss(V128StoreLane64Mem0Offset16_Ss) = simd::v128_store64_lane;
 }

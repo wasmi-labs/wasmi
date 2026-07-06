@@ -1223,8 +1223,6 @@ fn add_simd_store_ops(isa: &mut Isa) {
         (StoreKind::Value, Ty::V128),
         (StoreKind::Lane { width: LaneWidth::W8 }, Ty::V128),
         (StoreKind::Lane { width: LaneWidth::W16 }, Ty::V128),
-        (StoreKind::Lane { width: LaneWidth::W32 }, Ty::V128),
-        (StoreKind::Lane { width: LaneWidth::W64 }, Ty::V128),
     ];
     for (kind, value_ty) in kinds {
         for ptr in [OperandKind::Reg, OperandKind::Slot] {

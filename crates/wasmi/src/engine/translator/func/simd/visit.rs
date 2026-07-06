@@ -157,35 +157,13 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_store32_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
-        self.translate_v128_store_lane::<i32>(
-            memarg,
-            lane,
-            Op::v128_store_lane32_rs,
-            Op::v128_store_lane32_ss,
-            Op::v128_store_lane32_mem0_offset16_rs,
-            Op::v128_store_lane32_mem0_offset16_ss,
-            |this, memarg, ptr, lane, v128| {
-                let value = simd::i32x4_extract_lane(v128, lane);
-                let value = this.immediate_to_operand(value)?;
-                this.encode_store::<op::I32Store>(memarg, ptr, value)
-            },
-        )
+        self.visit_f32x4_extract_lane(lane)?;
+        self.visit_f32_store(memarg)
     }
 
     fn visit_v128_store64_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
-        self.translate_v128_store_lane::<i64>(
-            memarg,
-            lane,
-            Op::v128_store_lane64_rs,
-            Op::v128_store_lane64_ss,
-            Op::v128_store_lane64_mem0_offset16_rs,
-            Op::v128_store_lane64_mem0_offset16_ss,
-            |this, memarg, ptr, lane, v128| {
-                let value = simd::i64x2_extract_lane(v128, lane);
-                let value = this.immediate_to_operand(value)?;
-                this.encode_store::<op::I64Store>(memarg, ptr, value)
-            },
-        )
+        self.visit_f64x2_extract_lane(lane)?;
+        self.visit_f64_store(memarg)
     }
 
     fn visit_v128_const(&mut self, value: wasmparser::V128) -> Self::Output {
