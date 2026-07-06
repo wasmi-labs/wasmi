@@ -39,7 +39,18 @@ use std::env;
 /// optimization at `opt-level` 0 or 1. Together with the `auto-dispatch` crate
 /// feature this drives the automatic fallback to the portable dispatch backend.
 fn main() {
+    // The emitted `cfg`s depend on the following build configs:
+    //
+    // - optimization level
+    // - target architecture
+    // - target features (e.g. for Wasm)
+    // 
+    // The build script must re-run whenever those change.
     println!("cargo::rerun-if-changed=build.rs");
+    println!("cargo::rerun-if-env-changed=OPT_LEVEL");
+    println!("cargo::rerun-if-env-changed=CARGO_CFG_TARGET_ARCH");
+    println!("cargo::rerun-if-env-changed=CARGO_CFG_TARGET_FEATURE");
+    // Define Wasmi specific `cfg` values.
     println!("cargo::rustc-check-cfg=cfg(wasmi_opt_size)");
     println!("cargo::rustc-check-cfg=cfg(wasmi_opt_speed)");
     println!("cargo::rustc-check-cfg=cfg(wasmi_has_tail_calls)");
