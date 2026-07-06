@@ -10,14 +10,47 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ## `2.0.0-beta.5` - 2026-07-06
 
+### Added
+
+- Reduced Wasmi's binary artifact size with some new features and tweaks:
+  - Minor tweaks: [#1960]
+  - Added a new `debug` crate feature to Wasmi. [#1959]
+    - This is useful if richer debug messages are required.
+    - Disabled by default to reduce Wasmi's binary artifact size by default.
+  - Replace generic monomorphization with explicit V-Tables in translation. [#1961]
+- Added fused `load`+`copy_sr` operators. [#1955]
+  - These improve performance by up to 10% according to some benchmark test cases.
+- Added richer error information to Wasm module instantiation errors. [#1962] + [#1963]
+  - Thanks to [kajacx](https://github.com/kajacx) for the improvement!
+
 ### Fixed
 
 - Fixed a `u64` overflow when sizing a 64-bit memory's maximum during translation. [#1964]
   - A `memory64` declared with the largest allowed maximum (`2^48` pages) turned every
     non-zero constant load/store address into an unconditional `MemoryOutOfBounds` trap.
   - Thanks to [aizu-m](https://github.com/aizu-m) for the fix!
+- Fixed mismatched `load_extend` translation and execution. [#1958]
+  - Funnily this was mismatched on both translation and execution which caused this
+    to slip under the CI's radar as the double breakage caused this to behave as intended.
 
+### Changed
+
+- Lower some `v128_load{32,64}_lane` operators to `extract_lane` + `scalar.store` operators. [#1966]
+
+### Internal
+
+- Clean-up execution handlers with the new `Args` utility type. [#1956]
+
+[#1955]: https://github.com/wasmi-labs/wasmi/pull/1955
+[#1956]: https://github.com/wasmi-labs/wasmi/pull/1956
+[#1958]: https://github.com/wasmi-labs/wasmi/pull/1958
+[#1959]: https://github.com/wasmi-labs/wasmi/pull/1959
+[#1960]: https://github.com/wasmi-labs/wasmi/pull/1960
+[#1961]: https://github.com/wasmi-labs/wasmi/pull/1961
+[#1962]: https://github.com/wasmi-labs/wasmi/pull/1962
+[#1963]: https://github.com/wasmi-labs/wasmi/pull/1963
 [#1964]: https://github.com/wasmi-labs/wasmi/pull/1964
+[#1966]: https://github.com/wasmi-labs/wasmi/pull/1966
 
 ## `2.0.0-beta.4` - 2026-07-01
 
