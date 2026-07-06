@@ -44,7 +44,7 @@ fn main() {
     // - optimization level
     // - target architecture
     // - target features (e.g. for Wasm)
-    // 
+    //
     // The build script must re-run whenever those change.
     println!("cargo::rerun-if-changed=build.rs");
     println!("cargo::rerun-if-env-changed=OPT_LEVEL");
