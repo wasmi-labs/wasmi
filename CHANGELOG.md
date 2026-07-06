@@ -8,6 +8,20 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## Unreleased
+
+### Added
+
+- Added a new default-enabled `auto-dispatch` crate feature. [#1968]
+  - When enabled, Wasmi automatically uses its faster tail-call based dispatch only on
+    targets that are known to support LLVM tail calls and that are compiled with an
+    optimizing `opt-level`, and otherwise falls back to the portable (loop-based) dispatch
+    scheme automatically.
+  - Enabling the `portable-dispatch` feature still takes precedence over `auto-dispatch`.
+  - Feature added to the `wasmi`, `wasmi_cli`, `wasmi_c_api` and `wasmi_c_api_impl` crates.
+
+[#1968]: https://github.com/wasmi-labs/wasmi/pull/1968
+
 ## `2.0.0-beta.5` - 2026-07-06
 
 ### Added
