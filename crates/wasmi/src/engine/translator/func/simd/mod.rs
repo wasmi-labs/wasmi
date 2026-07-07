@@ -368,6 +368,7 @@ impl FuncTranslator {
             }
             op => {
                 let fuel_pos = self.stack.fuel_pos();
+                self.preserve_reg_of_type(<<L as LoadOp>::Result as Typed>::TY)?;
                 self.instrs
                     .encode_op(op, fuel_pos, FuelCostsProvider::load)?;
             }
@@ -394,6 +395,7 @@ impl FuncTranslator {
             }
             op => {
                 let fuel_pos = self.stack.fuel_pos();
+                self.preserve_reg_of_type(<<L as LoadOp>::Result as Typed>::TY)?;
                 self.instrs
                     .encode_op(op, fuel_pos, FuelCostsProvider::load)?;
             }
