@@ -2245,7 +2245,7 @@ impl FuncTranslator {
     /// Tries to lower a staged `f32.abs` and a `f32.neg` operator into a `f32.nabs` operator.
     ///
     /// Returns `true` if lowering was successful.
-    fn try_lower_f32_copysign(&mut self, value: Operand) -> Result<bool, Error> {
+    fn try_lower_f32_abs_neg(&mut self, value: Operand) -> Result<bool, Error> {
         let Some(staged_op) = self.instrs.peek_staged() else {
             // Case: no staged `Op` to lower
             return Ok(false);
@@ -2267,7 +2267,7 @@ impl FuncTranslator {
     /// Tries to lower a staged `f64.abs` and a `f64.neg` operator into a `f64.nabs` operator.
     ///
     /// Returns `true` if lowering was successful.
-    fn try_lower_f64_copysign(&mut self, value: Operand) -> Result<bool, Error> {
+    fn try_lower_f64_abs_neg(&mut self, value: Operand) -> Result<bool, Error> {
         let Some(staged_op) = self.instrs.peek_staged() else {
             // Case: no staged `Op` to lower
             return Ok(false);
