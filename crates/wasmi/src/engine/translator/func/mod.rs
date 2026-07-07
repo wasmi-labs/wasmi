@@ -932,7 +932,13 @@ impl FuncTranslator {
     /// a copy operator is encoded to turn the existing register operand into
     /// a temporary operand.
     fn push_result_reg(&mut self, ty: ValType) -> Result<(), Error> {
-        let fuel_pos = self.stack.fuel_pos();
+        self.preserve_reg_of_type(ty)?;
+        self.stack.push_temp(ty, Allocation::Reg)?;
+        Ok(())
+    }
+
+    /// Preserves the accumulator register of type `ty` via a `copy` operator if necessary.
+    fn preserve_reg_of_type(&mut self, ty: ValType) -> Result<(), Error> {
         if let Some(operand) = self.stack.dealloc_reg(ty) {
             let result = operand.temp_slots().head();
             let op = match self.fuse_copy_sr(result, ty) {
@@ -942,10 +948,10 @@ impl FuncTranslator {
                 }
                 None => Self::select_copy_sr_op(result, operand.ty()),
             };
+            let fuel_pos = self.stack.fuel_pos();
             self.instrs
                 .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
-        };
-        self.stack.push_temp(ty, Allocation::Reg)?;
+        }
         Ok(())
     }
 
