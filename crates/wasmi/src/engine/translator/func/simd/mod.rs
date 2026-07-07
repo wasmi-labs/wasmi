@@ -393,11 +393,9 @@ impl FuncTranslator {
                 return Ok(());
             }
             op => {
-                self.push_op_with_result_reg(
-                    <L as LoadOp>::Result::TY,
-                    op,
-                    FuelCostsProvider::load,
-                )?;
+                let fuel_pos = self.stack.fuel_pos();
+                self.instrs
+                    .encode_op(op, fuel_pos, FuelCostsProvider::load)?;
             }
         }
         let v128 = self.copy_operand_to_slot(v128)?;
