@@ -1684,6 +1684,7 @@ impl FuncTranslator {
         let input = self.stack.pop();
         if try_opt(self, input)? {
             // Case: custom optimization took effect, return early.
+            self.stack.push_temp(vt.result_ty, Allocation::Reg)?;
             return Ok(());
         }
         let op = match self.resolve_operand::<TypedRawVal>(input)? {
