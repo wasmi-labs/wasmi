@@ -2272,7 +2272,7 @@ impl FuncTranslator {
             return Ok(false);
         };
         let val = self.resolve_operand::<f64>(value)?;
-        if matches!(val, ResolvedOperand::Reg(ValType::F64)) {
+        if !matches!(val, ResolvedOperand::Reg(ValType::F64)) {
             // Case: input/output does not match with staged `Op`
             return Ok(false);
         }
