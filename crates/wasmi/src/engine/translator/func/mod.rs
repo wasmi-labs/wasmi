@@ -1684,6 +1684,7 @@ impl FuncTranslator {
         let input = self.stack.pop();
         if try_opt(self, input)? {
             // Case: custom optimization took effect, return early.
+            self.stack.push_temp(vt.result_ty, Allocation::Reg)?;
             return Ok(());
         }
         let op = match self.resolve_operand::<TypedRawVal>(input)? {
@@ -2244,13 +2245,13 @@ impl FuncTranslator {
     /// Tries to lower a staged `f32.abs` and a `f32.neg` operator into a `f32.nabs` operator.
     ///
     /// Returns `true` if lowering was successful.
-    fn try_lower_f32_copysign(&mut self, value: Operand) -> Result<bool, Error> {
+    fn try_lower_f32_abs_neg(&mut self, value: Operand) -> Result<bool, Error> {
         let Some(staged_op) = self.instrs.peek_staged() else {
             // Case: no staged `Op` to lower
             return Ok(false);
         };
         let val = self.resolve_operand::<f32>(value)?;
-        if matches!(val, ResolvedOperand::Reg(ValType::F32)) {
+        if !matches!(val, ResolvedOperand::Reg(ValType::F32)) {
             // Case: input/output does not match with staged `Op`
             return Ok(false);
         }
@@ -2266,13 +2267,13 @@ impl FuncTranslator {
     /// Tries to lower a staged `f64.abs` and a `f64.neg` operator into a `f64.nabs` operator.
     ///
     /// Returns `true` if lowering was successful.
-    fn try_lower_f64_copysign(&mut self, value: Operand) -> Result<bool, Error> {
+    fn try_lower_f64_abs_neg(&mut self, value: Operand) -> Result<bool, Error> {
         let Some(staged_op) = self.instrs.peek_staged() else {
             // Case: no staged `Op` to lower
             return Ok(false);
         };
         let val = self.resolve_operand::<f64>(value)?;
-        if matches!(val, ResolvedOperand::Reg(ValType::F64)) {
+        if !matches!(val, ResolvedOperand::Reg(ValType::F64)) {
             // Case: input/output does not match with staged `Op`
             return Ok(false);
         }
