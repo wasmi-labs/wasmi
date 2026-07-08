@@ -616,8 +616,7 @@ impl OperandStack {
     ///
     /// # Note
     ///
-    /// - Returns the [`Operand`] at `depth` before being converted to an [`Operand::Temp`].
-    /// - [`Operand::Temp`] will have their optional `instr` set to `None`.
+    /// Returns the [`Operand`] at `depth` before being converted to an [`Operand::Temp`].
     ///
     /// # Panics
     ///

@@ -730,13 +730,18 @@ impl FuncTranslator {
     fn copy_operands_to_temp(
         &mut self,
         len: u16,
+        skip: u16,
         fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<BoundedSlotSpan, Error> {
         if len == 0 {
             return Ok(BoundedSlotSpan::new(self.stack.next_temp_slots(), 0));
         }
-        let dst = self.stack.peek(usize::from(len) - 1).temp_slots().span();
-        self.copy_operands_to_dst(dst, len, 0, fuel_pos)
+        let dst = self
+            .stack
+            .peek(usize::from(len + skip) - 1)
+            .temp_slots()
+            .span();
+        self.copy_operands_to_dst(dst, len, skip, fuel_pos)
     }
 
     /// Skips the top `skip` operands and copies the remaining top `len` operands to `dst`.
@@ -1087,11 +1092,10 @@ impl FuncTranslator {
         &mut self,
         table: wasmparser::BrTable,
         index: Location,
-        default_branch_params: BranchParams,
+        values: BoundedSlotSpan,
     ) -> Result<(), Error> {
         let len_targets = table.len() + 1;
         debug_assert_eq!(self.immediates.len(), len_targets as usize);
-        let values = default_branch_params.temp_slots();
         let op = match index {
             Location::Reg(_) => Op::branch_table_span_r(len_targets, values),
             Location::Slot(index) => Op::branch_table_span_s(len_targets, index, values),
@@ -1615,8 +1619,7 @@ impl FuncTranslator {
     fn adjust_stack_for_call(&mut self, ty: &FuncType) -> Result<BoundedSlotSpan, Error> {
         let fuel_pos = self.stack.fuel_pos();
         self.preserve_regs(fuel_pos)?;
-        let fuel_pos = self.stack.fuel_pos();
-        let params = self.copy_operands_to_temp(ty.len_params(), fuel_pos)?;
+        let params = self.copy_operands_to_temp(ty.len_params(), 0, fuel_pos)?;
         for _ in 0..ty.len_params() {
             self.stack.pop();
         }
