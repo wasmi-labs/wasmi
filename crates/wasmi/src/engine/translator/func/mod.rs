@@ -1461,19 +1461,23 @@ impl FuncTranslator {
             // Case: cannot fuse without a known last instruction
             return Ok(None);
         };
-        let Some(ir::Location::Reg(result_ty)) = staged_op.result_loc() else {
+        let Some(ir::Location::Reg(staged_ty)) = staged_op.result_loc() else {
             // Case: cannot fuse without register result.
             return Ok(None);
         };
-        let ResolvedOperand::Reg(_ty) = condition.resolve(&self.layout)? else {
+        let ResolvedOperand::Reg(condition_ty) = condition.resolve(&self.layout)? else {
             // Case: cannot fuse non-register operands
             //  - locals have observable behavior.
             //  - immediates cannot be the result of a previous instruction.
             return Ok(None);
         };
+        if staged_ty != condition_ty {
+            // Case: cannot fuse if staged type and condition type do not match.
+            return Ok(None);
+        }
         debug_assert!(
-            matches!(result_ty, ValType::I32 | ValType::I64),
-            "unexpected condition type: {result_ty:?}"
+            RegKind::Ireg.matches_ty(condition_ty),
+            "unexpected condition type: {condition_ty:?}"
         );
         let cmp_op = match negate {
             false => staged_op,
