@@ -8,7 +8,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## Unreleased
+## `2.0.0-beta.6` - 2026-07-08
 
 ### Added
 
