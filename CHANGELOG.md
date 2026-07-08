@@ -20,7 +20,20 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Enabling the `portable-dispatch` feature still takes precedence over `auto-dispatch`.
   - Feature added to the `wasmi`, `wasmi_cli`, `wasmi_c_api` and `wasmi_c_api_impl` crates.
 
+### Fixed
+
+- Fixed a bug that incorrectly pushed multiple results in unfused SIMD `load` operator translation. [#1969]
+- Fixed a bug in `fabs` + `fneg` fused translation. [#1970]
+- Fixed a bug that some SIMD `load` operators did not properly preserve a previous accumulator. [#1971]
+- Fixed a bug in `multi-value` Wasm `br_table` translation. [#1972]
+- Fixed reachability of a `debug_assert` in `fuse_cmp_branch`. [#1973]
+
 [#1968]: https://github.com/wasmi-labs/wasmi/pull/1968
+[#1969]: https://github.com/wasmi-labs/wasmi/pull/1969
+[#1970]: https://github.com/wasmi-labs/wasmi/pull/1970
+[#1971]: https://github.com/wasmi-labs/wasmi/pull/1971
+[#1972]: https://github.com/wasmi-labs/wasmi/pull/1972
+[#1973]: https://github.com/wasmi-labs/wasmi/pull/1973
 
 ## `2.0.0-beta.5` - 2026-07-06
 
