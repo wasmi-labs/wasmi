@@ -378,12 +378,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 }
             }
         };
-        self.copy_branch_params(default_branch_params, fuel_pos)?;
-        let required_temp_copies = default_branch_params.len_temps() != 0;
-        let requires_branch_copies = required_temp_copies && equal_heights;
+        let len_temps = default_branch_params.len_temps();
+        let len_regs = default_branch_params.len_regs();
+        let values = self.copy_operands_to_temp(len_temps, len_regs, fuel_pos)?;
+        self.copy_branch_params_regs(default_branch_params, fuel_pos)?;
+        let required_temp_copies = len_temps != 0;
+        let requires_branch_copies = required_temp_copies && !equal_heights;
         match requires_branch_copies {
             false => self.encode_br_table_0(table, index_loc)?,
-            true => self.encode_br_table_n(table, index_loc, default_branch_params)?,
+            true => self.encode_br_table_n(table, index_loc, values)?,
         };
         self.reachable = false;
         Ok(())
