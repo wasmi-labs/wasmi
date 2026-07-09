@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `2.0.0-beta.7` - 2026-07-09
+
+### Fixed
+
+- Fixed an issue that `cmp+branch` fusions were not applied in all valid cases. [#1975]
+
+[#1975]: https://github.com/wasmi-labs/wasmi/pull/1975
+
 ## `2.0.0-beta.6` - 2026-07-08
 
 ### Added
