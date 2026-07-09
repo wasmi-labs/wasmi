@@ -1471,14 +1471,13 @@ impl FuncTranslator {
             //  - immediates cannot be the result of a previous instruction.
             return Ok(None);
         };
-        if staged_ty != condition_ty {
-            // Case: cannot fuse if staged type and condition type do not match.
-            return Ok(None);
+        match (RegKind::new(staged_ty), RegKind::new(condition_ty)) {
+            (Some(RegKind::Ireg), Some(RegKind::Ireg)) => {}
+            _ => {
+                // Case: cannot fuse if staged and condition accumulators do not match.
+                return Ok(None);
+            }
         }
-        debug_assert!(
-            RegKind::Ireg.matches_ty(condition_ty),
-            "unexpected condition type: {condition_ty:?}"
-        );
         let cmp_op = match negate {
             false => staged_op,
             true => match staged_op.negate_cmp_instr() {
