@@ -117,7 +117,7 @@ mod error;
 mod func;
 mod global;
 mod instance;
-mod limits;
+mod limiter;
 mod linker;
 mod memory;
 mod module;
@@ -208,7 +208,7 @@ pub use self::{
     },
     global::Global,
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
-    limits::{StoreLimits, StoreLimitsBuilder},
+    limiter::{StoreLimits, StoreLimitsBuilder},
     linker::Linker,
     memory::{Memory, MemoryType, MemoryTypeBuilder},
     module::{
