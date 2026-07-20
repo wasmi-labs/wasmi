@@ -1,6 +1,7 @@
 use super::InstanceEntity;
 use crate::{
     ElementSegment,
+    Error,
     Extern,
     ExternType,
     Func,
@@ -10,6 +11,7 @@ use crate::{
     Table,
     collections::Map,
     engine::DedupFuncType,
+    instance::{InstanceLayoutOffsets, handle::AnyHandle},
     memory::DataSegment,
     module::FuncIdx,
 };
@@ -183,17 +185,40 @@ impl InstanceEntityBuilder {
     }
 
     /// Finishes constructing the [`InstanceEntity`].
-    pub fn finish(self) -> InstanceEntity {
-        InstanceEntity {
+    pub fn finish(self) -> Result<InstanceEntity, Error> {
+        let offsets = self.finish_offsets()?;
+        let handles = self.finish_handles();
+        Ok(InstanceEntity {
             initialized: true,
             func_types: self.func_types,
-            tables: self.tables.into(),
-            funcs: self.funcs.into(),
-            memories: self.memories.into(),
-            globals: self.globals.into(),
             exports: self.exports,
-            data_segments: self.data_segments.into(),
-            elem_segments: self.elem_segments.into(),
-        }
+            offsets,
+            handles,
+        })
+    }
+
+    /// Finishes construction of the [`AnyHandle`] buffer.
+    fn finish_handles(&self) -> Box<[AnyHandle]> {
+        let mut handles = Vec::new();
+        handles.extend(self.globals.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.memories.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.tables.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.data_segments.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.elem_segments.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.funcs.iter().cloned().map(AnyHandle::from));
+        handles.into()
+    }
+
+    /// Finishes construction of [`InstanceLayoutOffsets`].
+    fn finish_offsets(&self) -> Result<InstanceLayoutOffsets, Error> {
+        let mut offsets = InstanceLayoutOffsets::build();
+        offsets
+            .globals(self.globals.len())?
+            .memories(self.memories.len())?
+            .tables(self.tables.len())?
+            .datas(self.data_segments.len())?
+            .elems(self.elem_segments.len())?
+            .funcs(self.funcs.len())?;
+        offsets.finish().map_err(Into::into)
     }
 }

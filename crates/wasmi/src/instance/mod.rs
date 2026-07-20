@@ -36,13 +36,9 @@ mod tests;
 pub struct InstanceEntity {
     initialized: bool,
     func_types: Arc<[DedupFuncType]>,
-    tables: Box<[Table]>,
-    funcs: Box<[Func]>,
-    memories: Box<[Memory]>,
-    globals: Box<[Global]>,
     exports: Map<Box<str>, Extern>,
-    data_segments: Box<[DataSegment]>,
-    elem_segments: Box<[ElementSegment]>,
+    offsets: InstanceLayoutOffsets,
+    handles: Box<[AnyHandle]>,
 }
 
 impl InstanceEntity {
@@ -51,13 +47,9 @@ impl InstanceEntity {
         Self {
             initialized: false,
             func_types: Arc::new([]),
-            tables: [].into(),
-            funcs: [].into(),
-            memories: [].into(),
-            globals: [].into(),
             exports: Map::new(),
-            data_segments: [].into(),
-            elem_segments: [].into(),
+            offsets: InstanceLayoutOffsets::uninit(),
+            handles: [].into(),
         }
     }
 
@@ -71,39 +63,52 @@ impl InstanceEntity {
         self.initialized
     }
 
-    /// Returns the linear memory at the `index` if any.
+    /// Returns the [`Memory`] at the `index` if any.
     pub fn get_memory(&self, index: u32) -> Option<Memory> {
-        self.memories.get(index as usize).copied()
+        let addr = self.offsets.memory_addr(index)?;
+        let handle = self.handles[u32::from(addr) as usize];
+        Some(unsafe { handle.cast_memory() })
     }
 
-    /// Returns the table at the `index` if any.
+    /// Returns the [`Table`] at the `index` if any.
     pub fn get_table(&self, index: u32) -> Option<Table> {
-        self.tables.get(index as usize).copied()
+        std::println!("self.offsets = {:?}", self.offsets);
+        let addr = self.offsets.table_addr(index)?;
+        let handle = self.handles[u32::from(addr) as usize];
+        Some(unsafe { handle.cast_table() })
     }
 
-    /// Returns the global variable at the `index` if any.
+    /// Returns the [`Global`] at the `index` if any.
     pub fn get_global(&self, index: u32) -> Option<Global> {
-        self.globals.get(index as usize).copied()
+        let addr = self.offsets.global_addr(index)?;
+        let handle = self.handles[u32::from(addr) as usize];
+        Some(unsafe { handle.cast_global() })
     }
 
-    /// Returns the function at the `index` if any.
+    /// Returns the [`Func`] at the `index` if any.
     pub fn get_func(&self, index: u32) -> Option<Func> {
-        self.funcs.get(index as usize).copied()
+        let addr = self.offsets.func_addr(index)?;
+        let handle = self.handles[u32::from(addr) as usize];
+        Some(unsafe { handle.cast_func() })
+    }
+
+    /// Returns the [`DataSegment`] at the `index` if any.
+    pub fn get_data_segment(&self, index: u32) -> Option<DataSegment> {
+        let addr = self.offsets.data_addr(index)?;
+        let handle = self.handles[u32::from(addr) as usize];
+        Some(unsafe { handle.cast_data() })
+    }
+
+    /// Returns the [`ElementSegment`] at the `index` if any.
+    pub fn get_element_segment(&self, index: u32) -> Option<ElementSegment> {
+        let addr = self.offsets.elem_addr(index)?;
+        let handle = self.handles[u32::from(addr) as usize];
+        Some(unsafe { handle.cast_elem() })
     }
 
     /// Returns the signature at the `index` if any.
     pub fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
         self.func_types.get(index as usize)
-    }
-
-    /// Returns the [`DataSegment`] at the `index` if any.
-    pub fn get_data_segment(&self, index: u32) -> Option<DataSegment> {
-        self.data_segments.get(index as usize).copied()
-    }
-
-    /// Returns the [`ElementSegment`] at the `index` if any.
-    pub fn get_element_segment(&self, index: u32) -> Option<ElementSegment> {
-        self.elem_segments.get(index as usize).copied()
     }
 
     /// Returns the value exported to the given `name` if any.

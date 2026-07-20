@@ -92,7 +92,7 @@ impl Module {
             .as_context_mut()
             .store
             .inner
-            .initialize_instance(instance, builder.finish());
+            .initialize_instance(instance, builder.finish()?);
         if let Some(start_index) = opt_start_index {
             let start_func = instance
                 .get_func_by_index(store.as_context_mut(), start_index)
