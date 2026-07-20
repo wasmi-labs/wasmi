@@ -51,8 +51,8 @@ define_addr_types! {
     pub struct MemoryAddr(u32) = Memory;
     pub struct TableAddr(u32) = Table;
     pub struct FuncAddr(u32) = Func;
-    pub struct DataAddr(u32) = Data;
-    pub struct ElemAddr(u32) = Elem;
+    pub struct DataAddr(u32) = DataSegment;
+    pub struct ElemAddr(u32) = ElementSegment;
 }
 
 impl InstanceLayout {
@@ -202,7 +202,7 @@ impl InstanceLayoutBuilder {
     impl_builder! {
         pub fn globals(&mut self, len_globals: usize) -> Result<&mut Self, LimitsError> = (Global, LimitsError::max_global_count);
         pub fn memories(&mut self, len_memories: usize) -> Result<&mut Self, LimitsError> = (Memory, LimitsError::max_memory_count);
-        pub fn tables(&mut self, len_tables: usize) -> Result<&mut Self, LimitsError> = (Tables, LimitsError::max_table_count);
+        pub fn tables(&mut self, len_tables: usize) -> Result<&mut Self, LimitsError> = (Table, LimitsError::max_table_count);
         pub fn datas(&mut self, len_datas: usize) -> Result<&mut Self, LimitsError> = (DataSegment, LimitsError::max_data_count);
         pub fn elems(&mut self, len_elems: usize) -> Result<&mut Self, LimitsError> = (ElementSegment, LimitsError::max_elem_count);
         pub fn funcs(&mut self, len_funcs: usize) -> Result<&mut Self, LimitsError> = (Func, LimitsError::max_func_count);
