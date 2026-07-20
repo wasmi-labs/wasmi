@@ -201,7 +201,7 @@ pub enum ErrorKind {
     /// Encountered when there is a Wasm to Wasmi translation error.
     Translation(TranslationError),
     /// Encountered when an enforced limit is exceeded.
-    Limits(EnforcedLimitsError),
+    UserLimits(EnforcedLimitsError),
     /// Encountered for Wasmi bytecode related errors.
     Ir(IrError),
     /// Encountered an error from the `wat` crate.
@@ -282,7 +282,7 @@ impl Display for ErrorKind {
             Self::Read(error) => Display::fmt(error, f),
             Self::Wasm(error) => Display::fmt(error, f),
             Self::Translation(error) => Display::fmt(error, f),
-            Self::Limits(error) => Display::fmt(error, f),
+            Self::UserLimits(error) => Display::fmt(error, f),
             Self::ResumableHostTrap(error) => Display::fmt(error, f),
             Self::ResumableOutOfFuel(error) => Display::fmt(error, f),
             Self::Ir(error) => Display::fmt(error, f),
@@ -317,7 +317,7 @@ impl_from! {
     impl From<ReadError> for Error::Read;
     impl From<FuelError> for Error::Fuel;
     impl From<FuncError> for Error::Func;
-    impl From<EnforcedLimitsError> for Error::Limits;
+    impl From<EnforcedLimitsError> for Error::UserLimits;
     impl From<ResumableHostTrapError> for Error::ResumableHostTrap;
     impl From<ResumableOutOfFuelError> for Error::ResumableOutOfFuel;
     impl From<IrError> for Error::Ir;
