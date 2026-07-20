@@ -1,6 +1,6 @@
 pub(crate) use self::builder::InstanceEntityBuilder;
 pub use self::exports::{Export, ExportsIter, Extern, ExternType};
-use self::{handle::AnyHandle, offsets::InstanceLayout};
+use self::{handle::AnyHandle, layout::InstanceLayout};
 use crate::{
     AsContext,
     AsContextMut,
@@ -26,7 +26,7 @@ use alloc::{boxed::Box, sync::Arc};
 mod builder;
 mod exports;
 mod handle;
-mod offsets;
+mod layout;
 
 #[cfg(test)]
 mod tests;
