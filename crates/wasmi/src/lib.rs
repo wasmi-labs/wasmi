@@ -118,6 +118,7 @@ mod func;
 mod global;
 mod instance;
 mod limiter;
+mod limits;
 mod linker;
 mod memory;
 mod module;

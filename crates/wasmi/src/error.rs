@@ -9,6 +9,7 @@ use super::errors::{
 use crate::{
     TrapCode,
     engine::{ResumableHostTrapError, ResumableOutOfFuelError, TranslationError},
+    limits::LimitsError,
     module::ReadError,
 };
 use alloc::{boxed::Box, string::String};
@@ -202,6 +203,8 @@ pub enum ErrorKind {
     Translation(TranslationError),
     /// Encountered when an enforced limit is exceeded.
     UserLimits(EnforcedLimitsError),
+    /// Encountered when a Wasmi implementation limit is exceeded.
+    ImplementationLimits(LimitsError),
     /// Encountered for Wasmi bytecode related errors.
     Ir(IrError),
     /// Encountered an error from the `wat` crate.
@@ -283,6 +286,7 @@ impl Display for ErrorKind {
             Self::Wasm(error) => Display::fmt(error, f),
             Self::Translation(error) => Display::fmt(error, f),
             Self::UserLimits(error) => Display::fmt(error, f),
+            Self::ImplementationLimits(error) => Display::fmt(error, f),
             Self::ResumableHostTrap(error) => Display::fmt(error, f),
             Self::ResumableOutOfFuel(error) => Display::fmt(error, f),
             Self::Ir(error) => Display::fmt(error, f),
@@ -318,6 +322,7 @@ impl_from! {
     impl From<FuelError> for Error::Fuel;
     impl From<FuncError> for Error::Func;
     impl From<EnforcedLimitsError> for Error::UserLimits;
+    impl From<LimitsError> for Error::ImplementationLimits;
     impl From<ResumableHostTrapError> for Error::ResumableHostTrap;
     impl From<ResumableOutOfFuelError> for Error::ResumableOutOfFuel;
     impl From<IrError> for Error::Ir;
