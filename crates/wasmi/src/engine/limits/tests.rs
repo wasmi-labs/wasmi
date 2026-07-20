@@ -45,7 +45,7 @@ fn max_globals_err() {
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EnforcedLimitsError::TooManyGlobals { limit: 2 }),
+        ErrorKind::UserLimits(EnforcedLimitsError::TooManyGlobals { limit: 2 }),
     ))
 }
 
@@ -84,7 +84,7 @@ fn max_functions_err() {
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EnforcedLimitsError::TooManyFunctions { limit: 2 }),
+        ErrorKind::UserLimits(EnforcedLimitsError::TooManyFunctions { limit: 2 }),
     ))
 }
 
@@ -123,7 +123,7 @@ fn max_tables_err() {
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EnforcedLimitsError::TooManyTables { limit: 2 }),
+        ErrorKind::UserLimits(EnforcedLimitsError::TooManyTables { limit: 2 }),
     ))
 }
 
@@ -162,7 +162,7 @@ fn max_memories_err() {
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EnforcedLimitsError::TooManyMemories { limit: 2 }),
+        ErrorKind::UserLimits(EnforcedLimitsError::TooManyMemories { limit: 2 }),
     ))
 }
 
@@ -205,7 +205,7 @@ fn max_element_segments_err() {
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EnforcedLimitsError::TooManyElementSegments { limit: 2 }),
+        ErrorKind::UserLimits(EnforcedLimitsError::TooManyElementSegments { limit: 2 }),
     ))
 }
 
@@ -246,7 +246,7 @@ fn max_data_segments_err() {
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EnforcedLimitsError::TooManyDataSegments { limit: 2 }),
+        ErrorKind::UserLimits(EnforcedLimitsError::TooManyDataSegments { limit: 2 }),
     ))
 }
 
@@ -282,7 +282,7 @@ fn max_params_func_err() {
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EnforcedLimitsError::TooManyParameters { limit: 2 }),
+        ErrorKind::UserLimits(EnforcedLimitsError::TooManyParameters { limit: 2 }),
     ))
 }
 
@@ -333,7 +333,7 @@ fn max_params_control_err() {
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EnforcedLimitsError::TooManyParameters { limit: 2 }),
+        ErrorKind::UserLimits(EnforcedLimitsError::TooManyParameters { limit: 2 }),
     ))
 }
 
@@ -376,7 +376,7 @@ fn max_results_func_err() {
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EnforcedLimitsError::TooManyResults { limit: 2 }),
+        ErrorKind::UserLimits(EnforcedLimitsError::TooManyResults { limit: 2 }),
     ))
 }
 
@@ -428,7 +428,7 @@ fn max_results_control_err() {
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EnforcedLimitsError::TooManyResults { limit: 2 }),
+        ErrorKind::UserLimits(EnforcedLimitsError::TooManyResults { limit: 2 }),
     ))
 }
 
@@ -487,7 +487,7 @@ fn min_avg_code_bytes_err() {
     std::println!("{:?}", parse_with(wasm, limits).unwrap_err());
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EnforcedLimitsError::MinAvgBytesPerFunction { limit: 6, avg: 5 }),
+        ErrorKind::UserLimits(EnforcedLimitsError::MinAvgBytesPerFunction { limit: 6, avg: 5 }),
     ))
 }
 
