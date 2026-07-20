@@ -186,13 +186,13 @@ impl InstanceEntityBuilder {
 
     /// Finishes constructing the [`InstanceEntity`].
     pub fn finish(self) -> Result<InstanceEntity, Error> {
-        let offsets = self.finish_offsets()?;
+        let layout = self.finish_layout()?;
         let handles = self.finish_handles();
         Ok(InstanceEntity {
             initialized: true,
             func_types: self.func_types,
             exports: self.exports,
-            offsets,
+            layout,
             handles,
         })
     }
@@ -210,7 +210,7 @@ impl InstanceEntityBuilder {
     }
 
     /// Finishes construction of [`InstanceLayout`].
-    fn finish_offsets(&self) -> Result<InstanceLayout, Error> {
+    fn finish_layout(&self) -> Result<InstanceLayout, Error> {
         let mut offsets = InstanceLayout::build();
         offsets
             .globals(self.globals.len())?

@@ -37,7 +37,7 @@ pub struct InstanceEntity {
     initialized: bool,
     func_types: Arc<[DedupFuncType]>,
     exports: Map<Box<str>, Extern>,
-    offsets: InstanceLayout,
+    layout: InstanceLayout,
     handles: Box<[AnyHandle]>,
 }
 
@@ -48,7 +48,7 @@ impl InstanceEntity {
             initialized: false,
             func_types: Arc::new([]),
             exports: Map::new(),
-            offsets: InstanceLayout::uninit(),
+            layout: InstanceLayout::uninit(),
             handles: [].into(),
         }
     }
@@ -65,42 +65,42 @@ impl InstanceEntity {
 
     /// Returns the [`Memory`] at the `index` if any.
     pub fn get_memory(&self, index: u32) -> Option<Memory> {
-        let addr = self.offsets.memory_addr(index)?;
+        let addr = self.layout.memory_addr(index)?;
         let handle = self.handles[u32::from(addr) as usize];
         Some(unsafe { handle.cast_memory() })
     }
 
     /// Returns the [`Table`] at the `index` if any.
     pub fn get_table(&self, index: u32) -> Option<Table> {
-        let addr = self.offsets.table_addr(index)?;
+        let addr = self.layout.table_addr(index)?;
         let handle = self.handles[u32::from(addr) as usize];
         Some(unsafe { handle.cast_table() })
     }
 
     /// Returns the [`Global`] at the `index` if any.
     pub fn get_global(&self, index: u32) -> Option<Global> {
-        let addr = self.offsets.global_addr(index)?;
+        let addr = self.layout.global_addr(index)?;
         let handle = self.handles[u32::from(addr) as usize];
         Some(unsafe { handle.cast_global() })
     }
 
     /// Returns the [`Func`] at the `index` if any.
     pub fn get_func(&self, index: u32) -> Option<Func> {
-        let addr = self.offsets.func_addr(index)?;
+        let addr = self.layout.func_addr(index)?;
         let handle = self.handles[u32::from(addr) as usize];
         Some(unsafe { handle.cast_func() })
     }
 
     /// Returns the [`DataSegment`] at the `index` if any.
     pub fn get_data_segment(&self, index: u32) -> Option<DataSegment> {
-        let addr = self.offsets.data_addr(index)?;
+        let addr = self.layout.data_addr(index)?;
         let handle = self.handles[u32::from(addr) as usize];
         Some(unsafe { handle.cast_data() })
     }
 
     /// Returns the [`ElementSegment`] at the `index` if any.
     pub fn get_element_segment(&self, index: u32) -> Option<ElementSegment> {
-        let addr = self.offsets.elem_addr(index)?;
+        let addr = self.layout.elem_addr(index)?;
         let handle = self.handles[u32::from(addr) as usize];
         Some(unsafe { handle.cast_elem() })
     }
