@@ -24,6 +24,7 @@ use alloc::{boxed::Box, sync::Arc};
 
 mod builder;
 mod exports;
+mod handle;
 
 #[cfg(test)]
 mod tests;
