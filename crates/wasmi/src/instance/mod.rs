@@ -1,6 +1,6 @@
 pub(crate) use self::builder::InstanceEntityBuilder;
 pub use self::exports::{Export, ExportsIter, Extern, ExternType};
-use self::{handle::AnyHandle, offsets::InstanceLayoutOffsets};
+use self::{handle::AnyHandle, offsets::InstanceLayout};
 use crate::{
     AsContext,
     AsContextMut,
@@ -37,7 +37,7 @@ pub struct InstanceEntity {
     initialized: bool,
     func_types: Arc<[DedupFuncType]>,
     exports: Map<Box<str>, Extern>,
-    offsets: InstanceLayoutOffsets,
+    offsets: InstanceLayout,
     handles: Box<[AnyHandle]>,
 }
 
@@ -48,7 +48,7 @@ impl InstanceEntity {
             initialized: false,
             func_types: Arc::new([]),
             exports: Map::new(),
-            offsets: InstanceLayoutOffsets::uninit(),
+            offsets: InstanceLayout::uninit(),
             handles: [].into(),
         }
     }

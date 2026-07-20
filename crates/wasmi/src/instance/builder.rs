@@ -11,7 +11,7 @@ use crate::{
     Table,
     collections::Map,
     engine::DedupFuncType,
-    instance::{InstanceLayoutOffsets, handle::AnyHandle},
+    instance::{InstanceLayout, handle::AnyHandle},
     memory::DataSegment,
     module::FuncIdx,
 };
@@ -209,9 +209,9 @@ impl InstanceEntityBuilder {
         handles.into()
     }
 
-    /// Finishes construction of [`InstanceLayoutOffsets`].
-    fn finish_offsets(&self) -> Result<InstanceLayoutOffsets, Error> {
-        let mut offsets = InstanceLayoutOffsets::build();
+    /// Finishes construction of [`InstanceLayout`].
+    fn finish_offsets(&self) -> Result<InstanceLayout, Error> {
+        let mut offsets = InstanceLayout::build();
         offsets
             .globals(self.globals.len())?
             .memories(self.memories.len())?

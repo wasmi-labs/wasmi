@@ -4,7 +4,7 @@ use crate::limits::LimitsError;
 
 /// Offsets within [`InstanceEntity::handles`] buffer for various handle types.
 #[derive(Debug, Copy, Clone)]
-pub struct InstanceLayoutOffsets {
+pub struct InstanceLayout {
     /// The start offset within `InstanceEntity::handles` for [`Global`] handles.
     globals: u32,
     /// The start offset within `InstanceEntity::handles` for [`Memory`] handles.
@@ -55,13 +55,13 @@ define_addr_types! {
     pub struct ElemAddr(u32) = Elem;
 }
 
-impl InstanceLayoutOffsets {
-    /// Creates a new [`InstanceLayoutOffsetsBuilder`].
-    pub(crate) fn build() -> InstanceLayoutOffsetsBuilder {
-        InstanceLayoutOffsetsBuilder::default()
+impl InstanceLayout {
+    /// Creates a new [`InstanceLayoutBuilder`].
+    pub(crate) fn build() -> InstanceLayoutBuilder {
+        InstanceLayoutBuilder::default()
     }
 
-    /// Creates an uninitialized [`InstanceLayoutOffsets`].
+    /// Creates an uninitialized [`InstanceLayout`].
     pub(crate) fn uninit() -> Self {
         Self {
             globals: 0,
@@ -166,7 +166,7 @@ impl InstanceLayoutOffsets {
 }
 
 #[derive(Debug, Default)]
-pub struct InstanceLayoutOffsetsBuilder {
+pub struct InstanceLayoutBuilder {
     /// The start offset within `InstanceEntity::handles` for [`Global`] handles.
     globals: Option<u32>,
     /// The start offset within `InstanceEntity::handles` for [`Memory`] handles.
@@ -198,7 +198,7 @@ macro_rules! impl_builder {
         )*
     };
 }
-impl InstanceLayoutOffsetsBuilder {
+impl InstanceLayoutBuilder {
     impl_builder! {
         pub fn globals(&mut self, len_globals: usize) -> Result<&mut Self, LimitsError> = (Global, LimitsError::max_global_count);
         pub fn memories(&mut self, len_memories: usize) -> Result<&mut Self, LimitsError> = (Memory, LimitsError::max_memory_count);
@@ -208,7 +208,7 @@ impl InstanceLayoutOffsetsBuilder {
         pub fn funcs(&mut self, len_funcs: usize) -> Result<&mut Self, LimitsError> = (Func, LimitsError::max_func_count);
     }
 
-    pub fn finish(self) -> Result<InstanceLayoutOffsets, LimitsError> {
+    pub fn finish(self) -> Result<InstanceLayout, LimitsError> {
         let err = LimitsError::TooManyInstanceHandles;
         let len_globals = self.globals.unwrap_or(0);
         let len_memories = self.memories.unwrap_or(0);
@@ -223,7 +223,7 @@ impl InstanceLayoutOffsetsBuilder {
         let elems = datas.checked_add(len_datas).ok_or(err)?;
         let funcs = elems.checked_add(len_elems).ok_or(err)?;
         let len_handles = funcs.checked_add(len_funcs).ok_or(err)?;
-        Ok(InstanceLayoutOffsets {
+        Ok(InstanceLayout {
             globals,
             memories,
             tables,
