@@ -72,7 +72,6 @@ impl InstanceEntity {
 
     /// Returns the [`Table`] at the `index` if any.
     pub fn get_table(&self, index: u32) -> Option<Table> {
-        std::println!("self.offsets = {:?}", self.offsets);
         let addr = self.offsets.table_addr(index)?;
         let handle = self.handles[u32::from(addr) as usize];
         Some(unsafe { handle.cast_table() })
