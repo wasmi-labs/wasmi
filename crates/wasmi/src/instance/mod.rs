@@ -66,45 +66,45 @@ impl InstanceEntity {
         self.initialized
     }
 
-    /// Returns the [`Memory`] at the `index` if any.
-    pub fn get_memory(&self, index: u32) -> Option<Memory> {
-        let addr = self.layout.memory_addr(index)?;
-        let handle = self.handles[u32::from(addr) as usize];
+    /// Returns the [`Memory`] at the `addr` if any.
+    pub fn get_memory(&self, addr: MemoryAddr) -> Option<Memory> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.cast_memory() })
     }
 
-    /// Returns the [`Table`] at the `index` if any.
-    pub fn get_table(&self, index: u32) -> Option<Table> {
-        let addr = self.layout.table_addr(index)?;
-        let handle = self.handles[u32::from(addr) as usize];
+    /// Returns the [`Table`] at the `addr` if any.
+    pub fn get_table(&self, addr: TableAddr) -> Option<Table> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.cast_table() })
     }
 
-    /// Returns the [`Global`] at the `index` if any.
-    pub fn get_global(&self, index: u32) -> Option<Global> {
-        let addr = self.layout.global_addr(index)?;
-        let handle = self.handles[u32::from(addr) as usize];
+    /// Returns the [`Global`] at the `addr` if any.
+    pub fn get_global(&self, addr: GlobalAddr) -> Option<Global> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.cast_global() })
     }
 
-    /// Returns the [`Func`] at the `index` if any.
-    pub fn get_func(&self, index: u32) -> Option<Func> {
-        let addr = self.layout.func_addr(index)?;
-        let handle = self.handles[u32::from(addr) as usize];
+    /// Returns the [`Func`] at the `addr` if any.
+    pub fn get_func(&self, addr: FuncAddr) -> Option<Func> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.cast_func() })
     }
 
-    /// Returns the [`DataSegment`] at the `index` if any.
-    pub fn get_data_segment(&self, index: u32) -> Option<DataSegment> {
-        let addr = self.layout.data_addr(index)?;
-        let handle = self.handles[u32::from(addr) as usize];
+    /// Returns the [`Func`] at the `index` if any.
+    pub fn get_func_by_index(&self, index: u32) -> Option<Func> {
+        let addr = self.layout.func_addr(index)?;
+        self.get_func(addr)
+    }
+
+    /// Returns the [`DataSegment`] at the `addr` if any.
+    pub fn get_data_segment(&self, addr: DataAddr) -> Option<DataSegment> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.cast_data() })
     }
 
-    /// Returns the [`ElementSegment`] at the `index` if any.
-    pub fn get_element_segment(&self, index: u32) -> Option<ElementSegment> {
-        let addr = self.layout.elem_addr(index)?;
-        let handle = self.handles[u32::from(addr) as usize];
+    /// Returns the [`ElementSegment`] at the `addr` if any.
+    pub fn get_element_segment(&self, addr: ElemAddr) -> Option<ElementSegment> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.cast_elem() })
     }
 
@@ -193,7 +193,7 @@ impl Instance {
             .store
             .inner
             .resolve_instance(self)
-            .get_func(index)
+            .get_func_by_index(index)
     }
 
     /// Returns the value exported to the given `name` if any.
