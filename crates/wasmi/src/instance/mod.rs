@@ -66,6 +66,11 @@ impl InstanceEntity {
         self.initialized
     }
 
+    /// Returns a shared reference to the [`InstanceLayout`] of `self`.
+    pub fn layout(&self) -> &InstanceLayout {
+        &self.layout
+    }
+
     /// Returns the [`Memory`] at the `addr` if any.
     pub fn get_memory(&self, addr: MemoryAddr) -> Option<Memory> {
         let handle = self.handles.get(u32::from(addr) as usize)?;
@@ -88,12 +93,6 @@ impl InstanceEntity {
     pub fn get_func(&self, addr: FuncAddr) -> Option<Func> {
         let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.cast_func() })
-    }
-
-    /// Returns the [`Func`] at the `index` if any.
-    pub fn get_func_by_index(&self, index: u32) -> Option<Func> {
-        let addr = self.layout.func_addr(index)?;
-        self.get_func(addr)
     }
 
     /// Returns the [`DataSegment`] at the `addr` if any.
@@ -180,20 +179,6 @@ impl Instance {
     ) -> Result<Instance, Error> {
         let instance = Module::instantiate(module, &mut store, imports.iter().cloned())?;
         Ok(instance)
-    }
-
-    /// Returns the function at the `index` if any.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `store` does not own this [`Instance`].
-    pub(crate) fn get_func_by_index(&self, store: impl AsContext, index: u32) -> Option<Func> {
-        store
-            .as_context()
-            .store
-            .inner
-            .resolve_instance(self)
-            .get_func_by_index(index)
     }
 
     /// Returns the value exported to the given `name` if any.
