@@ -104,8 +104,8 @@ impl InstanceLayout {
     /// Returns the number of tables in the associated instance.
     #[inline]
     fn len_tables(&self) -> u32 {
-        self.end_tables - self.end_memories
         // Note: tables are placed directly after global variables.
+        self.end_tables - self.end_globals
     }
 
     /// Returns the number of functions in the associated instance.
