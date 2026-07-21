@@ -90,6 +90,7 @@ use crate::{
         SlotSpan,
         index::{self, Memory},
     },
+    limits::LimitsError,
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, WasmiValueType},
 };
 use alloc::vec::Vec;
@@ -345,14 +346,15 @@ impl FuncTranslator {
     }
 
     /// Returns the [`MemoryAddr`] for the linear memory at `index`.
-    fn memory_addr(&self, index: u32) -> index::Memory {
+    fn memory_addr(&self, index: u32) -> Result<index::Memory, Error> {
         let Some(addr) = self.module.instance_layout().memory_addr(index) else {
             panic!("missing address for linear memory at: {index}")
         };
         let Ok(addr16) = u16::try_from(u32::from(addr)) else {
-            panic!("linear memory index out of bounds: {index}")
+            // panic!("linear memory index out of bounds: {index}")
+            return Err(Error::from(LimitsError::TooManyMemories));
         };
-        index::Memory::from(addr16)
+        Ok(index::Memory::from(addr16))
     }
 
     /// Returns the [`TableAddr`] for the table at `index`.
