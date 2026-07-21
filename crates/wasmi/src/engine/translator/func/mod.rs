@@ -338,6 +338,8 @@ impl FuncTranslator {
     }
 
     /// Returns the [`GlobalAddr`] for the global at `index`.
+    ///
+    /// [`GlobalAddr`]: crate::instance::GlobalAddr
     fn global_addr(&self, index: u32) -> index::Global {
         let Some(addr) = self.module.instance_layout().global_addr(index) else {
             panic!("missing address for global at: {}", index)
@@ -346,6 +348,8 @@ impl FuncTranslator {
     }
 
     /// Returns the [`MemoryAddr`] for the linear memory at `index`.
+    ///
+    /// [`MemoryAddr`]: crate::instance::MemoryAddr
     fn memory_addr(&self, index: u32) -> Result<index::Memory, Error> {
         let Some(addr) = self.module.instance_layout().memory_addr(index) else {
             panic!("missing address for linear memory at: {index}")
@@ -358,6 +362,8 @@ impl FuncTranslator {
     }
 
     /// Returns the [`TableAddr`] for the table at `index`.
+    ///
+    /// [`TableAddr`]: crate::instance::TableAddr
     fn table_addr(&self, index: u32) -> index::Table {
         let Some(addr) = self.module.instance_layout().table_addr(index) else {
             panic!("missing address for table at: {}", index)
@@ -366,6 +372,8 @@ impl FuncTranslator {
     }
 
     /// Returns the [`FuncAddr`] for the function at `index`.
+    ///
+    /// [`FuncAddr`]: crate::instance::FuncAddr
     fn func_addr(&self, index: u32) -> index::Func {
         let Some(addr) = self.module.instance_layout().func_addr(index) else {
             panic!("missing address for function at: {}", index)
@@ -374,6 +382,8 @@ impl FuncTranslator {
     }
 
     /// Returns the [`ElemAddr`] for the element segment at `index`.
+    ///
+    /// [`ElemAddr`]: crate::instance::ElemAddr
     fn elem_addr(&self, index: u32) -> index::Elem {
         let Some(addr) = self.module.instance_layout().elem_addr(index) else {
             panic!("missing address for element segment at: {}", index)
@@ -382,6 +392,8 @@ impl FuncTranslator {
     }
 
     /// Returns the [`DataAddr`] for the data segment at `index`.
+    ///
+    /// [`DataAddr`]: crate::instance::DataAddr
     fn data_addr(&self, index: u32) -> index::Data {
         let Some(addr) = self.module.instance_layout().data_addr(index) else {
             panic!("missing address for data segment at: {}", index)
