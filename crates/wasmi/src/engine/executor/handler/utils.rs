@@ -25,7 +25,7 @@ use crate::{
         utils::unreachable_unchecked,
     },
     func::{FuncEntity, HostFuncEntity},
-    instance::InstanceEntity,
+    instance::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceEntity, MemoryAddr, TableAddr},
     ir::{
         self,
         Address,
@@ -553,9 +553,12 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
 
 pub fn extract_mem0(store: &mut PrunedStore, instance: Inst) -> (Mem0Ptr, Mem0Len) {
     let instance = unsafe { instance.as_ref() };
-    let Some(memory) = instance.get_memory(0) else {
-        return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
-    };
+    let Some(memory) = instance
+        .layout()
+        .memory_addr(0)
+        .and_then(|addr| instance.get_memory(addr)) else {
+            return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));  
+        };
     let mem0 = resolve_memory_mut(store, &memory).data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
@@ -584,17 +587,18 @@ pub fn memory_slice_mut(
 
 macro_rules! impl_fetch_from_instance {
     (
-        $( fn $fn:ident($param:ident: $ty:ty) -> $ret:ty = $getter:expr );* $(;)?
+        $( fn $fn:ident($param:ident: $ty:ty as $addr:ty) -> $ret:ty = $getter:expr );* $(;)?
     ) => {
         $(
             pub fn $fn(instance: Inst, $param: $ty) -> $ret {
                 let instance = unsafe { instance.as_ref() };
-                let index = ::core::primitive::u32::from($param);
-                let Some($param) = $getter(instance, index) else {
+                let raw_addr = ::core::primitive::u32::from($param);
+                let addr = <$addr>::from(raw_addr);
+                let Some($param) = $getter(instance, addr) else {
                     unsafe {
                         $crate::engine::utils::unreachable_unchecked!(
                             ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
-                            index,
+                            addr,
                         )
                     }
                 };
@@ -604,13 +608,13 @@ macro_rules! impl_fetch_from_instance {
     };
 }
 impl_fetch_from_instance! {
-    fn fetch_data(func: index::Data) -> DataSegment = InstanceEntity::get_data_segment;
-    fn fetch_elem(func: index::Elem) -> ElementSegment = InstanceEntity::get_element_segment;
-    fn fetch_func(func: index::Func) -> Func = InstanceEntity::get_func;
-    fn fetch_global(global: index::Global) -> Global = InstanceEntity::get_global;
-    fn fetch_memory(memory: index::Memory) -> Memory = InstanceEntity::get_memory;
-    fn fetch_table(table: index::Table) -> Table = InstanceEntity::get_table;
-    fn fetch_func_type(func_type: index::FuncType) -> DedupFuncType = {
+    fn fetch_data(func: index::Data as DataAddr) -> DataSegment = InstanceEntity::get_data_segment;
+    fn fetch_elem(func: index::Elem as ElemAddr) -> ElementSegment = InstanceEntity::get_element_segment;
+    fn fetch_func(func: index::Func as FuncAddr) -> Func = InstanceEntity::get_func;
+    fn fetch_global(global: index::Global as GlobalAddr) -> Global = InstanceEntity::get_global;
+    fn fetch_memory(memory: index::Memory as MemoryAddr) -> Memory = InstanceEntity::get_memory;
+    fn fetch_table(table: index::Table as TableAddr) -> Table = InstanceEntity::get_table;
+    fn fetch_func_type(func_type: index::FuncType as u32) -> DedupFuncType = {
         |instance: &InstanceEntity, index: u32| instance.get_signature(index).copied()
     };
 }
