@@ -16,6 +16,8 @@ pub struct Config {
     consume_fuel: bool,
     /// Is `true` if Wasmi shall ignore Wasm custom sections when parsing Wasm modules.
     ignore_custom_sections: bool,
+    /// Is `true` if Wasmi allows `start` functions in Wasm modules.
+    allow_start_fn: bool,
     /// The configured fuel costs of all Wasmi bytecode instructions.
     fuel_costs: FuelCostsProvider,
     /// The mode of Wasm to Wasmi bytecode compilation.
@@ -53,6 +55,7 @@ impl Default for Config {
             features: Self::default_features(),
             consume_fuel: false,
             ignore_custom_sections: false,
+            allow_start_fn: true,
             fuel_costs: FuelCostsProvider::default(),
             compilation_mode: CompilationMode::default(),
             limits: EnforcedLimits::default(),
@@ -361,6 +364,21 @@ impl Config {
     /// [`Engine`]: crate::Engine
     pub(crate) fn get_consume_fuel(&self) -> bool {
         self.consume_fuel
+    }
+
+    /// Configures whether Wasmi allows Wasm modules with `start` functions.
+    ///
+    /// Enabled by default.
+    pub fn allow_start_fn(&mut self, allow: bool) -> &mut Self {
+        self.allow_start_fn = allow;
+        self
+    }
+
+    /// Returns `true` if the [`Config`] allows Wasm modules with `start` functions.
+    ///
+    /// [`Engine`]: crate::Engine
+    pub(crate) fn get_allow_start_fn(&self) -> bool {
+        self.allow_start_fn
     }
 
     /// Configures whether Wasmi will ignore custom sections when parsing Wasm modules.
