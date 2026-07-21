@@ -19,13 +19,13 @@ use crate::{
     Offset16,
     Op,
     OpCode,
-    index::RawSlot,
     Reg,
     Slot,
     SlotAndReg,
     SlotSpan,
     TableAddr,
     core::{ShiftAmount, TrapCode},
+    index::RawSlot,
     primitive::OffsetRepr,
 };
 use core::num::NonZero;
