@@ -12,7 +12,7 @@ use crate::{
     Offset16,
     Reg,
     decode::DecodeError,
-    index::{FuncType, Global, Memory, Table},
+    index::{FuncType, GlobalAddr, MemoryAddr, TableAddr},
 };
 
 #[derive(Copy, Clone)]
@@ -150,7 +150,7 @@ pub struct LoadOp<Res, Ptr> {
     pub result: Res,
     pub ptr: Ptr,
     pub offset: Offset,
-    pub memory: Memory,
+    pub memory: MemoryAddr,
 }
 
 impl<Res, Ptr> Decode for LoadOp<Res, Ptr>
@@ -172,7 +172,7 @@ where
 pub struct LoadAtOp<Res> {
     pub result: Res,
     pub address: Address,
-    pub memory: Memory,
+    pub memory: MemoryAddr,
 }
 
 impl<Res> Decode for LoadAtOp<Res>
@@ -214,7 +214,7 @@ pub struct StoreOp<Ptr, Val> {
     pub ptr: Ptr,
     pub offset: Offset,
     pub value: Val,
-    pub memory: Memory,
+    pub memory: MemoryAddr,
 }
 
 impl<Ptr: Decode, Val: Decode> Decode for StoreOp<Ptr, Val> {
@@ -232,7 +232,7 @@ impl<Ptr: Decode, Val: Decode> Decode for StoreOp<Ptr, Val> {
 pub struct StoreAtOp<T> {
     pub address: Address,
     pub value: T,
-    pub memory: Memory,
+    pub memory: MemoryAddr,
 }
 
 impl<T: Decode> Decode for StoreAtOp<T> {
@@ -268,7 +268,7 @@ pub struct StoreLaneOp<Ptr, Val, LaneIdx> {
     pub ptr: Ptr,
     pub offset: u64,
     pub value: Val,
-    pub memory: Memory,
+    pub memory: MemoryAddr,
     pub lane: LaneIdx,
 }
 
@@ -310,7 +310,7 @@ impl<Ptr: Decode, Val: Decode, LaneIdx: Decode> Decode
 
 #[derive(Copy, Clone)]
 pub struct GlobalGet<T> {
-    pub global: Global,
+    pub global: GlobalAddr,
     pub result: T,
 }
 
@@ -325,7 +325,7 @@ impl<T: Decode> Decode for GlobalGet<T> {
 
 #[derive(Copy, Clone)]
 pub struct GlobalSet<T> {
-    pub global: Global,
+    pub global: GlobalAddr,
     pub value: T,
 }
 
@@ -342,7 +342,7 @@ impl<T: Decode> Decode for GlobalSet<T> {
 pub struct TableGet<T> {
     pub result: Reg<i64>,
     pub index: T,
-    pub table: Table,
+    pub table: TableAddr,
 }
 
 impl<T: Decode> Decode for TableGet<T> {
@@ -357,7 +357,7 @@ impl<T: Decode> Decode for TableGet<T> {
 
 #[derive(Copy, Clone)]
 pub struct TableSet<I, V> {
-    pub table: Table,
+    pub table: TableAddr,
     pub index: I,
     pub value: V,
 }
@@ -374,7 +374,7 @@ impl<I: Decode, V: Decode> Decode for TableSet<I, V> {
 
 #[derive(Copy, Clone)]
 pub struct CallIndirect<I> {
-    pub table: Table,
+    pub table: TableAddr,
     pub func_type: FuncType,
     pub params: BoundedSlotSpan,
     pub index: I,

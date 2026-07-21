@@ -7,19 +7,19 @@ macro_rules! for_each_index {
     ($mac:ident) => {
         $mac! {
             /// A Wasmi function instance address.
-            Func(pub(crate) u32);
+            FuncAddr(pub(crate) u32);
             /// A Wasm function type index.
             FuncType(pub(crate) u32);
             /// A Wasmi global variable instance address.
-            Global(pub(crate) u32);
+            GlobalAddr(pub(crate) u32);
             /// A Wasmi linear memory instance address.
-            Memory(pub(crate) u16);
+            MemoryAddr(pub(crate) u16);
             /// A Wasmi table instance address.
-            Table(pub(crate) u32);
+            TableAddr(pub(crate) u32);
             /// A Wasmi data segment instance address.
-            Data(pub(crate) u32);
+            DataAddr(pub(crate) u32);
             /// A Wasmi element segment instance address.
-            Elem(pub(crate) u32);
+            ElemAddr(pub(crate) u32);
         }
     };
 }
@@ -80,20 +80,20 @@ impl fmt::Debug for InternalFunc {
     }
 }
 
-impl Memory {
-    /// Returns `true` if `self` refers to the default linear memory which always is at index 0.
+impl MemoryAddr {
+    /// Returns `true` if `self` refers to the default linear memory which always is at index 0. TODO: remove
     pub fn is_default(&self) -> bool {
         self.0 == 0
     }
 }
 
-impl From<Memory> for u32 {
-    fn from(value: Memory) -> Self {
+impl From<MemoryAddr> for u32 {
+    fn from(value: MemoryAddr) -> Self {
         u32::from(value.0)
     }
 }
 
-impl TryFrom<u32> for Memory {
+impl TryFrom<u32> for MemoryAddr {
     type Error = Error;
 
     fn try_from(index: u32) -> Result<Self, Self::Error> {

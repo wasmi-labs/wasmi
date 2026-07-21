@@ -9,7 +9,7 @@ pub enum Error {
     BlockFuelOutOfBounds,
     /// Encountered when trying to create a [`Memory`] from an out of bounds integer.
     ///
-    /// [`Memory`]: crate::index::Memory
+    /// [`Memory`]: crate::index::MemoryAddr
     MemoryIndexOutOfBounds,
 }
 

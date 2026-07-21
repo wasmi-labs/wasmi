@@ -541,7 +541,7 @@ impl LoadOp {
 
     pub fn memory_field(&self) -> Option<Field> {
         match self.mem {
-            MemoryOperand::Immediate => Some(Field::new(Ident::Memory, FieldTy::Memory)),
+            MemoryOperand::Immediate => Some(Field::new(Ident::Memory, FieldTy::MemoryAddr)),
             MemoryOperand::Mem0 => None,
         }
     }
@@ -662,7 +662,7 @@ impl StoreOp {
         if matches!(self.mem, MemoryOperand::Mem0) {
             return None;
         }
-        Some(Field::new(Ident::Memory, FieldTy::Memory))
+        Some(Field::new(Ident::Memory, FieldTy::MemoryAddr))
     }
 
     pub fn laneidx_field(&self) -> Option<Field> {
@@ -754,7 +754,7 @@ impl GlobalGetOp {
     }
 
     pub fn global_field(&self) -> Field {
-        Field::new(Ident::Global, FieldTy::Global)
+        Field::new(Ident::Global, FieldTy::GlobalAddr)
     }
 
     pub fn fields(&self) -> [Field; 2] {
@@ -781,7 +781,7 @@ impl GlobalSetOp {
     }
 
     pub fn global_field(&self) -> Field {
-        Field::new(Ident::Global, FieldTy::Global)
+        Field::new(Ident::Global, FieldTy::GlobalAddr)
     }
 
     pub fn fields(&self) -> [Field; 2] {
@@ -813,7 +813,7 @@ impl TableGetOp {
     }
 
     pub fn table_field(&self) -> Field {
-        Field::new(Ident::Table, FieldTy::Table)
+        Field::new(Ident::Table, FieldTy::TableAddr)
     }
 
     pub fn fields(&self) -> [Field; 3] {
@@ -845,7 +845,7 @@ impl TableSetOp {
     }
 
     pub fn table_field(&self) -> Field {
-        Field::new(Ident::Table, FieldTy::Table)
+        Field::new(Ident::Table, FieldTy::TableAddr)
     }
 
     pub fn fields(&self) -> [Field; 3] {
@@ -875,7 +875,7 @@ impl CallIndirectOp {
     }
 
     pub fn table_field(&self) -> Field {
-        Field::new(Ident::Table, FieldTy::Table)
+        Field::new(Ident::Table, FieldTy::TableAddr)
     }
 
     pub fn params_field(&self) -> Field {

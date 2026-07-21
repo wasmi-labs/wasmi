@@ -11,6 +11,7 @@ pub struct Local<const N: u16> {
     marker: PhantomData<fn()>,
 }
 
+/// A [`Slot`] and a [`Reg`] of type `T`.
 pub struct SlotAndReg<T> {
     pub slot: Slot,
     pub reg: Reg<T>,

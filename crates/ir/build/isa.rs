@@ -606,7 +606,7 @@ fn add_call_ops(isa: &mut Isa) {
             Ident::RefFunc,
             [
                 Field::new(Ident::Result, FieldTy::RegInt),
-                Field::new(Ident::Func, FieldTy::Func),
+                Field::new(Ident::Func, FieldTy::FuncAddr),
             ],
         )),
         Op::from(GenericOp::new(
@@ -620,7 +620,7 @@ fn add_call_ops(isa: &mut Isa) {
             Ident::CallImported,
             [
                 Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
-                Field::new(Ident::Func, FieldTy::Func),
+                Field::new(Ident::Func, FieldTy::FuncAddr),
             ],
         )),
         Op::from(CallIndirectOp::new(CallKind::Nested, OperandKind::Reg)),
@@ -638,7 +638,7 @@ fn add_call_ops(isa: &mut Isa) {
             Ident::ReturnCallImported,
             [
                 Field::new(Ident::Params, FieldTy::BoundedSlotSpan),
-                Field::new(Ident::Func, FieldTy::Func),
+                Field::new(Ident::Func, FieldTy::FuncAddr),
             ],
         )),
     ];
@@ -679,7 +679,7 @@ fn add_table_ops(isa: &mut Isa) {
             Ident::TableSize,
             [
                 Field::new(Ident::Result, FieldTy::RegInt),
-                Field::new(Ident::Table, FieldTy::Table),
+                Field::new(Ident::Table, FieldTy::TableAddr),
             ],
         )),
         Op::from(GenericOp::new(
@@ -688,14 +688,14 @@ fn add_table_ops(isa: &mut Isa) {
                 Field::new(Ident::Result, FieldTy::RegInt),
                 Field::new(Ident::Delta, FieldTy::Slot),
                 Field::new(Ident::Value, FieldTy::Slot),
-                Field::new(Ident::Table, FieldTy::Table),
+                Field::new(Ident::Table, FieldTy::TableAddr),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::TableCopy,
             [
-                Field::new(Ident::DstTable, FieldTy::Table),
-                Field::new(Ident::SrcTable, FieldTy::Table),
+                Field::new(Ident::DstTable, FieldTy::TableAddr),
+                Field::new(Ident::SrcTable, FieldTy::TableAddr),
                 Field::new(Ident::Dst, FieldTy::Slot),
                 Field::new(Ident::Src, FieldTy::Slot),
                 Field::new(Ident::Len, FieldTy::Slot),
@@ -704,7 +704,7 @@ fn add_table_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::TableFill,
             [
-                Field::new(Ident::Table, FieldTy::Table),
+                Field::new(Ident::Table, FieldTy::TableAddr),
                 Field::new(Ident::Dst, FieldTy::Slot),
                 Field::new(Ident::Len, FieldTy::Slot),
                 Field::new(Ident::Value, FieldTy::Slot),
@@ -713,8 +713,8 @@ fn add_table_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::TableInit,
             [
-                Field::new(Ident::Table, FieldTy::Table),
-                Field::new(Ident::Elem, FieldTy::Elem),
+                Field::new(Ident::Table, FieldTy::TableAddr),
+                Field::new(Ident::Elem, FieldTy::ElemAddr),
                 Field::new(Ident::Dst, FieldTy::Slot),
                 Field::new(Ident::Src, FieldTy::Slot),
                 Field::new(Ident::Len, FieldTy::Slot),
@@ -722,7 +722,7 @@ fn add_table_ops(isa: &mut Isa) {
         )),
         Op::from(GenericOp::new(
             Ident::ElemDrop,
-            [Field::new(Ident::Elem, FieldTy::Elem)],
+            [Field::new(Ident::Elem, FieldTy::ElemAddr)],
         )),
     ];
     isa.push_ops(ops);
@@ -732,13 +732,13 @@ fn add_memory_ops(isa: &mut Isa) {
     let ops = [
         Op::from(GenericOp::new(
             Ident::DataDrop,
-            [Field::new(Ident::Data, FieldTy::Data)],
+            [Field::new(Ident::Data, FieldTy::DataAddr)],
         )),
         Op::from(GenericOp::new(
             Ident::MemorySize,
             [
                 Field::new(Ident::Result, FieldTy::RegInt),
-                Field::new(Ident::Memory, FieldTy::Memory),
+                Field::new(Ident::Memory, FieldTy::MemoryAddr),
             ],
         )),
         Op::from(GenericOp::new(
@@ -746,14 +746,14 @@ fn add_memory_ops(isa: &mut Isa) {
             [
                 Field::new(Ident::Result, FieldTy::RegInt),
                 Field::new(Ident::Delta, FieldTy::Slot),
-                Field::new(Ident::Memory, FieldTy::Memory),
+                Field::new(Ident::Memory, FieldTy::MemoryAddr),
             ],
         )),
         Op::from(GenericOp::new(
             Ident::MemoryCopy,
             [
-                Field::new(Ident::DstMemory, FieldTy::Memory),
-                Field::new(Ident::SrcMemory, FieldTy::Memory),
+                Field::new(Ident::DstMemory, FieldTy::MemoryAddr),
+                Field::new(Ident::SrcMemory, FieldTy::MemoryAddr),
                 Field::new(Ident::Dst, FieldTy::Slot),
                 Field::new(Ident::Src, FieldTy::Slot),
                 Field::new(Ident::Len, FieldTy::Slot),
@@ -762,7 +762,7 @@ fn add_memory_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::MemoryFill,
             [
-                Field::new(Ident::Memory, FieldTy::Memory),
+                Field::new(Ident::Memory, FieldTy::MemoryAddr),
                 Field::new(Ident::Dst, FieldTy::Slot),
                 Field::new(Ident::Len, FieldTy::Slot),
                 Field::new(Ident::Value, FieldTy::Slot),
@@ -771,8 +771,8 @@ fn add_memory_ops(isa: &mut Isa) {
         Op::from(GenericOp::new(
             Ident::MemoryInit,
             [
-                Field::new(Ident::Memory, FieldTy::Memory),
-                Field::new(Ident::Data, FieldTy::Data),
+                Field::new(Ident::Memory, FieldTy::MemoryAddr),
+                Field::new(Ident::Data, FieldTy::DataAddr),
                 Field::new(Ident::Dst, FieldTy::Slot),
                 Field::new(Ident::Src, FieldTy::Slot),
                 Field::new(Ident::Len, FieldTy::Slot),

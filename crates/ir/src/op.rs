@@ -15,7 +15,16 @@ use crate::{
     Slot,
     SlotAndReg,
     core::{ShiftAmount, TrapCode, ValType},
-    index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
+    index::{
+        DataAddr,
+        ElemAddr,
+        FuncAddr,
+        FuncType,
+        GlobalAddr,
+        InternalFunc,
+        MemoryAddr,
+        TableAddr,
+    },
 };
 use core::num::NonZero;
 
