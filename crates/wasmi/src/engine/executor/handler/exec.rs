@@ -30,7 +30,7 @@ use crate::{
         utils::unreachable_unchecked,
     },
     errors::{FuelError, MemoryError, TableError},
-    ir::{self, BoundedSlotSpan, index},
+    ir::{self, BoundedSlotSpan},
     store::StoreError,
 };
 use core::{cmp, ptr};
@@ -512,7 +512,7 @@ fn memory_copy_within(
     state: &mut VmState<'_>,
     args: &mut Args,
     ip: Ip,
-    dst_memory: index::Memory,
+    dst_memory: ir::MemoryAddr,
     dst_index: usize,
     src_index: usize,
     len: usize,

@@ -26,18 +26,7 @@ use crate::{
     },
     func::{FuncEntity, HostFuncEntity},
     instance::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceEntity, MemoryAddr, TableAddr},
-    ir::{
-        self,
-        Address,
-        BoundedSlotSpan,
-        Local,
-        Offset,
-        Offset16,
-        Slot,
-        SlotAndReg,
-        SlotSpan,
-        index,
-    },
+    ir::{self, Address, BoundedSlotSpan, Local, Offset, Offset16, Slot, SlotAndReg, SlotSpan},
     memory::{DataSegment, DataSegmentEntity},
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
     table::ElementSegment,
@@ -558,7 +547,7 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
 /// `memory` is an instance address, not the raw Wasm memory index,
 /// so the default memory's address is not guaranteed to be zero.
 #[inline]
-pub fn is_default_memory(instance: Inst, memory: index::Memory) -> bool {
+pub fn is_default_memory(instance: Inst, memory: ir::MemoryAddr) -> bool {
     let instance = unsafe { instance.as_ref() };
     matches!(
         instance.layout().memory_addr(0),
@@ -624,13 +613,13 @@ macro_rules! impl_fetch_from_instance {
     };
 }
 impl_fetch_from_instance! {
-    fn fetch_data(func: index::Data as DataAddr) -> DataSegment = InstanceEntity::get_data_segment;
-    fn fetch_elem(func: index::Elem as ElemAddr) -> ElementSegment = InstanceEntity::get_element_segment;
-    fn fetch_func(func: index::Func as FuncAddr) -> Func = InstanceEntity::get_func;
-    fn fetch_global(global: index::Global as GlobalAddr) -> Global = InstanceEntity::get_global;
-    fn fetch_memory(memory: index::Memory as MemoryAddr) -> Memory = InstanceEntity::get_memory;
-    fn fetch_table(table: index::Table as TableAddr) -> Table = InstanceEntity::get_table;
-    fn fetch_func_type(func_type: index::FuncType as u32) -> DedupFuncType = {
+    fn fetch_data(func: ir::DataAddr as DataAddr) -> DataSegment = InstanceEntity::get_data_segment;
+    fn fetch_elem(func: ir::ElemAddr as ElemAddr) -> ElementSegment = InstanceEntity::get_element_segment;
+    fn fetch_func(func: ir::FuncAddr as FuncAddr) -> Func = InstanceEntity::get_func;
+    fn fetch_global(global: ir::GlobalAddr as GlobalAddr) -> Global = InstanceEntity::get_global;
+    fn fetch_memory(memory: ir::MemoryAddr as MemoryAddr) -> Memory = InstanceEntity::get_memory;
+    fn fetch_table(table: ir::TableAddr as TableAddr) -> Table = InstanceEntity::get_table;
+    fn fetch_func_type(func_type: ir::FuncType as u32) -> DedupFuncType = {
         |instance: &InstanceEntity, index: u32| instance.get_signature(index).copied()
     };
 }
@@ -673,8 +662,8 @@ impl_resolve_from_store! {
 #[inline]
 pub fn resolve_indirect_func<I>(
     index: I,
-    table: index::Table,
-    func_type: index::FuncType,
+    table: ir::TableAddr,
+    func_type: ir::FuncType,
     state: &mut VmState<'_>,
     args: &Args,
 ) -> Result<Func, TrapCode>

@@ -39,7 +39,7 @@ use crate::{
             },
         },
     },
-    ir::{self, BoundedSlotSpan, BranchOffset, index},
+    ir::{self, BoundedSlotSpan, BranchOffset},
 };
 
 /// Utility type to store the arguments of an execution handler and provide a clean API.
@@ -165,7 +165,7 @@ impl Args {
     pub fn fetch_memory_bytes<'a>(
         &self,
         state: &'a mut VmState,
-        memory: index::Memory,
+        memory: ir::MemoryAddr,
     ) -> &'a mut [u8] {
         if utils::is_default_memory(self.instance, memory) {
             return self.fetch_default_memory_bytes();
@@ -185,7 +185,7 @@ impl Args {
     pub fn fetch_memory<'a>(
         &mut self,
         state: &'a mut VmState,
-        index: index::Memory,
+        index: ir::MemoryAddr,
     ) -> &'a mut CoreMemory {
         let global = fetch_memory(self.instance, index);
         resolve_memory_mut(state.store, &global)
@@ -196,7 +196,7 @@ impl Args {
     pub fn fetch_global<'a>(
         &mut self,
         state: &'a mut VmState,
-        index: index::Global,
+        index: ir::GlobalAddr,
     ) -> &'a mut CoreGlobal {
         let global = fetch_global(self.instance, index);
         resolve_global_mut(state.store, &global)
@@ -207,7 +207,7 @@ impl Args {
     pub fn fetch_table<'a>(
         &mut self,
         state: &'a mut VmState,
-        index: index::Table,
+        index: ir::TableAddr,
     ) -> &'a mut CoreTable {
         let table = fetch_table(self.instance, index);
         resolve_table_mut(state.store, &table)
@@ -218,7 +218,7 @@ impl Args {
     pub fn fetch_elem<'a>(
         &mut self,
         state: &'a mut VmState,
-        index: index::Elem,
+        index: ir::ElemAddr,
     ) -> &'a mut CoreElementSegment {
         let elem = fetch_elem(self.instance, index);
         resolve_elem_mut(state.store, &elem)
@@ -229,7 +229,7 @@ impl Args {
     pub fn fetch_data<'a>(
         &mut self,
         state: &'a mut VmState,
-        index: index::Data,
+        index: ir::DataAddr,
     ) -> &'a mut DataSegmentEntity {
         let elem = fetch_data(self.instance, index);
         resolve_data_mut(state.store, &elem)
@@ -273,8 +273,8 @@ impl Args {
         &self,
         state: &mut VmState<'_>,
         index: Idx,
-        table: index::Table,
-        func_type: index::FuncType,
+        table: ir::TableAddr,
+        func_type: ir::FuncType,
     ) -> Control<Func, Break>
     where
         Idx: GetValue<u64>,

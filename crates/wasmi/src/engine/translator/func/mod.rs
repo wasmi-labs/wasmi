@@ -88,7 +88,6 @@ use crate::{
         Slot,
         SlotAndReg,
         SlotSpan,
-        index::{self, Memory},
     },
     limits::LimitsError,
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, WasmiValueType},
@@ -340,64 +339,64 @@ impl FuncTranslator {
     /// Returns the [`GlobalAddr`] for the global at `index`.
     ///
     /// [`GlobalAddr`]: crate::instance::GlobalAddr
-    fn global_addr(&self, index: u32) -> index::Global {
+    fn global_addr(&self, index: u32) -> ir::GlobalAddr {
         let Some(addr) = self.module.instance_layout().global_addr(index) else {
             panic!("missing address for global at: {}", index)
         };
-        index::Global::from(u32::from(addr))
+        ir::GlobalAddr::from(u32::from(addr))
     }
 
     /// Returns the [`MemoryAddr`] for the linear memory at `index`.
     ///
     /// [`MemoryAddr`]: crate::instance::MemoryAddr
-    fn memory_addr(&self, index: u32) -> Result<index::Memory, Error> {
+    fn memory_addr(&self, index: u32) -> Result<ir::MemoryAddr, Error> {
         let Some(addr) = self.module.instance_layout().memory_addr(index) else {
             panic!("missing address for linear memory at: {index}")
         };
         let Ok(addr16) = u16::try_from(u32::from(addr)) else {
             return Err(Error::from(LimitsError::TooManyMemories));
         };
-        Ok(index::Memory::from(addr16))
+        Ok(ir::MemoryAddr::from(addr16))
     }
 
     /// Returns the [`TableAddr`] for the table at `index`.
     ///
     /// [`TableAddr`]: crate::instance::TableAddr
-    fn table_addr(&self, index: u32) -> index::Table {
+    fn table_addr(&self, index: u32) -> ir::TableAddr {
         let Some(addr) = self.module.instance_layout().table_addr(index) else {
             panic!("missing address for table at: {}", index)
         };
-        index::Table::from(u32::from(addr))
+        ir::TableAddr::from(u32::from(addr))
     }
 
     /// Returns the [`FuncAddr`] for the function at `index`.
     ///
     /// [`FuncAddr`]: crate::instance::FuncAddr
-    fn func_addr(&self, index: u32) -> index::Func {
+    fn func_addr(&self, index: u32) -> ir::FuncAddr {
         let Some(addr) = self.module.instance_layout().func_addr(index) else {
             panic!("missing address for function at: {}", index)
         };
-        index::Func::from(u32::from(addr))
+        ir::FuncAddr::from(u32::from(addr))
     }
 
     /// Returns the [`ElemAddr`] for the element segment at `index`.
     ///
     /// [`ElemAddr`]: crate::instance::ElemAddr
-    fn elem_addr(&self, index: u32) -> index::Elem {
+    fn elem_addr(&self, index: u32) -> ir::ElemAddr {
         let Some(addr) = self.module.instance_layout().elem_addr(index) else {
             panic!("missing address for element segment at: {}", index)
         };
-        index::Elem::from(u32::from(addr))
+        ir::ElemAddr::from(u32::from(addr))
     }
 
     /// Returns the [`DataAddr`] for the data segment at `index`.
     ///
     /// [`DataAddr`]: crate::instance::DataAddr
-    fn data_addr(&self, index: u32) -> index::Data {
+    fn data_addr(&self, index: u32) -> ir::DataAddr {
         let Some(addr) = self.module.instance_layout().data_addr(index) else {
             panic!("missing address for data segment at: {}", index)
         };
-        index::Data::from(u32::from(addr))
+        ir::DataAddr::from(u32::from(addr))
     }
 
     /// Returns the [`Engine`] for which the function is compiled.
@@ -1622,8 +1621,8 @@ impl FuncTranslator {
     fn translate_call(
         &mut self,
         function_index: u32,
-        call_internal: fn(params: BoundedSlotSpan, func: index::InternalFunc) -> Op,
-        call_imported: fn(params: BoundedSlotSpan, func: index::Func) -> Op,
+        call_internal: fn(params: BoundedSlotSpan, func: ir::InternalFunc) -> Op,
+        call_imported: fn(params: BoundedSlotSpan, func: ir::FuncAddr) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let func_idx = FuncIdx::from(function_index);
@@ -1638,7 +1637,7 @@ impl FuncTranslator {
                 };
                 call_internal(
                     params,
-                    index::InternalFunc::from(func_entity as *const FuncEntry as usize),
+                    ir::InternalFunc::from(func_entity as *const FuncEntry as usize),
                 )
             }
             None => {
@@ -1657,12 +1656,12 @@ impl FuncTranslator {
         type_index: u32,
         table_index: u32,
         op_s: fn(
-            table: index::Table,
-            func_type: index::FuncType,
+            table: ir::TableAddr,
+            func_type: ir::FuncType,
             params: BoundedSlotSpan,
             index: Slot,
         ) -> Op,
-        op_r: fn(table: index::Table, func_type: index::FuncType, params: BoundedSlotSpan) -> Op,
+        op_r: fn(table: ir::TableAddr, func_type: ir::FuncType, params: BoundedSlotSpan) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let index = self.stack.pop();
@@ -1670,7 +1669,7 @@ impl FuncTranslator {
         let callee_ty = self.resolve_type(type_index);
         let index = self.copy_immediate_to_slot(index)?;
         let params = self.adjust_stack_for_call(&callee_ty)?;
-        let func_type = index::FuncType::from(type_index);
+        let func_type = ir::FuncType::from(type_index);
         let op = match index {
             Location::Slot(index) => op_s(table_addr, func_type, params, index),
             Location::Reg(_) => op_r(table_addr, func_type, params),
@@ -1867,7 +1866,7 @@ impl FuncTranslator {
     fn resolve_operand_as_index(
         &self,
         operand: Operand,
-        memory: Memory,
+        memory: ir::MemoryAddr,
     ) -> Result<ResolvedOperand<u64>, Error> {
         let memidx: MemoryIdx = u32::from(memory).into();
         let operand = match self.module.get_type_of_memory(memidx).index_ty() {
@@ -2684,7 +2683,7 @@ impl FuncTranslator {
         vt: &StoreOpVt,
         ptr: ResolvedOperand<Address>,
         offset: Offset,
-        memory: index::Memory,
+        memory: ir::MemoryAddr,
         value: Operand,
     ) -> Result<Option<Op>, Error> {
         use Location as Loc;
@@ -2725,8 +2724,8 @@ impl FuncTranslator {
     /// # Panics
     ///
     /// If the [`MemArg`] offset is not 32-bit.
-    fn decode_memarg(memarg: MemArg) -> Result<Option<(index::Memory, Offset)>, Error> {
-        let memory = index::Memory::try_from(memarg.memory)?;
+    fn decode_memarg(memarg: MemArg) -> Result<Option<(ir::MemoryAddr, Offset)>, Error> {
+        let memory = ir::MemoryAddr::try_from(memarg.memory)?;
         let Some(offset) = Offset::new(memarg.offset) else {
             return Ok(None);
         };
@@ -2734,7 +2733,7 @@ impl FuncTranslator {
     }
 
     /// Returns the effective address `ptr+offset` if it is valid.
-    fn effective_address(&self, mem: index::Memory, ptr: u64, offset: Offset) -> Option<Address> {
+    fn effective_address(&self, mem: ir::MemoryAddr, ptr: u64, offset: Offset) -> Option<Address> {
         let memory_type = *self
             .module
             .get_type_of_memory(MemoryIdx::from(u32::from(u16::from(mem))));

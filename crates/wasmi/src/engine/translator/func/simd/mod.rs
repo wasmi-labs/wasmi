@@ -25,13 +25,7 @@ use crate::{
         },
         utils::{ToBits, Wrap},
     },
-    ir::{
-        Offset,
-        Offset16,
-        Op,
-        Slot,
-        index::{self, Memory},
-    },
+    ir::{self, Offset, Offset16, Op, Slot},
 };
 use wasmparser::MemArg;
 
@@ -416,8 +410,14 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        op_rs: fn(offset: Offset, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
-        op_ss: fn(ptr: Slot, offset: Offset, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
+        op_rs: fn(offset: Offset, value: Slot, memory: ir::MemoryAddr, lane: T::LaneIdx) -> Op,
+        op_ss: fn(
+            ptr: Slot,
+            offset: Offset,
+            value: Slot,
+            memory: ir::MemoryAddr,
+            lane: T::LaneIdx,
+        ) -> Op,
         op_rs_mem0_offset16: fn(offset: Offset16, value: Slot, lane: T::LaneIdx) -> Op,
         op_ss_mem0_offset16: fn(ptr: Slot, offset: Offset16, value: Slot, lane: T::LaneIdx) -> Op,
         translate_imm: fn(
@@ -483,7 +483,7 @@ impl FuncTranslator {
         &mut self,
         ptr: Location,
         offset: Offset,
-        memory: index::Memory,
+        memory: ir::MemoryAddr,
         value: Slot,
     ) -> Result<bool, Error> {
         if !memory.is_default() {

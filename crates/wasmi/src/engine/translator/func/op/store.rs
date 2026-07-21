@@ -1,7 +1,7 @@
 use crate::{
     core::{Typed, TypedRawVal},
     engine::translator::utils::{ToBits, Wrap},
-    ir::{Address, Offset, Offset16, Op, Slot, index::Memory},
+    ir::{self, Address, Offset, Offset16, Op, Slot},
 };
 
 /// Trait implemented by all Wasm operators that can be translated as wrapping store instructions.
@@ -44,18 +44,18 @@ pub trait StoreOp: Sized {
     /// - Conversion to bits type or identity for normal stores.
     fn into_immediate(value: Self::Value) -> Self::Immediate;
 
-    fn store_rr(offset: Offset, memory: Memory) -> Option<Op> {
+    fn store_rr(offset: Offset, memory: ir::MemoryAddr) -> Option<Op> {
         _ = (offset, memory);
         None
     }
-    fn store_rs(offset: Offset, value: Slot, memory: Memory) -> Op;
-    fn store_ri(offset: Offset, value: Self::Immediate, memory: Memory) -> Op;
-    fn store_sr(ptr: Slot, offset: Offset, memory: Memory) -> Op;
-    fn store_ss(ptr: Slot, offset: Offset, value: Slot, memory: Memory) -> Op;
-    fn store_si(ptr: Slot, offset: Offset, value: Self::Immediate, memory: Memory) -> Op;
-    fn store_ir(address: Address, memory: Memory) -> Op;
-    fn store_is(address: Address, value: Slot, memory: Memory) -> Op;
-    fn store_ii(address: Address, value: Self::Immediate, memory: Memory) -> Op;
+    fn store_rs(offset: Offset, value: Slot, memory: ir::MemoryAddr) -> Op;
+    fn store_ri(offset: Offset, value: Self::Immediate, memory: ir::MemoryAddr) -> Op;
+    fn store_sr(ptr: Slot, offset: Offset, memory: ir::MemoryAddr) -> Op;
+    fn store_ss(ptr: Slot, offset: Offset, value: Slot, memory: ir::MemoryAddr) -> Op;
+    fn store_si(ptr: Slot, offset: Offset, value: Self::Immediate, memory: ir::MemoryAddr) -> Op;
+    fn store_ir(address: Address, memory: ir::MemoryAddr) -> Op;
+    fn store_is(address: Address, value: Slot, memory: ir::MemoryAddr) -> Op;
+    fn store_ii(address: Address, value: Self::Immediate, memory: ir::MemoryAddr) -> Op;
 
     fn store_mem0_offset16_rr(offset: Offset16) -> Option<Op> {
         _ = offset;
@@ -70,15 +70,15 @@ pub trait StoreOp: Sized {
 
 /// Virtual table for a [`StoreOp`]. See [`StoreOp::VT`].
 pub struct StoreOpVt {
-    pub store_rr: fn(offset: Offset, memory: Memory) -> Option<Op>,
-    pub store_rs: fn(offset: Offset, value: Slot, memory: Memory) -> Op,
-    pub store_ri: fn(offset: Offset, value: TypedRawVal, memory: Memory) -> Op,
-    pub store_sr: fn(ptr: Slot, offset: Offset, memory: Memory) -> Op,
-    pub store_ss: fn(ptr: Slot, offset: Offset, value: Slot, memory: Memory) -> Op,
-    pub store_si: fn(ptr: Slot, offset: Offset, value: TypedRawVal, memory: Memory) -> Op,
-    pub store_ir: fn(address: Address, memory: Memory) -> Op,
-    pub store_is: fn(address: Address, value: Slot, memory: Memory) -> Op,
-    pub store_ii: fn(address: Address, value: TypedRawVal, memory: Memory) -> Op,
+    pub store_rr: fn(offset: Offset, memory: ir::MemoryAddr) -> Option<Op>,
+    pub store_rs: fn(offset: Offset, value: Slot, memory: ir::MemoryAddr) -> Op,
+    pub store_ri: fn(offset: Offset, value: TypedRawVal, memory: ir::MemoryAddr) -> Op,
+    pub store_sr: fn(ptr: Slot, offset: Offset, memory: ir::MemoryAddr) -> Op,
+    pub store_ss: fn(ptr: Slot, offset: Offset, value: Slot, memory: ir::MemoryAddr) -> Op,
+    pub store_si: fn(ptr: Slot, offset: Offset, value: TypedRawVal, memory: ir::MemoryAddr) -> Op,
+    pub store_ir: fn(address: Address, memory: ir::MemoryAddr) -> Op,
+    pub store_is: fn(address: Address, value: Slot, memory: ir::MemoryAddr) -> Op,
+    pub store_ii: fn(address: Address, value: TypedRawVal, memory: ir::MemoryAddr) -> Op,
     pub store_mem0_offset16_rr: fn(offset: Offset16) -> Option<Op>,
     pub store_mem0_offset16_rs: fn(offset: Offset16, value: Slot) -> Op,
     pub store_mem0_offset16_ri: fn(offset: Offset16, value: TypedRawVal) -> Op,
@@ -88,17 +88,22 @@ pub struct StoreOpVt {
 }
 
 /// Adapts [`StoreOp::store_ri`] for [`StoreOpVt`].
-fn store_ri_vt<T: StoreOp>(offset: Offset, value: TypedRawVal, memory: Memory) -> Op {
+fn store_ri_vt<T: StoreOp>(offset: Offset, value: TypedRawVal, memory: ir::MemoryAddr) -> Op {
     T::store_ri(offset, T::into_immediate(value.into()), memory)
 }
 
 /// Adapts [`StoreOp::store_si`] for [`StoreOpVt`].
-fn store_si_vt<T: StoreOp>(ptr: Slot, offset: Offset, value: TypedRawVal, memory: Memory) -> Op {
+fn store_si_vt<T: StoreOp>(
+    ptr: Slot,
+    offset: Offset,
+    value: TypedRawVal,
+    memory: ir::MemoryAddr,
+) -> Op {
     T::store_si(ptr, offset, T::into_immediate(value.into()), memory)
 }
 
 /// Adapts [`StoreOp::store_ii`] for [`StoreOpVt`].
-fn store_ii_vt<T: StoreOp>(address: Address, value: TypedRawVal, memory: Memory) -> Op {
+fn store_ii_vt<T: StoreOp>(address: Address, value: TypedRawVal, memory: ir::MemoryAddr) -> Op {
     T::store_ii(address, T::into_immediate(value.into()), memory)
 }
 
@@ -149,40 +154,40 @@ macro_rules! impl_store_wrap {
                 }
 
                 $(
-                    fn store_rr(offset: Offset, memory: Memory) -> Option<Op> {
+                    fn store_rr(offset: Offset, memory: ir::MemoryAddr) -> Option<Op> {
                         Some($store_rr(offset, memory))
                     }
                 )?
 
-                fn store_rs(offset: Offset, value: Slot, memory: Memory) -> Op {
+                fn store_rs(offset: Offset, value: Slot, memory: ir::MemoryAddr) -> Op {
                     $store_rs(offset, value, memory)
                 }
 
-                fn store_ri(offset: Offset, value: Self::Immediate, memory: Memory) -> Op {
+                fn store_ri(offset: Offset, value: Self::Immediate, memory: ir::MemoryAddr) -> Op {
                     $store_ri(offset, value, memory)
                 }
 
-                fn store_sr(ptr: Slot, offset: Offset, memory: Memory) -> Op {
+                fn store_sr(ptr: Slot, offset: Offset, memory: ir::MemoryAddr) -> Op {
                     $store_sr(ptr, offset, memory)
                 }
 
-                fn store_ss(ptr: Slot, offset: Offset, value: Slot, memory: Memory) -> Op {
+                fn store_ss(ptr: Slot, offset: Offset, value: Slot, memory: ir::MemoryAddr) -> Op {
                     $store_ss(ptr, offset, value, memory)
                 }
 
-                fn store_si(ptr: Slot, offset: Offset, value: Self::Immediate, memory: Memory) -> Op {
+                fn store_si(ptr: Slot, offset: Offset, value: Self::Immediate, memory: ir::MemoryAddr) -> Op {
                     $store_si(ptr, offset, value, memory)
                 }
 
-                fn store_ir(address: Address, memory: Memory) -> Op {
+                fn store_ir(address: Address, memory: ir::MemoryAddr) -> Op {
                     $store_ir(address, memory)
                 }
 
-                fn store_is(address: Address, value: Slot, memory: Memory) -> Op {
+                fn store_is(address: Address, value: Slot, memory: ir::MemoryAddr) -> Op {
                     $store_is(address, value, memory)
                 }
 
-                fn store_ii(address: Address, value: Self::Immediate, memory: Memory) -> Op {
+                fn store_ii(address: Address, value: Self::Immediate, memory: ir::MemoryAddr) -> Op {
                     $store_ii(address, value, memory)
                 }
 
