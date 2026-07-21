@@ -6,8 +6,8 @@ use crate::limits::LimitsError;
 ///
 /// Objects in instances are layout out by-group in the following order:
 ///
-/// 1. `globals`: Global Variables
-/// 2. `memories`: Linear Memories
+/// 1. `memories`: Linear Memories
+/// 2. `globals`: Global Variables
 /// 3. `tables`: Tables
 /// 4. `funcs`: Functions
 /// 5. `elems`: Element Segments
@@ -15,13 +15,14 @@ use crate::limits::LimitsError;
 ///
 /// # Note
 ///
-/// Modules without `data_count` section do not allow to query the addresses of data segments.
+/// - Linear memories must be placed first because Wasmi IR uses 16-bit memory addresses.
+/// - Modules without `data_count` section do not allow to query the addresses of data segments.
 #[derive(Debug, Copy, Clone)]
 pub struct InstanceLayout {
-    /// The start offset within `InstanceEntity::handles` for [`Global`] handles.
-    end_globals: u32,
     /// The start offset within `InstanceEntity::handles` for [`Memory`] handles.
     end_memories: u32,
+    /// The start offset within `InstanceEntity::handles` for [`Global`] handles.
+    end_globals: u32,
     /// The start offset within `InstanceEntity::handles` for [`Table`] handles.
     end_tables: u32,
     /// The start offset within `InstanceEntity::handles` for [`Func`] handles.
@@ -86,50 +87,46 @@ impl InstanceLayout {
         }
     }
 
-    /// Returns the number of global variables in the associated instance.
-    fn len_globals(&self) -> u32 {
-        // Note: globals are placed first.
-        self.end_globals
+    /// Returns the number of linear memories in the associated instance.
+    #[inline]
+    fn len_memories(&self) -> u32 {
+        // Note: memories are placed first.
+        self.end_memories
     }
 
-    /// Returns the number of linear memories in the associated instance.
-    fn len_memories(&self) -> u32 {
-        // Note: memories are placed directly after global variables.
-        self.end_memories - self.end_globals
+    /// Returns the number of global variables in the associated instance.
+    #[inline]
+    fn len_globals(&self) -> u32 {
+        // Note: globals are placed directly after memories.
+        self.end_globals - self.end_memories
     }
 
     /// Returns the number of tables in the associated instance.
+    #[inline]
     fn len_tables(&self) -> u32 {
         // Note: tables are placed directly after linear memories.
         self.end_tables - self.end_memories
     }
 
     /// Returns the number of functions in the associated instance.
+    #[inline]
     fn len_funcs(&self) -> u32 {
         // Note: tables are placed directly after tables.
         self.end_funcs - self.end_tables
     }
 
     /// Returns the number of element segments in the associated instance.
+    #[inline]
     fn len_elems(&self) -> u32 {
         // Note: element segments are placed directly after functions.
         self.end_elems - self.end_funcs
     }
 
     /// Returns the number of data segments in the associated instance.
+    #[inline]
     fn len_datas(&self) -> u32 {
         // Note: element segments are placed directly after element segments.
         self.end_datas - self.end_elems
-    }
-
-    /// Returns the [`GlobalAddr`] for a [`Global`] Wasm index.
-    #[inline]
-    pub fn global_addr(&self, index: u32) -> Option<GlobalAddr> {
-        if index >= self.len_globals() {
-            return None;
-        }
-        // Note: globals are placed first in the instance.
-        Some(GlobalAddr(index))
     }
 
     /// Returns the [`MemoryAddr`] for a [`Memory`] Wasm index.
@@ -138,8 +135,18 @@ impl InstanceLayout {
         if index >= self.len_memories() {
             return None;
         }
-        // Note: linear memories are placed directly after globals.
-        Some(MemoryAddr(self.end_globals + index))
+        // Note: memories are placed first in the instance.
+        Some(MemoryAddr(index))
+    }
+
+    /// Returns the [`GlobalAddr`] for a [`Global`] Wasm index.
+    #[inline]
+    pub fn global_addr(&self, index: u32) -> Option<GlobalAddr> {
+        if index >= self.len_globals() {
+            return None;
+        }
+        // Note: globals are placed directly after memories.
+        Some(GlobalAddr(self.end_memories + index))
     }
 
     /// Returns the [`TableAddr`] for a [`Table`] Wasm index.
@@ -148,8 +155,8 @@ impl InstanceLayout {
         if index >= self.len_tables() {
             return None;
         }
-        // Note: tables are placed directly after linear memories.
-        Some(TableAddr(self.end_memories + index))
+        // Note: tables are placed directly after globals.
+        Some(TableAddr(self.end_globals + index))
     }
 
     /// Returns the [`FuncAddr`] for a [`Func`] Wasm index.
@@ -185,10 +192,10 @@ impl InstanceLayout {
 
 #[derive(Debug, Default)]
 pub struct InstanceLayoutBuilder {
-    /// The start offset within `InstanceEntity::handles` for [`Global`] handles.
-    globals: Option<u32>,
     /// The start offset within `InstanceEntity::handles` for [`Memory`] handles.
     memories: Option<u32>,
+    /// The start offset within `InstanceEntity::handles` for [`Global`] handles.
+    globals: Option<u32>,
     /// The start offset within `InstanceEntity::handles` for [`Table`] handles.
     tables: Option<u32>,
     /// The start offset within `InstanceEntity::handles` for [`DataSegment`] handles.
@@ -218,8 +225,8 @@ macro_rules! impl_builder {
 }
 impl InstanceLayoutBuilder {
     impl_builder! {
-        pub fn globals(&mut self, len_globals: usize) -> Result<&mut Self, LimitsError> = (Global, LimitsError::max_global_count);
         pub fn memories(&mut self, len_memories: usize) -> Result<&mut Self, LimitsError> = (Memory, LimitsError::max_memory_count);
+        pub fn globals(&mut self, len_globals: usize) -> Result<&mut Self, LimitsError> = (Global, LimitsError::max_global_count);
         pub fn tables(&mut self, len_tables: usize) -> Result<&mut Self, LimitsError> = (Table, LimitsError::max_table_count);
         pub fn datas(&mut self, len_datas: usize) -> Result<&mut Self, LimitsError> = (DataSegment, LimitsError::max_data_count);
         pub fn elems(&mut self, len_elems: usize) -> Result<&mut Self, LimitsError> = (ElementSegment, LimitsError::max_elem_count);
@@ -228,21 +235,21 @@ impl InstanceLayoutBuilder {
 
     pub fn finish(self) -> Result<InstanceLayout, LimitsError> {
         let err = LimitsError::TooManyInstanceHandles;
-        let len_globals = self.globals.unwrap_or(0);
         let len_memories = self.memories.unwrap_or(0);
+        let len_globals = self.globals.unwrap_or(0);
         let len_tables = self.tables.unwrap_or(0);
         let len_datas = self.datas.unwrap_or(0);
         let len_elems = self.elems.unwrap_or(0);
         let len_funcs = self.funcs.unwrap_or(0);
-        let end_globals = len_globals;
-        let end_memories = end_globals.checked_add(len_memories).ok_or(err)?;
-        let end_tables = end_memories.checked_add(len_tables).ok_or(err)?;
+        let end_memories = len_memories;
+        let end_globals = end_memories.checked_add(len_globals).ok_or(err)?;
+        let end_tables = end_globals.checked_add(len_tables).ok_or(err)?;
         let end_funcs = end_tables.checked_add(len_funcs).ok_or(err)?;
         let end_elems = end_funcs.checked_add(len_elems).ok_or(err)?;
         let end_datas = end_elems.checked_add(len_datas).ok_or(err)?;
         Ok(InstanceLayout {
-            end_globals,
             end_memories,
+            end_globals,
             end_tables,
             end_funcs,
             end_elems,

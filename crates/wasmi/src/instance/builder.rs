@@ -191,19 +191,19 @@ impl InstanceEntityBuilder {
     pub fn finish(self) -> Result<InstanceEntity, Error> {
         let handles = self.finish_handles();
         Ok(InstanceEntity {
-            initialized: true,
+            handles,
             func_types: self.func_types,
             exports: self.exports,
             layout: self.layout,
-            handles,
+            initialized: true,
         })
     }
 
     /// Finishes construction of the [`AnyHandle`] buffer.
     fn finish_handles(&self) -> Box<[AnyHandle]> {
         let mut handles = Vec::new();
-        handles.extend(self.globals.iter().cloned().map(AnyHandle::from));
         handles.extend(self.memories.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.globals.iter().cloned().map(AnyHandle::from));
         handles.extend(self.tables.iter().cloned().map(AnyHandle::from));
         handles.extend(self.funcs.iter().cloned().map(AnyHandle::from));
         handles.extend(self.elem_segments.iter().cloned().map(AnyHandle::from));
