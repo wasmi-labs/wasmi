@@ -8,11 +8,14 @@ use crate::{
     BranchOffset,
     Decode,
     Decoder,
+    FuncType,
+    GlobalAddr,
+    MemoryAddr,
     Offset,
     Offset16,
     Reg,
+    TableAddr,
     decode::DecodeError,
-    index::{FuncType, GlobalAddr, MemoryAddr, TableAddr},
 };
 
 #[derive(Copy, Clone)]

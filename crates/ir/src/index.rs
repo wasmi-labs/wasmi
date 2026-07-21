@@ -105,11 +105,11 @@ impl TryFrom<u32> for MemoryAddr {
 
 #[cfg(feature = "slot16")]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct RawSlot(pub(crate) u16);
+pub(crate) struct RawSlot(pub(crate) u16);
 
 #[cfg(not(feature = "slot16"))]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct RawSlot(pub(crate) u32);
+pub(crate) struct RawSlot(pub(crate) u32);
 
 /// The number of bytes in a Wasmi cell.
 const CELL_BYTES: u32 = core::mem::size_of::<u64>() as u32;
