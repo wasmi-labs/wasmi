@@ -311,14 +311,17 @@ impl Module {
     pub(crate) fn len_funcs(&self) -> usize {
         self.module_header().funcs.len()
     }
+
     /// Returns the number of non-imported tables of the [`Module`].
     pub(crate) fn len_tables(&self) -> usize {
         self.module_header().tables.len()
     }
+
     /// Returns the number of non-imported linear memories of the [`Module`].
     pub(crate) fn len_memories(&self) -> usize {
         self.module_header().memories.len()
     }
+
     /// Returns the number of non-imported global variables of the [`Module`].
     pub(crate) fn len_globals(&self) -> usize {
         self.module_header().globals.len()
