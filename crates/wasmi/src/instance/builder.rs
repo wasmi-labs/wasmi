@@ -206,8 +206,8 @@ impl InstanceEntityBuilder {
         handles.extend(self.memories.iter().cloned().map(AnyHandle::from));
         handles.extend(self.tables.iter().cloned().map(AnyHandle::from));
         handles.extend(self.funcs.iter().cloned().map(AnyHandle::from));
-        handles.extend(self.data_segments.iter().cloned().map(AnyHandle::from));
         handles.extend(self.elem_segments.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.data_segments.iter().cloned().map(AnyHandle::from));
         handles.into()
     }
 }
