@@ -16,7 +16,10 @@ fn disallowed_start_fn() {
         Ok(module) => panic!("expected error but found: {module:?}"),
         Err(err) => {
             assert!(matches!(err.kind(), ErrorKind::Translation(_)));
-            assert_eq!(err.to_string(), "configuration disallows start functions but found one".to_string())
+            assert_eq!(
+                err.to_string(),
+                "configuration disallows start functions but found one".to_string()
+            )
         }
     }
 }
