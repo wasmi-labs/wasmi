@@ -29,7 +29,7 @@ use crate::{
             },
         },
     },
-    ir::{Op, index},
+    ir::Op,
     module::{
         self,
         MemoryIdx,
@@ -712,10 +712,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .get_type_of_memory(MemoryIdx::from(mem))
             .index_ty()
             .ty();
-        let memory = index::Memory::try_from(mem)?;
+        let memory_addr = self.memory_addr(mem)?;
         self.stage_op_with_result_reg(
             index_ty,
-            Op::memory_size(memory),
+            Op::memory_size(memory_addr),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -728,7 +728,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .module
             .get_type_of_memory(MemoryIdx::from(mem))
             .index_ty();
-        let memory = index::Memory::try_from(mem)?;
+        let memory_addr = self.memory_addr(mem)?;
         let delta = self.stack.pop();
         if let Operand::Immediate(delta) = delta {
             let delta = delta.val();
@@ -744,7 +744,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // as `memory.size` instruction instead.
                 self.stage_op_with_result_reg(
                     index_ty.ty(),
-                    Op::memory_size(memory),
+                    Op::memory_size(memory_addr),
                     FuelCostsProvider::instance,
                 )?;
                 return Ok(());
@@ -754,7 +754,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let delta = self.copy_operand_to_slot(delta)?;
         self.stage_op_with_result_reg(
             index_ty.ty(),
-            Op::memory_grow(delta, memory),
+            Op::memory_grow(delta, memory_addr),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1494,13 +1494,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let memory = index::Memory::try_from(mem)?;
-        let data = index::Data::from(data_index);
+        let memory_addr = self.memory_addr(mem)?;
+        let data_addr = self.data_addr(data_index);
         let dst = self.copy_operand_to_slot(dst)?;
         let src = self.copy_operand_to_slot(src)?;
         let len = self.copy_operand_to_slot(len)?;
         self.push_instr(
-            Op::memory_init(memory, data, dst, src, len),
+            Op::memory_init(memory_addr, data_addr, dst, src, len),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1509,10 +1509,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_instr(
-            Op::data_drop(index::Data::from(data_index)),
-            FuelCostsProvider::instance,
-        )?;
+        let data_addr = self.data_addr(data_index);
+        self.push_instr(Op::data_drop(data_addr), FuelCostsProvider::instance)?;
         Ok(())
     }
 
@@ -1520,13 +1518,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_copy(&mut self, dst_mem: u32, src_mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let dst_memory = index::Memory::try_from(dst_mem)?;
-        let src_memory = index::Memory::try_from(src_mem)?;
+        let dst_memory_addr = self.memory_addr(dst_mem)?;
+        let src_memory_addr = self.memory_addr(src_mem)?;
         let dst = self.copy_operand_to_slot(dst)?;
         let src = self.copy_operand_to_slot(src)?;
         let len = self.copy_operand_to_slot(len)?;
         self.push_instr(
-            Op::memory_copy(dst_memory, src_memory, dst, src, len),
+            Op::memory_copy(dst_memory_addr, src_memory_addr, dst, src, len),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1536,12 +1534,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_fill(&mut self, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, value, len) = self.stack.pop3();
-        let memory = index::Memory::try_from(mem)?;
+        let memory_addr = self.memory_addr(mem)?;
         let dst = self.copy_operand_to_slot(dst)?;
         let len = self.copy_operand_to_slot(len)?;
         let value = self.copy_operand_to_slot(value)?;
         self.push_instr(
-            Op::memory_fill(memory, dst, len, value),
+            Op::memory_fill(memory_addr, dst, len, value),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1551,13 +1549,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_init(&mut self, elem_index: u32, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let table = index::Table::from(table);
-        let elem = index::Elem::from(elem_index);
+        let table_addr = self.table_addr(table);
+        let elem_addr = self.elem_addr(elem_index);
         let dst = self.copy_operand_to_slot(dst)?;
         let src = self.copy_operand_to_slot(src)?;
         let len = self.copy_operand_to_slot(len)?;
         self.push_instr(
-            Op::table_init(table, elem, dst, src, len),
+            Op::table_init(table_addr, elem_addr, dst, src, len),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1566,10 +1564,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_instr(
-            Op::elem_drop(index::Elem::from(elem_index)),
-            FuelCostsProvider::instance,
-        )?;
+        let elem_addr = self.elem_addr(elem_index);
+        self.push_instr(Op::elem_drop(elem_addr), FuelCostsProvider::instance)?;
         Ok(())
     }
 
@@ -1577,13 +1573,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.stack.pop3();
-        let dst_table = index::Table::from(dst_table);
-        let src_table = index::Table::from(src_table);
+        let dst_table_addr = self.table_addr(dst_table);
+        let src_table_addr = self.table_addr(src_table);
         let dst = self.copy_operand_to_slot(dst)?;
         let src = self.copy_operand_to_slot(src)?;
         let len = self.copy_operand_to_slot(len)?;
         self.push_instr(
-            Op::table_copy(dst_table, src_table, dst, src, len),
+            Op::table_copy(dst_table_addr, src_table_addr, dst, src, len),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1629,10 +1625,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_ref_func(&mut self, function_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        let func_index = index::Func::from(function_index);
+        let func_addr = self.func_addr(function_index);
         self.push_op_with_result_reg(
             ValType::FuncRef,
-            Op::ref_func(func_index),
+            Op::ref_func(func_addr),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1642,12 +1638,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_fill(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, value, len) = self.stack.pop3();
-        let table = index::Table::from(table);
+        let table_addr = self.table_addr(table);
         let dst = self.copy_operand_to_slot(dst)?;
         let value = self.copy_operand_to_slot(value)?;
         let len = self.copy_operand_to_slot(len)?;
         self.push_instr(
-            Op::table_fill(table, dst, len, value),
+            Op::table_fill(table_addr, dst, len, value),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1657,7 +1653,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_get(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
-        let table = index::Table::from(table);
+        let table_addr = self.table_addr(table);
         let index = self.stack.pop();
         let item_ty = table_type.element();
         let index_ty = table_type.index_ty();
@@ -1665,9 +1661,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.stage_op_with_result_reg(
             item_ty.into(),
             match index {
-                ResolvedOperand::Reg(_) => Op::table_get_rr(table),
-                ResolvedOperand::Slot(index) => Op::table_get_rs(index, table),
-                ResolvedOperand::Immediate(index) => Op::table_get_ri(index, table),
+                ResolvedOperand::Reg(_) => Op::table_get_rr(table_addr),
+                ResolvedOperand::Slot(index) => Op::table_get_rs(index, table_addr),
+                ResolvedOperand::Immediate(index) => Op::table_get_ri(index, table_addr),
             },
             FuelCostsProvider::instance,
         )?;
@@ -1679,7 +1675,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         use ResolvedOperand as Opd;
         bail_unreachable!(self);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
-        let table = index::Table::from(table);
+        let table_addr = self.table_addr(table);
         let index_ty = table_type.index_ty();
         let (index, value) = self.stack.pop2();
         let index = self.resolve_operand_as_index32_or_copy(index, index_ty)?;
@@ -1688,14 +1684,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .map(|r| r.raw())
             .map(u32::from);
         let instr = match (index, value) {
-            (Opd::Reg(_), Opd::Slot(value)) => Op::table_set_rs(table, value),
-            (Opd::Reg(_), Opd::Immediate(value)) => Op::table_set_ri(table, value),
-            (Opd::Slot(index), Opd::Reg(_)) => Op::table_set_sr(table, index),
-            (Opd::Slot(index), Opd::Slot(value)) => Op::table_set_ss(table, index, value),
-            (Opd::Slot(index), Opd::Immediate(value)) => Op::table_set_si(table, index, value),
-            (Opd::Immediate(index), Opd::Reg(_)) => Op::table_set_ir(table, index),
-            (Opd::Immediate(index), Opd::Slot(value)) => Op::table_set_is(table, index, value),
-            (Opd::Immediate(index), Opd::Immediate(value)) => Op::table_set_ii(table, index, value),
+            (Opd::Reg(_), Opd::Slot(value)) => Op::table_set_rs(table_addr, value),
+            (Opd::Reg(_), Opd::Immediate(value)) => Op::table_set_ri(table_addr, value),
+            (Opd::Slot(index), Opd::Reg(_)) => Op::table_set_sr(table_addr, index),
+            (Opd::Slot(index), Opd::Slot(value)) => Op::table_set_ss(table_addr, index, value),
+            (Opd::Slot(index), Opd::Immediate(value)) => Op::table_set_si(table_addr, index, value),
+            (Opd::Immediate(index), Opd::Reg(_)) => Op::table_set_ir(table_addr, index),
+            (Opd::Immediate(index), Opd::Slot(value)) => Op::table_set_is(table_addr, index, value),
+            (Opd::Immediate(index), Opd::Immediate(value)) => {
+                Op::table_set_ii(table_addr, index, value)
+            }
             _ => unreachable!(),
         };
         self.push_instr(instr, FuelCostsProvider::instance)?;
@@ -1706,7 +1704,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_grow(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
-        let table = index::Table::from(table);
+        let table_addr = self.table_addr(table);
         let index_ty = table_type.index_ty();
         let (value, delta) = self.stack.pop2();
         if let Operand::Immediate(delta) = delta {
@@ -1723,7 +1721,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // as `table.size` instruction instead.
                 self.stage_op_with_result_reg(
                     index_ty.ty(),
-                    Op::table_size(table),
+                    Op::table_size(table_addr),
                     FuelCostsProvider::instance,
                 )?;
                 return Ok(());
@@ -1733,7 +1731,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let delta = self.copy_operand_to_slot(delta)?;
         self.stage_op_with_result_reg(
             index_ty.ty(),
-            Op::table_grow(delta, value, table),
+            Op::table_grow(delta, value, table_addr),
             FuelCostsProvider::instance,
         )?;
         Ok(())
@@ -1743,11 +1741,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_size(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
-        let table = index::Table::from(table);
+        let table_addr = self.table_addr(table);
         let index_ty = table_type.index_ty();
         self.stage_op_with_result_reg(
             index_ty.ty(),
-            Op::table_size(table),
+            Op::table_size(table_addr),
             FuelCostsProvider::instance,
         )?;
         Ok(())

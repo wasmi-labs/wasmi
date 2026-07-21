@@ -2,7 +2,7 @@ pub(crate) use self::builder::InstanceEntityBuilder;
 use self::handle::AnyHandle;
 pub use self::{
     exports::{Export, ExportsIter, Extern, ExternType},
-    layout::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceLayout, MemoryAddr, TableAddr},
+    layout::InstanceLayout,
 };
 use crate::{
     AsContext,
