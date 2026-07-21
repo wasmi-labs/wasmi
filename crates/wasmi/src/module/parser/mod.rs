@@ -13,7 +13,7 @@ use crate::{
     FuncType,
     MemoryType,
     TableType,
-    engine::{EnforcedLimitsError, EngineFunc},
+    engine::{EnforcedLimitsError, EngineFunc, TranslationError},
     module::MaybeDebug,
 };
 use alloc::boxed::Box;
@@ -333,6 +333,9 @@ impl ModuleParser {
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.start_section(func, &range)?;
+        }
+        if !self.engine.config().get_allow_start_fn() {
+            return Err(Error::from(TranslationError::DisallowedStartFn));
         }
         module.set_start(FuncIdx::from(func));
         Ok(())

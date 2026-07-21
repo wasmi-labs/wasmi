@@ -6,6 +6,10 @@ use core::{
 /// An error that may occur upon parsing, validating and translating Wasm.
 #[derive(Debug)]
 pub enum TranslationError {
+    /// A Wasm module defines a `start` function that the [`Config`] disallowed.
+    ///
+    /// [`Config`]: crate::Config
+    DisallowedStartFn,
     /// Encountered an unsupported Wasm block type.
     UnsupportedBlockType(wasmparser::BlockType),
     /// Encountered an unsupported Wasm value type.
@@ -57,6 +61,7 @@ impl Error for TranslationError {}
 impl Display for TranslationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {
+            Self::DisallowedStartFn => "configuration disallows start functions but found one",
             Self::UnsupportedBlockType(error) => {
                 return write!(f, "encountered unsupported Wasm block type: {error:?}");
             }

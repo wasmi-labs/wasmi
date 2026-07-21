@@ -1,5 +1,6 @@
 mod call_hook;
 mod call_host_via_engine;
+mod disallowed_start_fn;
 mod fuel_consumption;
 mod fuel_metering;
 mod func;
