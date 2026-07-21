@@ -506,10 +506,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (global_type, init_value) = self.module.get_global(global_idx);
         let content = global_type.content();
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
+            // Case: The `global.get` instruction accesses a non-imported immutable global variable
+            //       and thus the access can be replaced by the underlying constant value.
             if let Some(value) = init_expr.eval(&EmptyEvalContext) {
                 if let Some(value) = value.as_raw_or_none() {
-                    // Case: access to immutable internally defined global variables
-                    //       can be replaced with their constant initialization value.
+                    // Case: replace `global.get` with its constant immediate value.
                     self.stack
                         .push_immediate(TypedRawVal::new(content, value))?;
                     return Ok(());
@@ -521,24 +522,25 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 return Ok(());
             }
         }
-        // Case: The `global.get` instruction accesses a mutable or imported
-        //       global variable and thus cannot be optimized away.
-        let global_idx = ir::index::Global::from(global_index);
+        let Some(global_addr) = self.module.instance_layout().global_addr(global_index) else {
+            panic!("missing instance address for global at: {global_index}")
+        };
+        let global_addr = ir::index::Global::from(u32::from(global_addr));
         #[cfg(feature = "simd")]
         if matches!(content, ValType::V128) {
             self.push_op_with_result_slot(
                 content,
-                |result| Op::global_get_v128_s(global_idx, result),
+                |result| Op::global_get_v128_s(global_addr, result),
                 FuelCostsProvider::instance,
             )?;
             return Ok(());
         }
         let operator = match content {
             ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
-                Op::global_get_u64_r(global_idx)
+                Op::global_get_u64_r(global_addr)
             }
-            ValType::F32 => Op::global_get_f32_r(global_idx),
-            ValType::F64 => Op::global_get_f64_r(global_idx),
+            ValType::F32 => Op::global_get_f32_r(global_addr),
+            ValType::F64 => Op::global_get_f64_r(global_addr),
             _ => unreachable!(),
         };
         self.push_op_with_result_reg(content, operator, FuelCostsProvider::instance)?;
@@ -548,37 +550,42 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        let global = index::Global::from(global_index);
         let (global_type, _init_value) = self
             .module
             .get_global(module::GlobalIdx::from(global_index));
+        let Some(global_addr) = self.module.instance_layout().global_addr(global_index) else {
+            panic!("missing instance address for global at: {global_index}")
+        };
+        let global_addr = ir::index::Global::from(u32::from(global_addr));
         let ty = global_type.content();
         let input = self.stack.pop();
         let op = match self.resolve_operand::<RawVal>(input)? {
             ResolvedOperand::Reg(ty) => match ty {
                 | ValType::I32 | ValType::I64 | ValType::FuncRef | ValType::ExternRef => {
-                    Op::global_set_u64_r(global)
+                    Op::global_set_u64_r(global_addr)
                 }
-                | ValType::F32 => Op::global_set_f32_r(global),
-                | ValType::F64 => Op::global_set_f64_r(global),
+                | ValType::F32 => Op::global_set_f32_r(global_addr),
+                | ValType::F64 => Op::global_set_f64_r(global_addr),
                 | ValType::V128 => unreachable!(),
             },
             ResolvedOperand::Slot(value) => match ty {
                 #[cfg(feature = "simd")]
-                ValType::V128 => Op::global_set_v128_s(global, value),
-                _ => Op::global_set_u64_s(global, value),
+                ValType::V128 => Op::global_set_v128_s(global_addr, value),
+                _ => Op::global_set_u64_s(global_addr, value),
             },
             ResolvedOperand::Immediate(value) => match ty {
                 | ValType::I32 | ValType::F32 | ValType::FuncRef | ValType::ExternRef => {
-                    Op::global_set_u32_i(global, u32::from(value))
+                    Op::global_set_u32_i(global_addr, u32::from(value))
                 }
-                | ValType::I64 | ValType::F64 => Op::global_set_u64_i(global, u64::from(value)),
+                | ValType::I64 | ValType::F64 => {
+                    Op::global_set_u64_i(global_addr, u64::from(value))
+                }
                 #[cfg(feature = "simd")]
                 | ValType::V128 => {
                     let fuel_pos = self.stack.fuel_pos();
                     let temp_result = input.temp_slots().head();
                     self.encode_copy_sx_op(temp_result, input, fuel_pos)?;
-                    Op::global_set_v128_s(global, temp_result)
+                    Op::global_set_v128_s(global_addr, temp_result)
                 }
                 #[cfg(not(feature = "simd"))]
                 _ => unreachable!(),
