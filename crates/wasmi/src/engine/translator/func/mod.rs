@@ -336,6 +336,57 @@ impl FuncTranslator {
             .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
+    /// Returns the [`GlobalAddr`] for the global at `index`.
+    fn global_addr(&self, index: u32) -> index::Global {
+        let Some(addr) = self.module.instance_layout().global_addr(index) else {
+            panic!("missing address for global at: {}", index)
+        };
+        index::Global::from(u32::from(addr))
+    }
+
+    /// Returns the [`MemoryAddr`] for the linear memory at `index`.
+    fn memory_addr(&self, index: u32) -> index::Memory {
+        let Some(addr) = self.module.instance_layout().memory_addr(index) else {
+            panic!("missing address for linear memory at: {index}")
+        };
+        let Ok(addr16) = u16::try_from(u32::from(addr)) else {
+            panic!("linear memory index out of bounds: {index}")
+        };
+        index::Memory::from(addr16)
+    }
+
+    /// Returns the [`TableAddr`] for the table at `index`.
+    fn table_addr(&self, index: u32) -> index::Table {
+        let Some(addr) = self.module.instance_layout().table_addr(index) else {
+            panic!("missing address for table at: {}", index)
+        };
+        index::Table::from(u32::from(addr))
+    }
+
+    /// Returns the [`FuncAddr`] for the function at `index`.
+    fn func_addr(&self, index: u32) -> index::Func {
+        let Some(addr) = self.module.instance_layout().func_addr(index) else {
+            panic!("missing address for function at: {}", index)
+        };
+        index::Func::from(u32::from(addr))
+    }
+
+    /// Returns the [`ElemAddr`] for the element segment at `index`.
+    fn elem_addr(&self, index: u32) -> index::Elem {
+        let Some(addr) = self.module.instance_layout().elem_addr(index) else {
+            panic!("missing address for element segment at: {}", index)
+        };
+        index::Elem::from(u32::from(addr))
+    }
+
+    /// Returns the [`DataAddr`] for the data segment at `index`.
+    fn data_addr(&self, index: u32) -> index::Data {
+        let Some(addr) = self.module.instance_layout().data_addr(index) else {
+            panic!("missing address for data segment at: {}", index)
+        };
+        index::Data::from(u32::from(addr))
+    }
+
     /// Returns the [`Engine`] for which the function is compiled.
     fn engine(&self) -> &Engine {
         &self.engine
