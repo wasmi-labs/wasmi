@@ -1,0 +1,12 @@
+(module
+    (func (export "count-via-params") (param $n i32) (result i32)
+        (local.get $n)
+        (loop $continue (param i32) (result i32)
+            (i32.const 1)
+            (i32.sub)
+            (local.tee $n)
+            (local.get $n)
+            (br_if $continue)
+        )
+    )
+)
