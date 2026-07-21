@@ -342,11 +342,12 @@ impl FuncTranslator {
             return Ok(());
         }
         // Case: non-optimized fallback load operator.
+        let memory_addr = self.memory_addr(memarg.memory)?;
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match ptr_loc {
-                Location::Reg(_) => Op::v128_load_sr(result, offset, memory),
-                Location::Slot(ptr) => Op::v128_load_ss(result, ptr, offset, memory),
+                Location::Reg(_) => Op::v128_load_sr(result, offset, memory_addr),
+                Location::Slot(ptr) => Op::v128_load_ss(result, ptr, offset, memory_addr),
             },
             FuelCostsProvider::load,
         )?;
@@ -460,10 +461,11 @@ impl FuncTranslator {
                 return Ok(());
             }
         }
+        let memory_addr = self.memory_addr(memarg.memory)?;
         self.push_instr(
             match ptr {
-                Location::Reg(_) => op_rs(offset, v128, memory, lane),
-                Location::Slot(ptr) => op_ss(ptr, offset, v128, memory, lane),
+                Location::Reg(_) => op_rs(offset, v128, memory_addr, lane),
+                Location::Slot(ptr) => op_ss(ptr, offset, v128, memory_addr, lane),
             },
             FuelCostsProvider::store,
         )?;

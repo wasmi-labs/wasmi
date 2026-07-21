@@ -1645,7 +1645,7 @@ impl FuncTranslator {
             None => {
                 // Case: We are calling an imported function and must use the
                 //       general calling operator for it.
-                call_imported(params, index::Func::from(function_index))
+                call_imported(params, self.func_addr(function_index))
             }
         };
         self.push_instr(instr, FuelCostsProvider::call)?;
@@ -1667,14 +1667,14 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let index = self.stack.pop();
-        let table = index::Table::from(table_index);
+        let table_addr = self.table_addr(table_index);
         let callee_ty = self.resolve_type(type_index);
         let index = self.copy_immediate_to_slot(index)?;
         let params = self.adjust_stack_for_call(&callee_ty)?;
         let func_type = index::FuncType::from(type_index);
         let op = match index {
-            Location::Slot(index) => op_s(table, func_type, params, index),
-            Location::Reg(_) => op_r(table, func_type, params),
+            Location::Slot(index) => op_s(table_addr, func_type, params, index),
+            Location::Reg(_) => op_r(table_addr, func_type, params),
         };
         self.push_instr(op, FuelCostsProvider::call)?;
         Ok(())
@@ -2563,10 +2563,11 @@ impl FuncTranslator {
         let Some(ptr) = ptr.filter_map(|ptr| self.effective_address(memory, ptr, offset)) else {
             return Ok(Op::trap(TrapCode::MemoryOutOfBounds));
         };
+        let memory_addr = self.memory_addr(memarg.memory)?;
         let op = match ptr {
-            ResolvedOperand::Reg(_) => (vt.op_rr)(offset, memory),
-            ResolvedOperand::Slot(ptr) => (vt.op_rs)(ptr, offset, memory),
-            ResolvedOperand::Immediate(address) => (vt.op_ri)(address, memory),
+            ResolvedOperand::Reg(_) => (vt.op_rr)(offset, memory_addr),
+            ResolvedOperand::Slot(ptr) => (vt.op_rs)(ptr, offset, memory_addr),
+            ResolvedOperand::Immediate(address) => (vt.op_ri)(address, memory_addr),
         };
         Ok(op)
     }
@@ -2647,21 +2648,26 @@ impl FuncTranslator {
         if let Some(op) = self.choose_store_mem0_offset16_op_vt(vt, ptr, offset, memory, value)? {
             return Ok(op);
         }
+        let memory_addr = self.memory_addr(memarg.memory)?;
         let value = self.resolve_operand::<TypedRawVal>(value)?;
         let op = match (ptr, value) {
-            (Opd::Reg(_), Opd::Reg(_)) => match (vt.store_rr)(offset, memory) {
+            (Opd::Reg(_), Opd::Reg(_)) => match (vt.store_rr)(offset, memory_addr) {
                 Some(op) => op,
                 None => unreachable!(),
             },
-            (Opd::Reg(_), Opd::Slot(value)) => (vt.store_rs)(offset, value, memory),
-            (Opd::Reg(_), Opd::Immediate(value)) => (vt.store_ri)(offset, value, memory),
-            (Opd::Slot(ptr), Opd::Reg(_)) => (vt.store_sr)(ptr, offset, memory),
-            (Opd::Slot(ptr), Opd::Slot(value)) => (vt.store_ss)(ptr, offset, value, memory),
-            (Opd::Slot(ptr), Opd::Immediate(value)) => (vt.store_si)(ptr, offset, value, memory),
-            (Opd::Immediate(address), Opd::Reg(_)) => (vt.store_ir)(address, memory),
-            (Opd::Immediate(address), Opd::Slot(value)) => (vt.store_is)(address, value, memory),
+            (Opd::Reg(_), Opd::Slot(value)) => (vt.store_rs)(offset, value, memory_addr),
+            (Opd::Reg(_), Opd::Immediate(value)) => (vt.store_ri)(offset, value, memory_addr),
+            (Opd::Slot(ptr), Opd::Reg(_)) => (vt.store_sr)(ptr, offset, memory_addr),
+            (Opd::Slot(ptr), Opd::Slot(value)) => (vt.store_ss)(ptr, offset, value, memory_addr),
+            (Opd::Slot(ptr), Opd::Immediate(value)) => {
+                (vt.store_si)(ptr, offset, value, memory_addr)
+            }
+            (Opd::Immediate(address), Opd::Reg(_)) => (vt.store_ir)(address, memory_addr),
+            (Opd::Immediate(address), Opd::Slot(value)) => {
+                (vt.store_is)(address, value, memory_addr)
+            }
             (Opd::Immediate(address), Opd::Immediate(value)) => {
-                (vt.store_ii)(address, value, memory)
+                (vt.store_ii)(address, value, memory_addr)
             }
         };
         Ok(op)
