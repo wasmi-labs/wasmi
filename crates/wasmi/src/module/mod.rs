@@ -44,6 +44,7 @@ use crate::{
     TableType,
     collections::Map,
     engine::{DedupFuncType, EngineFunc, EngineFuncSpan, EngineFuncSpanIter, EngineWeak},
+    instance::InstanceLayout,
 };
 use alloc::{boxed::Box, sync::Arc};
 use core::{iter, slice::Iter as SliceIter};
@@ -85,12 +86,18 @@ struct ModuleHeaderInner {
     start: Option<FuncIdx>,
     engine_funcs: EngineFuncSpan,
     element_segments: Box<[ElementSegment]>,
+    layout: InstanceLayout,
 }
 
 impl ModuleHeader {
     /// Returns the [`Engine`] of the [`ModuleHeader`].
     pub fn engine(&self) -> &EngineWeak {
         &self.inner.engine
+    }
+
+    /// Returns the [`InstanceLayout`] shared by all instances of this [`ModuleHeader`].
+    pub fn instance_layout(&self) -> &InstanceLayout {
+        &self.inner.layout
     }
 
     /// Returns the [`FuncType`] at the given index.
@@ -304,17 +311,25 @@ impl Module {
     pub(crate) fn len_funcs(&self) -> usize {
         self.module_header().funcs.len()
     }
+
     /// Returns the number of non-imported tables of the [`Module`].
     pub(crate) fn len_tables(&self) -> usize {
         self.module_header().tables.len()
     }
+
     /// Returns the number of non-imported linear memories of the [`Module`].
     pub(crate) fn len_memories(&self) -> usize {
         self.module_header().memories.len()
     }
+
     /// Returns the number of non-imported global variables of the [`Module`].
     pub(crate) fn len_globals(&self) -> usize {
         self.module_header().globals.len()
+    }
+
+    /// Returns the [`InstanceLayout`] shared by all instances of this [`Module`].
+    pub(crate) fn instance_layout(&self) -> &InstanceLayout {
+        &self.module_header().layout
     }
 
     /// Returns a slice to the function types of the [`Module`].

@@ -25,19 +25,8 @@ use crate::{
         utils::unreachable_unchecked,
     },
     func::{FuncEntity, HostFuncEntity},
-    instance::InstanceEntity,
-    ir::{
-        self,
-        Address,
-        BoundedSlotSpan,
-        Local,
-        Offset,
-        Offset16,
-        Slot,
-        SlotAndReg,
-        SlotSpan,
-        index,
-    },
+    instance::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceEntity, MemoryAddr, TableAddr},
+    ir::{self, Address, BoundedSlotSpan, Local, Offset, Offset16, Slot, SlotAndReg, SlotSpan},
     memory::{DataSegment, DataSegmentEntity},
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
     table::ElementSegment,
@@ -551,9 +540,28 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     }
 }
 
+/// Returns `true` if `memory` addresses the default linear memory (Wasm index 0).
+///
+/// # Note
+///
+/// `memory` is an instance address, not the raw Wasm memory index,
+/// so the default memory's address is not guaranteed to be zero.
+#[inline]
+pub fn is_default_memory(instance: Inst, memory: ir::MemoryAddr) -> bool {
+    let instance = unsafe { instance.as_ref() };
+    matches!(
+        instance.layout().memory_addr(0),
+        Some(addr) if u32::from(addr) == u32::from(memory)
+    )
+}
+
 pub fn extract_mem0(store: &mut PrunedStore, instance: Inst) -> (Mem0Ptr, Mem0Len) {
     let instance = unsafe { instance.as_ref() };
-    let Some(memory) = instance.get_memory(0) else {
+    let Some(memory) = instance
+        .layout()
+        .memory_addr(0)
+        .and_then(|addr| instance.get_memory(addr))
+    else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
     };
     let mem0 = resolve_memory_mut(store, &memory).data_mut();
@@ -584,17 +592,18 @@ pub fn memory_slice_mut(
 
 macro_rules! impl_fetch_from_instance {
     (
-        $( fn $fn:ident($param:ident: $ty:ty) -> $ret:ty = $getter:expr );* $(;)?
+        $( fn $fn:ident($param:ident: $ty:ty as $addr:ty) -> $ret:ty = $getter:expr );* $(;)?
     ) => {
         $(
             pub fn $fn(instance: Inst, $param: $ty) -> $ret {
                 let instance = unsafe { instance.as_ref() };
-                let index = ::core::primitive::u32::from($param);
-                let Some($param) = $getter(instance, index) else {
+                let raw_addr = ::core::primitive::u32::from($param);
+                let addr = <$addr>::from(raw_addr);
+                let Some($param) = $getter(instance, addr) else {
                     unsafe {
                         $crate::engine::utils::unreachable_unchecked!(
                             ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
-                            index,
+                            addr,
                         )
                     }
                 };
@@ -604,13 +613,13 @@ macro_rules! impl_fetch_from_instance {
     };
 }
 impl_fetch_from_instance! {
-    fn fetch_data(func: index::Data) -> DataSegment = InstanceEntity::get_data_segment;
-    fn fetch_elem(func: index::Elem) -> ElementSegment = InstanceEntity::get_element_segment;
-    fn fetch_func(func: index::Func) -> Func = InstanceEntity::get_func;
-    fn fetch_global(global: index::Global) -> Global = InstanceEntity::get_global;
-    fn fetch_memory(memory: index::Memory) -> Memory = InstanceEntity::get_memory;
-    fn fetch_table(table: index::Table) -> Table = InstanceEntity::get_table;
-    fn fetch_func_type(func_type: index::FuncType) -> DedupFuncType = {
+    fn fetch_data(func: ir::DataAddr as DataAddr) -> DataSegment = InstanceEntity::get_data_segment;
+    fn fetch_elem(func: ir::ElemAddr as ElemAddr) -> ElementSegment = InstanceEntity::get_element_segment;
+    fn fetch_func(func: ir::FuncAddr as FuncAddr) -> Func = InstanceEntity::get_func;
+    fn fetch_global(global: ir::GlobalAddr as GlobalAddr) -> Global = InstanceEntity::get_global;
+    fn fetch_memory(memory: ir::MemoryAddr as MemoryAddr) -> Memory = InstanceEntity::get_memory;
+    fn fetch_table(table: ir::TableAddr as TableAddr) -> Table = InstanceEntity::get_table;
+    fn fetch_func_type(func_type: ir::FuncType as u32) -> DedupFuncType = {
         |instance: &InstanceEntity, index: u32| instance.get_signature(index).copied()
     };
 }
@@ -653,8 +662,8 @@ impl_resolve_from_store! {
 #[inline]
 pub fn resolve_indirect_func<I>(
     index: I,
-    table: index::Table,
-    func_type: index::FuncType,
+    table: ir::TableAddr,
+    func_type: ir::FuncType,
     state: &mut VmState<'_>,
     args: &Args,
 ) -> Result<Func, TrapCode>

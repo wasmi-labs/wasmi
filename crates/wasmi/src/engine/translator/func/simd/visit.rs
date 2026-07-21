@@ -98,10 +98,11 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         if self.translate_store128_mem0_offset16(ptr, offset, memory, value)? {
             return Ok(());
         }
+        let memory_addr = self.memory_addr(memarg.memory)?;
         self.push_instr(
             match ptr {
-                Location::Slot(ptr) => Op::v128_store_ss(ptr, offset, value, memory),
-                Location::Reg(_) => Op::v128_store_rs(offset, value, memory),
+                Location::Slot(ptr) => Op::v128_store_ss(ptr, offset, value, memory_addr),
+                Location::Reg(_) => Op::v128_store_rs(offset, value, memory_addr),
             },
             FuelCostsProvider::store,
         )?;

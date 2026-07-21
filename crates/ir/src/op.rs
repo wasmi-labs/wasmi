@@ -7,15 +7,22 @@ use crate::{
     BlockFuel,
     BoundedSlotSpan,
     BranchOffset,
+    DataAddr,
+    ElemAddr,
     FixedSlotSpan,
+    FuncAddr,
+    FuncType,
+    GlobalAddr,
+    InternalFunc,
     Local,
+    MemoryAddr,
     Offset,
     Offset16,
     Reg,
     Slot,
     SlotAndReg,
+    TableAddr,
     core::{ShiftAmount, TrapCode, ValType},
-    index::{Data, Elem, Func, FuncType, Global, InternalFunc, Memory, Table},
 };
 use core::num::NonZero;
 

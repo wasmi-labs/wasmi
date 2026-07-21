@@ -25,13 +25,7 @@ use crate::{
         },
         utils::{ToBits, Wrap},
     },
-    ir::{
-        Offset,
-        Offset16,
-        Op,
-        Slot,
-        index::{self, Memory},
-    },
+    ir::{self, Offset, Offset16, Op, Slot},
 };
 use wasmparser::MemArg;
 
@@ -324,7 +318,7 @@ impl FuncTranslator {
         };
         'opt: {
             // Case: optimized load operator if possible, otherwise fallback.
-            if !memory.is_default() {
+            if !self.is_default_memory(memory) {
                 break 'opt;
             }
             let offset = match Offset16::new(offset) {
@@ -342,11 +336,12 @@ impl FuncTranslator {
             return Ok(());
         }
         // Case: non-optimized fallback load operator.
+        let memory_addr = self.memory_addr(memarg.memory)?;
         self.push_op_with_result_slot(
             ValType::V128,
             |result| match ptr_loc {
-                Location::Reg(_) => Op::v128_load_sr(result, offset, memory),
-                Location::Slot(ptr) => Op::v128_load_ss(result, ptr, offset, memory),
+                Location::Reg(_) => Op::v128_load_sr(result, offset, memory_addr),
+                Location::Slot(ptr) => Op::v128_load_ss(result, ptr, offset, memory_addr),
             },
             FuelCostsProvider::load,
         )?;
@@ -415,8 +410,14 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         lane: u8,
-        op_rs: fn(offset: Offset, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
-        op_ss: fn(ptr: Slot, offset: Offset, value: Slot, memory: Memory, lane: T::LaneIdx) -> Op,
+        op_rs: fn(offset: Offset, value: Slot, memory: ir::MemoryAddr, lane: T::LaneIdx) -> Op,
+        op_ss: fn(
+            ptr: Slot,
+            offset: Offset,
+            value: Slot,
+            memory: ir::MemoryAddr,
+            lane: T::LaneIdx,
+        ) -> Op,
         op_rs_mem0_offset16: fn(offset: Offset16, value: Slot, lane: T::LaneIdx) -> Op,
         op_ss_mem0_offset16: fn(ptr: Slot, offset: Offset16, value: Slot, lane: T::LaneIdx) -> Op,
         translate_imm: fn(
@@ -448,7 +449,7 @@ impl FuncTranslator {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
         let ptr = self.copy_immediate_to_slot(ptr)?;
-        if memory.is_default() {
+        if self.is_default_memory(memory) {
             if let Some(offset16) = Offset16::new(offset) {
                 self.push_instr(
                     match ptr {
@@ -460,10 +461,11 @@ impl FuncTranslator {
                 return Ok(());
             }
         }
+        let memory_addr = self.memory_addr(memarg.memory)?;
         self.push_instr(
             match ptr {
-                Location::Reg(_) => op_rs(offset, v128, memory, lane),
-                Location::Slot(ptr) => op_ss(ptr, offset, v128, memory, lane),
+                Location::Reg(_) => op_rs(offset, v128, memory_addr, lane),
+                Location::Slot(ptr) => op_ss(ptr, offset, v128, memory_addr, lane),
             },
             FuelCostsProvider::store,
         )?;
@@ -481,10 +483,10 @@ impl FuncTranslator {
         &mut self,
         ptr: Location,
         offset: Offset,
-        memory: index::Memory,
+        memory: ir::MemoryAddr,
         value: Slot,
     ) -> Result<bool, Error> {
-        if !memory.is_default() {
+        if !self.is_default_memory(memory) {
             return Ok(false);
         }
         let Some(offset16) = Offset16::new(offset) else {

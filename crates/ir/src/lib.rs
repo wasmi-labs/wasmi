@@ -8,7 +8,7 @@ extern crate std;
 pub mod decode;
 mod encode;
 mod error;
-pub mod index;
+mod index;
 mod op;
 mod opcode;
 mod primitive;
@@ -21,7 +21,17 @@ pub use self::{
     decode::{Decode, DecodeError, Decoder},
     encode::{Encode, Encoder},
     error::Error,
-    index::Slot,
+    index::{
+        DataAddr,
+        ElemAddr,
+        FuncAddr,
+        FuncType,
+        GlobalAddr,
+        InternalFunc,
+        MemoryAddr,
+        Slot,
+        TableAddr,
+    },
     op::{LEN_OPS, Location, Op},
     opcode::OpCode,
     primitive::{

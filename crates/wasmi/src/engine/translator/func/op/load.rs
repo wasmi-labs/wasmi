@@ -1,7 +1,7 @@
 use crate::{
     ValType,
     core::Typed,
-    ir::{Address, Offset, Offset16, Op, Slot, index::Memory},
+    ir::{self, Address, Offset, Offset16, Op, Slot},
 };
 
 /// Trait implemented by all Wasm operators that can be translated as load extend instructions.
@@ -23,9 +23,9 @@ pub trait LoadOp {
         op_rs_mem0_offset16: Self::op_rs_mem0_offset16,
     };
 
-    fn op_rr(offset: Offset, memory: Memory) -> Op;
-    fn op_rs(ptr: Slot, offset: Offset, memory: Memory) -> Op;
-    fn op_ri(address: Address, memory: Memory) -> Op;
+    fn op_rr(offset: Offset, memory: ir::MemoryAddr) -> Op;
+    fn op_rs(ptr: Slot, offset: Offset, memory: ir::MemoryAddr) -> Op;
+    fn op_ri(address: Address, memory: ir::MemoryAddr) -> Op;
     fn op_rr_mem0_offset16(offset: Offset16) -> Op;
     fn op_rs_mem0_offset16(ptr: Slot, offset: Offset16) -> Op;
 }
@@ -33,9 +33,9 @@ pub trait LoadOp {
 /// Virtual table for a [`LoadOp`]. See [`LoadOp::VT`].
 pub struct LoadOpVt {
     pub result_ty: ValType,
-    pub op_rr: fn(offset: Offset, memory: Memory) -> Op,
-    pub op_rs: fn(ptr: Slot, offset: Offset, memory: Memory) -> Op,
-    pub op_ri: fn(address: Address, memory: Memory) -> Op,
+    pub op_rr: fn(offset: Offset, memory: ir::MemoryAddr) -> Op,
+    pub op_rs: fn(ptr: Slot, offset: Offset, memory: ir::MemoryAddr) -> Op,
+    pub op_ri: fn(address: Address, memory: ir::MemoryAddr) -> Op,
     pub op_rr_mem0_offset16: fn(offset: Offset16) -> Op,
     pub op_rs_mem0_offset16: fn(ptr: Slot, offset: Offset16) -> Op,
 }
@@ -57,15 +57,15 @@ macro_rules! impl_load_extend {
             impl LoadOp for $name {
                 type Result = $result_ty;
 
-                fn op_rr(offset: Offset, memory: Memory) -> Op {
+                fn op_rr(offset: Offset, memory: ir::MemoryAddr) -> Op {
                     $store_rr(offset, memory)
                 }
 
-                fn op_rs(ptr: Slot, offset: Offset, memory: Memory) -> Op {
+                fn op_rs(ptr: Slot, offset: Offset, memory: ir::MemoryAddr) -> Op {
                     $store_rs(ptr, offset, memory)
                 }
 
-                fn op_ri(address: Address, memory: Memory) -> Op {
+                fn op_ri(address: Address, memory: ir::MemoryAddr) -> Op {
                     $store_ri(address, memory)
                 }
 

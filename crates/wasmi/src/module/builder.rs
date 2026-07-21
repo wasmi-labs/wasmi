@@ -27,6 +27,7 @@ use crate::{
     TableType,
     collections::Map,
     engine::{DedupFuncType, EngineFuncSpan},
+    instance::InstanceLayout,
 };
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 
@@ -46,6 +47,7 @@ pub struct ModuleBuilder {
     pub start: Option<FuncIdx>,
     pub engine_funcs: EngineFuncSpan,
     pub element_segments: Box<[ElementSegment]>,
+    pub data_count: Option<u32>,
     pub data_segments: DataSegmentsBuilder,
     pub custom_sections: CustomSectionsBuilder,
 }
@@ -67,30 +69,44 @@ impl ModuleBuilder {
             start: None,
             engine_funcs: EngineFuncSpan::default(),
             element_segments: Box::from([]),
+            data_count: None,
             data_segments: DataSegments::build(),
             custom_sections: CustomSectionsBuilder::default(),
         }
     }
 
     /// Finishes construction of [`ModuleHeader`].
-    pub fn finish(mut self) -> Module {
-        let header = self.header();
-        Module {
-            inner: Arc::new(ModuleInner {
-                engine: self.engine,
-                data_segments: self.data_segments.finish(),
-                custom_sections: self.custom_sections.finish(),
-                header,
-            }),
-        }
+    pub fn finish(mut self) -> Result<Module, Error> {
+        let header = self.header()?;
+        let inner = Arc::new(ModuleInner {
+            engine: self.engine,
+            data_segments: self.data_segments.finish(),
+            custom_sections: self.custom_sections.finish(),
+            header,
+        });
+        Ok(Module { inner })
     }
 
-    pub fn header(&mut self) -> ModuleHeader {
-        use core::mem::take;
+    /// Returns the [`ModuleHeader`].
+    ///
+    /// This also creates the [`ModuleHeader`] upon the first invocation.
+    pub fn header(&mut self) -> Result<ModuleHeader, Error> {
         if let Some(header) = self.header.as_ref() {
-            return header.clone();
+            return Ok(header.clone());
         }
+        self.finish_header()
+    }
+
+    /// Constructs the [`ModuleHeader`] if `None` exists so far.
+    ///
+    /// # Panics
+    ///
+    /// If a [`ModuleHeader`] has already been constructed in this [`ModuleBuilder`].
+    fn finish_header(&mut self) -> Result<ModuleHeader, Error> {
+        use core::mem::take;
+        assert!(self.header.is_none());
         let func_types: Box<[DedupFuncType]> = take(&mut self.func_types).into();
+        let layout = self.finish_instance_layout()?;
         let header = ModuleHeader {
             inner: Arc::new(ModuleHeaderInner {
                 engine: self.engine.weak(),
@@ -105,10 +121,33 @@ impl ModuleBuilder {
                 start: self.start,
                 engine_funcs: self.engine_funcs,
                 element_segments: take(&mut self.element_segments),
+                layout,
             }),
         };
         self.header = Some(header.clone());
-        header
+        Ok(header)
+    }
+
+    /// Constructs the [`InstanceLayout`] of the [`ModuleHeader`].
+    ///
+    /// # Panics
+    ///
+    /// If a [`ModuleHeader`] has already been constructed in this [`ModuleBuilder`].
+    fn finish_instance_layout(&self) -> Result<InstanceLayout, Error> {
+        assert!(self.header.is_none());
+        let mut layout = InstanceLayout::build();
+        layout.globals(self.globals.len())?;
+        layout.memories(self.memories.len())?;
+        layout.tables(self.tables.len())?;
+        layout.funcs(self.funcs.len())?;
+        layout.elems(self.element_segments.len())?;
+        if let Some(data_count) = self.data_count.as_ref() {
+            let Ok(count) = usize::try_from(*data_count) else {
+                panic!("out of bounds `data_count`")
+            };
+            layout.datas(count)?;
+        }
+        layout.finish().map_err(Into::into)
     }
 
     /// Returns the number of imported functions.
@@ -411,6 +450,15 @@ impl ModuleBuilder {
 }
 
 impl ModuleBuilder {
+    /// Registers the number of data segments from the `data_count` section if any.
+    ///
+    /// # Note
+    ///
+    /// This information is useful for the construction of the [`InstanceLayout`].
+    pub fn set_data_count(&mut self, count: u32) {
+        self.data_count = Some(count);
+    }
+
     /// Reserve space for at least `additional` new data segments.
     pub fn reserve_data_segments(&mut self, additional: usize) {
         self.data_segments.reserve(additional);

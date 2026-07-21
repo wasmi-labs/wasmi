@@ -1,6 +1,7 @@
 use super::InstanceEntity;
 use crate::{
     ElementSegment,
+    Error,
     Extern,
     ExternType,
     Func,
@@ -10,6 +11,7 @@ use crate::{
     Table,
     collections::Map,
     engine::DedupFuncType,
+    instance::{InstanceLayout, handle::AnyHandle},
     memory::DataSegment,
     module::FuncIdx,
 };
@@ -27,6 +29,7 @@ pub struct InstanceEntityBuilder {
     exports: Map<Box<str>, Extern>,
     data_segments: Vec<DataSegment>,
     elem_segments: Vec<ElementSegment>,
+    layout: InstanceLayout,
 }
 
 impl InstanceEntityBuilder {
@@ -57,6 +60,7 @@ impl InstanceEntityBuilder {
                 }
             }
         }
+        let layout = *module.instance_layout();
         Self {
             func_types: module.func_types_cloned(),
             tables: vec_with_capacity_exact(len_tables),
@@ -67,6 +71,7 @@ impl InstanceEntityBuilder {
             exports: Map::default(),
             data_segments: Vec::new(),
             elem_segments: Vec::new(),
+            layout,
         }
     }
 
@@ -183,17 +188,26 @@ impl InstanceEntityBuilder {
     }
 
     /// Finishes constructing the [`InstanceEntity`].
-    pub fn finish(self) -> InstanceEntity {
-        InstanceEntity {
-            initialized: true,
+    pub fn finish(self) -> Result<InstanceEntity, Error> {
+        let handles = self.finish_handles();
+        Ok(InstanceEntity {
+            handles,
             func_types: self.func_types,
-            tables: self.tables.into(),
-            funcs: self.funcs.into(),
-            memories: self.memories.into(),
-            globals: self.globals.into(),
             exports: self.exports,
-            data_segments: self.data_segments.into(),
-            elem_segments: self.elem_segments.into(),
-        }
+            layout: self.layout,
+            initialized: true,
+        })
+    }
+
+    /// Finishes construction of the [`AnyHandle`] buffer.
+    fn finish_handles(&self) -> Box<[AnyHandle]> {
+        let mut handles = Vec::new();
+        handles.extend(self.memories.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.globals.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.tables.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.funcs.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.elem_segments.iter().cloned().map(AnyHandle::from));
+        handles.extend(self.data_segments.iter().cloned().map(AnyHandle::from));
+        handles.into()
     }
 }

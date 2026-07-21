@@ -381,7 +381,12 @@ impl ModuleParser {
     ///
     /// This is part of the bulk memory operations Wasm proposal and not yet supported
     /// by Wasmi.
-    fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
+    fn process_data_count(
+        &mut self,
+        count: u32,
+        range: Range<usize>,
+        builder: &mut ModuleBuilder,
+    ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_enforced_limits().max_data_segments {
             if count > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyDataSegments {
@@ -393,6 +398,7 @@ impl ModuleParser {
         if let Some(validator) = &mut self.validator {
             validator.data_count_section(count, &range)?;
         }
+        builder.set_data_count(count);
         Ok(())
     }
 
@@ -523,7 +529,7 @@ impl ModuleParser {
                 None
             }
         };
-        let header = module.header();
+        let header = module.header()?;
         self.engine
             .translate_func(func, engine_func, offset, bytes, header, func_to_validate)?;
         Ok(())

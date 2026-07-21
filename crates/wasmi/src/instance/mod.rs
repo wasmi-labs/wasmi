@@ -1,5 +1,9 @@
 pub(crate) use self::builder::InstanceEntityBuilder;
-pub use self::exports::{Export, ExportsIter, Extern, ExternType};
+use self::handle::AnyHandle;
+pub use self::{
+    exports::{Export, ExportsIter, Extern, ExternType},
+    layout::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceLayout, MemoryAddr, TableAddr},
+};
 use crate::{
     AsContext,
     AsContextMut,
@@ -24,6 +28,8 @@ use alloc::{boxed::Box, sync::Arc};
 
 mod builder;
 mod exports;
+mod handle;
+mod layout;
 
 #[cfg(test)]
 mod tests;
@@ -31,15 +37,11 @@ mod tests;
 /// A module instance entity.
 #[derive(Debug)]
 pub struct InstanceEntity {
-    initialized: bool,
+    handles: Box<[AnyHandle]>,
     func_types: Arc<[DedupFuncType]>,
-    tables: Box<[Table]>,
-    funcs: Box<[Func]>,
-    memories: Box<[Memory]>,
-    globals: Box<[Global]>,
     exports: Map<Box<str>, Extern>,
-    data_segments: Box<[DataSegment]>,
-    elem_segments: Box<[ElementSegment]>,
+    layout: InstanceLayout,
+    initialized: bool,
 }
 
 impl InstanceEntity {
@@ -48,13 +50,9 @@ impl InstanceEntity {
         Self {
             initialized: false,
             func_types: Arc::new([]),
-            tables: [].into(),
-            funcs: [].into(),
-            memories: [].into(),
-            globals: [].into(),
             exports: Map::new(),
-            data_segments: [].into(),
-            elem_segments: [].into(),
+            layout: InstanceLayout::uninit(),
+            handles: [].into(),
         }
     }
 
@@ -68,39 +66,50 @@ impl InstanceEntity {
         self.initialized
     }
 
-    /// Returns the linear memory at the `index` if any.
-    pub fn get_memory(&self, index: u32) -> Option<Memory> {
-        self.memories.get(index as usize).copied()
+    /// Returns a shared reference to the [`InstanceLayout`] of `self`.
+    pub fn layout(&self) -> &InstanceLayout {
+        &self.layout
     }
 
-    /// Returns the table at the `index` if any.
-    pub fn get_table(&self, index: u32) -> Option<Table> {
-        self.tables.get(index as usize).copied()
+    /// Returns the [`Memory`] at the `addr` if any.
+    pub fn get_memory(&self, addr: MemoryAddr) -> Option<Memory> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
+        Some(unsafe { handle.cast_memory() })
     }
 
-    /// Returns the global variable at the `index` if any.
-    pub fn get_global(&self, index: u32) -> Option<Global> {
-        self.globals.get(index as usize).copied()
+    /// Returns the [`Table`] at the `addr` if any.
+    pub fn get_table(&self, addr: TableAddr) -> Option<Table> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
+        Some(unsafe { handle.cast_table() })
     }
 
-    /// Returns the function at the `index` if any.
-    pub fn get_func(&self, index: u32) -> Option<Func> {
-        self.funcs.get(index as usize).copied()
+    /// Returns the [`Global`] at the `addr` if any.
+    pub fn get_global(&self, addr: GlobalAddr) -> Option<Global> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
+        Some(unsafe { handle.cast_global() })
+    }
+
+    /// Returns the [`Func`] at the `addr` if any.
+    pub fn get_func(&self, addr: FuncAddr) -> Option<Func> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
+        Some(unsafe { handle.cast_func() })
+    }
+
+    /// Returns the [`DataSegment`] at the `addr` if any.
+    pub fn get_data_segment(&self, addr: DataAddr) -> Option<DataSegment> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
+        Some(unsafe { handle.cast_data() })
+    }
+
+    /// Returns the [`ElementSegment`] at the `addr` if any.
+    pub fn get_element_segment(&self, addr: ElemAddr) -> Option<ElementSegment> {
+        let handle = self.handles.get(u32::from(addr) as usize)?;
+        Some(unsafe { handle.cast_elem() })
     }
 
     /// Returns the signature at the `index` if any.
     pub fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
         self.func_types.get(index as usize)
-    }
-
-    /// Returns the [`DataSegment`] at the `index` if any.
-    pub fn get_data_segment(&self, index: u32) -> Option<DataSegment> {
-        self.data_segments.get(index as usize).copied()
-    }
-
-    /// Returns the [`ElementSegment`] at the `index` if any.
-    pub fn get_element_segment(&self, index: u32) -> Option<ElementSegment> {
-        self.elem_segments.get(index as usize).copied()
     }
 
     /// Returns the value exported to the given `name` if any.
@@ -170,20 +179,6 @@ impl Instance {
     ) -> Result<Instance, Error> {
         let instance = Module::instantiate(module, &mut store, imports.iter().cloned())?;
         Ok(instance)
-    }
-
-    /// Returns the function at the `index` if any.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `store` does not own this [`Instance`].
-    pub(crate) fn get_func_by_index(&self, store: impl AsContext, index: u32) -> Option<Func> {
-        store
-            .as_context()
-            .store
-            .inner
-            .resolve_instance(self)
-            .get_func(index)
     }
 
     /// Returns the value exported to the given `name` if any.

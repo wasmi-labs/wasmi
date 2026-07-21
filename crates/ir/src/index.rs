@@ -6,20 +6,20 @@ use core::fmt::{self, Write};
 macro_rules! for_each_index {
     ($mac:ident) => {
         $mac! {
-            /// A Wasm function index.
-            Func(pub(crate) u32);
+            /// A Wasmi function instance address.
+            FuncAddr(pub(crate) u32);
             /// A Wasm function type index.
             FuncType(pub(crate) u32);
-            /// A Wasm global variable index.
-            Global(pub(crate) u32);
-            /// A Wasm linear memory index.
-            Memory(pub(crate) u16);
-            /// A Wasm table index.
-            Table(pub(crate) u32);
-            /// A Wasm data segment index.
-            Data(pub(crate) u32);
-            /// A Wasm element segment index.
-            Elem(pub(crate) u32);
+            /// A Wasmi global variable instance address.
+            GlobalAddr(pub(crate) u32);
+            /// A Wasmi linear memory instance address.
+            MemoryAddr(pub(crate) u16);
+            /// A Wasmi table instance address.
+            TableAddr(pub(crate) u32);
+            /// A Wasmi data segment instance address.
+            DataAddr(pub(crate) u32);
+            /// A Wasmi element segment instance address.
+            ElemAddr(pub(crate) u32);
         }
     };
 }
@@ -80,20 +80,13 @@ impl fmt::Debug for InternalFunc {
     }
 }
 
-impl Memory {
-    /// Returns `true` if `self` refers to the default linear memory which always is at index 0.
-    pub fn is_default(&self) -> bool {
-        self.0 == 0
-    }
-}
-
-impl From<Memory> for u32 {
-    fn from(value: Memory) -> Self {
+impl From<MemoryAddr> for u32 {
+    fn from(value: MemoryAddr) -> Self {
         u32::from(value.0)
     }
 }
 
-impl TryFrom<u32> for Memory {
+impl TryFrom<u32> for MemoryAddr {
     type Error = Error;
 
     fn try_from(index: u32) -> Result<Self, Self::Error> {
@@ -105,11 +98,11 @@ impl TryFrom<u32> for Memory {
 
 #[cfg(feature = "slot16")]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct RawSlot(pub(crate) u16);
+pub(crate) struct RawSlot(pub(crate) u16);
 
 #[cfg(not(feature = "slot16"))]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct RawSlot(pub(crate) u32);
+pub(crate) struct RawSlot(pub(crate) u32);
 
 /// The number of bytes in a Wasmi cell.
 const CELL_BYTES: u32 = core::mem::size_of::<u64>() as u32;

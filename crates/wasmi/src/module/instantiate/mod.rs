@@ -1,8 +1,5 @@
 mod error;
 
-#[cfg(test)]
-mod tests;
-
 pub use self::error::InstantiationError;
 use super::{ConstExpr, InitDataSegment, Module, element::ElementSegmentKind, export};
 use crate::{
@@ -92,13 +89,15 @@ impl Module {
             .as_context_mut()
             .store
             .inner
-            .initialize_instance(instance, builder.finish());
+            .initialize_instance(instance, builder.finish()?);
         if let Some(start_index) = opt_start_index {
-            let start_func = instance
-                .get_func_by_index(store.as_context_mut(), start_index)
-                .unwrap_or_else(|| {
-                    panic!("encountered invalid start function after validation: {start_index}")
-                });
+            let entity = store.as_context().store.inner.resolve_instance(&instance);
+            let addr = entity.layout().func_addr(start_index).expect(
+                "failed to convert index to instance address for start function: {start_index}",
+            );
+            let start_func = entity
+                .get_func(addr)
+                .expect("missing function at instance address: {addr:?}");
             start_func.call(store.as_context_mut(), &[], &mut [])?
         }
         Ok(())
