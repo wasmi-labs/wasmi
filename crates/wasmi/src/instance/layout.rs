@@ -3,22 +3,35 @@ use crate::instance::{DataSegment, ElementSegment, Func, Global, InstanceEntity,
 use crate::limits::LimitsError;
 
 /// Offsets within [`InstanceEntity::handles`] buffer for various handle types.
+///
+/// Objects in instances are layout out by-group in the following order:
+///
+/// 1. `globals`: Global Variables
+/// 2. `memories`: Linear Memories
+/// 3. `tables`: Tables
+/// 4. `funcs`: Functions
+/// 5. `elems`: Element Segments
+/// 6. `datas`: Data Segments
+///
+/// # Note
+///
+/// Modules without `data_count` section do not allow to query the addresses of data segments.
 #[derive(Debug, Copy, Clone)]
 pub struct InstanceLayout {
     /// The start offset within `InstanceEntity::handles` for [`Global`] handles.
-    globals: u32,
+    end_globals: u32,
     /// The start offset within `InstanceEntity::handles` for [`Memory`] handles.
-    memories: u32,
+    end_memories: u32,
     /// The start offset within `InstanceEntity::handles` for [`Table`] handles.
-    tables: u32,
-    /// The start offset within `InstanceEntity::handles` for [`DataSegment`] handles.
-    datas: u32,
-    /// The start offset within `InstanceEntity::handles` for [`ElementSegment`] handles.
-    elems: u32,
+    end_tables: u32,
     /// The start offset within `InstanceEntity::handles` for [`Func`] handles.
-    funcs: u32,
-    /// The total number of handles in the instance.
-    len_handles: u32,
+    end_funcs: u32,
+    /// The start offset within `InstanceEntity::handles` for [`ElementSegment`] handles.
+    end_elems: u32,
+    /// The start offset within `InstanceEntity::handles` for [`DataSegment`] handles.
+    ///
+    /// This may be `0` if the `data_count` section does not exist.
+    end_datas: u32,
 }
 
 macro_rules! define_addr_types {
@@ -64,50 +77,49 @@ impl InstanceLayout {
     /// Creates an uninitialized [`InstanceLayout`].
     pub(crate) fn uninit() -> Self {
         Self {
-            globals: 0,
-            memories: 0,
-            tables: 0,
-            datas: 0,
-            elems: 0,
-            funcs: 0,
-            len_handles: 0,
+            end_globals: 0,
+            end_memories: 0,
+            end_tables: 0,
+            end_funcs: 0,
+            end_elems: 0,
+            end_datas: 0,
         }
     }
 
     /// Returns the number of global variables in the associated instance.
     fn len_globals(&self) -> u32 {
-        // Note: globals are placed directly before memories.
-        self.memories - self.globals
+        // Note: globals are placed first.
+        self.end_globals
     }
 
     /// Returns the number of linear memories in the associated instance.
     fn len_memories(&self) -> u32 {
-        // Note: memories are placed directly before tables.
-        self.tables - self.memories
+        // Note: memories are placed directly after global variables.
+        self.end_memories - self.end_globals
     }
 
     /// Returns the number of tables in the associated instance.
     fn len_tables(&self) -> u32 {
-        // Note: tables are placed directly before data segments.
-        self.datas - self.tables
-    }
-
-    /// Returns the number of data segments in the associated instance.
-    fn len_datas(&self) -> u32 {
-        // Note: data segments are placed directly before element segments.
-        self.elems - self.datas
-    }
-
-    /// Returns the number of element segments in the associated instance.
-    fn len_elems(&self) -> u32 {
-        // Note: element segments are placed directly before functions.
-        self.funcs - self.elems
+        // Note: tables are placed directly after linear memories.
+        self.end_tables - self.end_memories
     }
 
     /// Returns the number of functions in the associated instance.
     fn len_funcs(&self) -> u32 {
-        // Note: functions are placed last in the handles buffer.
-        self.len_handles - self.funcs
+        // Note: tables are placed directly after tables.
+        self.end_funcs - self.end_tables
+    }
+
+    /// Returns the number of element segments in the associated instance.
+    fn len_elems(&self) -> u32 {
+        // Note: element segments are placed directly after functions.
+        self.end_elems - self.end_funcs
+    }
+
+    /// Returns the number of data segments in the associated instance.
+    fn len_datas(&self) -> u32 {
+        // Note: element segments are placed directly after element segments.
+        self.end_datas - self.end_elems
     }
 
     /// Returns the [`GlobalAddr`] for a [`Global`] Wasm index.
@@ -116,7 +128,8 @@ impl InstanceLayout {
         if index >= self.len_globals() {
             return None;
         }
-        Some(GlobalAddr(self.globals + index))
+        // Note: globals are placed first in the instance.
+        Some(GlobalAddr(index))
     }
 
     /// Returns the [`MemoryAddr`] for a [`Memory`] Wasm index.
@@ -125,7 +138,8 @@ impl InstanceLayout {
         if index >= self.len_memories() {
             return None;
         }
-        Some(MemoryAddr(self.memories + index))
+        // Note: linear memories are placed directly after globals.
+        Some(MemoryAddr(self.end_globals + index))
     }
 
     /// Returns the [`TableAddr`] for a [`Table`] Wasm index.
@@ -134,25 +148,8 @@ impl InstanceLayout {
         if index >= self.len_tables() {
             return None;
         }
-        Some(TableAddr(self.tables + index))
-    }
-
-    /// Returns the [`DataAddr`] for a [`DataSegment`] Wasm index.
-    #[inline]
-    pub fn data_addr(&self, index: u32) -> Option<DataAddr> {
-        if index >= self.len_datas() {
-            return None;
-        }
-        Some(DataAddr(self.datas + index))
-    }
-
-    /// Returns the [`ElemAddr`] for a [`ElementSegment`] Wasm index.
-    #[inline]
-    pub fn elem_addr(&self, index: u32) -> Option<ElemAddr> {
-        if index >= self.len_elems() {
-            return None;
-        }
-        Some(ElemAddr(self.elems + index))
+        // Note: tables are placed directly after linear memories.
+        Some(TableAddr(self.end_memories + index))
     }
 
     /// Returns the [`FuncAddr`] for a [`Func`] Wasm index.
@@ -161,7 +158,28 @@ impl InstanceLayout {
         if index >= self.len_funcs() {
             return None;
         }
-        Some(FuncAddr(self.funcs + index))
+        // Note: functions are placed directly after tables.
+        Some(FuncAddr(self.end_tables + index))
+    }
+
+    /// Returns the [`ElemAddr`] for a [`ElementSegment`] Wasm index.
+    #[inline]
+    pub fn elem_addr(&self, index: u32) -> Option<ElemAddr> {
+        if index >= self.len_elems() {
+            return None;
+        }
+        // Note: element segments are placed directly after functions.
+        Some(ElemAddr(self.end_funcs + index))
+    }
+
+    /// Returns the [`DataAddr`] for a [`DataSegment`] Wasm index.
+    #[inline]
+    pub fn data_addr(&self, index: u32) -> Option<DataAddr> {
+        if index >= self.len_datas() {
+            return None;
+        }
+        // Note: data segments are placed directly after element segments.
+        Some(DataAddr(self.end_elems + index))
     }
 }
 
@@ -216,21 +234,19 @@ impl InstanceLayoutBuilder {
         let len_datas = self.datas.unwrap_or(0);
         let len_elems = self.elems.unwrap_or(0);
         let len_funcs = self.funcs.unwrap_or(0);
-        let globals = 0;
-        let memories = len_globals;
-        let tables = memories.checked_add(len_memories).ok_or(err)?;
-        let datas = tables.checked_add(len_tables).ok_or(err)?;
-        let elems = datas.checked_add(len_datas).ok_or(err)?;
-        let funcs = elems.checked_add(len_elems).ok_or(err)?;
-        let len_handles = funcs.checked_add(len_funcs).ok_or(err)?;
+        let end_globals = len_globals;
+        let end_memories = end_globals.checked_add(len_memories).ok_or(err)?;
+        let end_tables = end_memories.checked_add(len_tables).ok_or(err)?;
+        let end_funcs = end_tables.checked_add(len_funcs).ok_or(err)?;
+        let end_elems = end_funcs.checked_add(len_elems).ok_or(err)?;
+        let end_datas = end_elems.checked_add(len_datas).ok_or(err)?;
         Ok(InstanceLayout {
-            globals,
-            memories,
-            tables,
-            datas,
-            elems,
-            funcs,
-            len_handles,
+            end_globals,
+            end_memories,
+            end_tables,
+            end_funcs,
+            end_elems,
+            end_datas,
         })
     }
 }
