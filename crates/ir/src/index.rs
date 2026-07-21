@@ -80,13 +80,6 @@ impl fmt::Debug for InternalFunc {
     }
 }
 
-impl MemoryAddr {
-    /// Returns `true` if `self` refers to the default linear memory which always is at index 0. TODO: remove
-    pub fn is_default(&self) -> bool {
-        self.0 == 0
-    }
-}
-
 impl From<MemoryAddr> for u32 {
     fn from(value: MemoryAddr) -> Self {
         u32::from(value.0)

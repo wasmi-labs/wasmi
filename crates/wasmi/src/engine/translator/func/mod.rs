@@ -307,6 +307,20 @@ impl FuncTranslator {
         u16::try_from(len_stack_slots).ok()
     }
 
+    /// Returns `true` if `memory` addresses the default linear memory (Wasm index 0).
+    ///
+    /// # Note
+    ///
+    /// `memory` is an instance address, not the raw Wasm memory index,
+    /// so the default memory's address is not guaranteed to be zero.
+    #[inline]
+    pub fn is_default_memory(&self, memory: ir::MemoryAddr) -> bool {
+        matches!(
+            self.module.instance_layout().memory_addr(0),
+            Some(addr) if u32::from(addr) == u32::from(memory)
+        )
+    }
+
     /// Returns the [`FuncType`] of the function that is currently translated.
     fn func_type(&self) -> FuncType {
         self.func_type_with(FuncType::clone)
@@ -2543,7 +2557,7 @@ impl FuncTranslator {
         let ptr = self.resolve_operand_as_index(ptr, memory)?;
         'opt: {
             // Try to encode an optimized load operator if possible, otherwise fallback.
-            if !memory.is_default() {
+            if !self.is_default_memory(memory) {
                 break 'opt;
             }
             let offset = match Offset16::new(offset) {
@@ -2688,7 +2702,7 @@ impl FuncTranslator {
     ) -> Result<Option<Op>, Error> {
         use Location as Loc;
         use ResolvedOperand as Opd;
-        if !memory.is_default() {
+        if !self.is_default_memory(memory) {
             return Ok(None);
         }
         let Some(offset) = Offset16::new(offset) else {

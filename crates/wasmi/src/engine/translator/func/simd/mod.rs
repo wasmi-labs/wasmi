@@ -318,7 +318,7 @@ impl FuncTranslator {
         };
         'opt: {
             // Case: optimized load operator if possible, otherwise fallback.
-            if !memory.is_default() {
+            if !self.is_default_memory(memory) {
                 break 'opt;
             }
             let offset = match Offset16::new(offset) {
@@ -449,7 +449,7 @@ impl FuncTranslator {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
         };
         let ptr = self.copy_immediate_to_slot(ptr)?;
-        if memory.is_default() {
+        if self.is_default_memory(memory) {
             if let Some(offset16) = Offset16::new(offset) {
                 self.push_instr(
                     match ptr {
@@ -486,7 +486,7 @@ impl FuncTranslator {
         memory: ir::MemoryAddr,
         value: Slot,
     ) -> Result<bool, Error> {
-        if !memory.is_default() {
+        if !self.is_default_memory(memory) {
             return Ok(false);
         }
         let Some(offset16) = Offset16::new(offset) else {
