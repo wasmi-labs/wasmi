@@ -37,11 +37,11 @@ mod tests;
 /// A module instance entity.
 #[derive(Debug)]
 pub struct InstanceEntity {
-    initialized: bool,
+    handles: Box<[AnyHandle]>,
     func_types: Arc<[DedupFuncType]>,
     exports: Map<Box<str>, Extern>,
     layout: InstanceLayout,
-    handles: Box<[AnyHandle]>,
+    initialized: bool,
 }
 
 impl InstanceEntity {
