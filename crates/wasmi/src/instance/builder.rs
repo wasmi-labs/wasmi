@@ -211,14 +211,14 @@ impl InstanceEntityBuilder {
 
     /// Finishes construction of [`InstanceLayout`].
     fn finish_layout(&self) -> Result<InstanceLayout, Error> {
-        let mut offsets = InstanceLayout::build();
-        offsets
+        let mut builder = InstanceLayout::build();
+        builder
             .globals(self.globals.len())?
             .memories(self.memories.len())?
             .tables(self.tables.len())?
             .datas(self.data_segments.len())?
             .elems(self.elem_segments.len())?
             .funcs(self.funcs.len())?;
-        offsets.finish().map_err(Into::into)
+        builder.finish().map_err(Into::into)
     }
 }
