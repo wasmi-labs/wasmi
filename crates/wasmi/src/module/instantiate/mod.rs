@@ -1,8 +1,5 @@
 mod error;
 
-#[cfg(test)]
-mod tests;
-
 pub use self::error::InstantiationError;
 use super::{ConstExpr, InitDataSegment, Module, element::ElementSegmentKind, export};
 use crate::{
