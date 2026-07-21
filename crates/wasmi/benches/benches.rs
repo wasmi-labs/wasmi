@@ -120,10 +120,9 @@ criterion_group! {
         bench_execute_regex_redux,
         bench_execute_count_via_locals,
         bench_execute_count_via_params,
+        bench_execute_count_via_globals,
         bench_execute_br_table,
         bench_execute_trunc_f2i,
-        bench_execute_global_bump,
-        bench_execute_global_const,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
         bench_execute_flat_calls,
@@ -1107,7 +1106,7 @@ fn bench_execute_regex_redux(c: &mut Criterion) {
 fn bench_execute_count_via_locals(c: &mut Criterion) {
     const ITERATIONS: i32 = 1_000_000;
     c.bench_function("execute/count/locals", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/counter.wat"));
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/counter-local.wat"));
         let run = instance
             .get_typed_func::<i32, i32>(&store, "count-via-locals")
             .unwrap();
@@ -1121,9 +1120,24 @@ fn bench_execute_count_via_locals(c: &mut Criterion) {
 fn bench_execute_count_via_params(c: &mut Criterion) {
     const ITERATIONS: i32 = 1_000_000;
     c.bench_function("execute/count/params", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/counter.wat"));
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/counter-param.wat"));
         let run = instance
             .get_typed_func::<i32, i32>(&store, "count-via-params")
+            .unwrap();
+        b.iter(|| {
+            let result = run.call(&mut store, ITERATIONS).unwrap();
+            assert_eq!(result, 0);
+        })
+    });
+}
+
+fn bench_execute_count_via_globals(c: &mut Criterion) {
+    const ITERATIONS: i32 = 500_000;
+    c.bench_function("execute/count/globals", |b| {
+        let (mut store, instance) =
+            load_instance_from_wat(include_bytes!("wat/counter-global.wat"));
+        let run = instance
+            .get_typed_func::<i32, i32>(&store, "count-via-globals")
             .unwrap();
         b.iter(|| {
             let result = run.call(&mut store, ITERATIONS).unwrap();
@@ -1280,30 +1294,6 @@ fn bench_overhead_call_untyped_16(c: &mut Criterion) {
             for _ in 0..REPETITIONS {
                 bare_call.call(&mut store, &params, results).unwrap();
             }
-        })
-    });
-}
-
-fn bench_execute_global_bump(c: &mut Criterion) {
-    const ITERATIONS: i32 = 100_000;
-    c.bench_function("execute/global/bump", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/global_bump.wat"));
-        let run = instance.get_typed_func::<i32, i32>(&store, "bump").unwrap();
-        b.iter(|| {
-            let result = run.call(&mut store, ITERATIONS).unwrap();
-            assert_eq!(result, ITERATIONS);
-        })
-    });
-}
-
-fn bench_execute_global_const(c: &mut Criterion) {
-    const ITERATIONS: i32 = 100_000;
-    c.bench_function("execute/global/get_const", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/global_const.wat"));
-        let run = instance.get_typed_func::<i32, i32>(&store, "call").unwrap();
-        b.iter(|| {
-            let result = run.call(&mut store, ITERATIONS).unwrap();
-            assert_eq!(result, ITERATIONS);
         })
     });
 }
