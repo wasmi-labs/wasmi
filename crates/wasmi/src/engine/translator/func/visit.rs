@@ -29,7 +29,7 @@ use crate::{
             },
         },
     },
-    ir::{self, Op, index},
+    ir::{Op, index},
     module::{
         self,
         MemoryIdx,
@@ -522,10 +522,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 return Ok(());
             }
         }
-        let Some(global_addr) = self.module.instance_layout().global_addr(global_index) else {
-            panic!("missing instance address for global at: {global_index}")
-        };
-        let global_addr = ir::index::Global::from(u32::from(global_addr));
+        let global_addr = self.global_addr(global_index);
         #[cfg(feature = "simd")]
         if matches!(content, ValType::V128) {
             self.push_op_with_result_slot(
@@ -553,10 +550,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let (global_type, _init_value) = self
             .module
             .get_global(module::GlobalIdx::from(global_index));
-        let Some(global_addr) = self.module.instance_layout().global_addr(global_index) else {
-            panic!("missing instance address for global at: {global_index}")
-        };
-        let global_addr = ir::index::Global::from(u32::from(global_addr));
+        let global_addr = self.global_addr(global_index);
         let ty = global_type.content();
         let input = self.stack.pop();
         let op = match self.resolve_operand::<RawVal>(input)? {
