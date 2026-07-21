@@ -6,19 +6,19 @@ use core::fmt::{self, Write};
 macro_rules! for_each_index {
     ($mac:ident) => {
         $mac! {
-            /// A Wasm function index.
+            /// A Wasmi function instance address.
             Func(pub(crate) u32);
             /// A Wasm function type index.
             FuncType(pub(crate) u32);
-            /// A Wasm global variable index.
+            /// A Wasmi global variable instance address.
             Global(pub(crate) u32);
-            /// A Wasm linear memory index.
+            /// A Wasmi linear memory instance address.
             Memory(pub(crate) u16);
-            /// A Wasm table index.
+            /// A Wasmi table instance address.
             Table(pub(crate) u32);
-            /// A Wasm data segment index.
+            /// A Wasmi data segment instance address.
             Data(pub(crate) u32);
-            /// A Wasm element segment index.
+            /// A Wasmi element segment instance address.
             Elem(pub(crate) u32);
         }
     };
