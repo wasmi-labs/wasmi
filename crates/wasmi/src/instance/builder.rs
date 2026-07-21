@@ -29,6 +29,7 @@ pub struct InstanceEntityBuilder {
     exports: Map<Box<str>, Extern>,
     data_segments: Vec<DataSegment>,
     elem_segments: Vec<ElementSegment>,
+    layout: InstanceLayout,
 }
 
 impl InstanceEntityBuilder {
@@ -59,6 +60,7 @@ impl InstanceEntityBuilder {
                 }
             }
         }
+        let layout = *module.instance_layout();
         Self {
             func_types: module.func_types_cloned(),
             tables: vec_with_capacity_exact(len_tables),
@@ -69,6 +71,7 @@ impl InstanceEntityBuilder {
             exports: Map::default(),
             data_segments: Vec::new(),
             elem_segments: Vec::new(),
+            layout,
         }
     }
 
@@ -186,13 +189,12 @@ impl InstanceEntityBuilder {
 
     /// Finishes constructing the [`InstanceEntity`].
     pub fn finish(self) -> Result<InstanceEntity, Error> {
-        let layout = self.finish_layout()?;
         let handles = self.finish_handles();
         Ok(InstanceEntity {
             initialized: true,
             func_types: self.func_types,
             exports: self.exports,
-            layout,
+            layout: self.layout,
             handles,
         })
     }
@@ -207,18 +209,5 @@ impl InstanceEntityBuilder {
         handles.extend(self.data_segments.iter().cloned().map(AnyHandle::from));
         handles.extend(self.elem_segments.iter().cloned().map(AnyHandle::from));
         handles.into()
-    }
-
-    /// Finishes construction of [`InstanceLayout`].
-    fn finish_layout(&self) -> Result<InstanceLayout, Error> {
-        let mut builder = InstanceLayout::build();
-        builder
-            .globals(self.globals.len())?
-            .memories(self.memories.len())?
-            .tables(self.tables.len())?
-            .datas(self.data_segments.len())?
-            .elems(self.elem_segments.len())?
-            .funcs(self.funcs.len())?;
-        builder.finish().map_err(Into::into)
     }
 }

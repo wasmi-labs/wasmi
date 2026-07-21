@@ -324,6 +324,11 @@ impl Module {
         self.module_header().globals.len()
     }
 
+    /// Returns the [`InstanceLayout`] shared by all instances of this [`Module`].
+    pub(crate) fn instance_layout(&self) -> &InstanceLayout {
+        &self.module_header().layout
+    }
+
     /// Returns a slice to the function types of the [`Module`].
     ///
     /// # Note
