@@ -56,7 +56,8 @@ impl ModuleParser {
     unsafe fn parse_buffered_impl(mut self, mut buffer: &[u8]) -> Result<Module, Error> {
         let mut builder = ModuleBuilder::new(&self.engine);
         self.parse_module(&mut buffer, &mut builder)?;
-        Ok(builder.finish())
+        let module = builder.finish()?;
+        Ok(module)
     }
 
     /// Fetch next Wasm module payload and adust the `buffer`.
@@ -113,7 +114,9 @@ impl ModuleParser {
                 Payload::ExportSection(section) => self.process_exports(section, module),
                 Payload::StartSection { func, range } => self.process_start(func, range, module),
                 Payload::ElementSection(section) => self.process_element(section, module),
-                Payload::DataCountSection { count, range } => self.process_data_count(count, range),
+                Payload::DataCountSection { count, range } => {
+                    self.process_data_count(count, range, module)
+                }
                 Payload::CodeSectionStart { count, range, size } => {
                     self.process_code_start(count, range, size)
                 }

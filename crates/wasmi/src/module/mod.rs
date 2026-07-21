@@ -44,6 +44,7 @@ use crate::{
     TableType,
     collections::Map,
     engine::{DedupFuncType, EngineFunc, EngineFuncSpan, EngineFuncSpanIter, EngineWeak},
+    instance::InstanceLayout,
 };
 use alloc::{boxed::Box, sync::Arc};
 use core::{iter, slice::Iter as SliceIter};
@@ -85,12 +86,18 @@ struct ModuleHeaderInner {
     start: Option<FuncIdx>,
     engine_funcs: EngineFuncSpan,
     element_segments: Box<[ElementSegment]>,
+    layout: InstanceLayout,
 }
 
 impl ModuleHeader {
     /// Returns the [`Engine`] of the [`ModuleHeader`].
     pub fn engine(&self) -> &EngineWeak {
         &self.inner.engine
+    }
+
+    /// Returns the [`InstanceLayout`] shared by all instances of this [`ModuleHeader`].
+    pub fn instance_layout(&self) -> &InstanceLayout {
+        &self.inner.layout
     }
 
     /// Returns the [`FuncType`] at the given index.

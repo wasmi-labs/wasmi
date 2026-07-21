@@ -1,6 +1,9 @@
 pub(crate) use self::builder::InstanceEntityBuilder;
-pub use self::exports::{Export, ExportsIter, Extern, ExternType};
-use self::{handle::AnyHandle, layout::InstanceLayout};
+use self::handle::AnyHandle;
+pub use self::{
+    exports::{Export, ExportsIter, Extern, ExternType},
+    layout::InstanceLayout,
+};
 use crate::{
     AsContext,
     AsContextMut,
