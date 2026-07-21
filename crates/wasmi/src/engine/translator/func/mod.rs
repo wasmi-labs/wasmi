@@ -355,7 +355,6 @@ impl FuncTranslator {
             panic!("missing address for linear memory at: {index}")
         };
         let Ok(addr16) = u16::try_from(u32::from(addr)) else {
-            // panic!("linear memory index out of bounds: {index}")
             return Err(Error::from(LimitsError::TooManyMemories));
         };
         Ok(index::Memory::from(addr16))
