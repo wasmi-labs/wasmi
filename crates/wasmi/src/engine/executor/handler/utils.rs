@@ -551,6 +551,21 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     }
 }
 
+/// Returns `true` if `memory` addresses the default linear memory (Wasm index 0).
+///
+/// # Note
+///
+/// `memory` is an instance address, not the raw Wasm memory index,
+/// so the default memory's address is not guaranteed to be zero.
+#[inline]
+pub fn is_default_memory(instance: Inst, memory: index::Memory) -> bool {
+    let instance = unsafe { instance.as_ref() };
+    matches!(
+        instance.layout().memory_addr(0),
+        Some(addr) if u32::from(addr) == u32::from(memory)
+    )
+}
+
 pub fn extract_mem0(store: &mut PrunedStore, instance: Inst) -> (Mem0Ptr, Mem0Len) {
     let instance = unsafe { instance.as_ref() };
     let Some(memory) = instance

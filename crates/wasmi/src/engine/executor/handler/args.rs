@@ -167,7 +167,7 @@ impl Args {
         state: &'a mut VmState,
         memory: index::Memory,
     ) -> &'a mut [u8] {
-        if memory.is_default() {
+        if utils::is_default_memory(self.instance, memory) {
             return self.fetch_default_memory_bytes();
         }
         let memory = utils::fetch_memory(self.instance, memory);
