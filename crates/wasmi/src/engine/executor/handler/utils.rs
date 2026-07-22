@@ -649,7 +649,7 @@ impl_resolve_from_store! {
     // fn resolve_global(global: &Global) -> &'a CoreGlobal = StoreInner::try_resolve_global;
     fn resolve_memory(memory: &Memory) -> &'a CoreMemory = StoreInner::try_resolve_memory;
     fn resolve_table(table: &Table) -> &'a CoreTable = StoreInner::try_resolve_table;
-    fn resolve_instance(func: &Instance) -> &'a InstanceEntity = StoreInner::try_resolve_instance;
+    fn resolve_instance_mut(instance: &Instance) -> &'a mut InstanceEntity = StoreInner::try_resolve_instance_mut;
     // fn resolve_func_type(func_type: DedupFuncType) -> DedupFuncType = StoreInner::resolve_func_type;
 
     fn resolve_elem_mut(elem: &ElementSegment) -> &'a mut CoreElementSegment = StoreInner::try_resolve_element_mut;
@@ -874,7 +874,7 @@ pub fn call_wasm_or_host(
         FuncEntity::Wasm(wasm_func) => {
             let func = wasm_func.func_body();
             let callee_instance = *wasm_func.instance();
-            let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
+            let callee_instance: Inst = resolve_instance_mut(state.store, &callee_instance).into();
             let (callee_ip, callee_sp) =
                 call_wasm(state, caller_ip, params, func, Some(callee_instance))?;
             let (instance, mem0, mem0_len) =
@@ -916,7 +916,7 @@ pub fn return_call_wasm_or_host(
         FuncEntity::Wasm(wasm_func) => {
             let wasm_func_body = wasm_func.func_body();
             let callee_instance = *wasm_func.instance();
-            let callee_instance: Inst = resolve_instance(state.store, &callee_instance).into();
+            let callee_instance: Inst = resolve_instance_mut(state.store, &callee_instance).into();
             let changed_instance = match callee_instance != instance {
                 true => Some(callee_instance),
                 false => None,

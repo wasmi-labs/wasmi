@@ -163,10 +163,10 @@ pub struct Inst {
     marker: PhantomData<*const InstanceEntity>,
 }
 
-impl From<&'_ InstanceEntity> for Inst {
-    fn from(entity: &'_ InstanceEntity) -> Self {
+impl From<&'_ mut InstanceEntity> for Inst {
+    fn from(entity: &'_ mut InstanceEntity) -> Self {
         let value =
-            f64::from_ne_bytes(((entity as *const InstanceEntity as usize) as u64).to_ne_bytes());
+            f64::from_ne_bytes(((entity as *mut InstanceEntity as usize) as u64).to_ne_bytes());
         Self {
             value,
             marker: PhantomData,

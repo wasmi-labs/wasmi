@@ -11,7 +11,7 @@ use crate::{
         executor::handler::{
             dispatch::{ExecutionOutcome, execute_until_done},
             state::{Freg32, Freg64, Inst, Ip, Ireg, Sp, Stack, VmState},
-            utils::{self, resolve_instance},
+            utils::{self, resolve_instance_mut},
         },
     },
     func::HostFuncEntity,
@@ -173,7 +173,7 @@ pub fn init_wasm_func_call<'a, T>(
     //       an easy and efficient way to get the number of parameter cells at this point
     //       so we simply default to 0.
     let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), 0);
-    let instance = resolve_instance(store.prune(), &instance).into();
+    let instance = resolve_instance_mut(store.prune(), &instance).into();
     let callee_sp = stack.push_frame(
         None,
         callee_ip,
