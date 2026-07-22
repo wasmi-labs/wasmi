@@ -13,7 +13,7 @@ pub use self::{
     component_vec::ComponentVec,
     dedup::DedupArena,
     error::ArenaError,
-    stable_vec::{Iter as StableArenaIter, StableVec},
+    stable_vec::{Iter as StableVecIter, IterMut as StableVecIterMut, StableVec},
 };
 use alloc::vec::Vec;
 use core::{
