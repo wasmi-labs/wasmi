@@ -128,10 +128,7 @@ impl<T> StableVec<T> {
     /// - If `indices[0]` and `indices[1]` refer to the same item, a.k.a. aliasing each other.
     /// - If `indices[0]` or `indices[1]` is out of bounds for the arena.
     #[inline]
-    pub fn get_disjoint_mut(
-        &mut self,
-        indices: [usize; 2],
-    ) -> Result<(&mut T, &mut T), ArenaError> {
+    pub fn get_disjoint_mut(&mut self, indices: [usize; 2]) -> Result<[&mut T; 2], ArenaError> {
         let [a, b] = indices;
         if a == b {
             return Err(ArenaError::AliasingPairAccess);
@@ -146,7 +143,7 @@ impl<T> StableVec<T> {
         unsafe {
             let pa = self.buckets[ba].unwrap_unchecked().as_ptr().add(sa);
             let pb = self.buckets[bb].unwrap_unchecked().as_ptr().add(sb);
-            Ok((&mut *pa, &mut *pb))
+            Ok([&mut *pa, &mut *pb])
         }
     }
 
@@ -562,7 +559,7 @@ mod tests {
     #[test]
     fn get_pair_mut_disjoint() {
         let mut vector: StableVec<usize> = (0..100).collect();
-        let (a, b) = vector.get_disjoint_mut([10, 90]).unwrap();
+        let [a, b] = vector.get_disjoint_mut([10, 90]).unwrap();
         *a = 111;
         *b = 999;
         assert_eq!(vector.get(10), Some(&111));
