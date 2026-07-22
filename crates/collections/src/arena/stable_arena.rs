@@ -1,6 +1,8 @@
 use alloc::boxed::Box;
 use core::{
+    cmp::Ordering,
     fmt,
+    hash::{Hash, Hasher},
     iter::FusedIterator,
     marker::PhantomData,
     mem::MaybeUninit,
@@ -186,6 +188,71 @@ impl<T: fmt::Debug> fmt::Debug for StableArena<T> {
     }
 }
 
+impl<T: Clone> Clone for StableArena<T> {
+    fn clone(&self) -> Self {
+        self.iter().cloned().collect()
+    }
+}
+
+impl<T: PartialEq> PartialEq for StableArena<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.len == other.len && self.iter().eq(other.iter())
+    }
+}
+
+impl<T: Eq> Eq for StableArena<T> {}
+
+impl<T: PartialOrd> PartialOrd for StableArena<T> {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.iter().partial_cmp(other.iter())
+    }
+}
+
+impl<T: Ord> Ord for StableArena<T> {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.iter().cmp(other.iter())
+    }
+}
+
+impl<T: Hash> Hash for StableArena<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Mirrors the `[T]`/`Vec<T>` hash: length prefix followed by the items.
+        self.len.hash(state);
+        for item in self {
+            item.hash(state);
+        }
+    }
+}
+
+impl<T> FromIterator<T> for StableArena<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut arena = Self::new();
+        arena.extend(iter);
+        arena
+    }
+}
+
+impl<T> Extend<T> for StableArena<T> {
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        for item in iter {
+            self.push(item);
+        }
+    }
+}
+
+impl<'a, T> IntoIterator for &'a StableArena<T> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
 /// An iterator over the items of a [`StableArena`] in insertion order.
 pub struct Iter<'a, T> {
     /// The iterated [`StableArena`].
@@ -332,6 +399,50 @@ mod tests {
         let reversed: Vec<usize> = arena.iter().rev().copied().collect();
         assert_eq!(front, (0..100).collect::<Vec<_>>());
         assert_eq!(reversed, (0..100).rev().collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn from_iter_extend_and_ref_into_iter() {
+        let mut arena: StableArena<usize> = (0..50).collect();
+        arena.extend(50..100);
+        // `&StableArena` iterates like `iter`.
+        let collected: Vec<usize> = (&arena).into_iter().copied().collect();
+        assert_eq!(collected, (0..100).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn clone_and_eq() {
+        let a: StableArena<usize> = (0..100).collect();
+        let b = a.clone();
+        assert_eq!(a, b);
+        let mut c = a.clone();
+        c.push(100);
+        assert_ne!(a, c);
+        let d: StableArena<usize> = (0..99).collect();
+        assert_ne!(a, d);
+    }
+
+    #[test]
+    fn ord_is_lexicographic() {
+        let a: StableArena<i32> = [1, 2, 3].into_iter().collect();
+        let b: StableArena<i32> = [1, 2, 4].into_iter().collect();
+        let c: StableArena<i32> = [1, 2].into_iter().collect();
+        assert!(a < b);
+        assert!(c < a); // prefix is less
+        assert_eq!(a.cmp(&a.clone()), Ordering::Equal);
+    }
+
+    #[test]
+    fn hash_matches_for_equal_arenas() {
+        use std::hash::{DefaultHasher, Hash, Hasher};
+        fn hash_of(arena: &StableArena<usize>) -> u64 {
+            let mut hasher = DefaultHasher::new();
+            arena.hash(&mut hasher);
+            hasher.finish()
+        }
+        let a: StableArena<usize> = (0..100).collect();
+        let b = a.clone();
+        assert_eq!(hash_of(&a), hash_of(&b));
     }
 
     #[test]
