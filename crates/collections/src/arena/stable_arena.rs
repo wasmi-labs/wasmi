@@ -358,7 +358,7 @@ mod tests {
     #[test]
     fn alloc_and_get() {
         let mut arena = Arena::new();
-        let keys: Vec<usize> = (0..100).map(|i| arena.alloc(i as i32).unwrap()).collect();
+        let keys: Vec<usize> = (0..100).map(|i| arena.alloc(i).unwrap()).collect();
         assert_eq!(keys, (0..100).collect::<Vec<_>>());
         assert_eq!(arena.len(), 100);
         for key in 0..100 {
