@@ -11,7 +11,7 @@ use crate::{
     InstanceEntity,
     Memory,
     Table,
-    collections::arena::{Arena, ArenaKey, StableArena},
+    collections::arena::{Arena, ArenaError, ArenaKey, StableArena},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
     engine::DedupFuncType,
     memory::DataSegment,
@@ -33,6 +33,46 @@ type StoreArena<T> = Arena<RawHandle<T>, <T as Handle>::Entity>;
 
 /// An arena for the [`Store`] with stable addresses.
 type StableStoreArena<T> = StableArena<RawHandle<T>, <T as Handle>::Entity>;
+
+/// Trait to abstract over [`Arena`] and [`StableArena`] for shared resolution of keys.
+trait Resolve<T: Handle> {
+    /// Returns a shared reference to the entity at `key` if any.
+    fn get(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError>;
+}
+
+impl<T: Handle> Resolve<T> for StoreArena<T> {
+    #[inline]
+    fn get(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError> {
+        self.get(key)
+    }
+}
+
+impl<T: Handle> Resolve<T> for StableStoreArena<T> {
+    #[inline]
+    fn get(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError> {
+        self.get(key)
+    }
+}
+
+/// Trait to abstract over [`Arena`] and [`StableArena`] for mutable resolution of keys.
+trait ResolveMut<T: Handle> {
+    /// Returns an exclusive reference to the entity at `key` if any.
+    fn get_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError>;
+}
+
+impl<T: Handle> ResolveMut<T> for StoreArena<T> {
+    #[inline]
+    fn get_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError> {
+        self.get_mut(key)
+    }
+}
+
+impl<T: Handle> ResolveMut<T> for StableStoreArena<T> {
+    #[inline]
+    fn get_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError> {
+        self.get_mut(key)
+    }
+}
 
 /// The inner store that owns all data not associated to the host state.
 #[derive(Debug)]
@@ -274,28 +314,30 @@ impl StoreInner {
         *uninit = init;
     }
 
-    /// Returns a shared reference to the entity indexed by the given `idx`.
+    /// Returns a shared reference to the entity at `key`.
     ///
     /// # Errors
     ///
     /// - If the indexed entity does not originate from this [`StoreInner`].
     /// - If the entity index cannot be resolved to its entity.
-    fn resolve<'a, Idx, Entity>(
+    fn resolve<'a, T, Arena>(
         &self,
-        idx: &Stored<Idx>,
-        entities: &'a StableArena<Idx, Entity>,
-    ) -> Result<&'a Entity, InternalStoreError>
+        key: &Stored<RawHandle<T>>,
+        entities: &'a Arena,
+    ) -> Result<&'a <T as Handle>::Entity, InternalStoreError>
     where
-        Idx: ArenaKey + Debug,
+        T: Handle,
+        RawHandle<T>: ArenaKey + Debug,
+        Arena: Resolve<T>,
     {
-        let idx = self.unwrap_stored(idx)?;
+        let idx = self.unwrap_stored(key)?;
         match entities.get(*idx) {
             Ok(entity) => Ok(entity),
             Err(_err) => Err(InternalStoreError::not_found()),
         }
     }
 
-    /// Returns an exclusive reference to the entity indexed by the given `idx`.
+    /// Returns an exclusive reference to the entity at `key`.
     ///
     /// # Note
     ///
@@ -305,12 +347,14 @@ impl StoreInner {
     /// # Errors
     ///
     /// If the entity index cannot be resolved to its entity.
-    fn resolve_mut<Idx, Entity>(
-        idx: Idx,
-        entities: &mut StableArena<Idx, Entity>,
-    ) -> Result<&mut Entity, InternalStoreError>
+    fn resolve_mut<T, Arena>(
+        idx: RawHandle<T>,
+        entities: &mut Arena,
+    ) -> Result<&mut <T as Handle>::Entity, InternalStoreError>
     where
-        Idx: ArenaKey + Debug,
+        T: Handle,
+        RawHandle<T>: ArenaKey + Debug,
+        Arena: ResolveMut<T>,
     {
         match entities.get_mut(idx) {
             Ok(entity) => Ok(entity),
