@@ -344,7 +344,7 @@ where
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(key, entity)| {
+        self.iter.next_back().map(|(key, entity)| {
             let Some(key) = Key::from_usize(key) else {
                 unreachable!("arena can only contain valid keys")
             };
@@ -398,7 +398,7 @@ where
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(key, entity)| {
+        self.iter.next_back().map(|(key, entity)| {
             let Some(key) = Key::from_usize(key) else {
                 unreachable!("arena can only contain valid keys")
             };
