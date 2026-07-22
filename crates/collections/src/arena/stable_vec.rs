@@ -156,6 +156,17 @@ impl<T> StableVec<T> {
         }
     }
 
+    /// Returns an iterator over exclusive references to the items in insertion order.
+    #[inline]
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        let back = self.len;
+        IterMut {
+            vector: self,
+            front: 0,
+            back,
+        }
+    }
+
     /// Allocates an uninitialized bucket for `size` items and returns a thin pointer to it.
     #[inline]
     fn alloc_bucket(size: usize) -> NonNull<T> {
@@ -279,7 +290,18 @@ impl<'a, T> IntoIterator for &'a StableVec<T> {
     }
 }
 
+impl<'a, T> IntoIterator for &'a mut StableVec<T> {
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
+}
+
 /// An iterator over the items of a [`StableVec`] in insertion order.
+#[derive(Debug)]
 pub struct Iter<'a, T> {
     /// The iterated [`StableVec`].
     vector: &'a StableVec<T>,
@@ -322,6 +344,57 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
 
 impl<'a, T> ExactSizeIterator for Iter<'a, T> {}
 impl<'a, T> FusedIterator for Iter<'a, T> {}
+
+/// An iterator over exclusive references to the items of a [`StableVec`] in insertion order.
+#[derive(Debug)]
+pub struct IterMut<'a, T> {
+    /// The iterated [`StableVec`].
+    vector: &'a mut StableVec<T>,
+    /// The next index yielded from the front.
+    front: usize,
+    /// One past the next index yielded from the back.
+    back: usize,
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.front >= self.back {
+            return None;
+        }
+        let index = self.front;
+        self.front += 1;
+        // Safety: `index < back <= len`, so the slot is initialized. Reborrowing through a raw
+        //         pointer detaches the returned reference from `self`; distinct calls yield
+        //         distinct indices, so the handed-out references never alias.
+        let item: *mut T = unsafe { self.vector.get_mut(index).unwrap_unchecked() };
+        Some(unsafe { &mut *item })
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.back - self.front;
+        (len, Some(len))
+    }
+}
+
+impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.front >= self.back {
+            return None;
+        }
+        self.back -= 1;
+        // Safety: see `Iterator::next`.
+        let item: *mut T = unsafe { self.vector.get_mut(self.back).unwrap_unchecked() };
+        Some(unsafe { &mut *item })
+    }
+}
+
+impl<'a, T> ExactSizeIterator for IterMut<'a, T> {}
+impl<'a, T> FusedIterator for IterMut<'a, T> {}
 
 #[cfg(test)]
 mod tests {
@@ -469,6 +542,17 @@ mod tests {
         let a: StableVec<usize> = (0..100).collect();
         let b = a.clone();
         assert_eq!(hash_of(&a), hash_of(&b));
+    }
+
+    #[test]
+    fn iter_mut_updates_in_place() {
+        let mut vector: StableVec<usize> = (0..100).collect();
+        for item in &mut vector {
+            *item *= 2;
+        }
+        // `IterMut` is also double-ended.
+        let reversed: Vec<usize> = vector.iter_mut().rev().map(|item| *item).collect();
+        assert_eq!(reversed, (0..100).rev().map(|i| i * 2).collect::<Vec<_>>());
     }
 
     #[test]
