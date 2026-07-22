@@ -11,7 +11,7 @@ use crate::{
     InstanceEntity,
     Memory,
     Table,
-    collections::arena::{Arena, ArenaKey},
+    collections::arena::{Arena, ArenaKey, StableArena},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
     engine::DedupFuncType,
     memory::DataSegment,
@@ -28,7 +28,11 @@ use crate::{
 };
 use core::fmt::Debug;
 
+/// An arena for the [`Store`].
 type StoreArena<T> = Arena<RawHandle<T>, <T as Handle>::Entity>;
+
+/// An arena for the [`Store`] with stable addresses.
+type StableStoreArena<T> = StableArena<RawHandle<T>, <T as Handle>::Entity>;
 
 /// The inner store that owns all data not associated to the host state.
 #[derive(Debug)]
@@ -38,19 +42,19 @@ pub struct StoreInner {
     /// Used to protect against invalid entity indices.
     id: StoreId,
     /// Stored Wasm or host functions.
-    funcs: StoreArena<Func>,
+    funcs: StableStoreArena<Func>,
     /// Stored linear memories.
-    memories: StoreArena<Memory>,
+    memories: StableStoreArena<Memory>,
     /// Stored tables.
-    tables: StoreArena<Table>,
+    tables: StableStoreArena<Table>,
     /// Stored global variables.
-    globals: StoreArena<Global>,
+    globals: StableStoreArena<Global>,
     /// Stored module instances.
     instances: StoreArena<Instance>,
     /// Stored data segments.
-    datas: StoreArena<DataSegment>,
+    datas: StableStoreArena<DataSegment>,
     /// Stored data segments.
-    elems: StoreArena<ElementSegment>,
+    elems: StableStoreArena<ElementSegment>,
     /// Stored external objects for [`ExternRef`] types.
     ///
     /// [`ExternRef`]: [`crate::ExternRef`]
@@ -73,13 +77,13 @@ impl StoreInner {
         StoreInner {
             engine: engine.clone(),
             id: StoreId::new(),
-            funcs: Arena::new(),
-            memories: Arena::new(),
-            tables: Arena::new(),
-            globals: Arena::new(),
+            funcs: StableArena::new(),
+            memories: StableArena::new(),
+            tables: StableArena::new(),
+            globals: StableArena::new(),
             instances: Arena::new(),
-            datas: Arena::new(),
-            elems: Arena::new(),
+            datas: StableArena::new(),
+            elems: StableArena::new(),
             extern_objects: Arena::new(),
             fuel,
         }
@@ -279,7 +283,7 @@ impl StoreInner {
     fn resolve<'a, Idx, Entity>(
         &self,
         idx: &Stored<Idx>,
-        entities: &'a Arena<Idx, Entity>,
+        entities: &'a StableArena<Idx, Entity>,
     ) -> Result<&'a Entity, InternalStoreError>
     where
         Idx: ArenaKey + Debug,
@@ -303,7 +307,7 @@ impl StoreInner {
     /// If the entity index cannot be resolved to its entity.
     fn resolve_mut<Idx, Entity>(
         idx: Idx,
-        entities: &mut Arena<Idx, Entity>,
+        entities: &mut StableArena<Idx, Entity>,
     ) -> Result<&mut Entity, InternalStoreError>
     where
         Idx: ArenaKey + Debug,
