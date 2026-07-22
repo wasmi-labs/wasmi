@@ -15,7 +15,7 @@ use core::{
     marker::PhantomData,
     num::NonZero,
     ops::{Index, IndexMut, Range},
-    slice,
+    slice::{self, GetDisjointMutError},
 };
 
 /// Types that can be used as indices for arenas.
@@ -247,26 +247,19 @@ where
     ///
     /// # Errors
     ///
-    /// - If `fst` and `snd` refer to the same item, a.k.a. aliasing each other.
-    /// - If `fst` or `snd` is out of bounds for the arena.
+    /// - If `keys[0]` and `keys[1]` refer to the same item, a.k.a. aliasing each other.
+    /// - If `keys[0]` or `keys[1]` is out of bounds for the arena.
     #[inline]
-    pub fn get_pair_mut(&mut self, fst: Key, snd: Key) -> Result<(&mut T, &mut T), ArenaError> {
-        let fst_key = fst.into_usize();
-        let snd_key = snd.into_usize();
-        if fst_key == snd_key {
-            return Err(ArenaError::AliasingPairAccess);
+    pub fn get_disjoint_mut(&mut self, keys: [Key; 2]) -> Result<[&mut T; 2], ArenaError> {
+        let [a, b] = keys;
+        match self
+            .items
+            .get_disjoint_mut([a.into_usize(), b.into_usize()])
+        {
+            Ok(items) => Ok(items),
+            Err(GetDisjointMutError::IndexOutOfBounds) => Err(ArenaError::KeyOutOfBounds),
+            Err(GetDisjointMutError::OverlappingIndices) => Err(ArenaError::AliasingPairAccess),
         }
-        if fst_key > snd_key {
-            let (fst, snd) = self.get_pair_mut(snd, fst)?;
-            return Ok((snd, fst));
-        }
-        debug_assert!(fst_key < snd_key);
-        let Some((fst_set, snd_set)) = self.items.split_at_mut_checked(snd_key) else {
-            return Err(ArenaError::KeyOutOfBounds);
-        };
-        let fst = &mut fst_set[fst_key];
-        let snd = &mut snd_set[0];
-        Ok((fst, snd))
     }
 }
 
@@ -344,7 +337,7 @@ where
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(key, entity)| {
+        self.iter.next_back().map(|(key, entity)| {
             let Some(key) = Key::from_usize(key) else {
                 unreachable!("arena can only contain valid keys")
             };
@@ -398,7 +391,7 @@ where
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(key, entity)| {
+        self.iter.next_back().map(|(key, entity)| {
             let Some(key) = Key::from_usize(key) else {
                 unreachable!("arena can only contain valid keys")
             };
