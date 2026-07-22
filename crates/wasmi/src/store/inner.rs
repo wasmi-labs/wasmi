@@ -28,10 +28,10 @@ use crate::{
 };
 use core::fmt::Debug;
 
-/// An arena for the [`Store`].
+/// An arena for the [`StoreInner`].
 type StoreArena<T> = Arena<RawHandle<T>, <T as Handle>::Entity>;
 
-/// An arena for the [`Store`] with stable addresses.
+/// An arena for the [`StoreInner`] with stable addresses.
 type StableStoreArena<T> = StableArena<RawHandle<T>, <T as Handle>::Entity>;
 
 /// Trait to abstract over [`Arena`] and [`StableArena`] for shared resolution of keys.
