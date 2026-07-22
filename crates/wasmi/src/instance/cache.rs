@@ -48,7 +48,7 @@ impl HandleAndCache {
 macro_rules! impl_handle_and_cache {
     (
         $(
-            pub unsafe fn $name:ident<'a>(&mut self, store: &'a mut StoreInner) -> Option<&'a mut $ty:ty> = {
+            pub unsafe fn $name:ident<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut $ty:ty = {
                 resolve: $resolve:expr,
                 cast: $cast:expr,
                 load: $load:ident,
@@ -63,11 +63,10 @@ macro_rules! impl_handle_and_cache {
             #[doc = "It is the caller's responsibility to use this only if the"]
             #[doc = concat!("[`HandleAndCache`] is associated to a [`", stringify!($ty), "`].")]
             #[inline]
-            pub unsafe fn $name<'a>(&mut self, store: &'a mut StoreInner) -> Option<&'a mut $ty> {
+            pub unsafe fn $name<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut $ty {
                 if let Some(cache) = &mut self.cache {
                     // Case: cache already exists and can be re-used.
-                    let entity = unsafe { cache.cast::<$ty>().as_mut() };
-                    return Some(entity)
+                    return unsafe { cache.cast::<$ty>().as_mut() }
                 }
                 // Case: cache is vacant and the entity needs to be loaded from the `store`.
                 unsafe { Self::$load(self, store) }
@@ -80,48 +79,48 @@ macro_rules! impl_handle_and_cache {
             #[doc = "It is the caller's responsibility to use this only if the"]
             #[doc = concat!("[`HandleAndCache`] is associated to a [`", stringify!($ty), "`].")]
             #[cold]
-            unsafe fn $load<'a>(&mut self, store: &'a mut StoreInner) -> Option<&'a mut $ty> {
+            unsafe fn $load<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut $ty {
                 let handle = unsafe { $cast(self.handle) };
                 let entity = $resolve(store, &handle);
                 self.cache = Some(NonNull::from(&mut *entity).cast::<AnyEntity>());
-                Some(entity)
+                entity
             }
         )*
     };
 }
 impl HandleAndCache {
     impl_handle_and_cache! {
-        pub unsafe fn get_memory<'a>(&mut self, store: &'a mut StoreInner) -> Option<&'a mut MemoryEntity> = {
+        pub unsafe fn get_memory<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut MemoryEntity = {
             resolve: StoreInner::resolve_memory_mut,
             cast: AnyHandle::cast_memory,
             load: load_memory,
         }
 
-        pub unsafe fn get_global<'a>(&mut self, store: &'a mut StoreInner) -> Option<&'a mut GlobalEntity> = {
+        pub unsafe fn get_global<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut GlobalEntity = {
             resolve: StoreInner::resolve_global_mut,
             cast: AnyHandle::cast_global,
             load: load_global,
         }
 
-        pub unsafe fn get_table<'a>(&mut self, store: &'a mut StoreInner) -> Option<&'a mut TableEntity> = {
+        pub unsafe fn get_table<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut TableEntity = {
             resolve: StoreInner::resolve_table_mut,
             cast: AnyHandle::cast_table,
             load: load_table,
         }
 
-        pub unsafe fn get_func<'a>(&mut self, store: &'a mut StoreInner) -> Option<&'a mut FuncEntity> = {
+        pub unsafe fn get_func<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut FuncEntity = {
             resolve: StoreInner::resolve_func_mut,
             cast: AnyHandle::cast_func,
             load: load_func,
         }
 
-        pub unsafe fn get_elem<'a>(&mut self, store: &'a mut StoreInner) -> Option<&'a mut ElementSegmentEntity> = {
+        pub unsafe fn get_elem<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut ElementSegmentEntity = {
             resolve: StoreInner::resolve_element_mut,
             cast: AnyHandle::cast_elem,
             load: load_elem,
         }
 
-        pub unsafe fn get_data<'a>(&mut self, store: &'a mut StoreInner) -> Option<&'a mut DataSegmentEntity> = {
+        pub unsafe fn get_data<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut DataSegmentEntity = {
             resolve: StoreInner::resolve_data_mut,
             cast: AnyHandle::cast_data,
             load: load_data,
