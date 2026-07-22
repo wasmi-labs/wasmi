@@ -10,7 +10,8 @@
 //! - [`ComponentVec`]: useful to add properties to entities stored in an [`Arena`] or [`DedupArena`]
 //! - [`Map`]: generic set of values, based on either [`HashMap`] or [`BTreeMap`]
 //! - [`Set`]: generic key-value mapping, based on either [`HashSet`] or [`BTreeSet`]
-//! - [`StableArena`]: append-only arena that hands out index handles with stable element addresses
+//! - [`StableVec`]: append-only `Vec`-like structure with stable element addresses
+//! - [`StableArena`]: append-only [`Arena`] variant backed by a [`StableVec`] with stable element addresses
 //! - [`StringInterner`]: stores and deduplicates strings efficiently, based on either [`HashSet`] or [`BTreeSet`]
 //!
 //! [`HashSet`]: https://docs.rs/hashbrown/0.15.0/hashbrown/struct.HashSet.html
@@ -49,7 +50,7 @@ mod tests;
 
 #[doc(inline)]
 pub use self::{
-    arena::{Arena, ComponentVec, DedupArena, StableVec},
+    arena::{Arena, ComponentVec, DedupArena, StableArena, StableVec},
     head_vec::HeadVec,
     map::Map,
     set::Set,

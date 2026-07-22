@@ -7,12 +7,14 @@
 mod component_vec;
 mod dedup;
 mod error;
+mod stable_arena;
 mod stable_vec;
 
 pub use self::{
     component_vec::ComponentVec,
     dedup::DedupArena,
     error::ArenaError,
+    stable_arena::{Iter as StableArenaIter, IterMut as StableArenaIterMut, StableArena},
     stable_vec::{Iter as StableVecIter, IterMut as StableVecIterMut, StableVec},
 };
 use alloc::vec::Vec;
