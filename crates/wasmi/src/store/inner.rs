@@ -701,6 +701,20 @@ impl StoreInner {
     pub fn try_resolve_func(&self, key: &Func) -> Result<&FuncEntity, InternalStoreError> {
         self.resolve(key.as_raw(), &self.funcs)
     }
+
+    /// Returns an exclusive reference to the associated entity of the Wasm or host function.
+    ///
+    /// # Errors
+    ///
+    /// - If the [`Func`] does not originate from this [`StoreInner`].
+    /// - If the [`Func`] cannot be resolved to its entity.
+    pub fn try_resolve_func_mut(
+        &mut self,
+        key: &Func,
+    ) -> Result<&mut FuncEntity, InternalStoreError> {
+        let raw_key = self.unwrap_stored(key.as_raw())?;
+        Self::resolve_mut(*raw_key, &mut self.funcs)
+    }
 }
 
 macro_rules! define_panicking_getters {
@@ -749,6 +763,8 @@ impl StoreInner {
         pub fn resolve_element_mut(&mut Self, elem: &ElementSegment) -> &mut CoreElementSegment = Self::try_resolve_element_mut;
 
         pub fn resolve_func(&Self, func: &Func) -> &FuncEntity = Self::try_resolve_func;
+        pub fn resolve_func_mut(&mut Self, func: &Func) -> &mut FuncEntity = Self::try_resolve_func_mut;
+
         pub fn resolve_data_mut(&mut Self, data: &DataSegment) -> &mut DataSegmentEntity = Self::try_resolve_data_mut;
         pub fn resolve_instance(&Self, instance: &Instance) -> &InstanceEntity = Self::try_resolve_instance;
         pub fn resolve_externref(&Self, data: &ExternRef) -> &ExternRefEntity = Self::try_resolve_externref;
