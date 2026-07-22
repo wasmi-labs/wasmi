@@ -1,3 +1,4 @@
+use crate::arena::ArenaError;
 use alloc::boxed::Box;
 use core::{
     cmp::Ordering,
@@ -118,6 +119,31 @@ impl<T> StableVec<T> {
         // Safety: `index < len` implies the bucket is allocated and `slot` is initialized.
         let ptr = unsafe { self.buckets[bucket_index].unwrap_unchecked() };
         Some(unsafe { &mut *ptr.as_ptr().add(slot) })
+    }
+
+    /// Returns exclusive references to the items at `a` and `b`.
+    ///
+    /// # Errors
+    ///
+    /// - If `a` and `b` are not disjoint indices.
+    /// - If `a` or `b` are out of bounds.
+    #[inline]
+    pub fn get_disjoint_mut(&mut self, a: usize, b: usize) -> Result<(&mut T, &mut T), ArenaError> {
+        if a == b {
+            return Err(ArenaError::AliasingPairAccess);
+        }
+        if a >= self.len || b >= self.len {
+            return Err(ArenaError::KeyOutOfBounds);
+        }
+        let (ba, sa) = Self::locate(a);
+        let (bb, sb) = Self::locate(b);
+        // Safety: `a != b` and both are in bounds, so the two slots are initialized and disjoint;
+        //         the produced exclusive references therefore never alias.
+        unsafe {
+            let pa = self.buckets[ba].unwrap_unchecked().as_ptr().add(sa);
+            let pb = self.buckets[bb].unwrap_unchecked().as_ptr().add(sb);
+            Ok((&mut *pa, &mut *pb))
+        }
     }
 
     /// Returns an iterator over the items in insertion order.
@@ -443,6 +469,24 @@ mod tests {
         let a: StableVec<usize> = (0..100).collect();
         let b = a.clone();
         assert_eq!(hash_of(&a), hash_of(&b));
+    }
+
+    #[test]
+    fn get_pair_mut_disjoint() {
+        let mut vector: StableVec<usize> = (0..100).collect();
+        let (a, b) = vector.get_disjoint_mut(10, 90).unwrap();
+        *a = 111;
+        *b = 999;
+        assert_eq!(vector.get(10), Some(&111));
+        assert_eq!(vector.get(90), Some(&999));
+        assert!(matches!(
+            vector.get_disjoint_mut(5, 5),
+            Err(ArenaError::AliasingPairAccess)
+        ));
+        assert!(matches!(
+            vector.get_disjoint_mut(5, 100),
+            Err(ArenaError::KeyOutOfBounds)
+        ));
     }
 
     #[test]
