@@ -23,7 +23,7 @@ use crate::{
     engine::DedupFuncType,
     func::FuncError,
     memory::DataSegment,
-    store::Stored,
+    store::{StoreInner, Stored},
 };
 use alloc::{boxed::Box, sync::Arc};
 
@@ -74,42 +74,49 @@ impl InstanceEntity {
     }
 
     /// Returns the [`Memory`] at the `addr` if any.
+    #[inline]
     pub fn get_memory(&self, addr: MemoryAddr) -> Option<Memory> {
         let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.handle.cast_memory() })
     }
 
     /// Returns the [`Table`] at the `addr` if any.
+    #[inline]
     pub fn get_table(&self, addr: TableAddr) -> Option<Table> {
         let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.handle.cast_table() })
     }
 
     /// Returns the [`Global`] at the `addr` if any.
+    #[inline]
     pub fn get_global(&self, addr: GlobalAddr) -> Option<Global> {
         let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.handle.cast_global() })
     }
 
     /// Returns the [`Func`] at the `addr` if any.
+    #[inline]
     pub fn get_func(&self, addr: FuncAddr) -> Option<Func> {
         let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.handle.cast_func() })
     }
 
     /// Returns the [`DataSegment`] at the `addr` if any.
+    #[inline]
     pub fn get_data_segment(&self, addr: DataAddr) -> Option<DataSegment> {
         let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.handle.cast_data() })
     }
 
     /// Returns the [`ElementSegment`] at the `addr` if any.
+    #[inline]
     pub fn get_element_segment(&self, addr: ElemAddr) -> Option<ElementSegment> {
         let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.handle.cast_elem() })
     }
 
     /// Returns the signature at the `index` if any.
+    #[inline]
     pub fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
         self.func_types.get(index as usize)
     }
