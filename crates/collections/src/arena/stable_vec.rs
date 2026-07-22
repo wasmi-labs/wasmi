@@ -125,10 +125,14 @@ impl<T> StableVec<T> {
     ///
     /// # Errors
     ///
-    /// - If `a` and `b` are not disjoint indices.
-    /// - If `a` or `b` are out of bounds.
+    /// - If `indices[0]` and `indices[1]` refer to the same item, a.k.a. aliasing each other.
+    /// - If `indices[0]` or `indices[1]` is out of bounds for the arena.
     #[inline]
-    pub fn get_disjoint_mut(&mut self, a: usize, b: usize) -> Result<(&mut T, &mut T), ArenaError> {
+    pub fn get_disjoint_mut(
+        &mut self,
+        indices: [usize; 2],
+    ) -> Result<(&mut T, &mut T), ArenaError> {
+        let [a, b] = indices;
         if a == b {
             return Err(ArenaError::AliasingPairAccess);
         }
@@ -558,17 +562,17 @@ mod tests {
     #[test]
     fn get_pair_mut_disjoint() {
         let mut vector: StableVec<usize> = (0..100).collect();
-        let (a, b) = vector.get_disjoint_mut(10, 90).unwrap();
+        let (a, b) = vector.get_disjoint_mut([10, 90]).unwrap();
         *a = 111;
         *b = 999;
         assert_eq!(vector.get(10), Some(&111));
         assert_eq!(vector.get(90), Some(&999));
         assert!(matches!(
-            vector.get_disjoint_mut(5, 5),
+            vector.get_disjoint_mut([5, 5]),
             Err(ArenaError::AliasingPairAccess)
         ));
         assert!(matches!(
-            vector.get_disjoint_mut(5, 100),
+            vector.get_disjoint_mut([5, 100]),
             Err(ArenaError::KeyOutOfBounds)
         ));
     }
