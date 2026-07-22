@@ -8,9 +8,11 @@ pub use self::{
 use crate::{
     AsContext,
     AsContextMut,
+    DataSegmentEntity,
     ElementSegment,
     Error,
     Func,
+    FuncEntity,
     Global,
     Memory,
     Module,
@@ -20,6 +22,12 @@ use crate::{
     WasmParams,
     WasmResults,
     collections::Map,
+    core::{
+        CoreElementSegment as ElementSegmentEntity,
+        CoreGlobal as GlobalEntity,
+        CoreMemory as MemoryEntity,
+        CoreTable as TableEntity,
+    },
     engine::DedupFuncType,
     func::FuncError,
     memory::DataSegment,
@@ -71,6 +79,78 @@ impl InstanceEntity {
     /// Returns a shared reference to the [`InstanceLayout`] of `self`.
     pub fn layout(&self) -> &InstanceLayout {
         &self.layout
+    }
+
+    /// Returns the [`MemoryEntity`] at the `addr` if any.
+    #[inline]
+    pub fn get_memory_v2<'a>(
+        &mut self,
+        addr: MemoryAddr,
+        store: &'a mut StoreInner,
+    ) -> Option<&'a mut MemoryEntity> {
+        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
+        let entity = unsafe { handle.get_memory(store) };
+        Some(entity)
+    }
+
+    /// Returns the [`GlobalEntity`] at the `addr` if any.
+    #[inline]
+    pub fn get_global_v2<'a>(
+        &mut self,
+        addr: GlobalAddr,
+        store: &'a mut StoreInner,
+    ) -> Option<&'a mut GlobalEntity> {
+        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
+        let entity = unsafe { handle.get_global(store) };
+        Some(entity)
+    }
+
+    /// Returns the [`TableEntity`] at the `addr` if any.
+    #[inline]
+    pub fn get_table_v2<'a>(
+        &mut self,
+        addr: TableAddr,
+        store: &'a mut StoreInner,
+    ) -> Option<&'a mut TableEntity> {
+        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
+        let entity = unsafe { handle.get_table(store) };
+        Some(entity)
+    }
+
+    /// Returns the [`FuncEntity`] at the `addr` if any.
+    #[inline]
+    pub fn get_func_v2<'a>(
+        &mut self,
+        addr: FuncAddr,
+        store: &'a mut StoreInner,
+    ) -> Option<&'a mut FuncEntity> {
+        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
+        let entity = unsafe { handle.get_func(store) };
+        Some(entity)
+    }
+
+    /// Returns the [`DataSegmentEntity`] at the `addr` if any.
+    #[inline]
+    pub fn get_data_v2<'a>(
+        &mut self,
+        addr: DataAddr,
+        store: &'a mut StoreInner,
+    ) -> Option<&'a mut DataSegmentEntity> {
+        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
+        let entity = unsafe { handle.get_data(store) };
+        Some(entity)
+    }
+
+    /// Returns the [`ElementSegmentEntity`] at the `addr` if any.
+    #[inline]
+    pub fn get_elem_v2<'a>(
+        &mut self,
+        addr: ElemAddr,
+        store: &'a mut StoreInner,
+    ) -> Option<&'a mut ElementSegmentEntity> {
+        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
+        let entity = unsafe { handle.get_elem(store) };
+        Some(entity)
     }
 
     /// Returns the [`Memory`] at the `addr` if any.
