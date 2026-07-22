@@ -438,9 +438,12 @@ impl StoreInner {
     ) -> Result<(&mut CoreTable, &mut CoreTable, &mut Fuel), InternalStoreError> {
         let fst = self.unwrap_stored(fst.as_raw())?;
         let snd = self.unwrap_stored(snd.as_raw())?;
-        let (fst, snd) = self.tables.get_pair_mut(*fst, *snd).unwrap_or_else(|err| {
-            panic!("failed to resolve stored pair of tables at {fst:?} and {snd:?}: {err}")
-        });
+        let [fst, snd] = self
+            .tables
+            .get_disjoint_mut([*fst, *snd])
+            .unwrap_or_else(|err| {
+                panic!("failed to resolve stored pair of tables at {fst:?} and {snd:?}: {err}")
+            });
         let fuel = &mut self.fuel;
         Ok((fst, snd, fuel))
     }
@@ -591,9 +594,9 @@ impl StoreInner {
     ) -> Result<(&mut CoreMemory, &mut CoreMemory, &mut Fuel), InternalStoreError> {
         let mem0 = self.unwrap_stored(mem0.as_raw())?;
         let mem1 = self.unwrap_stored(mem1.as_raw())?;
-        let (mem0, mem1) = self
+        let [mem0, mem1] = self
             .memories
-            .get_pair_mut(*mem0, *mem1)
+            .get_disjoint_mut([*mem0, *mem1])
             .unwrap_or_else(|err| {
                 panic!("failed to resolve stored pair of memories at {mem0:?} and {mem1:?}: {err}")
             });
