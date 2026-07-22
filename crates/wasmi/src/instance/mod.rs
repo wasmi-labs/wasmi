@@ -89,8 +89,7 @@ impl InstanceEntity {
         store: &'a mut StoreInner,
     ) -> Option<&'a mut MemoryEntity> {
         let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        let entity = unsafe { handle.get_memory(store) };
-        Some(entity)
+        unsafe { handle.get_memory(store) }
     }
 
     /// Returns the [`GlobalEntity`] at the `addr` if any.
@@ -101,8 +100,7 @@ impl InstanceEntity {
         store: &'a mut StoreInner,
     ) -> Option<&'a mut GlobalEntity> {
         let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        let entity = unsafe { handle.get_global(store) };
-        Some(entity)
+        unsafe { handle.get_global(store) }
     }
 
     /// Returns the [`TableEntity`] at the `addr` if any.
@@ -113,8 +111,7 @@ impl InstanceEntity {
         store: &'a mut StoreInner,
     ) -> Option<&'a mut TableEntity> {
         let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        let entity = unsafe { handle.get_table(store) };
-        Some(entity)
+        unsafe { handle.get_table(store) }
     }
 
     /// Returns the [`FuncEntity`] at the `addr` if any.
@@ -125,8 +122,7 @@ impl InstanceEntity {
         store: &'a mut StoreInner,
     ) -> Option<&'a mut FuncEntity> {
         let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        let entity = unsafe { handle.get_func(store) };
-        Some(entity)
+        unsafe { handle.get_func(store) }
     }
 
     /// Returns the [`DataSegmentEntity`] at the `addr` if any.
@@ -137,8 +133,7 @@ impl InstanceEntity {
         store: &'a mut StoreInner,
     ) -> Option<&'a mut DataSegmentEntity> {
         let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        let entity = unsafe { handle.get_data(store) };
-        Some(entity)
+        unsafe { handle.get_data(store) }
     }
 
     /// Returns the [`ElementSegmentEntity`] at the `addr` if any.
@@ -149,8 +144,7 @@ impl InstanceEntity {
         store: &'a mut StoreInner,
     ) -> Option<&'a mut ElementSegmentEntity> {
         let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        let entity = unsafe { handle.get_elem(store) };
-        Some(entity)
+        unsafe { handle.get_elem(store) }
     }
 
     /// Returns the [`Memory`] at the `addr` if any.
