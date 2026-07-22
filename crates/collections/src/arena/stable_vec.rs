@@ -20,12 +20,12 @@ const LEN_BUCKET0: usize = 1 << LEN_BUCKET0_LOG2;
 /// Also keeps the largest bucket size (`1 << 31`) within a 32-bit `usize`.
 const MAX_BUCKETS: usize = 27;
 
-/// An append-only arena that hands out index handles with stable element addresses.
+/// An append-only vector that hands out index handles with stable element addresses.
 ///
-/// Once pushed, an item never moves, so raw pointers obtained from [`get`](StableArena::get) stay
-/// valid for the arena's lifetime. The bucket array is stored inline; wrap the whole
-/// [`StableArena`] in a `Box` to move it off the stack.
-pub struct StableArena<T> {
+/// Once pushed, an item never moves, so raw pointers obtained from [`get`](StableVec::get) stay
+/// valid for the vector's lifetime. The bucket array is stored inline; wrap the whole
+/// [`StableVec`] in a `Box` to move it off the stack.
+pub struct StableVec<T> {
     /// The total number of items across all `buckets`.
     len: usize,
     /// Thin pointers to each bucket's heap allocation, or `None` if not yet allocated.
@@ -38,12 +38,12 @@ pub struct StableArena<T> {
     marker: PhantomData<T>,
 }
 
-// Safety: a `StableArena<T>` uniquely owns its `T`s like a `Box<[T]>`, so it is `Send`/`Sync`
+// Safety: a `StableVec<T>` uniquely owns its `T`s like a `Box<[T]>`, so it is `Send`/`Sync`
 //         exactly when `T` is.
-unsafe impl<T: Send> Send for StableArena<T> {}
-unsafe impl<T: Sync> Sync for StableArena<T> {}
+unsafe impl<T: Send> Send for StableVec<T> {}
+unsafe impl<T: Sync> Sync for StableVec<T> {}
 
-impl<T> Default for StableArena<T> {
+impl<T> Default for StableVec<T> {
     #[inline]
     fn default() -> Self {
         Self {
@@ -54,30 +54,30 @@ impl<T> Default for StableArena<T> {
     }
 }
 
-impl<T> StableArena<T> {
-    /// Creates a new empty [`StableArena`].
+impl<T> StableVec<T> {
+    /// Creates a new empty [`StableVec`].
     #[inline]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Returns the number of items stored in the [`StableArena`].
+    /// Returns the number of items stored in the [`StableVec`].
     #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
 
-    /// Returns `true` if the [`StableArena`] contains no items.
+    /// Returns `true` if the [`StableVec`] contains no items.
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
 
-    /// Appends `value` to the [`StableArena`] and returns its index.
+    /// Appends `value` to the [`StableVec`] and returns its index.
     ///
     /// # Panics
     ///
-    /// If the arena is full (`2^32 - 32` items); unreachable in practice as allocation fails first.
+    /// If the vector is full (`2^32 - 32` items); unreachable in practice as allocation fails first.
     #[inline]
     pub fn push(&mut self, value: T) -> usize {
         let index = self.len;
@@ -124,7 +124,7 @@ impl<T> StableArena<T> {
     #[inline]
     pub fn iter(&self) -> Iter<'_, T> {
         Iter {
-            arena: self,
+            vector: self,
             front: 0,
             back: self.len,
         }
@@ -162,7 +162,7 @@ impl<T> StableArena<T> {
     }
 }
 
-impl<T> Drop for StableArena<T> {
+impl<T> Drop for StableVec<T> {
     fn drop(&mut self) {
         let len = self.len;
         for (n, slot) in self.buckets.iter_mut().enumerate() {
@@ -182,42 +182,42 @@ impl<T> Drop for StableArena<T> {
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for StableArena<T> {
+impl<T: fmt::Debug> fmt::Debug for StableVec<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.iter()).finish()
     }
 }
 
-impl<T: Clone> Clone for StableArena<T> {
+impl<T: Clone> Clone for StableVec<T> {
     fn clone(&self) -> Self {
         self.iter().cloned().collect()
     }
 }
 
-impl<T: PartialEq> PartialEq for StableArena<T> {
+impl<T: PartialEq> PartialEq for StableVec<T> {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.len == other.len && self.iter().eq(other.iter())
     }
 }
 
-impl<T: Eq> Eq for StableArena<T> {}
+impl<T: Eq> Eq for StableVec<T> {}
 
-impl<T: PartialOrd> PartialOrd for StableArena<T> {
+impl<T: PartialOrd> PartialOrd for StableVec<T> {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.iter().partial_cmp(other.iter())
     }
 }
 
-impl<T: Ord> Ord for StableArena<T> {
+impl<T: Ord> Ord for StableVec<T> {
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         self.iter().cmp(other.iter())
     }
 }
 
-impl<T: Hash> Hash for StableArena<T> {
+impl<T: Hash> Hash for StableVec<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         // Mirrors the `[T]`/`Vec<T>` hash: length prefix followed by the items.
         self.len.hash(state);
@@ -227,15 +227,15 @@ impl<T: Hash> Hash for StableArena<T> {
     }
 }
 
-impl<T> FromIterator<T> for StableArena<T> {
+impl<T> FromIterator<T> for StableVec<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
-        let mut arena = Self::new();
-        arena.extend(iter);
-        arena
+        let mut vector = Self::new();
+        vector.extend(iter);
+        vector
     }
 }
 
-impl<T> Extend<T> for StableArena<T> {
+impl<T> Extend<T> for StableVec<T> {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         for item in iter {
             self.push(item);
@@ -243,7 +243,7 @@ impl<T> Extend<T> for StableArena<T> {
     }
 }
 
-impl<'a, T> IntoIterator for &'a StableArena<T> {
+impl<'a, T> IntoIterator for &'a StableVec<T> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
 
@@ -253,10 +253,10 @@ impl<'a, T> IntoIterator for &'a StableArena<T> {
     }
 }
 
-/// An iterator over the items of a [`StableArena`] in insertion order.
+/// An iterator over the items of a [`StableVec`] in insertion order.
 pub struct Iter<'a, T> {
-    /// The iterated [`StableArena`].
-    arena: &'a StableArena<T>,
+    /// The iterated [`StableVec`].
+    vector: &'a StableVec<T>,
     /// The next index yielded from the front.
     front: usize,
     /// One past the next index yielded from the back.
@@ -271,7 +271,7 @@ impl<'a, T> Iterator for Iter<'a, T> {
         if self.front >= self.back {
             return None;
         }
-        let item = self.arena.get(self.front);
+        let item = self.vector.get(self.front);
         self.front += 1;
         item
     }
@@ -290,7 +290,7 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
             return None;
         }
         self.back -= 1;
-        self.arena.get(self.back)
+        self.vector.get(self.back)
     }
 }
 
@@ -304,174 +304,174 @@ mod tests {
 
     #[test]
     fn empty() {
-        let arena = StableArena::<i32>::new();
-        assert_eq!(arena.len(), 0);
-        assert!(arena.is_empty());
-        assert_eq!(arena.get(0), None);
+        let vector = StableVec::<i32>::new();
+        assert_eq!(vector.len(), 0);
+        assert!(vector.is_empty());
+        assert_eq!(vector.get(0), None);
     }
 
     #[test]
     fn push_and_get() {
-        let mut arena = StableArena::new();
+        let mut vector = StableVec::new();
         // Push enough items to span several buckets (32, 64, 128 -> boundaries at 32 and 96).
         let n = 200;
         for i in 0..n {
-            assert_eq!(arena.push(i), i);
+            assert_eq!(vector.push(i), i);
         }
-        assert_eq!(arena.len(), n);
-        assert!(!arena.is_empty());
+        assert_eq!(vector.len(), n);
+        assert!(!vector.is_empty());
         for i in 0..n {
-            assert_eq!(arena.get(i), Some(&i));
+            assert_eq!(vector.get(i), Some(&i));
         }
-        assert_eq!(arena.get(n), None);
+        assert_eq!(vector.get(n), None);
     }
 
     #[test]
     fn locate_boundaries() {
         // First bucket holds items [0, 32).
-        assert_eq!(StableArena::<()>::locate(0), (0, 0));
-        assert_eq!(StableArena::<()>::locate(31), (0, 31));
+        assert_eq!(StableVec::<()>::locate(0), (0, 0));
+        assert_eq!(StableVec::<()>::locate(31), (0, 31));
         // Second bucket holds items [32, 96).
-        assert_eq!(StableArena::<()>::locate(32), (1, 0));
-        assert_eq!(StableArena::<()>::locate(95), (1, 63));
+        assert_eq!(StableVec::<()>::locate(32), (1, 0));
+        assert_eq!(StableVec::<()>::locate(95), (1, 63));
         // Third bucket holds items [96, 224).
-        assert_eq!(StableArena::<()>::locate(96), (2, 0));
-        assert_eq!(StableArena::<()>::locate(223), (2, 127));
+        assert_eq!(StableVec::<()>::locate(96), (2, 0));
+        assert_eq!(StableVec::<()>::locate(223), (2, 127));
     }
 
     #[test]
     fn size_of_bucket_at() {
-        assert_eq!(StableArena::<()>::size_of_bucket_at(0), 32);
-        assert_eq!(StableArena::<()>::size_of_bucket_at(1), 64);
-        assert_eq!(StableArena::<()>::size_of_bucket_at(2), 128);
+        assert_eq!(StableVec::<()>::size_of_bucket_at(0), 32);
+        assert_eq!(StableVec::<()>::size_of_bucket_at(1), 64);
+        assert_eq!(StableVec::<()>::size_of_bucket_at(2), 128);
     }
 
     #[test]
     fn pointers_are_stable() {
-        let mut arena = StableArena::new();
+        let mut vector = StableVec::new();
         // Fill the first bucket and capture the address of its first and last item.
         for i in 0..32 {
-            arena.push(i);
+            vector.push(i);
         }
-        let ptr0: *const i32 = arena.get(0).unwrap();
-        let ptr31: *const i32 = arena.get(31).unwrap();
+        let ptr0: *const i32 = vector.get(0).unwrap();
+        let ptr31: *const i32 = vector.get(31).unwrap();
         // Push far more items, forcing several new bucket allocations.
         for i in 32..1000 {
-            arena.push(i);
+            vector.push(i);
         }
         // The previously captured pointers must still be valid and unchanged.
-        assert_eq!(ptr0, arena.get(0).unwrap() as *const i32);
-        assert_eq!(ptr31, arena.get(31).unwrap() as *const i32);
-        // Safety: the arena still owns these items and their addresses did not change.
+        assert_eq!(ptr0, vector.get(0).unwrap() as *const i32);
+        assert_eq!(ptr31, vector.get(31).unwrap() as *const i32);
+        // Safety: the vector still owns these items and their addresses did not change.
         assert_eq!(unsafe { *ptr0 }, 0);
         assert_eq!(unsafe { *ptr31 }, 31);
     }
 
     #[test]
     fn get_mut_and_iter() {
-        let mut arena = StableArena::new();
+        let mut vector = StableVec::new();
         for i in 0..100 {
-            arena.push(i);
+            vector.push(i);
         }
         for i in 0..100 {
-            *arena.get_mut(i).unwrap() *= 2;
+            *vector.get_mut(i).unwrap() *= 2;
         }
-        let collected: Vec<usize> = arena.iter().copied().collect();
+        let collected: Vec<usize> = vector.iter().copied().collect();
         let expected: Vec<usize> = (0..100).map(|i| i * 2).collect();
         assert_eq!(collected, expected);
-        assert_eq!(arena.get_mut(100), None);
+        assert_eq!(vector.get_mut(100), None);
     }
 
     #[test]
     fn iter_double_ended_and_exact_size() {
-        let mut arena = StableArena::new();
+        let mut vector = StableVec::new();
         for i in 0..100 {
-            arena.push(i);
+            vector.push(i);
         }
         // `ExactSizeIterator::len` shrinks as items are taken from both ends.
-        let mut it = arena.iter();
+        let mut it = vector.iter();
         assert_eq!(it.len(), 100);
         assert_eq!(it.next(), Some(&0));
         assert_eq!(it.next_back(), Some(&99));
         assert_eq!(it.len(), 98);
         // Meeting in the middle from alternating ends yields the full range in order.
-        let front: Vec<usize> = arena.iter().step_by(1).copied().collect();
-        let reversed: Vec<usize> = arena.iter().rev().copied().collect();
+        let front: Vec<usize> = vector.iter().step_by(1).copied().collect();
+        let reversed: Vec<usize> = vector.iter().rev().copied().collect();
         assert_eq!(front, (0..100).collect::<Vec<_>>());
         assert_eq!(reversed, (0..100).rev().collect::<Vec<_>>());
     }
 
     #[test]
     fn from_iter_extend_and_ref_into_iter() {
-        let mut arena: StableArena<usize> = (0..50).collect();
-        arena.extend(50..100);
-        // `&StableArena` iterates like `iter`.
-        let collected: Vec<usize> = (&arena).into_iter().copied().collect();
+        let mut vector: StableVec<usize> = (0..50).collect();
+        vector.extend(50..100);
+        // `&StableVec` iterates like `iter`.
+        let collected: Vec<usize> = (&vector).into_iter().copied().collect();
         assert_eq!(collected, (0..100).collect::<Vec<_>>());
     }
 
     #[test]
     fn clone_and_eq() {
-        let a: StableArena<usize> = (0..100).collect();
+        let a: StableVec<usize> = (0..100).collect();
         let b = a.clone();
         assert_eq!(a, b);
         let mut c = a.clone();
         c.push(100);
         assert_ne!(a, c);
-        let d: StableArena<usize> = (0..99).collect();
+        let d: StableVec<usize> = (0..99).collect();
         assert_ne!(a, d);
     }
 
     #[test]
     fn ord_is_lexicographic() {
-        let a: StableArena<i32> = [1, 2, 3].into_iter().collect();
-        let b: StableArena<i32> = [1, 2, 4].into_iter().collect();
-        let c: StableArena<i32> = [1, 2].into_iter().collect();
+        let a: StableVec<i32> = [1, 2, 3].into_iter().collect();
+        let b: StableVec<i32> = [1, 2, 4].into_iter().collect();
+        let c: StableVec<i32> = [1, 2].into_iter().collect();
         assert!(a < b);
         assert!(c < a); // prefix is less
         assert_eq!(a.cmp(&a.clone()), Ordering::Equal);
     }
 
     #[test]
-    fn hash_matches_for_equal_arenas() {
+    fn hash_matches_for_equal_vectors() {
         use std::hash::{DefaultHasher, Hash, Hasher};
-        fn hash_of(arena: &StableArena<usize>) -> u64 {
+        fn hash_of(vector: &StableVec<usize>) -> u64 {
             let mut hasher = DefaultHasher::new();
-            arena.hash(&mut hasher);
+            vector.hash(&mut hasher);
             hasher.finish()
         }
-        let a: StableArena<usize> = (0..100).collect();
+        let a: StableVec<usize> = (0..100).collect();
         let b = a.clone();
         assert_eq!(hash_of(&a), hash_of(&b));
     }
 
     #[test]
     fn iter_empty() {
-        let arena = StableArena::<i32>::new();
-        assert_eq!(arena.iter().next(), None);
-        assert_eq!(arena.iter().count(), 0);
+        let vector = StableVec::<i32>::new();
+        assert_eq!(vector.iter().next(), None);
+        assert_eq!(vector.iter().count(), 0);
     }
 
     #[test]
     fn debug() {
-        let mut arena = StableArena::new();
-        arena.push(1);
-        arena.push(2);
-        arena.push(3);
-        assert_eq!(std::format!("{arena:?}"), "[1, 2, 3]");
+        let mut vector = StableVec::new();
+        vector.push(1);
+        vector.push(2);
+        vector.push(3);
+        assert_eq!(std::format!("{vector:?}"), "[1, 2, 3]");
     }
 
     #[test]
     fn drops_all_items() {
         use std::rc::Rc;
         let counter = Rc::new(());
-        let mut arena = StableArena::new();
+        let mut vector = StableVec::new();
         // Span multiple buckets with a partially-filled last bucket.
         for _ in 0..100 {
-            arena.push(Rc::clone(&counter));
+            vector.push(Rc::clone(&counter));
         }
         assert_eq!(Rc::strong_count(&counter), 101);
-        drop(arena);
+        drop(vector);
         assert_eq!(Rc::strong_count(&counter), 1);
     }
 }

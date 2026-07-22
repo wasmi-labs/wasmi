@@ -49,7 +49,7 @@ mod tests;
 
 #[doc(inline)]
 pub use self::{
-    arena::{Arena, ComponentVec, DedupArena, StableArena},
+    arena::{Arena, ComponentVec, DedupArena, StableVec},
     head_vec::HeadVec,
     map::Map,
     set::Set,
