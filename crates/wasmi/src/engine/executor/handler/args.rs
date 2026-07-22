@@ -19,24 +19,7 @@ use crate::{
                 Sp,
                 VmState,
             },
-            utils::{
-                self,
-                GetValue,
-                IntoControl as _,
-                SetValue,
-                fetch_data,
-                fetch_elem,
-                fetch_global,
-                fetch_memory,
-                fetch_table,
-                get_value,
-                resolve_data_mut,
-                resolve_elem_mut,
-                resolve_global_mut,
-                resolve_memory_mut,
-                resolve_table_mut,
-                set_value,
-            },
+            utils::{self, GetValue, IntoControl as _, SetValue, get_value, set_value},
         },
     },
     ir::{self, BoundedSlotSpan, BranchOffset},
@@ -163,20 +146,19 @@ impl Args {
     /// Returns the bytes of the `memory`.
     #[inline]
     pub fn fetch_memory_bytes<'a>(
-        &self,
+        &mut self,
         state: &'a mut VmState,
-        memory: ir::MemoryAddr,
+        addr: ir::MemoryAddr,
     ) -> &'a mut [u8] {
-        if utils::is_default_memory(self.instance, memory) {
+        if utils::is_default_memory(self.instance, addr) {
             return self.fetch_default_memory_bytes();
         }
-        let memory = utils::fetch_memory(self.instance, memory);
-        utils::resolve_memory_mut(state.store, &memory).data_mut()
+        self.fetch_memory(state, addr).data_mut()
     }
 
     /// Returns the bytes of the default memory at index 0.
     #[inline]
-    pub fn fetch_default_memory_bytes<'a>(&self) -> &'a mut [u8] {
+    pub fn fetch_default_memory_bytes<'a>(&mut self) -> &'a mut [u8] {
         state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len)
     }
 
@@ -185,10 +167,9 @@ impl Args {
     pub fn fetch_memory<'a>(
         &mut self,
         state: &'a mut VmState,
-        index: ir::MemoryAddr,
+        addr: ir::MemoryAddr,
     ) -> &'a mut CoreMemory {
-        let global = fetch_memory(self.instance, index);
-        resolve_memory_mut(state.store, &global)
+        utils::load_memory(self.instance, state.store.inner_mut(), addr)
     }
 
     /// Returns an exclusive reference to the global at `index`.
@@ -196,10 +177,9 @@ impl Args {
     pub fn fetch_global<'a>(
         &mut self,
         state: &'a mut VmState,
-        index: ir::GlobalAddr,
+        addr: ir::GlobalAddr,
     ) -> &'a mut CoreGlobal {
-        let global = fetch_global(self.instance, index);
-        resolve_global_mut(state.store, &global)
+        utils::load_global(self.instance, state.store.inner_mut(), addr)
     }
 
     /// Returns an exclusive reference to the table at `index`.
@@ -207,10 +187,9 @@ impl Args {
     pub fn fetch_table<'a>(
         &mut self,
         state: &'a mut VmState,
-        index: ir::TableAddr,
+        addr: ir::TableAddr,
     ) -> &'a mut CoreTable {
-        let table = fetch_table(self.instance, index);
-        resolve_table_mut(state.store, &table)
+        utils::load_table(self.instance, state.store.inner_mut(), addr)
     }
 
     /// Returns an exclusive reference to the element segment at `index`.
@@ -218,10 +197,9 @@ impl Args {
     pub fn fetch_elem<'a>(
         &mut self,
         state: &'a mut VmState,
-        index: ir::ElemAddr,
+        addr: ir::ElemAddr,
     ) -> &'a mut CoreElementSegment {
-        let elem = fetch_elem(self.instance, index);
-        resolve_elem_mut(state.store, &elem)
+        utils::load_elem(self.instance, state.store.inner_mut(), addr)
     }
 
     /// Returns an exclusive reference to the data segment at `index`.
@@ -229,10 +207,9 @@ impl Args {
     pub fn fetch_data<'a>(
         &mut self,
         state: &'a mut VmState,
-        index: ir::DataAddr,
+        addr: ir::DataAddr,
     ) -> &'a mut DataSegmentEntity {
-        let elem = fetch_data(self.instance, index);
-        resolve_data_mut(state.store, &elem)
+        utils::load_data(self.instance, state.store.inner_mut(), addr)
     }
 
     /// Reloads the data pointer and length of the default memory at index 0 from `state`.
@@ -270,7 +247,7 @@ impl Args {
     /// Resolves the [`Func`] at `table[index]` of type `func_type` using `state`.
     #[inline]
     pub fn resolve_indirect_func<Idx>(
-        &self,
+        &mut self,
         state: &mut VmState<'_>,
         index: Idx,
         table: ir::TableAddr,
