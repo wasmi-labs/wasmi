@@ -7,8 +7,14 @@
 mod component_vec;
 mod dedup;
 mod error;
+mod stable_arena;
 
-pub use self::{component_vec::ComponentVec, dedup::DedupArena, error::ArenaError};
+pub use self::{
+    component_vec::ComponentVec,
+    dedup::DedupArena,
+    error::ArenaError,
+    stable_arena::{Iter as StableArenaIter, StableArena},
+};
 use alloc::vec::Vec;
 use core::{
     iter::{self, Enumerate},
