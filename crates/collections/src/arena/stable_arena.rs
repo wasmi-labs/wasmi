@@ -162,7 +162,7 @@ where
     /// - If `keys[0]` and `keys[1]` refer to the same item, a.k.a. aliasing each other.
     /// - If `keys[0]` or `keys[1]` is out of bounds for the arena.
     #[inline]
-    pub fn get_disjoint_mut(&mut self, keys: [Key; 2]) -> Result<(&mut T, &mut T), ArenaError> {
+    pub fn get_disjoint_mut(&mut self, keys: [Key; 2]) -> Result<[&mut T; 2], ArenaError> {
         let [a, b] = keys;
         self.items
             .get_disjoint_mut([a.into_usize(), b.into_usize()])
@@ -392,7 +392,7 @@ mod tests {
         let mut arena: Arena = (0..10).collect();
         *arena.get_mut(3).unwrap() = 30;
         assert_eq!(arena.get(3).unwrap(), &30);
-        let (a, b) = arena.get_disjoint_mut([1, 8]).unwrap();
+        let [a, b] = arena.get_disjoint_mut([1, 8]).unwrap();
         *a = -1;
         *b = -8;
         assert_eq!((arena[1], arena[8]), (-1, -8));
