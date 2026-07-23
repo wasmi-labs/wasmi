@@ -498,6 +498,23 @@ mod tests {
     }
 
     #[test]
+    fn get_mut_ptr_writes_through() {
+        let mut vector = StableVec::new();
+        for i in 0..100 {
+            vector.push(i);
+        }
+        for i in 0..100 {
+            let ptr = vector.get_mut_ptr(i).unwrap();
+            // Safety: `i < len`, so the slot is initialized and uniquely owned here.
+            unsafe { *ptr.as_ptr() *= 2 };
+        }
+        let collected: Vec<usize> = vector.iter().copied().collect();
+        let expected: Vec<usize> = (0..100).map(|i| i * 2).collect();
+        assert_eq!(collected, expected);
+        assert!(vector.get_mut_ptr(100).is_none());
+    }
+
+    #[test]
     fn iter_double_ended_and_exact_size() {
         let mut vector = StableVec::new();
         for i in 0..100 {

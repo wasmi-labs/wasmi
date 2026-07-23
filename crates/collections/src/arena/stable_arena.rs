@@ -423,6 +423,19 @@ mod tests {
     }
 
     #[test]
+    fn get_mut_ptr_writes_through() {
+        let mut arena: Arena = (0..10).collect();
+        let ptr = arena.get_mut_ptr(3).unwrap();
+        // Safety: key `3` is in bounds and uniquely owned here.
+        unsafe { *ptr.as_ptr() = 30 };
+        assert_eq!(arena.get(3).unwrap(), &30);
+        assert!(matches!(
+            arena.get_mut_ptr(10),
+            Err(ArenaError::KeyOutOfBounds)
+        ));
+    }
+
+    #[test]
     fn iter_yields_keys_and_is_double_ended() {
         let arena: Arena = (0..5).collect();
         let forward: Vec<(usize, i32)> = arena.iter().map(|(k, &v)| (k, v)).collect();
