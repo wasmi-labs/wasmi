@@ -12,13 +12,14 @@ use crate::{
 };
 use core::ptr::NonNull;
 
-/// An [`AnyHandle`] and its optional cached entity for hot reloading.
+/// An [`AnyHandle`] and its cached entity pointer for fast reloading.
+///
+/// The `cache` pointer is warmed up once at instantiation and must not be dereferenced before
+/// that. Entity addresses are stable since the `StoreInner` keeps them in `StableArena`s.
 #[derive(Debug)]
 pub struct HandleAndCache {
-    /// The cached entity for hot reloading.
-    ///
-    /// The entities can be cached since their addresses are guaranteed to be stable.
-    cache: Option<NonNull<AnyEntity>>,
+    /// The cached entity pointer, warmed up at instantiation.
+    cache: NonNull<AnyEntity>,
     /// The entity handle.
     pub handle: AnyHandle,
 }
@@ -30,102 +31,110 @@ pub struct HandleAndCache {
 //         `StableArena`/`StableVec` addresses survive that move. `handle` is `Copy` data.
 unsafe impl Send for HandleAndCache {}
 
-// SAFETY: `&HandleAndCache` exposes only the `Copy` `handle` field; every method that
-//         reads or dereferences `cache` takes `&mut self`, so a shared reference can
-//         never observe the pointer's pointee.
+// SAFETY: `&HandleAndCache` only hands out the `Copy` `handle` and a `NonNull` copy of
+//         `cache`; it never dereferences the pointee (only `warmup_*` writes `cache`, via
+//         `&mut self`), so a shared reference can never observe entity data.
 unsafe impl Sync for HandleAndCache {}
 
 impl HandleAndCache {
     /// Creates a new [`HandleAndCache`] from the given `handle`.
+    ///
+    /// The entity cache is left dangling and must be warmed up before any entity access.
     pub fn new(handle: AnyHandle) -> Self {
         Self {
-            cache: None,
+            cache: NonNull::dangling(),
             handle,
         }
     }
 }
 
-macro_rules! impl_handle_and_cache {
+macro_rules! impl_get_cache {
     (
         $(
-            pub unsafe fn $name:ident<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut $ty:ty = {
-                resolve: $resolve:expr,
-                cast: $cast:expr,
-                load: $load:ident,
-            }
+            $(#[$attr:meta])*
+            pub fn $get:ident(&self) -> NonNull<$ty:ty>;
         )*
     ) => {
         $(
-            #[doc = concat!("Returns the [`", stringify!($ty), "`] for `self` if any.")]
-            #[doc = ""]
-            #[doc = "# Safety"]
-            #[doc = ""]
-            #[doc = "It is the caller's responsibility to use this only if the"]
-            #[doc = concat!("[`HandleAndCache`] is associated to a [`", stringify!($ty), "`].")]
+            $(#[$attr])*
             #[inline]
-            pub unsafe fn $name<'a>(&mut self, store: &'a mut StoreInner) -> Option<&'a mut $ty> {
-                if let Some(cache) = &mut self.cache {
-                    // Case: cache already exists and can be re-used.
-                    let entity = unsafe { cache.cast::<$ty>().as_mut() };
-                    return Some(entity)
-                }
-                // Case: cache is vacant and the entity needs to be loaded from the `store`.
-                unsafe { Self::$load(self, store) }
-            }
-
-            #[doc = concat!("Loads the [`", stringify!($ty), "`] for `self` from `store` and caches it.")]
-            #[doc = ""]
-            #[doc = "# Safety"]
-            #[doc = ""]
-            #[doc = "It is the caller's responsibility to use this only if the"]
-            #[doc = concat!("[`HandleAndCache`] is associated to a [`", stringify!($ty), "`].")]
-            #[cold]
-            unsafe fn $load<'a>(&mut self, store: &'a mut StoreInner) -> Option<&'a mut $ty> {
-                let handle = unsafe { $cast(self.handle) };
-                let entity = $resolve(store, &handle).ok()?;
-                self.cache = Some(NonNull::from(&mut *entity).cast::<AnyEntity>());
-                Some(entity)
+            pub fn $get(&self) -> NonNull<$ty> {
+                self.cache.cast::<$ty>()
             }
         )*
     };
 }
 impl HandleAndCache {
-    impl_handle_and_cache! {
-        pub unsafe fn get_memory<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut MemoryEntity = {
-            resolve: StoreInner::try_resolve_memory_mut,
+    impl_get_cache! {
+        /// Returns a pointer to the cached [`MemoryEntity`] of `self`.
+        pub fn get_memory(&self) -> NonNull<MemoryEntity>;
+        /// Returns a pointer to the cached [`GlobalEntity`] of `self`.
+        pub fn get_global(&self) -> NonNull<GlobalEntity>;
+        /// Returns a pointer to the cached [`TableEntity`] of `self`.
+        pub fn get_table(&self) -> NonNull<TableEntity>;
+        /// Returns a pointer to the cached [`FuncEntity`] of `self`.
+        pub fn get_func(&self) -> NonNull<FuncEntity>;
+        /// Returns a pointer to the cached [`ElementSegmentEntity`] of `self`.
+        pub fn get_elem(&self) -> NonNull<ElementSegmentEntity>;
+        /// Returns a pointer to the cached [`DataSegmentEntity`] of `self`.
+        pub fn get_data(&self) -> NonNull<DataSegmentEntity>;
+    }
+}
+
+macro_rules! impl_warmup_cache {
+    (
+        $(
+            pub unsafe fn $warmup:ident(&mut self, store: &mut StoreInner) = {
+                cast: $cast:expr,
+                resolve: $resolve:expr,
+            };
+        )*
+    ) => {
+        $(
+            /// Warms up the cached entity pointer of `self` by resolving its handle in `store`.
+            ///
+            /// # Safety
+            ///
+            /// The caller must ensure that `self`'s handle matches the resolved entity type.
+            pub unsafe fn $warmup(&mut self, store: &mut StoreInner) {
+                let handle = unsafe { $cast(self.handle) };
+                let entity = $resolve(store, &handle);
+                self.cache = NonNull::from(entity).cast::<AnyEntity>();
+            }
+        )*
+    };
+}
+impl HandleAndCache {
+    impl_warmup_cache! {
+        pub unsafe fn warmup_memory(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_memory,
-            load: load_memory,
-        }
+            resolve: StoreInner::resolve_memory_mut,
+        };
 
-        pub unsafe fn get_global<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut GlobalEntity = {
-            resolve: StoreInner::try_resolve_global_mut,
+        pub unsafe fn warmup_global(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_global,
-            load: load_global,
-        }
+            resolve: StoreInner::resolve_global_mut,
+        };
 
-        pub unsafe fn get_table<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut TableEntity = {
-            resolve: StoreInner::try_resolve_table_mut,
+        pub unsafe fn warmup_table(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_table,
-            load: load_table,
-        }
+            resolve: StoreInner::resolve_table_mut,
+        };
 
-        pub unsafe fn get_func<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut FuncEntity = {
-            resolve: StoreInner::try_resolve_func_mut,
+        pub unsafe fn warmup_func(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_func,
-            load: load_func,
-        }
+            resolve: StoreInner::resolve_func_mut,
+        };
 
-        pub unsafe fn get_elem<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut ElementSegmentEntity = {
-            resolve: StoreInner::try_resolve_element_mut,
+        pub unsafe fn warmup_elem(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_elem,
-            load: load_elem,
-        }
+            resolve: StoreInner::resolve_element_mut,
+        };
 
-        pub unsafe fn get_data<'a>(&mut self, store: &'a mut StoreInner) -> &'a mut DataSegmentEntity = {
-            resolve: StoreInner::try_resolve_data_mut,
+        pub unsafe fn warmup_data(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_data,
-            load: load_data,
-        }
+            resolve: StoreInner::resolve_data_mut,
+        };
     }
 }
 

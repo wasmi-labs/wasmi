@@ -294,11 +294,15 @@ impl StoreInner {
     /// - If the [`Instance`] is unknown to the [`StoreInner`].
     /// - If the [`Instance`] has already been initialized.
     /// - If the given [`InstanceEntity`] is itself not initialized, yet.
-    pub fn initialize_instance(&mut self, instance: Instance, init: InstanceEntity) {
+    pub fn initialize_instance(&mut self, instance: Instance, mut init: InstanceEntity) {
         assert!(
             init.is_initialized(),
             "encountered an uninitialized new instance entity: {init:?}",
         );
+        // Warm up the entity cache while `init` is still separate from `self.instances`.
+        // The cached pointers target other (stable) arenas, so moving `init` into place
+        // afterwards keeps them valid.
+        init.warmup(self);
         let idx = match self.unwrap_stored(instance.as_raw()) {
             Ok(idx) => idx,
             Err(error) => panic!("failed to unwrap stored entity: {error}"),

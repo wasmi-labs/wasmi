@@ -34,6 +34,7 @@ use crate::{
     store::{StoreInner, Stored},
 };
 use alloc::{boxed::Box, sync::Arc};
+use core::ptr::NonNull;
 
 mod builder;
 mod cache;
@@ -81,70 +82,79 @@ impl InstanceEntity {
         &self.layout
     }
 
-    /// Returns the [`MemoryEntity`] at the `addr` if any.
-    #[inline]
-    pub fn get_memory_v2<'a>(
-        &mut self,
-        addr: MemoryAddr,
-        store: &'a mut StoreInner,
-    ) -> Option<&'a mut MemoryEntity> {
-        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        unsafe { handle.get_memory(store) }
+    fn entry(&self, addr: impl Into<u32>) -> Option<&HandleAndCache> {
+        self.handles.get(addr.into() as usize)
     }
 
-    /// Returns the [`GlobalEntity`] at the `addr` if any.
-    #[inline]
-    pub fn get_global_v2<'a>(
-        &mut self,
-        addr: GlobalAddr,
-        store: &'a mut StoreInner,
-    ) -> Option<&'a mut GlobalEntity> {
-        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        unsafe { handle.get_global(store) }
+    /// Warms up the entity cache of every handle so that execution never resolves lazily.
+    ///
+    /// This must be called once before the [`InstanceEntity`] is used for execution.
+    pub fn warmup(&mut self, store: &mut StoreInner) {
+        let layout = self.layout;
+        macro_rules! warmup {
+            ($addr:ident, $warmup:ident) => {{
+                let mut index = 0;
+                while let Some(addr) = layout.$addr(index) {
+                    let handle = &mut self.handles[u32::from(addr) as usize];
+                    unsafe { handle.$warmup(store) };
+                    index += 1;
+                }
+            }};
+        }
+        warmup!(memory_addr, warmup_memory);
+        warmup!(global_addr, warmup_global);
+        warmup!(table_addr, warmup_table);
+        warmup!(func_addr, warmup_func);
+        warmup!(elem_addr, warmup_elem);
+        warmup!(data_addr, warmup_data);
     }
 
-    /// Returns the [`TableEntity`] at the `addr` if any.
+    /// Returns a pointer to the [`MemoryEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
-    pub fn get_table_v2<'a>(
-        &mut self,
-        addr: TableAddr,
-        store: &'a mut StoreInner,
-    ) -> Option<&'a mut TableEntity> {
-        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        unsafe { handle.get_table(store) }
+    pub fn get_memory_v2(&self, addr: MemoryAddr) -> Option<NonNull<MemoryEntity>> {
+        self.entry(addr).map(HandleAndCache::get_memory)
     }
 
-    /// Returns the [`FuncEntity`] at the `addr` if any.
+    /// Returns a pointer to the [`GlobalEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
-    pub fn get_func_v2<'a>(
-        &mut self,
-        addr: FuncAddr,
-        store: &'a mut StoreInner,
-    ) -> Option<&'a mut FuncEntity> {
-        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        unsafe { handle.get_func(store) }
+    pub fn get_global_v2(&self, addr: GlobalAddr) -> Option<NonNull<GlobalEntity>> {
+        self.entry(addr).map(HandleAndCache::get_global)
     }
 
-    /// Returns the [`DataSegmentEntity`] at the `addr` if any.
+    /// Returns a pointer to the [`TableEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
-    pub fn get_data_v2<'a>(
-        &mut self,
-        addr: DataAddr,
-        store: &'a mut StoreInner,
-    ) -> Option<&'a mut DataSegmentEntity> {
-        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        unsafe { handle.get_data(store) }
+    pub fn get_table_v2(&self, addr: TableAddr) -> Option<NonNull<TableEntity>> {
+        self.entry(addr).map(HandleAndCache::get_table)
     }
 
-    /// Returns the [`ElementSegmentEntity`] at the `addr` if any.
+    /// Returns a pointer to the [`FuncEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
-    pub fn get_elem_v2<'a>(
-        &mut self,
-        addr: ElemAddr,
-        store: &'a mut StoreInner,
-    ) -> Option<&'a mut ElementSegmentEntity> {
-        let handle = self.handles.get_mut(u32::from(addr) as usize)?;
-        unsafe { handle.get_elem(store) }
+    pub fn get_func_v2(&self, addr: FuncAddr) -> Option<NonNull<FuncEntity>> {
+        self.entry(addr).map(HandleAndCache::get_func)
+    }
+
+    /// Returns a pointer to the [`DataSegmentEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    #[inline]
+    pub fn get_data_v2(&self, addr: DataAddr) -> Option<NonNull<DataSegmentEntity>> {
+        self.entry(addr).map(HandleAndCache::get_data)
+    }
+
+    /// Returns a pointer to the [`ElementSegmentEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    #[inline]
+    pub fn get_elem_v2(&self, addr: ElemAddr) -> Option<NonNull<ElementSegmentEntity>> {
+        self.entry(addr).map(HandleAndCache::get_elem)
     }
 
     /// Returns the [`Memory`] at the `addr` if any.
