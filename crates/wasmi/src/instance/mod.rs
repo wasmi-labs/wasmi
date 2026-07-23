@@ -82,6 +82,8 @@ impl InstanceEntity {
         &self.layout
     }
 
+    /// Returns the [`HandleAndCache`] entry for `addr` if any.
+    #[inline]
     fn entry(&self, addr: impl Into<u32>) -> Option<&HandleAndCache> {
         self.handles.get(addr.into() as usize)
     }
