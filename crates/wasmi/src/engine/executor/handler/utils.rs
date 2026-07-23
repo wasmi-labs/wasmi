@@ -562,17 +562,16 @@ pub fn is_default_memory(instance: Inst, memory: ir::MemoryAddr) -> bool {
     )
 }
 
-pub fn extract_mem0(store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) {
-    let mut inst = inst;
-    let instance = unsafe { inst.as_mut() };
-    let Some(addr) = instance.layout().memory_addr(0)
-    else {
+pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) {
+    let instance = unsafe { inst.as_ref() };
+    let Some(addr) = instance.layout().memory_addr(0) else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
     };
-    let Some(mem0) = instance.get_memory_v2(addr, store.inner_mut()) else {
+    let Some(mem0) = instance.get_memory_v2(addr) else {
         unsafe { unreachable_unchecked!() }
     };
-    let mem0 = mem0.data_mut();
+    // SAFETY: warmed at instantiation; the `_store` borrow scopes exclusive memory access.
+    let mem0 = unsafe { &mut *mem0.as_ptr() }.data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
     (Mem0Ptr::from(mem0_ptr), Mem0Len::from(mem0_len))
@@ -603,13 +602,16 @@ macro_rules! impl_resolve_from_instance {
         $( fn $fn:ident(inst: Inst, store: &mut StoreInner, $param:ident: ir::$param_ty:ident) -> &mut $ret:ty = $getter:expr );* $(;)?
     ) => {
         $(
+            /// Resolves the entity from the warmed up instance cache.
+            ///
+            /// The `store` borrow is not read; it ties the returned reference so that it
+            /// cannot alias a concurrent store mutation (this is the safe wrapper).
             #[inline]
-            pub fn $fn(inst: Inst, store: &mut StoreInner, $param: ir::$param_ty) -> &mut $ret {
-                let mut inst = inst;
-                let inst = unsafe { inst.as_mut() };
+            pub fn $fn(inst: Inst, _store: &mut StoreInner, $param: ir::$param_ty) -> &mut $ret {
+                let inst = unsafe { inst.as_ref() };
                 let raw_addr = ::core::primitive::u32::from($param);
                 let addr = <$param_ty>::from(raw_addr);
-                let Some($param) = $getter(inst, addr, store) else {
+                let Some(ptr) = $getter(inst, addr) else {
                     unsafe {
                         $crate::engine::utils::unreachable_unchecked!(
                             ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
@@ -617,7 +619,8 @@ macro_rules! impl_resolve_from_instance {
                         )
                     }
                 };
-                $param
+                // SAFETY: warmed at instantiation; the `_store` borrow scopes the reference.
+                unsafe { &mut *ptr.as_ptr() }
             }
         )*
     };
