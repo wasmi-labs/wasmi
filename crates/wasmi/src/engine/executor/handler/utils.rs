@@ -34,11 +34,10 @@ use crate::{
     func::{FuncEntity, HostFuncEntity},
     instance::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceEntity, MemoryAddr, TableAddr},
     ir::{self, Address, BoundedSlotSpan, Local, Offset, Offset16, Slot, SlotAndReg, SlotSpan},
-    memory::{DataSegment, DataSegmentEntity},
+    memory::DataSegmentEntity,
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
-    table::ElementSegment,
 };
-use core::num::NonZero;
+use core::{num::NonZero, ptr::NonNull};
 
 macro_rules! out_of_fuel {
     ($state:expr, $args:expr, $required_fuel:expr) => {{
@@ -634,6 +633,49 @@ impl_resolve_from_instance! {
     fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = InstanceEntity::get_table_v2;
 }
 
+macro_rules! impl_resolve_ptr_from_instance {
+    (
+        $( fn $fn:ident(inst: Inst, $param:ident: ir::$param_ty:ident) -> $ret:ty = $getter:expr );* $(;)?
+    ) => {
+        $(
+            /// Resolves a pointer to the entity from the warmed up instance cache.
+            ///
+            /// Unlike [`load_memory`] and friends this returns a raw [`NonNull`] instead of a
+            /// reference tied to the store. This lets the caller hold several entity pointers
+            /// (or an entity pointer alongside a `&mut` borrow of `fuel`) at once and materialize
+            /// a reference only in the narrow scope where the entity is actually accessed.
+            ///
+            /// # Safety
+            ///
+            /// The caller must ensure that `inst` refers to a live, warmed up [`InstanceEntity`]
+            /// and that `$param` is a valid address within it. The returned pointer is only sound
+            /// to dereference while the instance cache remains warmed up, and the caller must
+            /// ensure the resulting reference does not alias any other live reference.
+            #[inline]
+            pub unsafe fn $fn(inst: Inst, $param: ir::$param_ty) -> NonNull<$ret> {
+                let inst = unsafe { inst.as_ref() };
+                let raw_addr = ::core::primitive::u32::from($param);
+                let addr = <$param_ty>::from(raw_addr);
+                let Some(ptr) = $getter(inst, addr) else {
+                    unsafe {
+                        $crate::engine::utils::unreachable_unchecked!(
+                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
+                            addr,
+                        )
+                    }
+                };
+                ptr
+            }
+        )*
+    };
+}
+impl_resolve_ptr_from_instance! {
+    fn load_memory_ptr(inst: Inst, memory: ir::MemoryAddr) -> MemoryEntity = InstanceEntity::get_memory_v2;
+    fn load_table_ptr(inst: Inst, table: ir::TableAddr) -> TableEntity = InstanceEntity::get_table_v2;
+    fn load_data_ptr(inst: Inst, data: ir::DataAddr) -> DataSegmentEntity = InstanceEntity::get_data_v2;
+    fn load_elem_ptr(inst: Inst, elem: ir::ElemAddr) -> ElementSegmentEntity = InstanceEntity::get_elem_v2;
+}
+
 macro_rules! impl_fetch_from_instance {
     (
         $( fn $fn:ident($param:ident: $ty:ty as $addr:ty) -> $ret:ty = $getter:expr );* $(;)?
@@ -657,8 +699,6 @@ macro_rules! impl_fetch_from_instance {
     };
 }
 impl_fetch_from_instance! {
-    fn fetch_data(func: ir::DataAddr as DataAddr) -> DataSegment = InstanceEntity::get_data;
-    fn fetch_elem(func: ir::ElemAddr as ElemAddr) -> ElementSegment = InstanceEntity::get_elem;
     fn fetch_func(func: ir::FuncAddr as FuncAddr) -> Func = InstanceEntity::get_func;
     fn fetch_memory(memory: ir::MemoryAddr as MemoryAddr) -> Memory = InstanceEntity::get_memory;
     fn fetch_table(table: ir::TableAddr as TableAddr) -> Table = InstanceEntity::get_table;
