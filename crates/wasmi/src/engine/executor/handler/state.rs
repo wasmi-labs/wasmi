@@ -188,12 +188,6 @@ impl Inst {
         bits as usize as *const InstanceEntity
     }
 
-    /// Converts the underlying representation back into its original pointer value.
-    fn as_ptr_mut(&mut self) -> *mut InstanceEntity {
-        let bits = u64::from_ne_bytes(self.value.to_ne_bytes());
-        bits as usize as *mut InstanceEntity
-    }
-
     /// Returns a shared reference to the referenced [`InstanceEntity`].
     ///
     /// # Safety
@@ -207,21 +201,6 @@ impl Inst {
     ///   reference.
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
         unsafe { &*self.as_ptr() }
-    }
-
-    /// Returns an exclusive reference to the referenced [`InstanceEntity`].
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that:
-    ///
-    /// - The [`Inst`] was constructed from a valid, properly aligned
-    ///   `InstanceEntity` pointer.
-    /// - The referenced [`InstanceEntity`] remains alive and is not
-    ///   mutably accessed for the entire duration of the returned
-    ///   reference.
-    pub unsafe fn as_mut(&mut self) -> &mut InstanceEntity {
-        unsafe { &mut *self.as_ptr_mut() }
     }
 }
 
