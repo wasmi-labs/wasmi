@@ -121,6 +121,21 @@ impl<T> StableVec<T> {
         Some(unsafe { &mut *ptr.as_ptr().add(slot) })
     }
 
+    /// Returns a raw pointer to the item at `index`, or `None` if out of bounds.
+    ///
+    /// Unlike [`get_mut`](StableVec::get_mut), this never forms an intermediate `&mut T`, so the
+    /// pointer carries the bucket allocation's own provenance.
+    #[inline]
+    pub fn get_mut_ptr(&mut self, index: usize) -> Option<NonNull<T>> {
+        if index >= self.len {
+            return None;
+        }
+        let (bucket_index, slot) = Self::locate(index);
+        // Safety: `index < len` implies the bucket is allocated and `slot` is initialized.
+        let ptr = unsafe { self.buckets[bucket_index].unwrap_unchecked() };
+        Some(unsafe { NonNull::new_unchecked(ptr.as_ptr().add(slot)) })
+    }
+
     /// Returns exclusive references to the items at `a` and `b`.
     ///
     /// # Errors

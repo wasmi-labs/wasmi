@@ -3,6 +3,7 @@ use core::{
     iter::{Enumerate, FusedIterator, repeat_with},
     marker::PhantomData,
     ops::{Index, IndexMut, Range},
+    ptr::NonNull,
 };
 
 /// An append-only [`Arena`] whose entities have stable addresses.
@@ -152,6 +153,21 @@ where
     pub fn get_mut(&mut self, key: Key) -> Result<&mut T, ArenaError> {
         self.items
             .get_mut(key.into_usize())
+            .ok_or(ArenaError::KeyOutOfBounds)
+    }
+
+    /// Returns a raw pointer to the entity at the given key.
+    ///
+    /// Unlike [`get_mut`](StableArena::get_mut), this never forms an intermediate `&mut T`, so the
+    /// pointer carries the entity's underlying allocation provenance.
+    ///
+    /// # Errors
+    ///
+    /// If the `key` is out of bounds.
+    #[inline]
+    pub fn get_mut_ptr(&mut self, key: Key) -> Result<NonNull<T>, ArenaError> {
+        self.items
+            .get_mut_ptr(key.into_usize())
             .ok_or(ArenaError::KeyOutOfBounds)
     }
 
