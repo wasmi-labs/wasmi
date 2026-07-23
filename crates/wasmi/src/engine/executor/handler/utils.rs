@@ -566,7 +566,6 @@ pub fn extract_mem0(store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) {
     let mut inst = inst;
     let instance = unsafe { inst.as_mut() };
     let Some(addr) = instance.layout().memory_addr(0)
-    // .and_then(|addr| instance.get_memory(addr))
     else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
     };
