@@ -26,7 +26,7 @@ use crate::{
         id::StoreId,
     },
 };
-use core::fmt::Debug;
+use core::{fmt::Debug, ptr::NonNull};
 
 /// An arena for the [`StoreInner`].
 type StoreArena<T> = Arena<RawHandle<T>, <T as Handle>::Entity>;
@@ -366,6 +366,29 @@ impl StoreInner {
         }
     }
 
+    /// Returns a raw pointer to the entity at `idx` in a stable arena.
+    ///
+    /// Unlike [`resolve_mut`](Self::resolve_mut) this never forms an intermediate `&mut Entity`,
+    /// so the returned pointer carries the arena allocation's own provenance and stays valid to
+    /// dereference even after the same slot is resolved again. This is what makes caching the
+    /// pointer in [`HandleAndCache`](crate::instance::HandleAndCache) sound.
+    ///
+    /// # Errors
+    ///
+    /// If the entity index cannot be resolved to its entity.
+    fn resolve_mut_ptr<T>(
+        idx: RawHandle<T>,
+        entities: &mut StableStoreArena<T>,
+    ) -> Result<NonNull<<T as Handle>::Entity>, InternalStoreError>
+    where
+        T: Handle,
+        RawHandle<T>: ArenaKey + Debug,
+    {
+        entities
+            .get_mut_ptr(idx)
+            .map_err(|_err| InternalStoreError::not_found())
+    }
+
     /// Returns the [`FuncType`] associated to the given [`DedupFuncType`].
     ///
     /// # Panics
@@ -635,6 +658,50 @@ impl StoreInner {
     }
 }
 
+macro_rules! impl_try_resolve_ptr {
+    (
+        $(
+            $(#[$attr:meta])*
+            fn $name:ident($handle:ident: &$Handle:ty) -> NonNull<$Entity:ty> = self.$field:ident;
+        )*
+    ) => {
+        impl StoreInner {
+            $(
+                $(#[$attr])*
+                ///
+                /// Unlike the `_mut` twin this never forms an intermediate `&mut Entity`, so the
+                /// returned pointer is sound to cache and dereference later. See
+                /// [`StoreInner::resolve_mut_ptr`].
+                ///
+                /// # Errors
+                ///
+                /// If the handle does not originate from this store or cannot be resolved.
+                pub fn $name(
+                    &mut self,
+                    $handle: &$Handle,
+                ) -> Result<NonNull<$Entity>, InternalStoreError> {
+                    let raw_key = self.unwrap_stored($handle.as_raw())?;
+                    Self::resolve_mut_ptr(*raw_key, &mut self.$field)
+                }
+            )*
+        }
+    };
+}
+impl_try_resolve_ptr! {
+    /// Returns a raw pointer to the [`CoreMemory`] associated to the given [`Memory`].
+    fn try_resolve_memory_ptr(memory: &Memory) -> NonNull<CoreMemory> = self.memories;
+    /// Returns a raw pointer to the [`CoreGlobal`] associated to the given [`Global`].
+    fn try_resolve_global_ptr(global: &Global) -> NonNull<CoreGlobal> = self.globals;
+    /// Returns a raw pointer to the [`CoreTable`] associated to the given [`Table`].
+    fn try_resolve_table_ptr(table: &Table) -> NonNull<CoreTable> = self.tables;
+    /// Returns a raw pointer to the [`FuncEntity`] associated to the given [`Func`].
+    fn try_resolve_func_ptr(func: &Func) -> NonNull<FuncEntity> = self.funcs;
+    /// Returns a raw pointer to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
+    fn try_resolve_element_ptr(elem: &ElementSegment) -> NonNull<CoreElementSegment> = self.elems;
+    /// Returns a raw pointer to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    fn try_resolve_data_ptr(data: &DataSegment) -> NonNull<DataSegmentEntity> = self.datas;
+}
+
 macro_rules! define_panicking_getters {
     (
         $(
@@ -686,6 +753,13 @@ impl StoreInner {
         pub fn resolve_data_mut(&mut Self, data: &DataSegment) -> &mut DataSegmentEntity = Self::try_resolve_data_mut;
         pub fn resolve_instance(&Self, instance: &Instance) -> &InstanceEntity = Self::try_resolve_instance;
         pub fn resolve_externref(&Self, data: &ExternRef) -> &ExternRefEntity = Self::try_resolve_externref;
+
+        pub fn resolve_memory_ptr(&mut Self, memory: &Memory) -> NonNull<CoreMemory> = Self::try_resolve_memory_ptr;
+        pub fn resolve_global_ptr(&mut Self, global: &Global) -> NonNull<CoreGlobal> = Self::try_resolve_global_ptr;
+        pub fn resolve_table_ptr(&mut Self, table: &Table) -> NonNull<CoreTable> = Self::try_resolve_table_ptr;
+        pub fn resolve_func_ptr(&mut Self, func: &Func) -> NonNull<FuncEntity> = Self::try_resolve_func_ptr;
+        pub fn resolve_element_ptr(&mut Self, elem: &ElementSegment) -> NonNull<CoreElementSegment> = Self::try_resolve_element_ptr;
+        pub fn resolve_data_ptr(&mut Self, data: &DataSegment) -> NonNull<DataSegmentEntity> = Self::try_resolve_data_ptr;
 
         pub fn resolve_table_and_element_mut(
             &mut Self,
