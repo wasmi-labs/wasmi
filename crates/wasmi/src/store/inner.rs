@@ -500,39 +500,6 @@ impl StoreInner {
         Ok((fst, snd, fuel))
     }
 
-    /// Returns the following data:
-    ///
-    /// - A shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
-    /// - An exclusive reference to the [`CoreTable`] associated to the given [`Table`].
-    /// - A shared reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
-    /// - An exclusive reference to the [`Fuel`] of the [`StoreInner`].
-    ///
-    /// # Note
-    ///
-    /// This method exists to properly handle use cases where
-    /// otherwise the Rust borrow-checker would not accept.
-    ///
-    /// # Errors
-    ///
-    /// - If the [`Instance`] does not originate from this [`StoreInner`].
-    /// - If the [`Instance`] cannot be resolved to its entity.
-    /// - If the [`Table`] does not originate from this [`StoreInner`].
-    /// - If the [`Table`] cannot be resolved to its entity.
-    /// - If the [`ElementSegment`] does not originate from this [`StoreInner`].
-    /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub fn try_resolve_table_init_params(
-        &mut self,
-        table: &Table,
-        segment: &ElementSegment,
-    ) -> Result<(&mut CoreTable, &CoreElementSegment, &mut Fuel), InternalStoreError> {
-        let mem_idx = self.unwrap_stored(table.as_raw())?;
-        let elem_idx = segment.as_raw();
-        let elem = self.resolve(elem_idx, &self.elems)?;
-        let mem = Self::resolve_mut(*mem_idx, &mut self.tables)?;
-        let fuel = &mut self.fuel;
-        Ok((mem, elem, fuel))
-    }
-
     /// Returns a shared reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
     ///
     /// # Errors
@@ -601,59 +568,6 @@ impl StoreInner {
         let memory = Self::resolve_mut(*idx, &mut self.memories)?;
         let fuel = &mut self.fuel;
         Ok((memory, fuel))
-    }
-
-    /// Returns the following data:
-    ///
-    /// - An exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
-    /// - A shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
-    /// - An exclusive reference to the [`Fuel`] of the [`StoreInner`].
-    ///
-    /// # Note
-    ///
-    /// This method exists to properly handle use cases where
-    /// otherwise the Rust borrow-checker would not accept.
-    ///
-    /// # Errors
-    ///
-    /// - If the [`Memory`] does not originate from this [`StoreInner`].
-    /// - If the [`Memory`] cannot be resolved to its entity.
-    /// - If the [`DataSegment`] does not originate from this [`StoreInner`].
-    /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub fn try_resolve_memory_init_params(
-        &mut self,
-        memory: &Memory,
-        segment: &DataSegment,
-    ) -> Result<(&mut CoreMemory, &DataSegmentEntity, &mut Fuel), InternalStoreError> {
-        let mem_idx = self.unwrap_stored(memory.as_raw())?;
-        let data_idx = segment.as_raw();
-        let data = self.resolve(data_idx, &self.datas)?;
-        let mem = Self::resolve_mut(*mem_idx, &mut self.memories)?;
-        let fuel = &mut self.fuel;
-        Ok((mem, data, fuel))
-    }
-
-    /// Returns an exclusive pair of references to the [`CoreMemory`] associated to the given [`Memory`]s.
-    ///
-    /// # Errors
-    ///
-    /// - If the [`Memory`] does not originate from this [`StoreInner`].
-    /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn try_resolve_memory_pair_and_fuel(
-        &mut self,
-        mem0: &Memory,
-        mem1: &Memory,
-    ) -> Result<(&mut CoreMemory, &mut CoreMemory, &mut Fuel), InternalStoreError> {
-        let mem0 = self.unwrap_stored(mem0.as_raw())?;
-        let mem1 = self.unwrap_stored(mem1.as_raw())?;
-        let [mem0, mem1] = self
-            .memories
-            .get_disjoint_mut([*mem0, *mem1])
-            .unwrap_or_else(|err| {
-                panic!("failed to resolve stored pair of memories at {mem0:?} and {mem1:?}: {err}")
-            });
-        let fuel = &mut self.fuel;
-        Ok((mem0, mem1, fuel))
     }
 
     /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
@@ -793,38 +707,10 @@ impl StoreInner {
             table: &Table, elem: &ElementSegment,
         ) -> (&mut CoreTable, &mut CoreElementSegment) = Self::try_resolve_table_and_element_mut;
 
-        pub fn resolve_table_and_fuel_mut(
-            &mut Self,
-            table: &Table,
-        ) -> (&mut CoreTable, &mut Fuel) = Self::try_resolve_table_and_fuel_mut;
-
         pub fn resolve_table_pair_and_fuel(
             &mut Self,
             fst: &Table,
             snd: &Table,
         ) -> (&mut CoreTable, &mut CoreTable, &mut Fuel) = Self::try_resolve_table_pair_and_fuel;
-
-        pub fn resolve_table_init_params(
-            &mut Self,
-            table: &Table,
-            elem: &ElementSegment,
-        ) -> (&mut CoreTable, &CoreElementSegment, &mut Fuel) = Self::try_resolve_table_init_params;
-
-        pub fn resolve_memory_and_fuel_mut(
-            &mut Self,
-            memory: &Memory,
-        ) -> (&mut CoreMemory, &mut Fuel) = Self::try_resolve_memory_and_fuel_mut;
-
-        pub fn resolve_memory_init_params(
-            &mut Self,
-            memory: &Memory,
-            segment: &DataSegment,
-        ) -> (&mut CoreMemory, &DataSegmentEntity, &mut Fuel) = Self::try_resolve_memory_init_params;
-
-        pub fn resolve_memory_pair_and_fuel(
-            &mut Self,
-            fst: &Memory,
-            snd: &Memory,
-        ) -> (&mut CoreMemory, &mut CoreMemory, &mut Fuel) = Self::try_resolve_memory_pair_and_fuel;
     }
 }
