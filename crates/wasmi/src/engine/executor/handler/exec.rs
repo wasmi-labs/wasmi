@@ -487,11 +487,19 @@ execution_handler! {
             memory_copy_within(state, &mut args, ip, dst_memory, dst_index, src_index, len)?;
             dispatch!(state, args)
         }
-        // SAFETY: the `dst_memory == src_memory` branch above guarantees `dst != src`, so these
-        //         are distinct entities whose references do not alias.
-        //         These accesses just perform the bounds checks required by the Wasm spec.
-        let src_memory = unsafe { utils::load_memory_ptr(instance, src_memory).as_ref() };
-        let dst_memory = unsafe { utils::load_memory_ptr(instance, dst_memory).as_mut() };
+        let src_ptr = unsafe { utils::load_memory_ptr(instance, src_memory) };
+        let mut dst_ptr = unsafe { utils::load_memory_ptr(instance, dst_memory) };
+        if src_ptr == dst_ptr {
+            // Distinct memory indices can still resolve to the same store entity (e.g. the same
+            // memory imported under two names), so branch on the resolved entity before forming
+            // the aliasing references below.
+            memory_copy_within(state, &mut args, ip, dst_memory, dst_index, src_index, len)?;
+            dispatch!(state, args)
+        }
+        // SAFETY: `src_ptr != dst_ptr`, so these are distinct entities whose references do not
+        //         alias. These accesses just perform the bounds checks required by the Wasm spec.
+        let src_memory = unsafe { src_ptr.as_ref() };
+        let dst_memory = unsafe { dst_ptr.as_mut() };
         let fuel = state.store.inner_mut().fuel_mut();
         let src_bytes = utils::memory_slice(src_memory, src_index, len)
             .into_control()?;
@@ -732,32 +740,26 @@ execution_handler! {
         let dst: u64 = args.get(dst);
         let src: u64 = args.get(src);
         let len: u64 = args.get(len);
-        if dst_table == src_table {
-            // Case: copy within the same table
-            // SAFETY: `instance` is live and warmed up; `table` is the only entity accessed here.
-            let table = unsafe { utils::load_table_ptr(instance, dst_table).as_mut() };
+        let src_ptr = unsafe { utils::load_table_ptr(instance, src_table) };
+        let mut dst_ptr = unsafe { utils::load_table_ptr(instance, dst_table) };
+        // Distinct table indices can still resolve to the same store entity (e.g. the same table
+        // imported under two names), so branch on the resolved entity, not just the index.
+        let result = if src_ptr == dst_ptr {
+            // Case: copy within the same table.
+            // SAFETY: `dst_ptr` is warmed up and is the only entity accessed here.
+            let table = unsafe { dst_ptr.as_mut() };
             let fuel = state.store.inner_mut().fuel_mut();
-            if let Err(error) = table.copy_within(dst, src, len, Some(fuel)) {
-                let trap_code = match error {
-                    TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
-                    TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
-                    TableError::OutOfFuel { required_fuel } => {
-                        args.set_ip(ip);
-                        out_of_fuel!(state, args, required_fuel)
-                    }
-                    _ => panic!("table.copy: unexpected error: {error}"),
-                };
-                trap!(trap_code)
-            }
-            dispatch!(state, args)
-        }
-        // Case: copy between two different tables
-        // SAFETY: the `dst_table == src_table` branch above guarantees `dst != src`, so these
-        //         are distinct entities whose references do not alias.
-        let dst_table = unsafe { utils::load_table_ptr(instance, dst_table).as_mut() };
-        let src_table = unsafe { utils::load_table_ptr(instance, src_table).as_ref() };
-        let fuel = state.store.inner_mut().fuel_mut();
-        if let Err(error) = CoreTable::copy(dst_table, dst, src_table, src, len, Some(fuel)) {
+            table.copy_within(dst, src, len, Some(fuel))
+        } else {
+            // Case: copy between two distinct tables.
+            // SAFETY: `src_ptr != dst_ptr`, so these are distinct entities whose references do
+            //         not alias.
+            let src_table = unsafe { src_ptr.as_ref() };
+            let dst_table = unsafe { dst_ptr.as_mut() };
+            let fuel = state.store.inner_mut().fuel_mut();
+            CoreTable::copy(dst_table, dst, src_table, src, len, Some(fuel))
+        };
+        if let Err(error) = result {
             let trap_code = match error {
                 TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
