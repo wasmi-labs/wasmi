@@ -657,8 +657,8 @@ macro_rules! impl_fetch_from_instance {
     };
 }
 impl_fetch_from_instance! {
-    fn fetch_data(func: ir::DataAddr as DataAddr) -> DataSegment = InstanceEntity::get_data_segment;
-    fn fetch_elem(func: ir::ElemAddr as ElemAddr) -> ElementSegment = InstanceEntity::get_element_segment;
+    fn fetch_data(func: ir::DataAddr as DataAddr) -> DataSegment = InstanceEntity::get_data;
+    fn fetch_elem(func: ir::ElemAddr as ElemAddr) -> ElementSegment = InstanceEntity::get_elem;
     fn fetch_func(func: ir::FuncAddr as FuncAddr) -> Func = InstanceEntity::get_func;
     fn fetch_memory(memory: ir::MemoryAddr as MemoryAddr) -> Memory = InstanceEntity::get_memory;
     fn fetch_table(table: ir::TableAddr as TableAddr) -> Table = InstanceEntity::get_table;

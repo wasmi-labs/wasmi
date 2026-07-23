@@ -187,14 +187,14 @@ impl InstanceEntity {
 
     /// Returns the [`DataSegment`] at the `addr` if any.
     #[inline]
-    pub fn get_data_segment(&self, addr: DataAddr) -> Option<DataSegment> {
+    pub fn get_data(&self, addr: DataAddr) -> Option<DataSegment> {
         let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.handle.cast_data() })
     }
 
     /// Returns the [`ElementSegment`] at the `addr` if any.
     #[inline]
-    pub fn get_element_segment(&self, addr: ElemAddr) -> Option<ElementSegment> {
+    pub fn get_elem(&self, addr: ElemAddr) -> Option<ElementSegment> {
         let handle = self.handles.get(u32::from(addr) as usize)?;
         Some(unsafe { handle.handle.cast_elem() })
     }
