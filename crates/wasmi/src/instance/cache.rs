@@ -98,8 +98,7 @@ macro_rules! impl_warmup_cache {
             /// The caller must ensure that `self`'s handle matches the resolved entity type.
             pub unsafe fn $warmup(&mut self, store: &mut StoreInner) {
                 let handle = unsafe { $cast(self.handle) };
-                let entity = $resolve(store, &handle);
-                self.cache = NonNull::from(entity).cast::<AnyEntity>();
+                self.cache = $resolve(store, &handle).cast::<AnyEntity>();
             }
         )*
     };
@@ -108,32 +107,32 @@ impl HandleAndCache {
     impl_warmup_cache! {
         pub unsafe fn warmup_memory(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_memory,
-            resolve: StoreInner::resolve_memory_mut,
+            resolve: StoreInner::resolve_memory_ptr,
         };
 
         pub unsafe fn warmup_global(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_global,
-            resolve: StoreInner::resolve_global_mut,
+            resolve: StoreInner::resolve_global_ptr,
         };
 
         pub unsafe fn warmup_table(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_table,
-            resolve: StoreInner::resolve_table_mut,
+            resolve: StoreInner::resolve_table_ptr,
         };
 
         pub unsafe fn warmup_func(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_func,
-            resolve: StoreInner::resolve_func_mut,
+            resolve: StoreInner::resolve_func_ptr,
         };
 
         pub unsafe fn warmup_elem(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_elem,
-            resolve: StoreInner::resolve_element_mut,
+            resolve: StoreInner::resolve_element_ptr,
         };
 
         pub unsafe fn warmup_data(&mut self, store: &mut StoreInner) = {
             cast: AnyHandle::cast_data,
-            resolve: StoreInner::resolve_data_mut,
+            resolve: StoreInner::resolve_data_ptr,
         };
     }
 }
