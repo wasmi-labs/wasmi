@@ -1,15 +1,18 @@
 pub(crate) use self::builder::InstanceEntityBuilder;
 use self::handle::AnyHandle;
 pub use self::{
+    cache::HandleAndCache,
     exports::{Export, ExportsIter, Extern, ExternType},
     layout::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceLayout, MemoryAddr, TableAddr},
 };
 use crate::{
     AsContext,
     AsContextMut,
+    DataSegmentEntity,
     ElementSegment,
     Error,
     Func,
+    FuncEntity,
     Global,
     Memory,
     Module,
@@ -19,14 +22,22 @@ use crate::{
     WasmParams,
     WasmResults,
     collections::Map,
+    core::{
+        CoreElementSegment as ElementSegmentEntity,
+        CoreGlobal as GlobalEntity,
+        CoreMemory as MemoryEntity,
+        CoreTable as TableEntity,
+    },
     engine::DedupFuncType,
     func::FuncError,
     memory::DataSegment,
-    store::Stored,
+    store::{StoreInner, Stored},
 };
 use alloc::{boxed::Box, sync::Arc};
+use core::ptr::NonNull;
 
 mod builder;
+mod cache;
 mod exports;
 mod handle;
 mod layout;
@@ -37,7 +48,7 @@ mod tests;
 /// A module instance entity.
 #[derive(Debug)]
 pub struct InstanceEntity {
-    handles: Box<[AnyHandle]>,
+    handles: Box<[HandleAndCache]>,
     func_types: Arc<[DedupFuncType]>,
     exports: Map<Box<str>, Extern>,
     layout: InstanceLayout,
@@ -71,43 +82,127 @@ impl InstanceEntity {
         &self.layout
     }
 
+    /// Returns the [`HandleAndCache`] entry for `addr` if any.
+    #[inline]
+    fn entry(&self, addr: impl Into<u32>) -> Option<&HandleAndCache> {
+        self.handles.get(addr.into() as usize)
+    }
+
+    /// Warms up the entity cache of every handle so that execution never resolves lazily.
+    ///
+    /// This must be called once before the [`InstanceEntity`] is used for execution.
+    pub fn warmup(&mut self, store: &mut StoreInner) {
+        let layout = self.layout;
+        macro_rules! warmup {
+            ($addr:ident, $warmup:ident) => {{
+                let mut index = 0;
+                while let Some(addr) = layout.$addr(index) {
+                    let handle = &mut self.handles[u32::from(addr) as usize];
+                    unsafe { handle.$warmup(store) };
+                    index += 1;
+                }
+            }};
+        }
+        warmup!(memory_addr, warmup_memory);
+        warmup!(global_addr, warmup_global);
+        warmup!(table_addr, warmup_table);
+        warmup!(func_addr, warmup_func);
+        warmup!(elem_addr, warmup_elem);
+        warmup!(data_addr, warmup_data);
+    }
+
+    /// Returns a pointer to the [`MemoryEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    #[inline]
+    pub fn get_memory_ptr(&self, addr: MemoryAddr) -> Option<NonNull<MemoryEntity>> {
+        self.entry(addr).map(HandleAndCache::get_memory)
+    }
+
+    /// Returns a pointer to the [`GlobalEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    #[inline]
+    pub fn get_global_ptr(&self, addr: GlobalAddr) -> Option<NonNull<GlobalEntity>> {
+        self.entry(addr).map(HandleAndCache::get_global)
+    }
+
+    /// Returns a pointer to the [`TableEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    #[inline]
+    pub fn get_table_ptr(&self, addr: TableAddr) -> Option<NonNull<TableEntity>> {
+        self.entry(addr).map(HandleAndCache::get_table)
+    }
+
+    /// Returns a pointer to the [`FuncEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    #[inline]
+    pub fn get_func_ptr(&self, addr: FuncAddr) -> Option<NonNull<FuncEntity>> {
+        self.entry(addr).map(HandleAndCache::get_func)
+    }
+
+    /// Returns a pointer to the [`DataSegmentEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    #[inline]
+    pub fn get_data_ptr(&self, addr: DataAddr) -> Option<NonNull<DataSegmentEntity>> {
+        self.entry(addr).map(HandleAndCache::get_data)
+    }
+
+    /// Returns a pointer to the [`ElementSegmentEntity`] at the `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    #[inline]
+    pub fn get_elem_ptr(&self, addr: ElemAddr) -> Option<NonNull<ElementSegmentEntity>> {
+        self.entry(addr).map(HandleAndCache::get_elem)
+    }
+
     /// Returns the [`Memory`] at the `addr` if any.
+    #[inline]
     pub fn get_memory(&self, addr: MemoryAddr) -> Option<Memory> {
-        let handle = self.handles.get(u32::from(addr) as usize)?;
-        Some(unsafe { handle.cast_memory() })
+        let entry = self.entry(addr)?;
+        Some(unsafe { entry.handle.cast_memory() })
     }
 
     /// Returns the [`Table`] at the `addr` if any.
+    #[inline]
     pub fn get_table(&self, addr: TableAddr) -> Option<Table> {
-        let handle = self.handles.get(u32::from(addr) as usize)?;
-        Some(unsafe { handle.cast_table() })
+        let entry = self.entry(addr)?;
+        Some(unsafe { entry.handle.cast_table() })
     }
 
     /// Returns the [`Global`] at the `addr` if any.
+    #[inline]
     pub fn get_global(&self, addr: GlobalAddr) -> Option<Global> {
-        let handle = self.handles.get(u32::from(addr) as usize)?;
-        Some(unsafe { handle.cast_global() })
+        let entry = self.entry(addr)?;
+        Some(unsafe { entry.handle.cast_global() })
     }
 
     /// Returns the [`Func`] at the `addr` if any.
+    #[inline]
     pub fn get_func(&self, addr: FuncAddr) -> Option<Func> {
-        let handle = self.handles.get(u32::from(addr) as usize)?;
-        Some(unsafe { handle.cast_func() })
+        let entry = self.entry(addr)?;
+        Some(unsafe { entry.handle.cast_func() })
     }
 
     /// Returns the [`DataSegment`] at the `addr` if any.
-    pub fn get_data_segment(&self, addr: DataAddr) -> Option<DataSegment> {
-        let handle = self.handles.get(u32::from(addr) as usize)?;
-        Some(unsafe { handle.cast_data() })
+    #[inline]
+    pub fn get_data(&self, addr: DataAddr) -> Option<DataSegment> {
+        let entry = self.entry(addr)?;
+        Some(unsafe { entry.handle.cast_data() })
     }
 
     /// Returns the [`ElementSegment`] at the `addr` if any.
-    pub fn get_element_segment(&self, addr: ElemAddr) -> Option<ElementSegment> {
-        let handle = self.handles.get(u32::from(addr) as usize)?;
-        Some(unsafe { handle.cast_elem() })
+    #[inline]
+    pub fn get_elem(&self, addr: ElemAddr) -> Option<ElementSegment> {
+        let entry = self.entry(addr)?;
+        Some(unsafe { entry.handle.cast_elem() })
     }
 
     /// Returns the signature at the `index` if any.
+    #[inline]
     pub fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
         self.func_types.get(index as usize)
     }

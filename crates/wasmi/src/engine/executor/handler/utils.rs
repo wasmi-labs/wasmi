@@ -4,7 +4,6 @@ use crate::core::simd::ImmLaneIdx;
 use crate::{
     Error,
     Func,
-    Global,
     Instance,
     Memory,
     Nullable,
@@ -12,7 +11,15 @@ use crate::{
     Table,
     TrapCode,
     V128,
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, RawVal, ShiftAmount},
+    core::{
+        CoreElementSegment as ElementSegmentEntity,
+        CoreGlobal as GlobalEntity,
+        CoreMemory as MemoryEntity,
+        CoreTable as TableEntity,
+        CoreTable,
+        RawVal,
+        ShiftAmount,
+    },
     engine::{
         DedupFuncType,
         EngineFunc,
@@ -27,11 +34,10 @@ use crate::{
     func::{FuncEntity, HostFuncEntity},
     instance::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceEntity, MemoryAddr, TableAddr},
     ir::{self, Address, BoundedSlotSpan, Local, Offset, Offset16, Slot, SlotAndReg, SlotSpan},
-    memory::{DataSegment, DataSegmentEntity},
+    memory::DataSegmentEntity,
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
-    table::ElementSegment,
 };
-use core::num::NonZero;
+use core::{num::NonZero, ptr::NonNull};
 
 macro_rules! out_of_fuel {
     ($state:expr, $args:expr, $required_fuel:expr) => {{
@@ -555,22 +561,22 @@ pub fn is_default_memory(instance: Inst, memory: ir::MemoryAddr) -> bool {
     )
 }
 
-pub fn extract_mem0(store: &mut PrunedStore, instance: Inst) -> (Mem0Ptr, Mem0Len) {
-    let instance = unsafe { instance.as_ref() };
-    let Some(memory) = instance
-        .layout()
-        .memory_addr(0)
-        .and_then(|addr| instance.get_memory(addr))
-    else {
+pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) {
+    let instance = unsafe { inst.as_ref() };
+    let Some(addr) = instance.layout().memory_addr(0) else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
     };
-    let mem0 = resolve_memory_mut(store, &memory).data_mut();
+    let Some(mem0) = instance.get_memory_ptr(addr) else {
+        unsafe { unreachable_unchecked!() }
+    };
+    // SAFETY: warmed at instantiation; the `_store` borrow scopes exclusive memory access.
+    let mem0 = unsafe { &mut *mem0.as_ptr() }.data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
     (Mem0Ptr::from(mem0_ptr), Mem0Len::from(mem0_len))
 }
 
-pub fn memory_slice(memory: &CoreMemory, pos: usize, len: usize) -> Result<&[u8], TrapCode> {
+pub fn memory_slice(memory: &MemoryEntity, pos: usize, len: usize) -> Result<&[u8], TrapCode> {
     memory
         .data()
         .get(pos..)
@@ -579,7 +585,7 @@ pub fn memory_slice(memory: &CoreMemory, pos: usize, len: usize) -> Result<&[u8]
 }
 
 pub fn memory_slice_mut(
-    memory: &mut CoreMemory,
+    memory: &mut MemoryEntity,
     pos: usize,
     len: usize,
 ) -> Result<&mut [u8], TrapCode> {
@@ -588,6 +594,86 @@ pub fn memory_slice_mut(
         .get_mut(pos..)
         .and_then(|memory| memory.get_mut(..len))
         .ok_or(TrapCode::MemoryOutOfBounds)
+}
+
+macro_rules! impl_resolve_from_instance {
+    (
+        $( fn $fn:ident(inst: Inst, store: &mut StoreInner, $param:ident: ir::$param_ty:ident) -> &mut $ret:ty = $getter:expr );* $(;)?
+    ) => {
+        $(
+            /// Resolves the entity from the warmed up instance cache.
+            ///
+            /// The `store` borrow is not read; it ties the returned reference so that it
+            /// cannot alias a concurrent store mutation (this is the safe wrapper).
+            #[inline]
+            pub fn $fn(inst: Inst, _store: &mut StoreInner, $param: ir::$param_ty) -> &mut $ret {
+                let inst = unsafe { inst.as_ref() };
+                let raw_addr = ::core::primitive::u32::from($param);
+                let addr = <$param_ty>::from(raw_addr);
+                let Some(ptr) = $getter(inst, addr) else {
+                    unsafe {
+                        $crate::engine::utils::unreachable_unchecked!(
+                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
+                            addr,
+                        )
+                    }
+                };
+                // SAFETY: warmed at instantiation; the `_store` borrow scopes the reference.
+                unsafe { &mut *ptr.as_ptr() }
+            }
+        )*
+    };
+}
+impl_resolve_from_instance! {
+    fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = InstanceEntity::get_data_ptr;
+    fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = InstanceEntity::get_elem_ptr;
+    // fn load_func(inst: Inst, store: &mut StoreInner, func: ir::FuncAddr) -> &mut FuncEntity = InstanceEntity::get_func_ptr;
+    fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = InstanceEntity::get_global_ptr;
+    fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = InstanceEntity::get_memory_ptr;
+    fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = InstanceEntity::get_table_ptr;
+}
+
+macro_rules! impl_resolve_ptr_from_instance {
+    (
+        $( fn $fn:ident(inst: Inst, $param:ident: ir::$param_ty:ident) -> $ret:ty = $getter:expr );* $(;)?
+    ) => {
+        $(
+            /// Resolves a pointer to the entity from the warmed up instance cache.
+            ///
+            /// Unlike [`load_memory`] and friends this returns a raw [`NonNull`] instead of a
+            /// reference tied to the store. This lets the caller hold several entity pointers
+            /// (or an entity pointer alongside a `&mut` borrow of `fuel`) at once and materialize
+            /// a reference only in the narrow scope where the entity is actually accessed.
+            ///
+            /// # Safety
+            ///
+            /// The caller must ensure that `inst` refers to a live, warmed up [`InstanceEntity`]
+            /// and that `$param` is a valid address within it. The returned pointer is only sound
+            /// to dereference while the instance cache remains warmed up, and the caller must
+            /// ensure the resulting reference does not alias any other live reference.
+            #[inline]
+            pub unsafe fn $fn(inst: Inst, $param: ir::$param_ty) -> NonNull<$ret> {
+                let inst = unsafe { inst.as_ref() };
+                let raw_addr = ::core::primitive::u32::from($param);
+                let addr = <$param_ty>::from(raw_addr);
+                let Some(ptr) = $getter(inst, addr) else {
+                    unsafe {
+                        $crate::engine::utils::unreachable_unchecked!(
+                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
+                            addr,
+                        )
+                    }
+                };
+                ptr
+            }
+        )*
+    };
+}
+impl_resolve_ptr_from_instance! {
+    fn load_memory_ptr(inst: Inst, memory: ir::MemoryAddr) -> MemoryEntity = InstanceEntity::get_memory_ptr;
+    fn load_table_ptr(inst: Inst, table: ir::TableAddr) -> TableEntity = InstanceEntity::get_table_ptr;
+    fn load_data_ptr(inst: Inst, data: ir::DataAddr) -> DataSegmentEntity = InstanceEntity::get_data_ptr;
+    fn load_elem_ptr(inst: Inst, elem: ir::ElemAddr) -> ElementSegmentEntity = InstanceEntity::get_elem_ptr;
 }
 
 macro_rules! impl_fetch_from_instance {
@@ -613,10 +699,7 @@ macro_rules! impl_fetch_from_instance {
     };
 }
 impl_fetch_from_instance! {
-    fn fetch_data(func: ir::DataAddr as DataAddr) -> DataSegment = InstanceEntity::get_data_segment;
-    fn fetch_elem(func: ir::ElemAddr as ElemAddr) -> ElementSegment = InstanceEntity::get_element_segment;
     fn fetch_func(func: ir::FuncAddr as FuncAddr) -> Func = InstanceEntity::get_func;
-    fn fetch_global(global: ir::GlobalAddr as GlobalAddr) -> Global = InstanceEntity::get_global;
     fn fetch_memory(memory: ir::MemoryAddr as MemoryAddr) -> Memory = InstanceEntity::get_memory;
     fn fetch_table(table: ir::TableAddr as TableAddr) -> Table = InstanceEntity::get_table;
     fn fetch_func_type(func_type: ir::FuncType as u32) -> DedupFuncType = {
@@ -647,16 +730,10 @@ impl_resolve_from_store! {
     // fn resolve_elem(elem: &ElementSegment) -> &'a CoreElementSegment = StoreInner::try_resolve_element;
     fn resolve_func(func: &Func) -> &'a FuncEntity = StoreInner::try_resolve_func;
     // fn resolve_global(global: &Global) -> &'a CoreGlobal = StoreInner::try_resolve_global;
-    fn resolve_memory(memory: &Memory) -> &'a CoreMemory = StoreInner::try_resolve_memory;
+    fn resolve_memory(memory: &Memory) -> &'a MemoryEntity = StoreInner::try_resolve_memory;
     fn resolve_table(table: &Table) -> &'a CoreTable = StoreInner::try_resolve_table;
-    fn resolve_instance(func: &Instance) -> &'a InstanceEntity = StoreInner::try_resolve_instance;
+    fn resolve_instance(instance: &Instance) -> &'a InstanceEntity = StoreInner::try_resolve_instance;
     // fn resolve_func_type(func_type: DedupFuncType) -> DedupFuncType = StoreInner::resolve_func_type;
-
-    fn resolve_elem_mut(elem: &ElementSegment) -> &'a mut CoreElementSegment = StoreInner::try_resolve_element_mut;
-    fn resolve_data_mut(data: &DataSegment) -> &'a mut DataSegmentEntity = StoreInner::try_resolve_data_mut;
-    fn resolve_global_mut(global: &Global) -> &'a mut CoreGlobal = StoreInner::try_resolve_global_mut;
-    fn resolve_memory_mut(memory: &Memory) -> &'a mut CoreMemory = StoreInner::try_resolve_memory_mut;
-    fn resolve_table_mut(table: &Table) -> &'a mut CoreTable = StoreInner::try_resolve_table_mut;
 }
 
 #[inline]
@@ -665,14 +742,13 @@ pub fn resolve_indirect_func<I>(
     table: ir::TableAddr,
     func_type: ir::FuncType,
     state: &mut VmState<'_>,
-    args: &Args,
+    args: &mut Args,
 ) -> Result<Func, TrapCode>
 where
     I: GetValue<u64>,
 {
     let index = get_value(index, args.sp, args.ireg, args.freg32, args.freg64);
-    let table = fetch_table(args.instance, table);
-    let table = resolve_table(state.store, &table);
+    let table = args.fetch_table(state, table);
     let rawref = table.get(index).ok_or(TrapCode::TableOutOfBounds)?;
     debug_assert!(matches!(rawref.ty(), RefType::Func));
     let funcref = <Nullable<Func>>::from_raw_parts(rawref.raw(), &*state.store);

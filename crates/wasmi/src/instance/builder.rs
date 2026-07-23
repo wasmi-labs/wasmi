@@ -11,11 +11,12 @@ use crate::{
     Table,
     collections::Map,
     engine::DedupFuncType,
-    instance::{InstanceLayout, handle::AnyHandle},
+    instance::{HandleAndCache, InstanceLayout, handle::AnyHandle},
     memory::DataSegment,
     module::FuncIdx,
 };
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
+use core::iter::FusedIterator;
 
 /// A module instance entity builder.
 #[derive(Debug)]
@@ -200,14 +201,28 @@ impl InstanceEntityBuilder {
     }
 
     /// Finishes construction of the [`AnyHandle`] buffer.
-    fn finish_handles(&self) -> Box<[AnyHandle]> {
+    fn finish_handles(&self) -> Box<[HandleAndCache]> {
+        fn handle_and_cache_iter<T>(
+            slice: &[T],
+        ) -> impl ExactSizeIterator<Item = HandleAndCache> + FusedIterator
+        where
+            T: Clone,
+            AnyHandle: From<T>,
+        {
+            slice
+                .iter()
+                .cloned()
+                .map(AnyHandle::from)
+                .map(HandleAndCache::new)
+        }
+
         let mut handles = Vec::new();
-        handles.extend(self.memories.iter().cloned().map(AnyHandle::from));
-        handles.extend(self.globals.iter().cloned().map(AnyHandle::from));
-        handles.extend(self.tables.iter().cloned().map(AnyHandle::from));
-        handles.extend(self.funcs.iter().cloned().map(AnyHandle::from));
-        handles.extend(self.elem_segments.iter().cloned().map(AnyHandle::from));
-        handles.extend(self.data_segments.iter().cloned().map(AnyHandle::from));
+        handles.extend(handle_and_cache_iter(&self.memories));
+        handles.extend(handle_and_cache_iter(&self.globals));
+        handles.extend(handle_and_cache_iter(&self.tables));
+        handles.extend(handle_and_cache_iter(&self.funcs));
+        handles.extend(handle_and_cache_iter(&self.elem_segments));
+        handles.extend(handle_and_cache_iter(&self.data_segments));
         handles.into()
     }
 }

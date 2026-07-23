@@ -487,15 +487,24 @@ execution_handler! {
             memory_copy_within(state, &mut args, ip, dst_memory, dst_index, src_index, len)?;
             dispatch!(state, args)
         }
-        let dst_memory = utils::fetch_memory(instance, dst_memory);
-        let src_memory = utils::fetch_memory(instance, src_memory);
-        let (src_memory, dst_memory, fuel) = state
-            .store
-            .inner_mut()
-            .resolve_memory_pair_and_fuel(&src_memory, &dst_memory);
-        // These accesses just perform the bounds checks required by the Wasm spec.
-        let src_bytes = utils::memory_slice(src_memory, src_index, len).into_control()?;
-        let dst_bytes = utils::memory_slice_mut(dst_memory, dst_index, len).into_control()?;
+        let src_ptr = unsafe { utils::load_memory_ptr(instance, src_memory) };
+        let mut dst_ptr = unsafe { utils::load_memory_ptr(instance, dst_memory) };
+        if src_ptr == dst_ptr {
+            // Distinct memory indices can still resolve to the same store entity (e.g. the same
+            // memory imported under two names), so branch on the resolved entity before forming
+            // the aliasing references below.
+            memory_copy_within(state, &mut args, ip, dst_memory, dst_index, src_index, len)?;
+            dispatch!(state, args)
+        }
+        // SAFETY: `src_ptr != dst_ptr`, so these are distinct entities whose references do not
+        //         alias. These accesses just perform the bounds checks required by the Wasm spec.
+        let src_memory = unsafe { src_ptr.as_ref() };
+        let dst_memory = unsafe { dst_ptr.as_mut() };
+        let fuel = state.store.inner_mut().fuel_mut();
+        let src_bytes = utils::memory_slice(src_memory, src_index, len)
+            .into_control()?;
+        let dst_bytes = utils::memory_slice_mut(dst_memory, dst_index, len)
+            .into_control()?;
         consume_fuel!(
             state,
             ip,
@@ -517,8 +526,9 @@ fn memory_copy_within(
     src_index: usize,
     len: usize,
 ) -> Control<(), Break> {
-    let memory = utils::fetch_memory(args.instance, dst_memory);
-    let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
+    // SAFETY: `args.instance` is live and warmed up; `memory` is the only entity accessed here.
+    let memory = unsafe { utils::load_memory_ptr(args.instance, dst_memory).as_mut() };
+    let fuel = state.store.inner_mut().fuel_mut();
     // These accesses just perform the bounds checks required by the Wasm spec.
     utils::memory_slice(memory, src_index, len).into_control()?;
     utils::memory_slice(memory, dst_index, len).into_control()?;
@@ -558,8 +568,9 @@ execution_handler! {
         let Ok(len) = usize::try_from(len) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
-        let memory = utils::fetch_memory(instance, memory);
-        let (memory, fuel) = state.store.inner_mut().resolve_memory_and_fuel_mut(&memory);
+        // SAFETY: `instance` is live and warmed up; `memory` is the only entity accessed here.
+        let memory = unsafe { utils::load_memory_ptr(instance, memory).as_mut() };
+        let fuel = state.store.inner_mut().fuel_mut();
         let slice = utils::memory_slice_mut(memory, dst, len).into_control()?;
         consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         slice.fill(value);
@@ -599,13 +610,11 @@ execution_handler! {
         let Ok(len) = usize::try_from(len) else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
-        let (memory, data, fuel) = state
-            .store
-            .inner_mut()
-            .resolve_memory_init_params(
-                &utils::fetch_memory(instance, memory),
-                &utils::fetch_data(instance, data),
-            );
+        // SAFETY: `instance` is live and warmed up. `memory` and `data` live in different
+        // arenas, so their references are to distinct entities and cannot alias.
+        let memory = unsafe { utils::load_memory_ptr(instance, memory).as_mut() };
+        let data = unsafe { utils::load_data_ptr(instance, data).as_ref() };
+        let fuel = state.store.inner_mut().fuel_mut();
         let memory = utils::memory_slice_mut(memory, dst_index, len).into_control()?;
         let Some(data) = data
             .bytes()
@@ -731,32 +740,26 @@ execution_handler! {
         let dst: u64 = args.get(dst);
         let src: u64 = args.get(src);
         let len: u64 = args.get(len);
-        if dst_table == src_table {
-            // Case: copy within the same table
-            let table = utils::fetch_table(instance, dst_table);
-            let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
-            if let Err(error) = table.copy_within(dst, src, len, Some(fuel)) {
-                let trap_code = match error {
-                    TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
-                    TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
-                    TableError::OutOfFuel { required_fuel } => {
-                        args.set_ip(ip);
-                        out_of_fuel!(state, args, required_fuel)
-                    }
-                    _ => panic!("table.copy: unexpected error: {error}"),
-                };
-                trap!(trap_code)
-            }
-            dispatch!(state, args)
-        }
-        // Case: copy between two different tables
-        let dst_table = utils::fetch_table(instance, dst_table);
-        let src_table = utils::fetch_table(instance, src_table);
-        let (dst_table, src_table, fuel) = state
-            .store
-            .inner_mut()
-            .resolve_table_pair_and_fuel(&dst_table, &src_table);
-        if let Err(error) = CoreTable::copy(dst_table, dst, src_table, src, len, Some(fuel)) {
+        let src_ptr = unsafe { utils::load_table_ptr(instance, src_table) };
+        let mut dst_ptr = unsafe { utils::load_table_ptr(instance, dst_table) };
+        // Distinct table indices can still resolve to the same store entity (e.g. the same table
+        // imported under two names), so branch on the resolved entity, not just the index.
+        let result = if src_ptr == dst_ptr {
+            // Case: copy within the same table.
+            // SAFETY: `dst_ptr` is warmed up and is the only entity accessed here.
+            let table = unsafe { dst_ptr.as_mut() };
+            let fuel = state.store.inner_mut().fuel_mut();
+            table.copy_within(dst, src, len, Some(fuel))
+        } else {
+            // Case: copy between two distinct tables.
+            // SAFETY: `src_ptr != dst_ptr`, so these are distinct entities whose references do
+            //         not alias.
+            let src_table = unsafe { src_ptr.as_ref() };
+            let dst_table = unsafe { dst_ptr.as_mut() };
+            let fuel = state.store.inner_mut().fuel_mut();
+            CoreTable::copy(dst_table, dst, src_table, src, len, Some(fuel))
+        };
+        if let Err(error) = result {
             let trap_code = match error {
                 TableError::CopyOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
@@ -794,8 +797,9 @@ execution_handler! {
         let dst: u64 = args.get(dst);
         let len: u64 = args.get(len);
         let value: RawRef = args.get(value);
-        let table = utils::fetch_table(instance, table);
-        let (table, fuel) = state.store.inner_mut().resolve_table_and_fuel_mut(&table);
+        // SAFETY: `instance` is live and warmed up; `table` is the only entity accessed here.
+        let table = unsafe { utils::load_table_ptr(instance, table).as_mut() };
+        let fuel = state.store.inner_mut().fuel_mut();
         if let Err(error) = table.fill_raw(dst, value, len, Some(fuel)) {
             let trap_code = match error {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
@@ -835,12 +839,11 @@ execution_handler! {
         let dst: u64 = args.get(dst);
         let src: u32 = args.get(src);
         let len: u32 = args.get(len);
-        let table = utils::fetch_table(args.instance, table);
-        let elem = utils::fetch_elem(args.instance, elem);
-        let (table, element, fuel) = state
-            .store
-            .inner_mut()
-            .resolve_table_init_params(&table, &elem);
+        // SAFETY: `args.instance` is live and warmed up. `table` and `elem` live in different
+        //         arenas, so their references are to distinct entities and cannot alias.
+        let table = unsafe { utils::load_table_ptr(args.instance, table).as_mut() };
+        let element = unsafe { utils::load_elem_ptr(args.instance, elem).as_ref() };
+        let fuel = state.store.inner_mut().fuel_mut();
         if let Err(error) = table.init(element.as_ref(), dst, src, len, Some(fuel)) {
             let trap_code = match error {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
