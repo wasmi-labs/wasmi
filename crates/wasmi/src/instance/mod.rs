@@ -115,7 +115,7 @@ impl InstanceEntity {
     ///
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
-    pub fn get_memory_v2(&self, addr: MemoryAddr) -> Option<NonNull<MemoryEntity>> {
+    pub fn get_memory_ptr(&self, addr: MemoryAddr) -> Option<NonNull<MemoryEntity>> {
         self.entry(addr).map(HandleAndCache::get_memory)
     }
 
@@ -123,7 +123,7 @@ impl InstanceEntity {
     ///
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
-    pub fn get_global_v2(&self, addr: GlobalAddr) -> Option<NonNull<GlobalEntity>> {
+    pub fn get_global_ptr(&self, addr: GlobalAddr) -> Option<NonNull<GlobalEntity>> {
         self.entry(addr).map(HandleAndCache::get_global)
     }
 
@@ -131,7 +131,7 @@ impl InstanceEntity {
     ///
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
-    pub fn get_table_v2(&self, addr: TableAddr) -> Option<NonNull<TableEntity>> {
+    pub fn get_table_ptr(&self, addr: TableAddr) -> Option<NonNull<TableEntity>> {
         self.entry(addr).map(HandleAndCache::get_table)
     }
 
@@ -139,7 +139,7 @@ impl InstanceEntity {
     ///
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
-    pub fn get_func_v2(&self, addr: FuncAddr) -> Option<NonNull<FuncEntity>> {
+    pub fn get_func_ptr(&self, addr: FuncAddr) -> Option<NonNull<FuncEntity>> {
         self.entry(addr).map(HandleAndCache::get_func)
     }
 
@@ -147,7 +147,7 @@ impl InstanceEntity {
     ///
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
-    pub fn get_data_v2(&self, addr: DataAddr) -> Option<NonNull<DataSegmentEntity>> {
+    pub fn get_data_ptr(&self, addr: DataAddr) -> Option<NonNull<DataSegmentEntity>> {
         self.entry(addr).map(HandleAndCache::get_data)
     }
 
@@ -155,7 +155,7 @@ impl InstanceEntity {
     ///
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
-    pub fn get_elem_v2(&self, addr: ElemAddr) -> Option<NonNull<ElementSegmentEntity>> {
+    pub fn get_elem_ptr(&self, addr: ElemAddr) -> Option<NonNull<ElementSegmentEntity>> {
         self.entry(addr).map(HandleAndCache::get_elem)
     }
 

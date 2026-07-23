@@ -566,7 +566,7 @@ pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) 
     let Some(addr) = instance.layout().memory_addr(0) else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
     };
-    let Some(mem0) = instance.get_memory_v2(addr) else {
+    let Some(mem0) = instance.get_memory_ptr(addr) else {
         unsafe { unreachable_unchecked!() }
     };
     // SAFETY: warmed at instantiation; the `_store` borrow scopes exclusive memory access.
@@ -625,12 +625,12 @@ macro_rules! impl_resolve_from_instance {
     };
 }
 impl_resolve_from_instance! {
-    fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = InstanceEntity::get_data_v2;
-    fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = InstanceEntity::get_elem_v2;
-    // fn load_func(inst: Inst, store: &mut StoreInner, func: ir::FuncAddr) -> &mut FuncEntity = InstanceEntity::get_func_v2;
-    fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = InstanceEntity::get_global_v2;
-    fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = InstanceEntity::get_memory_v2;
-    fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = InstanceEntity::get_table_v2;
+    fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = InstanceEntity::get_data_ptr;
+    fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = InstanceEntity::get_elem_ptr;
+    // fn load_func(inst: Inst, store: &mut StoreInner, func: ir::FuncAddr) -> &mut FuncEntity = InstanceEntity::get_func_ptr;
+    fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = InstanceEntity::get_global_ptr;
+    fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = InstanceEntity::get_memory_ptr;
+    fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = InstanceEntity::get_table_ptr;
 }
 
 macro_rules! impl_resolve_ptr_from_instance {
@@ -670,10 +670,10 @@ macro_rules! impl_resolve_ptr_from_instance {
     };
 }
 impl_resolve_ptr_from_instance! {
-    fn load_memory_ptr(inst: Inst, memory: ir::MemoryAddr) -> MemoryEntity = InstanceEntity::get_memory_v2;
-    fn load_table_ptr(inst: Inst, table: ir::TableAddr) -> TableEntity = InstanceEntity::get_table_v2;
-    fn load_data_ptr(inst: Inst, data: ir::DataAddr) -> DataSegmentEntity = InstanceEntity::get_data_v2;
-    fn load_elem_ptr(inst: Inst, elem: ir::ElemAddr) -> ElementSegmentEntity = InstanceEntity::get_elem_v2;
+    fn load_memory_ptr(inst: Inst, memory: ir::MemoryAddr) -> MemoryEntity = InstanceEntity::get_memory_ptr;
+    fn load_table_ptr(inst: Inst, table: ir::TableAddr) -> TableEntity = InstanceEntity::get_table_ptr;
+    fn load_data_ptr(inst: Inst, data: ir::DataAddr) -> DataSegmentEntity = InstanceEntity::get_data_ptr;
+    fn load_elem_ptr(inst: Inst, elem: ir::ElemAddr) -> ElementSegmentEntity = InstanceEntity::get_elem_ptr;
 }
 
 macro_rules! impl_fetch_from_instance {
