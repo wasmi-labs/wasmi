@@ -536,20 +536,6 @@ impl StoreInner {
         self.resolve(segment.as_raw(), &self.elems)
     }
 
-    /// Returns an exclusive reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
-    ///
-    /// # Errors
-    ///
-    /// - If the [`ElementSegment`] does not originate from this [`StoreInner`].
-    /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub fn try_resolve_element_mut(
-        &mut self,
-        segment: &ElementSegment,
-    ) -> Result<&mut CoreElementSegment, InternalStoreError> {
-        let idx = self.unwrap_stored(segment.as_raw())?;
-        Self::resolve_mut(*idx, &mut self.elems)
-    }
-
     /// Returns a shared reference to the [`CoreMemory`] associated to the given [`Memory`].
     ///
     /// # Errors
@@ -593,20 +579,6 @@ impl StoreInner {
         Ok((memory, fuel))
     }
 
-    /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
-    ///
-    /// # Errors
-    ///
-    /// - If the [`DataSegment`] does not originate from this [`StoreInner`].
-    /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub fn try_resolve_data_mut(
-        &mut self,
-        key: &DataSegment,
-    ) -> Result<&mut DataSegmentEntity, InternalStoreError> {
-        let raw_key = self.unwrap_stored(key.as_raw())?;
-        Self::resolve_mut(*raw_key, &mut self.datas)
-    }
-
     /// Returns a shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
     ///
     /// # Errors
@@ -641,20 +613,6 @@ impl StoreInner {
     /// - If the [`Func`] cannot be resolved to its entity.
     pub fn try_resolve_func(&self, key: &Func) -> Result<&FuncEntity, InternalStoreError> {
         self.resolve(key.as_raw(), &self.funcs)
-    }
-
-    /// Returns an exclusive reference to the associated entity of the Wasm or host function.
-    ///
-    /// # Errors
-    ///
-    /// - If the [`Func`] does not originate from this [`StoreInner`].
-    /// - If the [`Func`] cannot be resolved to its entity.
-    pub fn try_resolve_func_mut(
-        &mut self,
-        key: &Func,
-    ) -> Result<&mut FuncEntity, InternalStoreError> {
-        let raw_key = self.unwrap_stored(key.as_raw())?;
-        Self::resolve_mut(*raw_key, &mut self.funcs)
     }
 }
 
@@ -745,12 +703,9 @@ impl StoreInner {
         pub fn resolve_table_mut(&mut Self, table: &Table) -> &mut CoreTable = Self::try_resolve_table_mut;
 
         pub fn resolve_element(&Self, elem: &ElementSegment) -> &CoreElementSegment = Self::try_resolve_element;
-        pub fn resolve_element_mut(&mut Self, elem: &ElementSegment) -> &mut CoreElementSegment = Self::try_resolve_element_mut;
 
         pub fn resolve_func(&Self, func: &Func) -> &FuncEntity = Self::try_resolve_func;
-        pub fn resolve_func_mut(&mut Self, func: &Func) -> &mut FuncEntity = Self::try_resolve_func_mut;
 
-        pub fn resolve_data_mut(&mut Self, data: &DataSegment) -> &mut DataSegmentEntity = Self::try_resolve_data_mut;
         pub fn resolve_instance(&Self, instance: &Instance) -> &InstanceEntity = Self::try_resolve_instance;
         pub fn resolve_externref(&Self, data: &ExternRef) -> &ExternRefEntity = Self::try_resolve_externref;
 
