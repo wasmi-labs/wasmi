@@ -37,19 +37,19 @@ type StableStoreArena<T> = StableArena<RawHandle<T>, <T as Handle>::Entity>;
 /// Trait to abstract over [`Arena`] and [`StableArena`] for shared resolution of keys.
 trait Resolve<T: Handle> {
     /// Returns a shared reference to the entity at `key` if any.
-    fn get(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError>;
+    fn resolve(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError>;
 }
 
 impl<T: Handle> Resolve<T> for StoreArena<T> {
     #[inline]
-    fn get(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError> {
+    fn resolve(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError> {
         self.get(key)
     }
 }
 
 impl<T: Handle> Resolve<T> for StableStoreArena<T> {
     #[inline]
-    fn get(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError> {
+    fn resolve(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError> {
         self.get(key)
     }
 }
@@ -57,19 +57,19 @@ impl<T: Handle> Resolve<T> for StableStoreArena<T> {
 /// Trait to abstract over [`Arena`] and [`StableArena`] for mutable resolution of keys.
 trait ResolveMut<T: Handle> {
     /// Returns an exclusive reference to the entity at `key` if any.
-    fn get_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError>;
+    fn resolve_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError>;
 }
 
 impl<T: Handle> ResolveMut<T> for StoreArena<T> {
     #[inline]
-    fn get_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError> {
+    fn resolve_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError> {
         self.get_mut(key)
     }
 }
 
 impl<T: Handle> ResolveMut<T> for StableStoreArena<T> {
     #[inline]
-    fn get_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError> {
+    fn resolve_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError> {
         self.get_mut(key)
     }
 }
@@ -335,7 +335,7 @@ impl StoreInner {
         Arena: Resolve<T>,
     {
         let idx = self.unwrap_stored(key)?;
-        match entities.get(*idx) {
+        match entities.resolve(*idx) {
             Ok(entity) => Ok(entity),
             Err(_err) => Err(InternalStoreError::not_found()),
         }
@@ -360,7 +360,7 @@ impl StoreInner {
         RawHandle<T>: ArenaKey + Debug,
         Arena: ResolveMut<T>,
     {
-        match entities.get_mut(idx) {
+        match entities.resolve_mut(idx) {
             Ok(entity) => Ok(entity),
             Err(_err) => Err(InternalStoreError::not_found()),
         }
