@@ -597,20 +597,6 @@ impl StoreInner {
         self.resolve(key.as_raw(), &self.instances)
     }
 
-    /// Returns an exclusive reference to the [`InstanceEntity`] associated to the given [`Instance`].
-    ///
-    /// # Errors
-    ///
-    /// - If the [`Instance`] does not originate from this [`StoreInner`].
-    /// - If the [`Instance`] cannot be resolved to its entity.
-    pub fn try_resolve_instance_mut(
-        &mut self,
-        key: &Instance,
-    ) -> Result<&mut InstanceEntity, InternalStoreError> {
-        let raw_key = self.unwrap_stored(key.as_raw())?;
-        Self::resolve_mut(*raw_key, &mut self.instances)
-    }
-
     /// Returns a shared reference to the [`ExternRefEntity`] associated to the given [`ExternRef`].
     ///
     /// # Errors
@@ -699,7 +685,6 @@ impl StoreInner {
 
         pub fn resolve_data_mut(&mut Self, data: &DataSegment) -> &mut DataSegmentEntity = Self::try_resolve_data_mut;
         pub fn resolve_instance(&Self, instance: &Instance) -> &InstanceEntity = Self::try_resolve_instance;
-        pub fn resolve_instance_mut(&mut Self, instance: &Instance) -> &mut InstanceEntity = Self::try_resolve_instance_mut;
         pub fn resolve_externref(&Self, data: &ExternRef) -> &ExternRefEntity = Self::try_resolve_externref;
 
         pub fn resolve_table_and_element_mut(
