@@ -19,7 +19,7 @@ use crate::{
     TrapCode,
     core::{CoreTable, RawRef, ReadAs, WriteAs, wasm},
     engine::{
-        FuncEntry,
+        FuncEntryPtr,
         eval,
         executor::handler::{
             Control,
@@ -33,7 +33,7 @@ use crate::{
     ir::{self, BoundedSlotSpan},
     store::StoreError,
 };
-use core::{cmp, ptr};
+use core::cmp;
 
 fn identity<T>(value: T) -> T {
     value
@@ -205,14 +205,9 @@ execution_handler! {
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::CallInternal { params, func } = unsafe { args.decode_op() };
-        // Safety:
-        //
-        // `func` is the exposed address of a `FuncEntity` in the engine's append-only `CodeMap`.
-        //
-        //  - the used `with_exposed_provenance` recovers the original provenance.
-        //  - its allocation is never moved or freed while this bytecode runs.
-        //  - the `FuncEntry` type mutates only guarded by lock-free atomics.
-        let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
+        // SAFETY: `func` is the exposed address of a `FuncEntry` in the engine's append-only
+        //         `CodeMap`, baked into the bytecode; it stays valid while this bytecode runs.
+        let func = unsafe { FuncEntryPtr::from(usize::from(func)).get() };
         args.call_func_entry(state, func, params, None)?;
         dispatch!(state, args)
     }
@@ -287,14 +282,8 @@ execution_handler! {
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::ReturnCallInternal { params, func } = unsafe { args.decode_op() };
-        // Safety:
-        //
-        // `func` is the exposed address of a `FuncEntity` in the engine's append-only `CodeMap`.
-        //
-        //  - the used `with_exposed_provenance` recovers the original provenance.
-        //  - its allocation is never moved or freed while this bytecode runs.
-        //  - the `FuncEntry` type mutates only guarded by lock-free atomics.
-        let func = unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(usize::from(func)) };
+        // SAFETY: see `call_internal`.
+        let func = unsafe { FuncEntryPtr::from(usize::from(func)).get() };
         args.return_call_func_entry(state, func, params, None)?;
         dispatch!(state, args)
     }

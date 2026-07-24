@@ -15,6 +15,7 @@ mod utils;
 pub(crate) use self::translator::ValidatingFuncTranslator;
 pub(crate) use self::{
     block_type::BlockType,
+    code_map::{FuncEntry, FuncEntryPtr},
     executor::{
         InOutParams,
         InOutResults,
@@ -61,7 +62,6 @@ use crate::{
     Func,
     FuncType,
     StoreContextMut,
-    engine::code_map::FuncEntry,
     module::{FuncIdx, ModuleHeader},
 };
 use alloc::{
