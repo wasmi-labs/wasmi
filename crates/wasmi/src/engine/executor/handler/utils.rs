@@ -772,17 +772,6 @@ pub fn update_instance(
     (new_instance, mem0, mem0_len)
 }
 
-#[inline(never)]
-pub fn call_func_entry_cold(
-    state: &mut VmState,
-    caller_ip: Ip,
-    params: BoundedSlotSpan,
-    func: &FuncEntry,
-    instance: Option<Inst>,
-) -> Control<(Ip, Sp), Break> {
-    call_func_entry(state, caller_ip, params, func, instance)
-}
-
 #[inline(always)]
 pub fn call_func_entry(
     state: &mut VmState,
@@ -804,16 +793,6 @@ pub fn call_func_entry(
         )
         .into_control()?;
     Control::Continue((callee_ip, callee_sp))
-}
-
-#[inline(never)]
-pub fn return_call_func_entry_cold(
-    state: &mut VmState,
-    params: BoundedSlotSpan,
-    func: &FuncEntry,
-    instance: Option<Inst>,
-) -> Control<(Ip, Sp), Break> {
-    return_call_func_entry(state, params, func, instance)
 }
 
 #[inline(always)]
@@ -929,13 +908,25 @@ pub fn call_wasm_or_host(
     let wasm_func = match func_entity {
         FuncEntity::Wasm(wasm_func) => wasm_func,
         FuncEntity::Host(host_func) => {
-            return call_host_cold(state, func, caller_ip, *host_func, params, instance);
+            let sp = call_host(
+                state,
+                func,
+                Some(caller_ip),
+                *host_func,
+                params,
+                Some(instance),
+                CallHooks::Call,
+            )?;
+            // Note: host functions may grow memories, invalidating the cached `(memory 0)`.
+            //       Therefore, it is required to re-extract `(memory 0)` to avoid a stale cache.
+            let (mem0, mem0_len) = extract_mem0(state.store, instance);
+            return Control::Continue((caller_ip, sp, mem0, mem0_len, instance));
         }
     };
     // Hot path: calling a Wasm function. Uses the cached `FuncEntry` and the same inlined
     // machinery as `call_internal`, differing only in the possible instance switch.
     let callee_instance: Inst = resolve_instance(state.store, wasm_func.instance()).into();
-    let (callee_ip, callee_sp) = call_func_entry_cold(
+    let (callee_ip, callee_sp) = call_func_entry(
         state,
         caller_ip,
         params,
@@ -945,33 +936,6 @@ pub fn call_wasm_or_host(
     let (instance, mem0, mem0_len) =
         update_instance(state.store, instance, callee_instance, mem0, mem0_len);
     Control::Continue((callee_ip, callee_sp, mem0, mem0_len, instance))
-}
-
-/// Out-of-line slow path of [`call_wasm_or_host`] for calling a host function.
-#[cold]
-#[inline(never)]
-fn call_host_cold(
-    state: &mut VmState,
-    func: Func,
-    caller_ip: Ip,
-    host_func: HostFuncEntity,
-    params: BoundedSlotSpan,
-    instance: Inst,
-) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
-    let sp = call_host(
-        state,
-        func,
-        Some(caller_ip),
-        host_func,
-        params,
-        Some(instance),
-        CallHooks::Call,
-    )?;
-    // Host functions may re-enter WASM (e.g. calling cabi_realloc)
-    // which can trigger memory.grow, invalidating the cached mem0
-    // pointer. Re-extract to avoid stale pointer dereference.
-    let (mem0, mem0_len) = extract_mem0(state.store, instance);
-    Control::Continue((caller_ip, sp, mem0, mem0_len, instance))
 }
 
 /// Tail-call (`return_call`) twin of [`call_wasm_or_host`].
@@ -990,35 +954,19 @@ pub fn return_call_wasm_or_host(
     let wasm_func = match func_entity {
         FuncEntity::Wasm(wasm_func) => wasm_func,
         FuncEntity::Host(host_func) => {
-            return return_call_host_cold(
-                state, func, *host_func, params, mem0, mem0_len, instance,
-            );
+            let (callee_ip, sp, new_instance) =
+                return_call_host(state, func, *host_func, params, instance)?;
+            let (instance, mem0, mem0_len) =
+                update_instance(state.store, instance, new_instance, mem0, mem0_len);
+            return Control::Continue((callee_ip, sp, mem0, mem0_len, instance));
         }
     };
     // Hot path: tail-calling a Wasm function. See `call_wasm_or_host` for the shape.
     let callee_instance: Inst = resolve_instance(state.store, wasm_func.instance()).into();
     let changed_instance = (callee_instance != instance).then_some(callee_instance);
     let (callee_ip, callee_sp) =
-        return_call_func_entry_cold(state, params, wasm_func.func_entry(), changed_instance)?;
+        return_call_func_entry(state, params, wasm_func.func_entry(), changed_instance)?;
     let (instance, mem0, mem0_len) =
         update_instance(state.store, instance, callee_instance, mem0, mem0_len);
     Control::Continue((callee_ip, callee_sp, mem0, mem0_len, instance))
-}
-
-/// Out-of-line slow path of [`return_call_wasm_or_host`] for tail-calling a host function.
-#[cold]
-#[inline(never)]
-fn return_call_host_cold(
-    state: &mut VmState,
-    func: Func,
-    host_func: HostFuncEntity,
-    params: BoundedSlotSpan,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
-    let (callee_ip, sp, new_instance) = return_call_host(state, func, host_func, params, instance)?;
-    let (instance, mem0, mem0_len) =
-        update_instance(state.store, instance, new_instance, mem0, mem0_len);
-    Control::Continue((callee_ip, sp, mem0, mem0_len, instance))
 }
