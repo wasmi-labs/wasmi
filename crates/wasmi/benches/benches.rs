@@ -128,6 +128,7 @@ criterion_group! {
         bench_execute_flat_calls,
         bench_execute_nested_calls,
         bench_execute_host_calls,
+        bench_execute_imported_calls,
         bench_execute_fuse,
         bench_execute_divrem,
         bench_execute_fibonacci,
@@ -1485,6 +1486,52 @@ fn bench_execute_host_calls(c: &mut Criterion) {
     linker.define("benchmark", "host/8", host8).unwrap();
     linker.define("benchmark", "host/16", host16).unwrap();
     let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
+    for n in [0, 1, 8, 16] {
+        bench_with(&mut g, &mut store, &instance, n);
+    }
+}
+
+fn bench_execute_imported_calls(c: &mut Criterion) {
+    fn bench_with(
+        g: &mut BenchmarkGroup<WallTime>,
+        store: &mut Store<()>,
+        instance: &Instance,
+        n: usize,
+    ) {
+        /// How often the imported calls are performed per benchmark run.
+        const ITERATIONS: i64 = 5_000;
+
+        let id = format!("{n}");
+        g.bench_function(&id, |b| {
+            let func_name = format!("run/{n}");
+            let run = instance
+                .get_typed_func::<i64, i64>(&*store, &func_name)
+                .unwrap();
+            b.iter(|| {
+                run.call(&mut *store, ITERATIONS).unwrap();
+            })
+        });
+    }
+
+    let engine = Engine::new(&bench_config());
+    let provider =
+        Module::new(&engine, include_bytes!("wat/imported_calls_provider.wat")).unwrap();
+    let module = Module::new(&engine, include_bytes!("wat/imported_calls.wat")).unwrap();
+    let mut store = Store::new(&engine, ());
+    // Instantiate the provider module and register its exported Wasm functions as
+    // imports for the caller module, so that its calls become `call_imported`.
+    let provider = <Linker<()>>::new(&engine)
+        .instantiate_and_start(&mut store, &provider)
+        .unwrap();
+    let mut linker = <Linker<()>>::new(&engine);
+    for n in [0, 1, 8, 16] {
+        let name = format!("identity/{n}");
+        let func = provider.get_func(&store, &name).unwrap();
+        linker.define("provider", &name, func).unwrap();
+    }
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
+
+    let mut g = c.benchmark_group("execute/call/imported");
     for n in [0, 1, 8, 16] {
         bench_with(&mut g, &mut store, &instance, n);
     }
