@@ -221,7 +221,7 @@ impl Args {
     }
 
     /// Calls `func` with `params` on `instance` with `state` using `self`.
-    #[inline]
+    #[inline(always)]
     pub fn call_func_entry(
         &mut self,
         state: &mut VmState,
@@ -234,7 +234,7 @@ impl Args {
     }
 
     /// Tail-calls `func` with `params` on `instance` with `state` using `self`.
-    #[inline]
+    #[inline(always)]
     pub fn return_call_func_entry(
         &mut self,
         state: &mut VmState,

@@ -16,7 +16,7 @@ use super::{
     AsContextMut,
     Instance,
     StoreContext,
-    engine::{DedupFuncType, EngineFunc},
+    engine::{DedupFuncType, EngineFunc, FuncEntry, FuncEntryPtr},
 };
 use crate::{
     Engine,
@@ -129,16 +129,32 @@ pub struct WasmFuncEntity {
     ty: DedupFuncType,
     /// The compiled function body of the Wasm function.
     body: EngineFunc,
+    /// A cached pointer to the [`FuncEntry`] of `body` in the [`Engine`].
+    ///
+    /// Lets the executor reach the compiled code without an [`Engine`] lookup.
+    ///
+    /// [`Engine`]: crate::Engine
+    func_entry: FuncEntryPtr,
     /// The instance associated to the Wasm function.
     instance: Instance,
 }
 
 impl WasmFuncEntity {
     /// Creates a new Wasm function from the given raw parts.
-    pub fn new(signature: DedupFuncType, body: EngineFunc, instance: Instance) -> Self {
+    ///
+    /// `func_entry` must be the [`FuncEntry`] of `body` in the owning [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    pub fn new(
+        signature: DedupFuncType,
+        body: EngineFunc,
+        func_entry: &FuncEntry,
+        instance: Instance,
+    ) -> Self {
         Self {
             ty: signature,
             body,
+            func_entry: FuncEntryPtr::new(func_entry),
             instance,
         }
     }
@@ -156,6 +172,13 @@ impl WasmFuncEntity {
     /// Returns the Wasm function body of the [`Func`].
     pub fn func_body(&self) -> EngineFunc {
         self.body
+    }
+
+    /// Returns the cached [`FuncEntry`] of the Wasm function.
+    pub fn func_entry(&self) -> &FuncEntry {
+        // SAFETY: the `FuncEntry` lives in the owning engine's `CodeMap`, which outlives this
+        //         `WasmFuncEntity` since a `Func` cannot outlive its engine.
+        unsafe { self.func_entry.get() }
     }
 }
 

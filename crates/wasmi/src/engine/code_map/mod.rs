@@ -550,6 +550,49 @@ pub struct FuncEntry {
     state: AtomicU8,
 }
 
+/// A stable address of a [`FuncEntry`] in the engine's append-only [`CodeMap`].
+///
+/// Holding this instead of an `EngineFunc` lets callers reach the [`FuncEntry`] directly, skipping
+/// the [`CodeMap`] lookup. It stores the address as an exposed-provenance `usize` (the same
+/// convention the `call_internal` handler uses for its baked pointer) which keeps it `Send + Sync`
+/// without an `unsafe impl`.
+///
+/// [`CodeMap`]: crate::engine::CodeMap
+#[derive(Debug, Copy, Clone)]
+pub struct FuncEntryPtr(usize);
+
+impl From<usize> for FuncEntryPtr {
+    /// Creates a [`FuncEntryPtr`] from a previously exposed [`FuncEntry`] address.
+    ///
+    /// Used by the `call_internal` handlers to recover the address baked into the bytecode.
+    fn from(addr: usize) -> Self {
+        Self(addr)
+    }
+}
+
+impl FuncEntryPtr {
+    /// Creates a [`FuncEntryPtr`] from `entry`, exposing its provenance.
+    pub fn new(entry: &FuncEntry) -> Self {
+        Self(ptr::from_ref(entry).expose_provenance())
+    }
+
+    /// Returns a shared reference to the pointed-to [`FuncEntry`].
+    ///
+    /// # Safety
+    ///
+    /// The engine owning the [`FuncEntry`] must outlive `'a`. This holds for a [`FuncEntryPtr`]
+    /// stored in a [`WasmFuncEntity`] since its [`Func`] cannot outlive the owning engine. The
+    /// [`FuncEntry`] is only ever accessed through shared references (interior mutation is guarded
+    /// by atomics), so no aliasing `&mut` is ever formed.
+    ///
+    /// [`WasmFuncEntity`]: crate::func::WasmFuncEntity
+    /// [`Func`]: crate::Func
+    pub unsafe fn get<'a>(self) -> &'a FuncEntry {
+        // SAFETY: guaranteed by the caller (see above); provenance was exposed in `new`.
+        unsafe { &*ptr::with_exposed_provenance::<FuncEntry>(self.0) }
+    }
+}
+
 impl Drop for FuncEntry {
     fn drop(&mut self) {
         match self.state.load(Ordering::Acquire) {

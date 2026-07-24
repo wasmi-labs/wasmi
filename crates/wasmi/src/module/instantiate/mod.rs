@@ -210,7 +210,10 @@ impl Module {
         handle: Instance,
     ) {
         for (func_type, func_body) in self.internal_funcs() {
-            let wasm_func = WasmFuncEntity::new(func_type, func_body, handle);
+            let Some(func_entry) = self.engine().resolve_func(func_body) else {
+                unreachable!("missing func entry at: {func_body:?}")
+            };
+            let wasm_func = WasmFuncEntity::new(func_type, func_body, func_entry, handle);
             let func = context
                 .as_context_mut()
                 .store
