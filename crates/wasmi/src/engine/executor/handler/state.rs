@@ -158,15 +158,14 @@ pub struct Inst {
     ///   considered "slow" anyways an additional conversion between
     ///   integer and float won't be a terrible trade-off.
     value: f64,
-    /// Indicates to the compiler that this type is similar in behavior as
-    /// a non-owning, non-lifetime restricted `*const InstanceEntity` type.
+    /// Marks `Inst` as logically containing a shared raw pointer.
     marker: PhantomData<*const InstanceEntity>,
 }
 
 impl From<&'_ InstanceEntity> for Inst {
     fn from(entity: &'_ InstanceEntity) -> Self {
-        let value =
-            f64::from_ne_bytes(((entity as *const InstanceEntity as usize) as u64).to_ne_bytes());
+        let addr = (entity as *const InstanceEntity).expose_provenance();
+        let value = f64::from_ne_bytes((addr as u64).to_ne_bytes());
         Self {
             value,
             marker: PhantomData,
@@ -185,7 +184,7 @@ impl Inst {
     /// Converts the underlying representation back into its original pointer value.
     fn as_ptr(&self) -> *const InstanceEntity {
         let bits = u64::from_ne_bytes(self.value.to_ne_bytes());
-        bits as usize as *const InstanceEntity
+        ptr::with_exposed_provenance::<InstanceEntity>(bits as usize)
     }
 
     /// Returns a shared reference to the referenced [`InstanceEntity`].
