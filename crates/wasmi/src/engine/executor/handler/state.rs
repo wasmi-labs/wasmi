@@ -176,6 +176,7 @@ const _: () = {
 };
 
 impl From<&'_ InstanceEntity> for Inst {
+    #[inline]
     fn from(entity: &'_ InstanceEntity) -> Self {
         let addr = (entity as *const InstanceEntity).expose_provenance();
         let value = InstRepr::from_ne_bytes((addr).to_ne_bytes());
@@ -187,6 +188,7 @@ impl From<&'_ InstanceEntity> for Inst {
 }
 
 impl PartialEq for Inst {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         ptr::addr_eq(self.as_ptr(), other.as_ptr())
     }
@@ -195,6 +197,7 @@ impl Eq for Inst {}
 
 impl Inst {
     /// Converts the underlying representation back into its original pointer value.
+    #[inline]
     fn as_ptr(&self) -> *const InstanceEntity {
         let bits = usize::from_ne_bytes(self.value.to_ne_bytes());
         ptr::with_exposed_provenance::<InstanceEntity>(bits)
@@ -211,6 +214,7 @@ impl Inst {
     /// - The referenced [`InstanceEntity`] remains alive and is not
     ///   mutably accessed for the entire duration of the returned
     ///   reference.
+    #[inline]
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
         unsafe { &*self.as_ptr() }
     }
