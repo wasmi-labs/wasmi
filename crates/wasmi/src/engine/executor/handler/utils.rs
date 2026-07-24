@@ -627,7 +627,6 @@ macro_rules! impl_resolve_from_instance {
 impl_resolve_from_instance! {
     fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = InstanceEntity::get_data_ptr;
     fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = InstanceEntity::get_elem_ptr;
-    // fn load_func(inst: Inst, store: &mut StoreInner, func: ir::FuncAddr) -> &mut FuncEntity = InstanceEntity::get_func_ptr;
     fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = InstanceEntity::get_global_ptr;
     fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = InstanceEntity::get_memory_ptr;
     fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = InstanceEntity::get_table_ptr;
@@ -674,6 +673,20 @@ impl_resolve_ptr_from_instance! {
     fn load_table_ptr(inst: Inst, table: ir::TableAddr) -> TableEntity = InstanceEntity::get_table_ptr;
     fn load_data_ptr(inst: Inst, data: ir::DataAddr) -> DataSegmentEntity = InstanceEntity::get_data_ptr;
     fn load_elem_ptr(inst: Inst, elem: ir::ElemAddr) -> ElementSegmentEntity = InstanceEntity::get_elem_ptr;
+}
+
+/// Resolves the [`Func`] handle and its warmed up cached [`FuncEntity`] pointer from `inst`.
+///
+/// The returned pointer is only sound to dereference while the instance cache remains warmed up
+/// and must not be turned into a reference that aliases a concurrent store mutation.
+#[inline]
+pub fn load_func_entry(inst: Inst, func: ir::FuncAddr) -> (Func, NonNull<FuncEntity>) {
+    let instance = unsafe { inst.as_ref() };
+    let addr = FuncAddr::from(u32::from(func));
+    let Some(func_entry) = instance.get_func_entry(addr) else {
+        unsafe { unreachable_unchecked!("missing func at: {:?}", addr) }
+    };
+    func_entry
 }
 
 macro_rules! impl_fetch_from_instance {
@@ -728,7 +741,6 @@ macro_rules! impl_resolve_from_store {
 }
 impl_resolve_from_store! {
     // fn resolve_elem(elem: &ElementSegment) -> &'a CoreElementSegment = StoreInner::try_resolve_element;
-    fn resolve_func(func: &Func) -> &'a FuncEntity = StoreInner::try_resolve_func;
     // fn resolve_global(global: &Global) -> &'a CoreGlobal = StoreInner::try_resolve_global;
     fn resolve_memory(memory: &Memory) -> &'a MemoryEntity = StoreInner::try_resolve_memory;
     fn resolve_table(table: &Table) -> &'a CoreTable = StoreInner::try_resolve_table;
@@ -743,7 +755,7 @@ pub fn resolve_indirect_func<I>(
     func_type: ir::FuncType,
     state: &mut VmState<'_>,
     args: &mut Args,
-) -> Result<Func, TrapCode>
+) -> Result<(Func, NonNull<FuncEntity>), TrapCode>
 where
     I: GetValue<u64>,
 {
@@ -753,12 +765,14 @@ where
     debug_assert!(matches!(rawref.ty(), RefType::Func));
     let funcref = <Nullable<Func>>::from_raw_parts(rawref.raw(), &*state.store);
     let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;
-    let actual_fnty = resolve_func(state.store, func).ty_dedup();
+    let func_entity = state.store.inner_mut().resolve_func_ptr(func);
+    // SAFETY: freshly resolved from the store; only read here for the signature check.
+    let actual_fnty = unsafe { func_entity.as_ref() }.ty_dedup();
     let expected_fnty = fetch_func_type(args.instance, func_type);
     if expected_fnty.ne(actual_fnty) {
         return Err(TrapCode::BadSignature);
     }
-    Ok(*func)
+    Ok((*func, func_entity))
 }
 
 pub fn update_instance(
@@ -936,16 +950,21 @@ pub fn return_call_host(
     }
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn call_wasm_or_host(
     state: &mut VmState,
     caller_ip: Ip,
     func: Func,
+    func_entity: NonNull<FuncEntity>,
     params: BoundedSlotSpan,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: Inst,
 ) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
-    let func_entity = resolve_func(state.store, &func);
+    // SAFETY: the pointer is warmed up at instantiation (imported calls) or freshly resolved
+    //         (indirect calls); the reference is only used to copy out the callee data below,
+    //         before any store mutation, so it never aliases a `&mut` into the funcs arena.
+    let func_entity = unsafe { func_entity.as_ref() };
     let next_state = match func_entity {
         FuncEntity::Wasm(wasm_func) => {
             let func = wasm_func.func_body();
@@ -982,12 +1001,14 @@ pub fn call_wasm_or_host(
 pub fn return_call_wasm_or_host(
     state: &mut VmState,
     func: Func,
+    func_entity: NonNull<FuncEntity>,
     params: BoundedSlotSpan,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
     instance: Inst,
 ) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
-    let func_entity = resolve_func(state.store, &func);
+    // SAFETY: see `call_wasm_or_host`.
+    let func_entity = unsafe { func_entity.as_ref() };
     let (callee_ip, sp, new_instance) = match func_entity {
         FuncEntity::Wasm(wasm_func) => {
             let wasm_func_body = wasm_func.func_body();
