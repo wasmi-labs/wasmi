@@ -772,7 +772,18 @@ pub fn update_instance(
     (new_instance, mem0, mem0_len)
 }
 
-#[inline]
+#[inline(never)]
+pub fn call_func_entry_cold(
+    state: &mut VmState,
+    caller_ip: Ip,
+    params: BoundedSlotSpan,
+    func: &FuncEntry,
+    instance: Option<Inst>,
+) -> Control<(Ip, Sp), Break> {
+    call_func_entry(state, caller_ip, params, func, instance)
+}
+
+#[inline(always)]
 pub fn call_func_entry(
     state: &mut VmState,
     caller_ip: Ip,
@@ -795,7 +806,17 @@ pub fn call_func_entry(
     Control::Continue((callee_ip, callee_sp))
 }
 
-#[inline]
+#[inline(never)]
+pub fn return_call_func_entry_cold(
+    state: &mut VmState,
+    params: BoundedSlotSpan,
+    func: &FuncEntry,
+    instance: Option<Inst>,
+) -> Control<(Ip, Sp), Break> {
+    return_call_func_entry(state, params, func, instance)
+}
+
+#[inline(always)]
 pub fn return_call_func_entry(
     state: &mut VmState,
     params: BoundedSlotSpan,
@@ -914,7 +935,7 @@ pub fn call_wasm_or_host(
     // Hot path: calling a Wasm function. Uses the cached `FuncEntry` and the same inlined
     // machinery as `call_internal`, differing only in the possible instance switch.
     let callee_instance: Inst = resolve_instance(state.store, wasm_func.instance()).into();
-    let (callee_ip, callee_sp) = call_func_entry(
+    let (callee_ip, callee_sp) = call_func_entry_cold(
         state,
         caller_ip,
         params,
@@ -978,7 +999,7 @@ pub fn return_call_wasm_or_host(
     let callee_instance: Inst = resolve_instance(state.store, wasm_func.instance()).into();
     let changed_instance = (callee_instance != instance).then_some(callee_instance);
     let (callee_ip, callee_sp) =
-        return_call_func_entry(state, params, wasm_func.func_entry(), changed_instance)?;
+        return_call_func_entry_cold(state, params, wasm_func.func_entry(), changed_instance)?;
     let (instance, mem0, mem0_len) =
         update_instance(state.store, instance, callee_instance, mem0, mem0_len);
     Control::Continue((callee_ip, callee_sp, mem0, mem0_len, instance))
