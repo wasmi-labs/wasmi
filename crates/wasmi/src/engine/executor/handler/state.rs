@@ -151,22 +151,35 @@ pub struct Inst {
     ///
     /// # Note
     ///
-    /// - We use a `f64` to represent [`Inst`] to avoid using a
+    /// - We use a float to represent [`Inst`] to avoid using a
     ///   general purpose (integer) register as they are not as
     ///   available as floating point registers on most platforms.
     /// - Since [`Inst`] is only accessed by operators that are
     ///   considered "slow" anyways an additional conversion between
     ///   integer and float won't be a terrible trade-off.
-    value: f64,
-    /// Indicates to the compiler that this type is similar in behavior as
-    /// a non-owning, non-lifetime restricted `*const InstanceEntity` type.
+    value: InstRepr,
+    /// Marks `Inst` as logically containing a shared raw pointer.
     marker: PhantomData<*const InstanceEntity>,
 }
 
+/// The underlying float representation of `Inst` for 64-bit platforms.
+#[cfg(target_pointer_width = "64")]
+type InstRepr = f64;
+
+/// The underlying float representation of `Inst` for 32-bit platforms.
+#[cfg(target_pointer_width = "32")]
+type InstRepr = f32;
+
+const _: () = {
+    use core::mem::size_of;
+    assert!(size_of::<InstRepr>() == size_of::<usize>());
+};
+
 impl From<&'_ InstanceEntity> for Inst {
+    #[inline]
     fn from(entity: &'_ InstanceEntity) -> Self {
-        let value =
-            f64::from_ne_bytes(((entity as *const InstanceEntity as usize) as u64).to_ne_bytes());
+        let addr = (entity as *const InstanceEntity).expose_provenance();
+        let value = InstRepr::from_ne_bytes((addr).to_ne_bytes());
         Self {
             value,
             marker: PhantomData,
@@ -175,6 +188,7 @@ impl From<&'_ InstanceEntity> for Inst {
 }
 
 impl PartialEq for Inst {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         ptr::addr_eq(self.as_ptr(), other.as_ptr())
     }
@@ -183,9 +197,10 @@ impl Eq for Inst {}
 
 impl Inst {
     /// Converts the underlying representation back into its original pointer value.
+    #[inline]
     fn as_ptr(&self) -> *const InstanceEntity {
-        let bits = u64::from_ne_bytes(self.value.to_ne_bytes());
-        bits as usize as *const InstanceEntity
+        let bits = usize::from_ne_bytes(self.value.to_ne_bytes());
+        ptr::with_exposed_provenance::<InstanceEntity>(bits)
     }
 
     /// Returns a shared reference to the referenced [`InstanceEntity`].
@@ -199,6 +214,7 @@ impl Inst {
     /// - The referenced [`InstanceEntity`] remains alive and is not
     ///   mutably accessed for the entire duration of the returned
     ///   reference.
+    #[inline]
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
         unsafe { &*self.as_ptr() }
     }
