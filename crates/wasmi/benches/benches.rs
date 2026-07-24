@@ -1514,8 +1514,7 @@ fn bench_execute_imported_calls(c: &mut Criterion) {
     }
 
     let engine = Engine::new(&bench_config());
-    let provider =
-        Module::new(&engine, include_bytes!("wat/imported_calls_provider.wat")).unwrap();
+    let provider = Module::new(&engine, include_bytes!("wat/imported_calls_provider.wat")).unwrap();
     let module = Module::new(&engine, include_bytes!("wat/imported_calls.wat")).unwrap();
     let mut store = Store::new(&engine, ());
     // Instantiate the provider module and register its exported Wasm functions as
