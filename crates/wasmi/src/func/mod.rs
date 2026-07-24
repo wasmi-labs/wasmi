@@ -129,11 +129,11 @@ pub struct WasmFuncEntity {
     ty: DedupFuncType,
     /// The compiled function body of the Wasm function.
     body: EngineFunc,
-    /// A cached pointer to the [`FuncEntry`] of `body` in the engine's [`CodeMap`].
+    /// A cached pointer to the [`FuncEntry`] of `body` in the [`Engine`].
     ///
-    /// Lets the executor reach the compiled code without a [`CodeMap`] lookup.
+    /// Lets the executor reach the compiled code without an [`Engine`] lookup.
     ///
-    /// [`CodeMap`]: crate::engine::CodeMap
+    /// [`Engine`]: crate::Engine
     func_entry: FuncEntryPtr,
     /// The instance associated to the Wasm function.
     instance: Instance,
@@ -142,9 +142,9 @@ pub struct WasmFuncEntity {
 impl WasmFuncEntity {
     /// Creates a new Wasm function from the given raw parts.
     ///
-    /// `func_entry` must be the [`FuncEntry`] of `body` in the owning engine's [`CodeMap`].
+    /// `func_entry` must be the [`FuncEntry`] of `body` in the owning [`Engine`].
     ///
-    /// [`CodeMap`]: crate::engine::CodeMap
+    /// [`Engine`]: crate::Engine
     pub fn new(
         signature: DedupFuncType,
         body: EngineFunc,
