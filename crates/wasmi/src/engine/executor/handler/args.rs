@@ -1,6 +1,7 @@
 use crate::{
     DataSegmentEntity,
     Func,
+    FuncEntity,
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable},
     engine::{
         code_map::FuncEntry,
@@ -24,6 +25,7 @@ use crate::{
     },
     ir::{self, BoundedSlotSpan, BranchOffset},
 };
+use core::ptr::NonNull;
 
 /// Utility type to store the arguments of an execution handler and provide a clean API.
 #[derive(Debug, Copy, Clone)]
@@ -252,7 +254,7 @@ impl Args {
         index: Idx,
         table: ir::TableAddr,
         func_type: ir::FuncType,
-    ) -> Control<Func, Break>
+    ) -> Control<(Func, NonNull<FuncEntity>), Break>
     where
         Idx: GetValue<u64>,
     {
@@ -265,6 +267,7 @@ impl Args {
         &mut self,
         state: &mut VmState,
         func: Func,
+        func_entity: NonNull<FuncEntity>,
         params: BoundedSlotSpan,
     ) -> Control<(), Break> {
         (
@@ -277,6 +280,7 @@ impl Args {
             state,
             self.ip,
             func,
+            func_entity,
             params,
             self.mem0_ptr,
             self.mem0_len,
@@ -291,6 +295,7 @@ impl Args {
         &mut self,
         state: &mut VmState,
         func: Func,
+        func_entity: NonNull<FuncEntity>,
         params: BoundedSlotSpan,
     ) -> Control<(), Break> {
         (
@@ -302,6 +307,7 @@ impl Args {
         ) = utils::return_call_wasm_or_host(
             state,
             func,
+            func_entity,
             params,
             self.mem0_ptr,
             self.mem0_len,

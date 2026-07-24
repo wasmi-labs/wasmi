@@ -232,8 +232,8 @@ execution_handler! {
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::CallImported { params, func } = unsafe { args.decode_op() };
-        let func = fetch_func(args.instance, func);
-        args.call_wasm_or_host_func(state, func, params)?;
+        let (func, func_entity) = utils::load_func_entry(args.instance, func);
+        args.call_wasm_or_host_func(state, func, func_entity, params)?;
         dispatch!(state, args)
     }
 }
@@ -260,8 +260,8 @@ macro_rules! call_indirect_execution_handler {
                         params,
                         index,
                     } = unsafe { args.decode_op() };
-                    let func = args.resolve_indirect_func(state, index, table, func_type)?;
-                    args.call_wasm_or_host_func(state, func, params)?;
+                    let (func, func_entity) = args.resolve_indirect_func(state, index, table, func_type)?;
+                    args.call_wasm_or_host_func(state, func, func_entity, params)?;
                     dispatch!(state, args)
                 }
             }
@@ -314,8 +314,8 @@ execution_handler! {
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::ReturnCallImported { params, func } = unsafe { args.decode_op() };
-        let func = fetch_func(instance, func);
-        args.return_call_wasm_or_host_func(state, func, params)?;
+        let (func, func_entity) = utils::load_func_entry(instance, func);
+        args.return_call_wasm_or_host_func(state, func, func_entity, params)?;
         dispatch!(state, args)
     }
 }
@@ -342,8 +342,8 @@ macro_rules! return_call_indirect_execution_handler {
                         func_type,
                         table,
                     } = unsafe { args.decode_op() };
-                    let func = args.resolve_indirect_func(state, index, table, func_type)?;
-                    args.return_call_wasm_or_host_func(state, func, params)?;
+                    let (func, func_entity) = args.resolve_indirect_func(state, index, table, func_type)?;
+                    args.return_call_wasm_or_host_func(state, func, func_entity, params)?;
                     dispatch!(state, args)
                 }
             }

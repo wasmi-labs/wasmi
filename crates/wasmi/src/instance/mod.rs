@@ -143,6 +143,15 @@ impl InstanceEntity {
         self.entry(addr).map(HandleAndCache::get_func)
     }
 
+    /// Returns the [`Func`] handle and its cached [`FuncEntity`] pointer at `addr` if any.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    #[inline]
+    pub fn get_func_entry(&self, addr: FuncAddr) -> Option<(Func, NonNull<FuncEntity>)> {
+        let entry = self.entry(addr)?;
+        Some((unsafe { entry.handle.cast_func() }, entry.get_func()))
+    }
+
     /// Returns a pointer to the [`DataSegmentEntity`] at the `addr` if any.
     ///
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
