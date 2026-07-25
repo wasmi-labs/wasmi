@@ -2,7 +2,7 @@ use crate::{
     engine::executor::handler::{
         dispatch::{Break, Control, ExecutionOutcome, decode_handler, decode_op_code},
         exec,
-        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
+        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, Vm, VmState},
     },
     ir,
     ir::OpCode,
@@ -24,7 +24,7 @@ pub type Done = Control<Never, Break>;
 
 #[cfg(not(target_arch = "x86_64"))]
 pub type Handler = fn(
-    &mut VmState,
+    state: Vm<'_, '_>,
     ip: Ip,
     sp: Sp,
     mem0: Mem0Ptr,
@@ -38,7 +38,7 @@ pub type Handler = fn(
 #[cfg(target_arch = "x86_64")]
 #[allow(improper_ctypes_definitions)] // not used in FFI
 pub type Handler = extern "sysv64" fn(
-    &mut VmState,
+    state: Vm<'_, '_>,
     ip: Ip,
     sp: Sp,
     mem0: Mem0Ptr,
@@ -103,7 +103,15 @@ pub fn execute_until_done(
 ) -> Result<Sp, ExecutionOutcome> {
     let handler = fetch_handler(ip);
     let Control::Break(reason) = handler(
-        state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64,
+        Vm::from(&mut *state),
+        ip,
+        sp,
+        mem0,
+        mem0_len,
+        instance,
+        ireg,
+        freg32,
+        freg64,
     );
     if let Some(trap_code) = reason.trap_code() {
         return Err(ExecutionOutcome::from(trap_code));

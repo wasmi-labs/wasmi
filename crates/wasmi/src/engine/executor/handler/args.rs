@@ -18,6 +18,7 @@ use crate::{
                 Mem0Len,
                 Mem0Ptr,
                 Sp,
+                Vm,
                 VmState,
             },
             utils::{self, GetValue, IntoControl as _, SetValue, get_value, set_value},
@@ -149,13 +150,14 @@ impl Args {
     #[inline]
     pub fn fetch_memory_bytes<'a>(
         &mut self,
-        state: &'a mut VmState,
+        state: &'a mut Vm<'_, '_>,
         addr: ir::MemoryAddr,
     ) -> &'a mut [u8] {
         if utils::is_default_memory(self.instance, addr) {
             return self.fetch_default_memory_bytes();
         }
-        self.fetch_memory(state, addr).data_mut()
+        // Note: only the non-default memory path resolves the `VmState`.
+        self.fetch_memory(state.get(), addr).data_mut()
     }
 
     /// Returns the bytes of the default memory at index 0.

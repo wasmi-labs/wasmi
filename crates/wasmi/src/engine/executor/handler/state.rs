@@ -28,7 +28,14 @@ use crate::{
     store::PrunedStore,
 };
 use alloc::vec::Vec;
-use core::{cmp, marker::PhantomData, mem, ops, ptr, slice};
+use core::{
+    cmp,
+    marker::PhantomData,
+    mem,
+    ops,
+    ptr::{self, NonNull},
+    slice,
+};
 
 pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
@@ -77,6 +84,72 @@ impl<'vm> VmState<'vm> {
 
     pub fn execution_outcome(&mut self) -> Result<Sp, ExecutionOutcome> {
         self.take_done_reason().into_execution_outcome()
+    }
+}
+
+/// An exclusive reference to a [`VmState`] that is passed in a floating point register.
+///
+/// # Note
+///
+/// - This is semantically equivalent to a `&'a mut VmState<'vm>` and only exists to control
+///   how the reference is passed to execution handlers: we use a float representation so that
+///   the compiler puts it into a floating point register. This frees up a general purpose
+///   (integer) register for [`Inst`] which is accessed far more frequently on the hot path,
+///   and integer registers are the scarce resource in the execution handler ABI.
+/// - [`Vm`] is deliberately not [`Copy`] since [`Vm::get`] would otherwise be unsound: two
+///   copies could each hand out an exclusive reference to the same [`VmState`].
+/// - On 32-bit platforms the pointer bit pattern may represent a signaling NaN. This is fine
+///   as long as the value is only ever moved between registers and never used arithmetically.
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct Vm<'a, 'vm> {
+    /// The underlying reference to the [`VmState`].
+    value: VmRepr,
+    /// Marks [`Vm`] as what it is: an exclusive borrow of a [`VmState`].
+    marker: PhantomData<&'a mut VmState<'vm>>,
+}
+
+/// The underlying float representation of [`Vm`] for 64-bit platforms.
+#[cfg(target_pointer_width = "64")]
+type VmRepr = f64;
+
+/// The underlying float representation of [`Vm`] for 32-bit platforms.
+#[cfg(target_pointer_width = "32")]
+type VmRepr = f32;
+
+const _: () = {
+    use core::mem::size_of;
+    assert!(size_of::<VmRepr>() == size_of::<usize>());
+};
+
+impl<'a, 'vm> From<&'a mut VmState<'vm>> for Vm<'a, 'vm> {
+    #[inline]
+    fn from(state: &'a mut VmState<'vm>) -> Self {
+        let addr = ptr::from_mut(state).expose_provenance();
+        Self {
+            value: VmRepr::from_ne_bytes(addr.to_ne_bytes()),
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<'vm> Vm<'_, 'vm> {
+    /// Converts the underlying representation back into its original pointer value.
+    #[inline]
+    fn as_ptr(&self) -> NonNull<VmState<'vm>> {
+        let bits = usize::from_ne_bytes(self.value.to_ne_bytes());
+        let ptr = ptr::with_exposed_provenance_mut::<VmState<'vm>>(bits);
+        // SAFETY: `self` was constructed from a reference and thus is never null.
+        unsafe { NonNull::new_unchecked(ptr) }
+    }
+
+    /// Returns an exclusive reference to the underlying [`VmState`].
+    #[inline]
+    pub fn get(&mut self) -> &mut VmState<'vm> {
+        // SAFETY: `Vm` is not `Copy` and its only constructor consumes a `&'a mut VmState<'vm>`.
+        //         Thus `self` is the unique live handle to that `VmState` and the exclusive
+        //         borrow of `self` properly scopes the returned reference.
+        unsafe { self.as_ptr().as_mut() }
     }
 }
 
@@ -144,65 +217,23 @@ impl DoneReason {
 }
 
 /// A thin-wrapper around a non-owned [`InstanceEntity`].
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Inst {
     /// The underlying reference to the [`InstanceEntity`].
-    ///
-    /// # Note
-    ///
-    /// - We use a float to represent [`Inst`] to avoid using a
-    ///   general purpose (integer) register as they are not as
-    ///   available as floating point registers on most platforms.
-    /// - Since [`Inst`] is only accessed by operators that are
-    ///   considered "slow" anyways an additional conversion between
-    ///   integer and float won't be a terrible trade-off.
-    value: InstRepr,
-    /// Marks `Inst` as logically containing a shared raw pointer.
-    marker: PhantomData<*const InstanceEntity>,
+    value: NonNull<InstanceEntity>,
 }
-
-/// The underlying float representation of `Inst` for 64-bit platforms.
-#[cfg(target_pointer_width = "64")]
-type InstRepr = f64;
-
-/// The underlying float representation of `Inst` for 32-bit platforms.
-#[cfg(target_pointer_width = "32")]
-type InstRepr = f32;
-
-const _: () = {
-    use core::mem::size_of;
-    assert!(size_of::<InstRepr>() == size_of::<usize>());
-};
 
 impl From<&'_ InstanceEntity> for Inst {
     #[inline]
     fn from(entity: &'_ InstanceEntity) -> Self {
-        let addr = (entity as *const InstanceEntity).expose_provenance();
-        let value = InstRepr::from_ne_bytes((addr).to_ne_bytes());
         Self {
-            value,
-            marker: PhantomData,
+            value: NonNull::from(entity),
         }
     }
 }
 
-impl PartialEq for Inst {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        ptr::addr_eq(self.as_ptr(), other.as_ptr())
-    }
-}
-impl Eq for Inst {}
-
 impl Inst {
-    /// Converts the underlying representation back into its original pointer value.
-    #[inline]
-    fn as_ptr(&self) -> *const InstanceEntity {
-        let bits = usize::from_ne_bytes(self.value.to_ne_bytes());
-        ptr::with_exposed_provenance::<InstanceEntity>(bits)
-    }
-
     /// Returns a shared reference to the referenced [`InstanceEntity`].
     ///
     /// # Safety
@@ -216,7 +247,7 @@ impl Inst {
     ///   reference.
     #[inline]
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
-        unsafe { &*self.as_ptr() }
+        unsafe { self.value.as_ref() }
     }
 }
 

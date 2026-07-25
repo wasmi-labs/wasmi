@@ -29,8 +29,9 @@ macro_rules! execution_handler {
         )]
         #[allow(improper_ctypes_definitions)] // not used in FFI
         #[allow(clippy::too_many_arguments)] // extern fns are ignored
+        #[allow(unused_mut)] // most handlers never touch the `VmState`
         pub extern "sysv64" fn $name(
-            $state: $state_ty,
+            mut $state: $state_ty,
             $ip: $ip_ty,
             $sp: $sp_ty,
             $mem0_ptr: $mem0_ptr_ty,
@@ -74,8 +75,9 @@ macro_rules! execution_handler {
         )]
         #[allow(improper_ctypes_definitions)] // not used in FFI
         #[expect(clippy::too_many_arguments)]
+        #[allow(unused_mut)] // most handlers never touch the `VmState`
         pub fn $name(
-            $state: $state_ty,
+            mut $state: $state_ty,
             $ip: $ip_ty,
             $sp: $sp_ty,
             $mem0_ptr: $mem0_ptr_ty,
@@ -93,7 +95,7 @@ macro_rules! handler_unary {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    state: Vm<'_, '_>,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -120,7 +122,7 @@ macro_rules! handler_binary {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    state: Vm<'_, '_>,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -148,7 +150,7 @@ macro_rules! handler_load {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    state: Vm<'_, '_>,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -167,7 +169,7 @@ macro_rules! handler_load {
                     } = unsafe { args.decode_op() };
                     let ptr: u64 = args.get(ptr);
                     let offset: u64 = args.get(offset);
-                    let bytes = args.fetch_memory_bytes(state, memory);
+                    let bytes = args.fetch_memory_bytes(&mut state, memory);
                     let loaded = $load(bytes, ptr, offset).into_control()?;
                     args.set(result, loaded);
                     dispatch!(state, args)
@@ -182,7 +184,7 @@ macro_rules! handler_load_mem0_offset16 {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    state: Vm<'_, '_>,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -215,7 +217,7 @@ macro_rules! handler_store {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    state: Vm<'_, '_>,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -235,7 +237,7 @@ macro_rules! handler_store {
                     let ptr = args.get(ptr);
                     let offset = args.get(offset);
                     let value: $hint = args.get(value);
-                    let bytes = args.fetch_memory_bytes(state, memory);
+                    let bytes = args.fetch_memory_bytes(&mut state, memory);
                     $store(bytes, ptr, offset, value.into()).into_control()?;
                     dispatch!(state, args)
                 }
@@ -249,7 +251,7 @@ macro_rules! handler_store_mem0_offset16 {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    state: Vm<'_, '_>,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,

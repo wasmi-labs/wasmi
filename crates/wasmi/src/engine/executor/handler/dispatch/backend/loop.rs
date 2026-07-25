@@ -2,7 +2,7 @@ use crate::{
     engine::executor::handler::{
         dispatch::{Break, Control, ExecutionOutcome},
         exec,
-        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
+        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, Vm, VmState},
     },
     ir,
     ir::OpCode,
@@ -48,7 +48,7 @@ pub fn control_continue(
 
 macro_rules! dispatch {
     ( $state:expr, $args:expr $(,)? ) => {{
-        let _: &mut VmState = $state;
+        let _: Vm<'_, '_> = $state;
         let (ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64) = $args.into_parts();
         return $crate::engine::executor::handler::dispatch::backend::control_continue(
             ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64,
@@ -190,7 +190,7 @@ macro_rules! impl_executor_handlers {
             #[cfg_attr(all(feature = "indirect-dispatch", debug_assertions), inline(never))]
             #[cfg_attr(not(feature = "indirect-dispatch"), inline(never))]
             fn $snake_case(&mut self, state: &mut VmState) -> Control<(), Break> {
-                match exec::$snake_case(state, self.ip, self.sp, self.mem0, self.mem0_len, self.instance, self.ireg, self.freg32, self.freg64) {
+                match exec::$snake_case(Vm::from(&mut *state), self.ip, self.sp, self.mem0, self.mem0_len, self.instance, self.ireg, self.freg32, self.freg64) {
                     Done::Continue(NextState { ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64 }) => {
                         self.ip = ip;
                         self.sp = sp;
