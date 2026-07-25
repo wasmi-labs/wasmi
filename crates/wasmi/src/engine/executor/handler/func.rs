@@ -10,15 +10,16 @@ use crate::{
         LowerToCells,
         executor::handler::{
             dispatch::{ExecutionOutcome, execute_until_done},
-            state::{Freg32, Freg64, Inst, Ip, Ireg, Sp, Stack, VmState},
+            state::{Freg32, Freg64, Ip, Ireg, Sp, Stack, VmState},
             utils::{self, resolve_instance},
         },
     },
     func::HostFuncEntity,
+    instance::InstanceEntity,
     ir::{BoundedSlotSpan, Slot, SlotSpan},
     store::{CallHooks, StoreError},
 };
-use core::marker::PhantomData;
+use core::{marker::PhantomData, ptr::NonNull};
 
 pub struct WasmFuncCall<'a, T, State> {
     store: &'a mut Store<T>,
@@ -26,7 +27,7 @@ pub struct WasmFuncCall<'a, T, State> {
     code: CodeView<'a>,
     callee_ip: Ip,
     callee_sp: Sp,
-    instance: Inst,
+    instance: NonNull<InstanceEntity>,
     state: State,
     ireg: Ireg,
     freg32: Freg32,

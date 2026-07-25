@@ -1,11 +1,13 @@
+use core::ptr::NonNull;
+
 use crate::{
     engine::executor::handler::{
         dispatch::{Break, Control, ExecutionOutcome},
         exec,
         state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
     },
-    ir,
-    ir::OpCode,
+    instance::InstanceEntity,
+    ir::{self, OpCode},
 };
 
 #[derive(Debug, Copy, Clone)]
@@ -83,11 +85,12 @@ pub fn execute_until_done(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
+    instance: NonNull<InstanceEntity>,
     ireg: Ireg,
     freg32: Freg32,
     freg64: Freg64,
 ) -> Result<Sp, ExecutionOutcome> {
+    let instance = Inst::from(instance);
     let mut executor = Executor {
         ip,
         sp,

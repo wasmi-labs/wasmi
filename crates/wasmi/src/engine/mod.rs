@@ -19,7 +19,6 @@ pub(crate) use self::{
     executor::{
         InOutParams,
         InOutResults,
-        Inst,
         LiftFromCells,
         LiftFromCellsByValue,
         LoadByVal,

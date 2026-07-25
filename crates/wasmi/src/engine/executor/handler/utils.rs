@@ -544,7 +544,7 @@ pub fn is_default_memory(instance: Inst, memory: ir::MemoryAddr) -> bool {
     )
 }
 
-pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) {
+pub fn extract_mem0(_store: &mut PrunedStore, inst: NonNull<InstanceEntity>) -> (Mem0Ptr, Mem0Len) {
     let instance = unsafe { inst.as_ref() };
     let Some(addr) = instance.layout().memory_addr(0) else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
@@ -760,11 +760,11 @@ where
 
 pub fn update_instance(
     store: &mut PrunedStore,
-    instance: Inst,
-    new_instance: Inst,
+    instance: NonNull<InstanceEntity>,
+    new_instance: NonNull<InstanceEntity>,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-) -> (Inst, Mem0Ptr, Mem0Len) {
+) -> (NonNull<InstanceEntity>, Mem0Ptr, Mem0Len) {
     if new_instance == instance {
         return (instance, mem0, mem0_len);
     }
@@ -778,7 +778,7 @@ pub fn call_func_entry(
     caller_ip: Ip,
     params: BoundedSlotSpan,
     func: &FuncEntry,
-    instance: Option<Inst>,
+    instance: Option<NonNull<InstanceEntity>>,
 ) -> Control<(Ip, Sp), Break> {
     let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func_entry!(state, func);
     let callee_sp = state
@@ -800,7 +800,7 @@ pub fn return_call_func_entry(
     state: &mut VmState,
     params: BoundedSlotSpan,
     func: &FuncEntry,
-    instance: Option<Inst>,
+    instance: Option<NonNull<InstanceEntity>>,
 ) -> Control<(Ip, Sp), Break> {
     let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func_entry!(state, func);
     let callee_sp = state
@@ -822,7 +822,7 @@ pub fn call_host(
     caller_ip: Option<Ip>,
     host_func: HostFuncEntity,
     params: BoundedSlotSpan,
-    instance: Option<Inst>,
+    instance: Option<NonNull<InstanceEntity>>,
     call_hooks: CallHooks,
 ) -> Control<Sp, Break> {
     debug_assert_eq!(params.len(), host_func.len_param_cells());
@@ -854,8 +854,8 @@ pub fn return_call_host(
     func: Func,
     host_func: HostFuncEntity,
     params: BoundedSlotSpan,
-    instance: Inst,
-) -> Control<(Ip, Sp, Inst), Break> {
+    instance: NonNull<InstanceEntity>,
+) -> Control<(Ip, Sp, NonNull<InstanceEntity>), Break> {
     debug_assert_eq!(params.len(), host_func.len_param_cells());
     let trampoline = *host_func.trampoline();
     let (control, inout) = state
@@ -899,8 +899,8 @@ pub fn call_wasm_or_host(
     params: BoundedSlotSpan,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
-) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
+    instance: NonNull<InstanceEntity>,
+) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, NonNull<InstanceEntity>), Break> {
     // SAFETY: the pointer is warmed up at instantiation (imported calls) or freshly resolved
     //         (indirect calls); the reference is only used to copy out the callee data below,
     //         before any store mutation, so it never aliases a `&mut` into the funcs arena.
@@ -925,7 +925,8 @@ pub fn call_wasm_or_host(
     };
     // Hot path: calling a Wasm function. Uses the cached `FuncEntry` and the same inlined
     // machinery as `call_internal`, differing only in the possible instance switch.
-    let callee_instance: Inst = resolve_instance(state.store, wasm_func.instance()).into();
+    let callee_instance: NonNull<InstanceEntity> =
+        resolve_instance(state.store, wasm_func.instance()).into();
     let (callee_ip, callee_sp) = call_func_entry(
         state,
         caller_ip,
@@ -947,8 +948,8 @@ pub fn return_call_wasm_or_host(
     params: BoundedSlotSpan,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
-) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
+    instance: NonNull<InstanceEntity>,
+) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, NonNull<InstanceEntity>), Break> {
     // SAFETY: see `call_wasm_or_host`.
     let func_entity = unsafe { func_entity.as_ref() };
     let wasm_func = match func_entity {
@@ -964,7 +965,8 @@ pub fn return_call_wasm_or_host(
         }
     };
     // Hot path: tail-calling a Wasm function. See `call_wasm_or_host` for the shape.
-    let callee_instance: Inst = resolve_instance(state.store, wasm_func.instance()).into();
+    let callee_instance: NonNull<InstanceEntity> =
+        resolve_instance(state.store, wasm_func.instance()).into();
     let changed_instance = (callee_instance != instance).then_some(callee_instance);
     let (callee_ip, callee_sp) =
         return_call_func_entry(state, params, wasm_func.func_entry(), changed_instance)?;

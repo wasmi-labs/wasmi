@@ -28,7 +28,14 @@ use crate::{
     store::PrunedStore,
 };
 use alloc::vec::Vec;
-use core::{cmp, marker::PhantomData, mem, ops, ptr, slice};
+use core::{
+    cmp,
+    marker::PhantomData,
+    mem,
+    ops,
+    ptr::{self, NonNull},
+    slice,
+};
 
 pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
@@ -179,7 +186,19 @@ impl From<&'_ InstanceEntity> for Inst {
     #[inline]
     fn from(entity: &'_ InstanceEntity) -> Self {
         let addr = (entity as *const InstanceEntity).expose_provenance();
-        let value = InstRepr::from_ne_bytes((addr).to_ne_bytes());
+        let value = InstRepr::from_ne_bytes(addr.to_ne_bytes());
+        Self {
+            value,
+            marker: PhantomData,
+        }
+    }
+}
+
+impl From<NonNull<InstanceEntity>> for Inst {
+    #[inline]
+    fn from(entity: NonNull<InstanceEntity>) -> Self {
+        let addr = entity.as_ptr().expose_provenance();
+        let value = InstRepr::from_ne_bytes(addr.to_ne_bytes());
         Self {
             value,
             marker: PhantomData,
@@ -190,7 +209,7 @@ impl From<&'_ InstanceEntity> for Inst {
 impl PartialEq for Inst {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        ptr::addr_eq(self.as_ptr(), other.as_ptr())
+        self.as_ptr().addr() == other.as_ptr().addr()
     }
 }
 impl Eq for Inst {}
@@ -198,9 +217,10 @@ impl Eq for Inst {}
 impl Inst {
     /// Converts the underlying representation back into its original pointer value.
     #[inline]
-    fn as_ptr(&self) -> *const InstanceEntity {
+    pub fn as_ptr(&self) -> NonNull<InstanceEntity> {
         let bits = usize::from_ne_bytes(self.value.to_ne_bytes());
-        ptr::with_exposed_provenance::<InstanceEntity>(bits)
+        let ptr = ptr::with_exposed_provenance::<InstanceEntity>(bits);
+        unsafe { NonNull::new_unchecked(ptr as *mut InstanceEntity) }
     }
 
     /// Returns a shared reference to the referenced [`InstanceEntity`].
@@ -216,7 +236,7 @@ impl Inst {
     ///   reference.
     #[inline]
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
-        unsafe { &*self.as_ptr() }
+        unsafe { self.as_ptr().as_ref() }
     }
 }
 
@@ -749,7 +769,7 @@ pub struct Stack {
     freg64: Freg64,
 }
 
-type ReturnCallHost = Control<(Ip, Sp, Inst), Sp>;
+type ReturnCallHost = Control<(Ip, Sp, NonNull<InstanceEntity>), Sp>;
 
 impl Stack {
     /// Creates a new [`Stack`] with the given [`StackConfig`] limits.
@@ -821,7 +841,7 @@ impl Stack {
     /// # Note
     ///
     /// This is useful and required to resume a function execution that yielded back to the host.
-    pub fn restore_frame(&mut self) -> (Ip, Sp, Inst, Ireg, Freg32, Freg64) {
+    pub fn restore_frame(&mut self) -> (Ip, Sp, NonNull<InstanceEntity>, Ireg, Freg32, Freg64) {
         let Some((ip, start, instance)) = self.frames.restore_frame() else {
             panic!("restore_frame: missing top-frame")
         };
@@ -834,7 +854,7 @@ impl Stack {
         &'a mut self,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-        caller_instance: Inst,
+        caller_instance: NonNull<InstanceEntity>,
     ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
         let (callee_start, caller) = self.frames.return_prepare_host_frame(caller_instance);
         self.values
@@ -862,7 +882,7 @@ impl Stack {
         callee_params: BoundedSlotSpan,
         callee_locals: u16,
         callee_slots: u16,
-        callee_instance: Option<Inst>,
+        callee_instance: Option<NonNull<InstanceEntity>>,
     ) -> Result<Sp, TrapCode> {
         let start = self
             .frames
@@ -877,8 +897,8 @@ impl Stack {
         store: &mut PrunedStore,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
-        instance: Inst,
-    ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, Inst)> {
+        instance: NonNull<InstanceEntity>,
+    ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, NonNull<InstanceEntity>)> {
         let (ip, start, changed_instance) = self.frames.pop()?;
         let sp = self.values.sp_or_dangling(start);
         let (mem0, mem0_len, instance) = match changed_instance {
@@ -899,7 +919,7 @@ impl Stack {
         callee_params: BoundedSlotSpan,
         callee_locals: u16,
         callee_size: u16,
-        callee_instance: Option<Inst>,
+        callee_instance: Option<NonNull<InstanceEntity>>,
     ) -> Result<Sp, TrapCode> {
         let start = self.frames.replace(callee_ip, callee_instance)?;
         self.values
@@ -1038,7 +1058,7 @@ impl ValueStack {
     /// the caller's caller.
     fn return_prepare_host_frame<'a>(
         &'a mut self,
-        caller: Option<(Ip, SpOffset, Inst)>,
+        caller: Option<(Ip, SpOffset, NonNull<InstanceEntity>)>,
         callee_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
@@ -1212,7 +1232,7 @@ pub struct CallStack {
     /// The currently used [`Inst`] if any.
     ///
     /// This may be `None`, for example if the [`CallStack`] is empty.
-    instance: Option<Inst>,
+    instance: Option<NonNull<InstanceEntity>>,
     /// The maximum height of the call stack.
     max_height: usize,
 }
@@ -1285,7 +1305,7 @@ impl CallStack {
     /// # Note
     ///
     /// This is useful and required to resume a function execution that yielded back to the host.
-    fn restore_frame(&self) -> Option<(Ip, SpOffset, Inst)> {
+    fn restore_frame(&self) -> Option<(Ip, SpOffset, NonNull<InstanceEntity>)> {
         let instance = self.instance?;
         let top = self.top()?;
         Some((top.ip, top.start, instance))
@@ -1308,8 +1328,8 @@ impl CallStack {
     /// the caller's caller.
     pub fn return_prepare_host_frame(
         &mut self,
-        callee_instance: Inst,
-    ) -> (SpOffset, Option<(Ip, SpOffset, Inst)>) {
+        callee_instance: NonNull<InstanceEntity>,
+    ) -> (SpOffset, Option<(Ip, SpOffset, NonNull<InstanceEntity>)>) {
         let callee_start = self.top_start();
         let caller = match self.pop() {
             Some((ip, start, instance)) => {
@@ -1328,7 +1348,7 @@ impl CallStack {
         caller_ip: Option<Ip>,
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
-        instance: Option<Inst>,
+        instance: Option<NonNull<InstanceEntity>>,
     ) -> Result<SpOffset, TrapCode> {
         if self.frames.len() == self.max_height {
             return Err(TrapCode::StackOverflow);
@@ -1352,7 +1372,7 @@ impl CallStack {
     }
 
     /// Adjusts `self` after returning from a function.
-    fn pop(&mut self) -> Option<(Ip, SpOffset, Option<Inst>)> {
+    fn pop(&mut self) -> Option<(Ip, SpOffset, Option<NonNull<InstanceEntity>>)> {
         let Some(popped) = self.frames.pop() else {
             unsafe { unreachable_unchecked!("call stack must not be empty") }
         };
@@ -1373,7 +1393,11 @@ impl CallStack {
     ///   which is required to be different from the currently used instance.
     /// - If `instance` is `None` the callee shares the currently used instance.
     #[inline(always)]
-    fn replace(&mut self, callee_ip: Ip, instance: Option<Inst>) -> Result<SpOffset, TrapCode> {
+    fn replace(
+        &mut self,
+        callee_ip: Ip,
+        instance: Option<NonNull<InstanceEntity>>,
+    ) -> Result<SpOffset, TrapCode> {
         let Some(caller_frame) = self.frames.last_mut() else {
             unsafe { unreachable_unchecked!("missing caller frame on the call stack") }
         };
@@ -1406,13 +1430,13 @@ pub struct Frame {
     pub ip: Ip,
     /// The start index on the value stack for this function frame.
     start: SpOffset,
-    /// The [`Inst`] used if any.
+    /// The instance used if any.
     ///
     /// # Note
     ///
     /// This is only `Some` if [`Frame`] and its caller originate from different
-    /// Wasm instances and thus execution needs to change the currently used [`Inst`].
-    instance: Option<Inst>,
+    /// Wasm instances and thus execution needs to change the currently used instance.
+    instance: Option<NonNull<InstanceEntity>>,
 }
 
 /// The offset of an [`Sp`] of a [`Stack`].

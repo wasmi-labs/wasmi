@@ -6,14 +6,16 @@ use crate::{
     Store,
     Table,
     core::{RawRef, hint},
-    engine::{InOutParams, Inst},
+    engine::InOutParams,
     errors::{MemoryError, TableError},
     func::Trampoline,
+    instance::InstanceEntity,
     store::error::{InternalStoreError, StoreError},
 };
 use core::{
     fmt::{self, Debug},
     mem,
+    ptr::NonNull,
 };
 
 #[cfg(test)]
@@ -34,7 +36,7 @@ pub struct PrunedStoreVTable {
     call_host_func: fn(
         store: &mut PrunedStore,
         trampoline: Trampoline,
-        instance: Option<Inst>,
+        instance: Option<NonNull<InstanceEntity>>,
         inout: InOutParams,
         call_hooks: CallHooks,
     ) -> Result<(), StoreError<Error>>,
@@ -54,7 +56,7 @@ impl PrunedStoreVTable {
         Self {
             call_host_func: |pruned: &mut PrunedStore,
                              trampoline: Trampoline,
-                             instance: Option<Inst>,
+                             instance: Option<NonNull<InstanceEntity>>,
                              inout: InOutParams,
                              call_hooks: CallHooks|
              -> Result<(), StoreError<Error>> {
@@ -104,7 +106,7 @@ impl PrunedStoreVTable {
         &self,
         pruned: &mut PrunedStore,
         trampoline: Trampoline,
-        instance: Option<Inst>,
+        instance: Option<NonNull<InstanceEntity>>,
         inout: InOutParams,
         call_hooks: CallHooks,
     ) -> Result<(), StoreError<Error>> {
@@ -194,7 +196,7 @@ impl PrunedStore {
     pub fn call_host_func(
         &mut self,
         trampoline: Trampoline,
-        instance: Option<Inst>,
+        instance: Option<NonNull<InstanceEntity>>,
         inout: InOutParams,
         call_hooks: CallHooks,
     ) -> Result<(), StoreError<Error>> {

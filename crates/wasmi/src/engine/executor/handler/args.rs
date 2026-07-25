@@ -23,6 +23,7 @@ use crate::{
             utils::{self, GetValue, IntoControl as _, SetValue, get_value, set_value},
         },
     },
+    instance::InstanceEntity,
     ir::{self, BoundedSlotSpan, BranchOffset},
 };
 use core::ptr::NonNull;
@@ -217,7 +218,7 @@ impl Args {
     /// Reloads the data pointer and length of the default memory at index 0 from `state`.
     #[inline]
     pub fn reload_mem0(&mut self, state: &mut VmState) {
-        (self.mem0_ptr, self.mem0_len) = utils::extract_mem0(state.store, self.instance);
+        (self.mem0_ptr, self.mem0_len) = utils::extract_mem0(state.store, self.instance.as_ptr());
     }
 
     /// Calls `func` with `params` on `instance` with `state` using `self`.
@@ -227,7 +228,7 @@ impl Args {
         state: &mut VmState,
         func: &FuncEntry,
         params: BoundedSlotSpan,
-        instance: Option<Inst>,
+        instance: Option<NonNull<InstanceEntity>>,
     ) -> Control<(), Break> {
         (self.ip, self.sp) = utils::call_func_entry(state, self.ip, params, func, instance)?;
         Control::Continue(())
@@ -240,7 +241,7 @@ impl Args {
         state: &mut VmState,
         func: &FuncEntry,
         params: BoundedSlotSpan,
-        instance: Option<Inst>,
+        instance: Option<NonNull<InstanceEntity>>,
     ) -> Control<(), Break> {
         (self.ip, self.sp) = utils::return_call_func_entry(state, params, func, instance)?;
         Control::Continue(())
@@ -270,13 +271,8 @@ impl Args {
         func_entity: NonNull<FuncEntity>,
         params: BoundedSlotSpan,
     ) -> Control<(), Break> {
-        (
-            self.ip,
-            self.sp,
-            self.mem0_ptr,
-            self.mem0_len,
-            self.instance,
-        ) = utils::call_wasm_or_host(
+        let mut instance = self.instance.as_ptr();
+        (self.ip, self.sp, self.mem0_ptr, self.mem0_len, instance) = utils::call_wasm_or_host(
             state,
             self.ip,
             func,
@@ -284,8 +280,9 @@ impl Args {
             params,
             self.mem0_ptr,
             self.mem0_len,
-            self.instance,
+            instance,
         )?;
+        self.instance = instance.into();
         Control::Continue(())
     }
 
@@ -298,32 +295,30 @@ impl Args {
         func_entity: NonNull<FuncEntity>,
         params: BoundedSlotSpan,
     ) -> Control<(), Break> {
-        (
-            self.ip,
-            self.sp,
-            self.mem0_ptr,
-            self.mem0_len,
-            self.instance,
-        ) = utils::return_call_wasm_or_host(
-            state,
-            func,
-            func_entity,
-            params,
-            self.mem0_ptr,
-            self.mem0_len,
-            self.instance,
-        )?;
+        let mut instance = self.instance.as_ptr();
+        (self.ip, self.sp, self.mem0_ptr, self.mem0_len, instance) =
+            utils::return_call_wasm_or_host(
+                state,
+                func,
+                func_entity,
+                params,
+                self.mem0_ptr,
+                self.mem0_len,
+                instance,
+            )?;
+        self.instance = instance.into();
         Control::Continue(())
     }
 
     /// Pops the top-most frame from the call stack.
     #[inline]
     pub fn pop_frame(&mut self, state: &mut VmState) -> Control<(), Break> {
-        let Some((ip, sp, mem0_ptr, mem0_len, instance)) =
-            state
-                .stack
-                .pop_frame(state.store, self.mem0_ptr, self.mem0_len, self.instance)
-        else {
+        let Some((ip, sp, mem0_ptr, mem0_len, instance)) = state.stack.pop_frame(
+            state.store,
+            self.mem0_ptr,
+            self.mem0_len,
+            self.instance.as_ptr(),
+        ) else {
             // No more frames on the call stack -> break out of execution!
             done!(state, DoneReason::Return(self.sp))
         };
@@ -331,7 +326,7 @@ impl Args {
         self.sp = sp;
         self.mem0_ptr = mem0_ptr;
         self.mem0_len = mem0_len;
-        self.instance = instance;
+        self.instance = instance.into();
         Control::Continue(())
     }
 }

@@ -23,13 +23,15 @@ use crate::{
     ResourceLimiter,
     collections::arena::{Arena, ArenaError},
     core::{CoreMemory, ResourceLimiterRef},
-    engine::{InOutParams, Inst},
+    engine::InOutParams,
     func::{Trampoline, TrampolineEntity},
+    instance::InstanceEntity,
 };
 use alloc::boxed::Box;
 use core::{
     any::{TypeId, type_name},
     fmt::{self, Debug},
+    ptr::NonNull,
 };
 
 /// The store that owns all data associated to Wasm modules.
@@ -114,7 +116,7 @@ impl<T> Store<T> {
     fn call_host_func(
         &mut self,
         trampoline: Trampoline,
-        instance: Option<Inst>,
+        instance: Option<NonNull<InstanceEntity>>,
         inout: InOutParams,
     ) -> Result<(), StoreError<Error>> {
         let trampoline = self.resolve_trampoline(&trampoline)?.clone();

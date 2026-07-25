@@ -22,11 +22,16 @@ use crate::{
     Engine,
     Error,
     Val,
-    engine::{InOutParams, InOutResults, Inst, ResumableCall, required_cells_for_tys},
+    engine::{InOutParams, InOutResults, ResumableCall, required_cells_for_tys},
+    instance::InstanceEntity,
     store::Stored,
 };
 use alloc::{boxed::Box, sync::Arc};
-use core::{fmt, fmt::Debug, num::NonZero};
+use core::{
+    fmt::{self, Debug},
+    num::NonZero,
+    ptr::NonNull,
+};
 
 define_handle! {
     struct Trampoline(usize, Stored) => TrampolineEntity<Generic>;
@@ -293,7 +298,7 @@ impl<T> TrampolineEntity<T> {
     pub fn call<'a>(
         &self,
         mut ctx: impl AsContextMut<Data = T>,
-        instance: Option<Inst>,
+        instance: Option<NonNull<InstanceEntity>>,
         params: InOutParams<'a>,
     ) -> Result<InOutResults<'a>, Error> {
         let caller = <Caller<T>>::new(&mut ctx, instance);

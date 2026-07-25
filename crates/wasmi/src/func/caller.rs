@@ -1,5 +1,6 @@
 use super::super::{AsContext, AsContextMut, StoreContext, StoreContextMut};
-use crate::{Engine, Error, Extern, engine::Inst};
+use crate::{Engine, Error, Extern, instance::InstanceEntity};
+use core::ptr::NonNull;
 
 /// Represents the caller’s context when creating a host function via [`Func::wrap`].
 ///
@@ -10,14 +11,14 @@ pub struct Caller<'a, T> {
     /// This is `Some` if the host function was called from a Wasm function
     /// since all Wasm function are associated to a module instance.
     /// This usually is `None` if the host function was called from the host side.
-    instance: Option<Inst>,
+    instance: Option<NonNull<InstanceEntity>>,
 }
 
 impl<'a, T> Caller<'a, T> {
     /// Creates a new [`Caller`] from the given store context and [`Instance`] handle.
     ///
     /// [`Instance`]: crate::Instance
-    pub(crate) fn new<C>(ctx: &'a mut C, instance: Option<Inst>) -> Self
+    pub(crate) fn new<C>(ctx: &'a mut C, instance: Option<NonNull<InstanceEntity>>) -> Self
     where
         C: AsContextMut<Data = T>,
     {

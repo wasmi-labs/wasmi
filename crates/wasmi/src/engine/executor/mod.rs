@@ -5,7 +5,6 @@ pub use self::{
         CellsReader,
         CellsWriter,
         ExecutionOutcome,
-        Inst,
         LiftFromCells,
         LiftFromCellsByValue,
         LoadByVal,
