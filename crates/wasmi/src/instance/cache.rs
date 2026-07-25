@@ -27,7 +27,7 @@ pub struct HandleAndCache {
     /// The cached entity pointer, warmed up at instantiation.
     cache: NonNull<AnyEntity>,
     /// The entity handle.
-    pub handle: AnyHandle,
+    handle: AnyHandle,
 }
 
 // SAFETY: `cache` only ever points at an entity owned by the same `StoreInner` that
