@@ -21,8 +21,10 @@ use crate::{
         ShiftAmount,
     },
     engine::{
+        CodeView,
         DedupFuncType,
         FuncEntry,
+        InOutParams,
         executor::{
             LoadFromCellsByValue,
             StoreToCells,
@@ -30,7 +32,7 @@ use crate::{
         },
         utils::unreachable_unchecked,
     },
-    func::{FuncEntity, HostFuncEntity},
+    func::{FuncEntity, HostFuncEntity, Trampoline},
     instance::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceEntity, MemoryAddr, TableAddr},
     ir::{self, Address, BoundedSlotSpan, Local, Offset, Offset16, Slot, SlotAndReg, SlotSpan},
     memory::DataSegmentEntity,
@@ -816,6 +818,38 @@ pub fn return_call_func_entry(
     Control::Continue((callee_ip, callee_sp))
 }
 
+/// Invokes the host function behind `trampoline`.
+///
+/// Returns the host provided error if the host function trapped.
+///
+/// # Note
+///
+/// Takes `store` and `code` instead of the whole [`VmState`] since `inout` already
+/// borrows its [`Stack`].
+///
+/// [`Stack`]: crate::engine::executor::Stack
+#[inline]
+fn invoke_host(
+    store: &mut PrunedStore,
+    code: &mut CodeView,
+    trampoline: Trampoline,
+    instance: Option<Inst>,
+    inout: InOutParams<'_>,
+    call_hooks: CallHooks,
+) -> Result<(), Error> {
+    match store.call_host_func(trampoline, instance, inout, call_hooks) {
+        Ok(()) => {}
+        Err(StoreError::External(error)) => return Err(error),
+        Err(StoreError::Internal(error)) => unsafe {
+            unreachable_unchecked!(
+                "internal interpreter error while executing host function: {error}"
+            )
+        },
+    }
+    code.refresh();
+    Ok(())
+}
+
 pub fn call_host(
     state: &mut VmState,
     func: Func,
@@ -831,21 +865,16 @@ pub fn call_host(
         .stack
         .prepare_host_frame(caller_ip, params, host_func.len_result_cells())
         .into_control()?;
-    match state
-        .store
-        .call_host_func(trampoline, instance, inout, call_hooks)
-    {
-        Ok(()) => {}
-        Err(StoreError::External(error)) => {
-            done!(state, DoneReason::host_error(error, func, params.span()))
-        }
-        Err(StoreError::Internal(error)) => unsafe {
-            unreachable_unchecked!(
-                "internal interpreter error while executing host function: {error}"
-            )
-        },
+    if let Err(error) = invoke_host(
+        state.store,
+        &mut state.code,
+        trampoline,
+        instance,
+        inout,
+        call_hooks,
+    ) {
+        done!(state, DoneReason::host_error(error, func, params.span()))
     }
-    state.code.refresh();
     Control::Continue(sp)
 }
 
@@ -862,27 +891,22 @@ pub fn return_call_host(
         .stack
         .return_prepare_host_frame(params, host_func.len_result_cells(), instance)
         .into_control()?;
-    match state
-        .store
-        .call_host_func(trampoline, Some(instance), inout, CallHooks::Call)
-    {
-        Ok(()) => {}
-        Err(StoreError::External(error)) => {
-            // Note: we won't allow resumption in case the execution would
-            //       have returned with this the host function tail call.
-            let reason = match control {
-                Control::Continue(_) => DoneReason::host_error(error, func, params.span()),
-                Control::Break(_) => DoneReason::error(error),
-            };
-            done!(state, reason)
-        }
-        Err(StoreError::Internal(error)) => unsafe {
-            unreachable_unchecked!(
-                "internal interpreter error while executing host function: {error}"
-            )
-        },
+    if let Err(error) = invoke_host(
+        state.store,
+        &mut state.code,
+        trampoline,
+        Some(instance),
+        inout,
+        CallHooks::Call,
+    ) {
+        // Note: we won't allow resumption in case the execution would
+        //       have returned with this the host function tail call.
+        let reason = match control {
+            Control::Continue(_) => DoneReason::host_error(error, func, params.span()),
+            Control::Break(_) => DoneReason::error(error),
+        };
+        done!(state, reason)
     }
-    state.code.refresh();
     match control {
         Control::Continue((ip, sp, instance)) => Control::Continue((ip, sp, instance)),
         Control::Break(sp) => done!(state, DoneReason::Return(sp)),
@@ -965,9 +989,8 @@ pub fn return_call_wasm_or_host(
     };
     // Hot path: tail-calling a Wasm function. See `call_wasm_or_host` for the shape.
     let callee_instance: Inst = resolve_instance(state.store, wasm_func.instance()).into();
-    let changed_instance = (callee_instance != instance).then_some(callee_instance);
     let (callee_ip, callee_sp) =
-        return_call_func_entry(state, params, wasm_func.func_entry(), changed_instance)?;
+        return_call_func_entry(state, params, wasm_func.func_entry(), Some(callee_instance))?;
     let (instance, mem0, mem0_len) =
         update_instance(state.store, instance, callee_instance, mem0, mem0_len);
     Control::Continue((callee_ip, callee_sp, mem0, mem0_len, instance))

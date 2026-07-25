@@ -872,6 +872,13 @@ impl Stack {
     }
 
     /// Adjusts `self` after returning from a function.
+    ///
+    /// # Note
+    ///
+    /// The cached `(memory 0)` is only re-extracted if the returned-to frame uses a
+    /// different [`Inst`]. This is sound because every operation that can grow a memory
+    /// refreshes the cache at the growth site instead: the `memory.grow` handler and
+    /// each of the host call paths.
     pub fn pop_frame(
         &mut self,
         store: &mut PrunedStore,
@@ -1066,12 +1073,7 @@ impl ValueStack {
         let callee_end = callee_start.add(callee_size)?;
         self.grow_if_needed(callee_end)?;
         let caller_sp = self.sp(caller_start);
-        let Some(cells) = self.cells_from_to(callee_start, callee_end) else {
-            unsafe { unreachable_unchecked!("must fit slice after `grow_if_needed` operation") }
-        };
-        let Ok(inout) = InOutParams::new(cells, params_len, results_len) else {
-            panic!("todo")
-        };
+        let inout = self.host_inout(callee_start, callee_end, params_len, results_len);
         let control = match caller {
             Some((ip, _, instance)) => ReturnCallHost::Continue((ip, caller_sp, instance)),
             None => ReturnCallHost::Break(caller_sp),
@@ -1094,13 +1096,36 @@ impl ValueStack {
         let callee_end = callee_start.add(callee_size)?;
         self.grow_if_needed(callee_end)?;
         let sp = self.sp(caller_start);
-        let Some(cells) = self.cells_from_to(callee_start, callee_end) else {
+        let inout = self.host_inout(callee_start, callee_end, params_len, results_len);
+        Ok((sp, inout))
+    }
+
+    /// Returns the [`InOutParams`] window `cells[start..end]` for a host function call.
+    ///
+    /// # Note
+    ///
+    /// Both `end - start` and `max(len_params, len_results)` denote the callee size,
+    /// and [`ValueStack::grow_if_needed`] has already been called for `end`.
+    fn host_inout(
+        &mut self,
+        start: SpOffset,
+        end: SpOffset,
+        len_params: usize,
+        len_results: usize,
+    ) -> InOutParams<'_> {
+        debug_assert_eq!(
+            end.into_inner() - start.into_inner(),
+            len_params.max(len_results)
+        );
+        let Some(cells) = self.cells_from_to(start, end) else {
             unsafe { unreachable_unchecked!("must fit slice after `grow_if_needed` operation") }
         };
-        let Ok(inout) = InOutParams::new(cells, params_len, results_len) else {
-            panic!("todo")
+        let Ok(inout) = InOutParams::new(cells, len_params, len_results) else {
+            unsafe {
+                unreachable_unchecked!("host frame cells are sized as max(len_params, len_results)")
+            }
         };
-        Ok((sp, inout))
+        inout
     }
 
     /// Adjusts `self` for a normal function call.
@@ -1369,9 +1394,11 @@ impl CallStack {
     ///
     /// # Note
     ///
-    /// - If `instance` is `Some` it refers to the _callee_ instance of the tail call
-    ///   which is required to be different from the currently used instance.
+    /// - If `instance` is `Some` it refers to the _callee_ instance of the tail call.
+    ///   Only an actual instance change creates a restoration obligation.
     /// - If `instance` is `None` the callee shares the currently used instance.
+    ///
+    /// This mirrors the contract of [`CallStack::push`].
     #[inline(always)]
     fn replace(&mut self, callee_ip: Ip, instance: Option<Inst>) -> Result<SpOffset, TrapCode> {
         let Some(caller_frame) = self.frames.last_mut() else {
@@ -1380,12 +1407,11 @@ impl CallStack {
         let start = caller_frame.start;
         caller_frame.ip = callee_ip;
         if let Some(callee_instance) = instance {
-            debug_assert!(self.instance != Some(callee_instance));
             // The replaced frame's restoration obligation is carried over unchanged.
             // However, if the replaced frame has no such obligation yet, its caller
             // runs in the currently used instance which must be restored when the
             // new frame returns since the callee continues in a different instance.
-            if caller_frame.instance.is_none() {
+            if caller_frame.instance.is_none() && self.instance != Some(callee_instance) {
                 caller_frame.instance = self.instance;
             }
             self.instance = Some(callee_instance);
