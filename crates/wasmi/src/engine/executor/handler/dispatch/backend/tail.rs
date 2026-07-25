@@ -7,6 +7,8 @@ use crate::{
     ir,
     ir::OpCode,
 };
+use crate::instance::InstanceEntity;
+use core::ptr::NonNull;
 
 #[inline(always)]
 pub fn fetch_handler(ip: Ip) -> Handler {
@@ -96,11 +98,12 @@ pub fn execute_until_done(
     sp: Sp,
     mem0: Mem0Ptr,
     mem0_len: Mem0Len,
-    instance: Inst,
+    instance: NonNull<InstanceEntity>,
     ireg: Ireg,
     freg32: Freg32,
     freg64: Freg64,
 ) -> Result<Sp, ExecutionOutcome> {
+    let instance = instance.into();
     let handler = fetch_handler(ip);
     let Control::Break(reason) = handler(
         state, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64,
