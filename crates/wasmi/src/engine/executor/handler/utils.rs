@@ -956,9 +956,11 @@ pub fn return_call_wasm_or_host(
         FuncEntity::Host(host_func) => {
             let (callee_ip, sp, new_instance) =
                 return_call_host(state, func, *host_func, params, instance)?;
-            let (instance, mem0, mem0_len) =
-                update_instance(state.store, instance, new_instance, mem0, mem0_len);
-            return Control::Continue((callee_ip, sp, mem0, mem0_len, instance));
+            // Note: host functions may grow memories, invalidating the cached `(memory 0)`.
+            //       Therefore, it is required to re-extract `(memory 0)` to avoid a stale
+            //       cache - even if the tail call returned into the very same instance.
+            let (mem0, mem0_len) = extract_mem0(state.store, new_instance);
+            return Control::Continue((callee_ip, sp, mem0, mem0_len, new_instance));
         }
     };
     // Hot path: tail-calling a Wasm function. See `call_wasm_or_host` for the shape.
