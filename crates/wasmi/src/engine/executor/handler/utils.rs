@@ -989,9 +989,8 @@ pub fn return_call_wasm_or_host(
     };
     // Hot path: tail-calling a Wasm function. See `call_wasm_or_host` for the shape.
     let callee_instance: Inst = resolve_instance(state.store, wasm_func.instance()).into();
-    let changed_instance = (callee_instance != instance).then_some(callee_instance);
     let (callee_ip, callee_sp) =
-        return_call_func_entry(state, params, wasm_func.func_entry(), changed_instance)?;
+        return_call_func_entry(state, params, wasm_func.func_entry(), Some(callee_instance))?;
     let (instance, mem0, mem0_len) =
         update_instance(state.store, instance, callee_instance, mem0, mem0_len);
     Control::Continue((callee_ip, callee_sp, mem0, mem0_len, instance))
