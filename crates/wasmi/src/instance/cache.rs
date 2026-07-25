@@ -1,6 +1,11 @@
 use crate::{
     DataSegmentEntity,
+    ElementSegment,
+    Func,
     FuncEntity,
+    Global,
+    Memory,
+    Table,
     core::{
         CoreElementSegment as ElementSegmentEntity,
         CoreGlobal as GlobalEntity,
@@ -8,6 +13,7 @@ use crate::{
         CoreTable as TableEntity,
     },
     instance::AnyHandle,
+    memory::DataSegment,
     store::StoreInner,
 };
 use core::ptr::NonNull;
@@ -78,6 +84,44 @@ impl HandleAndCache {
         pub fn get_elem(&self) -> NonNull<ElementSegmentEntity>;
         /// Returns a pointer to the cached [`DataSegmentEntity`] of `self`.
         pub fn get_data(&self) -> NonNull<DataSegmentEntity>;
+    }
+}
+
+macro_rules! impl_cast_handle {
+    (
+        $(
+            $(#[$attr:meta])*
+            pub unsafe fn $cast:ident(&self) -> $ty:ty = $inner:expr;
+        )*
+    ) => {
+        $(
+            $(#[$attr])*
+            ///
+            /// # Safety
+            ///
+            /// The caller must ensure that `self`'s handle is of the requested kind.
+            #[inline]
+            pub unsafe fn $cast(&self) -> $ty {
+                // Safety: guaranteed by the caller.
+                unsafe { $inner(self.handle) }
+            }
+        )*
+    };
+}
+impl HandleAndCache {
+    impl_cast_handle! {
+        /// Returns the [`Memory`] handle of `self`.
+        pub unsafe fn cast_memory(&self) -> Memory = AnyHandle::cast_memory;
+        /// Returns the [`Global`] handle of `self`.
+        pub unsafe fn cast_global(&self) -> Global = AnyHandle::cast_global;
+        /// Returns the [`Table`] handle of `self`.
+        pub unsafe fn cast_table(&self) -> Table = AnyHandle::cast_table;
+        /// Returns the [`Func`] handle of `self`.
+        pub unsafe fn cast_func(&self) -> Func = AnyHandle::cast_func;
+        /// Returns the [`ElementSegment`] handle of `self`.
+        pub unsafe fn cast_elem(&self) -> ElementSegment = AnyHandle::cast_elem;
+        /// Returns the [`DataSegment`] handle of `self`.
+        pub unsafe fn cast_data(&self) -> DataSegment = AnyHandle::cast_data;
     }
 }
 
