@@ -28,7 +28,14 @@ use crate::{
     store::PrunedStore,
 };
 use alloc::vec::Vec;
-use core::{cmp, marker::PhantomData, mem, ops, ptr, slice};
+use core::{
+    cmp,
+    marker::PhantomData,
+    mem,
+    ops,
+    ptr::{self, NonNull},
+    slice,
+};
 
 pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
@@ -179,28 +186,43 @@ impl From<&'_ InstanceEntity> for Inst {
     #[inline]
     fn from(entity: &'_ InstanceEntity) -> Self {
         let addr = (entity as *const InstanceEntity).expose_provenance();
-        let value = InstRepr::from_ne_bytes((addr).to_ne_bytes());
-        Self {
-            value,
-            marker: PhantomData,
-        }
+        Self::from_addr(addr)
+    }
+}
+
+impl From<NonNull<InstanceEntity>> for Inst {
+    #[inline]
+    fn from(entity: NonNull<InstanceEntity>) -> Self {
+        let addr = entity.as_ptr().expose_provenance();
+        Self::from_addr(addr)
     }
 }
 
 impl PartialEq for Inst {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        ptr::addr_eq(self.as_ptr(), other.as_ptr())
+        self.as_ptr().addr() == other.as_ptr().addr()
     }
 }
 impl Eq for Inst {}
 
 impl Inst {
+    /// Creates a new [`Inst`] from the given `addr` value.
+    #[inline]
+    fn from_addr(addr: usize) -> Self {
+        let value = InstRepr::from_ne_bytes(addr.to_ne_bytes());
+        Self {
+            value,
+            marker: PhantomData,
+        }
+    }
+
     /// Converts the underlying representation back into its original pointer value.
     #[inline]
-    fn as_ptr(&self) -> *const InstanceEntity {
+    pub fn as_ptr(&self) -> NonNull<InstanceEntity> {
         let bits = usize::from_ne_bytes(self.value.to_ne_bytes());
-        ptr::with_exposed_provenance::<InstanceEntity>(bits)
+        let ptr = ptr::with_exposed_provenance::<InstanceEntity>(bits);
+        unsafe { NonNull::new_unchecked(ptr as *mut InstanceEntity) }
     }
 
     /// Returns a shared reference to the referenced [`InstanceEntity`].
@@ -216,7 +238,7 @@ impl Inst {
     ///   reference.
     #[inline]
     pub unsafe fn as_ref(&self) -> &InstanceEntity {
-        unsafe { &*self.as_ptr() }
+        unsafe { self.as_ptr().as_ref() }
     }
 }
 
