@@ -52,18 +52,29 @@ pub struct InstanceEntity {
     func_types: Arc<[DedupFuncType]>,
     exports: Map<Box<str>, Extern>,
     layout: InstanceLayout,
-    initialized: bool,
+    state: InstanceState,
+}
+
+/// The state of an [`InstanceEntity`].
+#[derive(Debug, Copy, Clone)]
+pub enum InstanceState {
+    /// The instance is in an uninitialized state.
+    Uninitialized,
+    /// The instance has been initialized.
+    Initialized,
+    /// The instance has been initialized and its cache has been warmed up.
+    WarmedUp,
 }
 
 impl InstanceEntity {
     /// Creates an uninitialized [`InstanceEntity`].
     pub fn uninitialized() -> InstanceEntity {
         Self {
-            initialized: false,
+            handles: [].into(),
             func_types: Arc::new([]),
             exports: Map::new(),
             layout: InstanceLayout::uninit(),
-            handles: [].into(),
+            state: InstanceState::Uninitialized,
         }
     }
 
@@ -74,10 +85,14 @@ impl InstanceEntity {
 
     /// Returns `true` if the [`InstanceEntity`] has been fully initialized.
     pub fn is_initialized(&self) -> bool {
-        self.initialized
+        matches!(
+            self.state,
+            InstanceState::Initialized | InstanceState::WarmedUp
+        )
     }
 
     /// Returns a shared reference to the [`InstanceLayout`] of `self`.
+    #[inline]
     pub fn layout(&self) -> &InstanceLayout {
         &self.layout
     }
@@ -92,6 +107,15 @@ impl InstanceEntity {
     ///
     /// This must be called once before the [`InstanceEntity`] is used for execution.
     pub fn warmup(&mut self, store: &mut StoreInner) {
+        assert!(
+            !matches!(self.state, InstanceState::Uninitialized),
+            "must not warm-up the cache of an uninitialized instance",
+        );
+        if matches!(self.state, InstanceState::WarmedUp) {
+            // Nothing to do as the instance already has warmed-up its cache.
+            return;
+        }
+        self.state = InstanceState::WarmedUp;
         let layout = self.layout;
         macro_rules! warmup {
             ($addr:ident, $warmup:ident) => {{

@@ -11,7 +11,7 @@ use crate::{
     Table,
     collections::Map,
     engine::DedupFuncType,
-    instance::{HandleAndCache, InstanceLayout, handle::AnyHandle},
+    instance::{HandleAndCache, InstanceLayout, InstanceState, handle::AnyHandle},
     memory::DataSegment,
     module::FuncIdx,
 };
@@ -196,7 +196,7 @@ impl InstanceEntityBuilder {
             func_types: self.func_types,
             exports: self.exports,
             layout: self.layout,
-            initialized: true,
+            state: InstanceState::Initialized,
         })
     }
 
