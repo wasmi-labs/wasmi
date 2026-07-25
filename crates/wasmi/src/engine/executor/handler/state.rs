@@ -1162,7 +1162,10 @@ impl ValueStack {
         self.grow_if_needed(end)?;
         let start_locals = start.into_inner().wrapping_add(len_params);
         let end_locals = start.into_inner().wrapping_add(len_local_slots);
-        self.cells[start_locals..end_locals].fill_with(Cell::default);
+        let Some(local_cells) = self.cells.get_mut(start_locals..end_locals) else {
+            unsafe { unreachable_unchecked!() }
+        };
+        local_cells.fill_with(Cell::default);
         let sp = self.sp(start);
         Ok(sp)
     }
@@ -1191,7 +1194,10 @@ impl ValueStack {
             unsafe { unreachable_unchecked!("ValueStack::replace: out of bounds callee cells") }
         };
         callee_cells.copy_within(params_start..params_end, 0);
-        callee_cells[params_len..callee_locals].fill_with(Cell::default);
+        let Some(local_cells) = callee_cells.get_mut(params_len..callee_locals) else {
+            unsafe { unreachable_unchecked!() }
+        };
+        local_cells.fill_with(Cell::default);
         let sp = self.sp(callee_start);
         Ok(sp)
     }
