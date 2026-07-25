@@ -1,6 +1,6 @@
 //! This submodule tests the unusual use case of calling host functions through the engine from the host side.
 
-use wasmi::{Caller, Config, Engine, Error, Func, Linker, Module, Store};
+use wasmi::{Caller, Config, Engine, Error, Extern, Func, Linker, Module, Store};
 
 /// Setup a new `Store` for testing with initial value of 5.
 fn setup_store() -> Store<i32> {
@@ -115,6 +115,61 @@ fn host_tail_calls_0() {
     *store.data_mut() = 10;
     assert_eq!(*store.data(), 10);
     assert_eq!(test.call(&mut store, 5).unwrap(), 5 + 10);
+}
+
+/// A host function that grows `(memory 0)` invalidates the executor's cached
+/// `(memory 0)` pointer and length. This must also hold when the host function is
+/// entered via a `return_call` whose caller's caller uses the very same instance.
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn host_tail_call_grow_memory() {
+    let wasm = r#"
+        (module
+            (import "host" "grow" (func $grow (result i32)))
+            (memory (export "memory") 1)
+            ;; Tail-calls the host, so the host returns directly into `test`.
+            (func $tail (result i32)
+                (return_call $grow)
+            )
+            (func (export "test") (result i32)
+                (drop (call $tail))
+                ;; Both accesses live in the page that `$grow` just added and are
+                ;; only in bounds with a refreshed `(memory 0)` cache.
+                (i32.store (i32.const 65536) (i32.const 0x0DEFACED))
+                (i32.load (i32.const 65536))
+            )
+        )
+    "#;
+    let engine = Engine::default();
+    let module = Module::new(&engine, wasm).unwrap();
+    let mut store = Store::new(&engine, ());
+    let mut linker = Linker::new(&engine);
+    linker
+        .func_wrap("host", "grow", |mut caller: Caller<()>| -> i32 {
+            let Some(Extern::Memory(memory)) = caller.get_export("memory") else {
+                panic!("missing exported `memory`")
+            };
+            // Grow by enough pages to force the backing buffer to be reallocated.
+            memory.grow(&mut caller, 16).unwrap() as i32
+        })
+        .unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
+    let test = instance
+        .get_typed_func::<(), i32>(&mut store, "test")
+        .unwrap();
+
+    assert_eq!(test.call(&mut store, ()).unwrap(), 0x0DEFACED);
+    // Cross-check against the store's own view: a write through a stale `(memory 0)`
+    // pointer would land in the freed buffer instead of the grown one.
+    let Some(Extern::Memory(memory)) = instance.get_export(&store, "memory") else {
+        panic!("missing exported `memory`")
+    };
+    let data = memory.data(&store);
+    assert_eq!(data.len(), 17 * 65536);
+    assert_eq!(
+        i32::from_le_bytes(data[65536..65540].try_into().unwrap()),
+        0x0DEFACED
+    );
 }
 
 #[test]
