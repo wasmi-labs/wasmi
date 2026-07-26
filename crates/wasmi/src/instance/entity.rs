@@ -220,43 +220,30 @@ impl InstanceEntity {
             exports,
             layout,
         };
-        let layout = layout_for_handles(len);
-        // Safety: `layout` has a non-zero size since `InstanceEntityHeader` is non-empty.
-        let Some(ptr) = NonNull::new(unsafe { alloc(layout) }) else {
-            handle_alloc_error(layout)
+        let alloc_layout = layout_for_handles(len);
+        // Safety: `alloc_layout` has a non-zero size since `InstanceEntityHeader` is non-empty.
+        let Some(ptr) = NonNull::new(unsafe { alloc(alloc_layout) }) else {
+            handle_alloc_error(alloc_layout)
         };
-        // Safety: `ptr` is a fresh allocation of at least `layout` bytes, so writing `len`
-        //         handles at `HANDLES_OFFSET` stays in bounds and properly aligned. The
-        //         `take` caps the writes at `len` in case `handles` yields more items than
-        //         it promised.
-        //
-        // Note: `header` is written only after this loop and the assert below. Unwinding out
-        //       of either would leak the raw allocation, but `header` is still an owned local
-        //       and drops normally, so its `Arc` and `exports` map are released.
-        //       `AnyHandleAndEntity` has no `Drop`, so nothing else is leaked.
-        let mut len_written = 0;
+        // Safety: `ptr` is a fresh allocation of `alloc_layout` bytes, which reserves the
+        //         header at offset 0 and `len` handles at `HANDLES_OFFSET`, both properly
+        //         aligned. Copying the entries out of `handles` moves them since
+        //         `AnyHandleAndEntity` has no drop glue, so dropping the `Vec` afterwards
+        //         releases only its buffer.
         unsafe {
-            let buffer = ptr.byte_add(HANDLES_OFFSET).cast::<AnyHandleAndEntity>();
-            for handle in handles.by_ref().take(len) {
-                buffer.add(len_written).write(handle);
-                len_written += 1;
-            }
+            ptr.cast::<InstanceEntityHeader>().write(header);
+            ptr.byte_add(HANDLES_OFFSET)
+                .cast::<AnyHandleAndEntity>()
+                .copy_from_nonoverlapping(NonNull::from(handles.as_slice()).cast(), len);
         }
-        assert_eq!(
-            len_written, len,
-            "instance handles iterator yielded too few items",
-        );
-        // Safety: `ptr` is a fresh allocation of at least `layout` bytes and `#[repr(C)]` puts
-        //         the header at offset 0.
-        unsafe { ptr.cast::<InstanceEntityHeader>().write(header) };
         // Note: this fat-pointer cast is the stable-Rust replacement for the unstable
         //       `ptr::from_raw_parts`. Source and target metadata are both the trailing
         //       slice length, so the cast preserves it.
         let ptr = ptr::slice_from_raw_parts_mut(ptr.as_ptr().cast::<AnyHandleAndEntity>(), len)
             as *mut InstanceEntity;
         // Safety: `ptr` points to a fully initialized `InstanceEntity` allocated with the
-        //         global allocator using `layout`, which is asserted to be the very layout
-        //         that `Box` will use to deallocate it again.
+        //         global allocator using `alloc_layout`, which is asserted to be the very
+        //         layout that `Box` will use to deallocate it again.
         let entity = unsafe { Box::from_raw(ptr) };
         // Pins the assumption that the entire `ThinPtr<InstanceEntity>` API rests on: that
         // `#[repr(C)]` places `handles` at the offset the buffer was just written to. This is
@@ -268,7 +255,7 @@ impl InstanceEntity {
         );
         // Note: unlike the assert above this only guards `Box`'s deallocation, which is local
         //       to this type, and therefore stays a `debug_assert`.
-        debug_assert_eq!(Layout::for_value::<Self>(&entity), layout);
+        debug_assert_eq!(Layout::for_value::<Self>(&entity), alloc_layout);
         entity
     }
 
