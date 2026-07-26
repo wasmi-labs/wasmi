@@ -104,19 +104,19 @@ pub enum InstanceState {
 impl InstanceEntityHeader {
     /// Returns the number of items in the trailing `handles` buffer.
     #[inline]
-    pub fn len_handles(&self) -> u32 {
+    fn len_handles(&self) -> u32 {
         self.len_handles
     }
 
     /// Returns a shared reference to the [`InstanceLayout`].
     #[inline]
-    pub fn layout(&self) -> &InstanceLayout {
+    fn layout(&self) -> &InstanceLayout {
         &self.layout
     }
 
     /// Returns the signature at the `index` if any.
     #[inline]
-    pub fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
+    fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
         self.func_types.get(index as usize)
     }
 }
