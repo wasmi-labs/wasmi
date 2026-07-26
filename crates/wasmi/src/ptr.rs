@@ -61,10 +61,15 @@ impl<T: ?Sized> ThinPtr<T> {
         self.ptr.as_ptr().expose_provenance()
     }
 
-    /// Returns the underlying pointer to the first byte of the pointee.
+    /// Casts `self` into a [`NonNull<U>`] to the start of the pointee.
+    ///
+    /// # Note
+    ///
+    /// This is how a [`ThinPtr`] is turned into a typed pointer. It is a pure reinterpretation
+    /// and asserts nothing about what actually resides at that address.
     #[inline]
-    pub fn as_byte_ptr(self) -> NonNull<u8> {
-        self.ptr
+    pub fn cast<U: Sized>(self) -> NonNull<U> {
+        self.ptr.cast::<U>()
     }
 }
 
