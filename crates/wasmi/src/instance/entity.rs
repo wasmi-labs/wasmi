@@ -32,6 +32,7 @@ use alloc::{
 };
 use core::{
     alloc::Layout,
+    mem::{needs_drop, offset_of},
     ptr::{self, NonNull},
 };
 
@@ -79,10 +80,20 @@ struct InstanceEntityHeader {
 
 /// The byte offset of the `handles` buffer within an [`InstanceEntity`] allocation.
 ///
-/// This mirrors what `#[repr(C)]` computes for [`InstanceEntity`], which
-/// [`InstanceEntity::alloc`] asserts on every allocation.
-const HANDLES_OFFSET: usize =
-    size_of::<InstanceEntityHeader>().next_multiple_of(align_of::<AnyHandleAndEntity>());
+/// # Note
+///
+/// `offset_of!` rejects the unsized `handles` field on stable Rust: that is the unstable
+/// `offset_of_slice` feature. Since `[T]` has the alignment of `T`, and so does `[T; 0]`, the
+/// `#[repr(C)]` layout algorithm places both at the very same offset, which makes the sized
+/// twin below yield exactly what `offset_of!(InstanceEntity, handles)` would.
+const HANDLES_OFFSET: usize = {
+    #[repr(C)]
+    struct HandlesOffset {
+        header: InstanceEntityHeader,
+        handles: [AnyHandleAndEntity; 0],
+    }
+    offset_of!(HandlesOffset, handles)
+};
 
 /// The state of an [`InstanceEntity`].
 #[derive(Debug, Copy, Clone)]
