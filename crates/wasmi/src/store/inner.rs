@@ -35,6 +35,9 @@ type StoreArena<T> = Arena<RawHandle<T>, <T as Handle>::Entity>;
 /// An arena for the [`StoreInner`] with stable addresses.
 type StableStoreArena<T> = StableArena<RawHandle<T>, <T as Handle>::Entity>;
 
+/// An arena for the [`StoreInner`] that owns its possibly unsized entities via a [`Box`].
+type BoxedStoreArena<T> = Arena<RawHandle<T>, Box<<T as Handle>::Entity>>;
+
 /// Trait to abstract over [`Arena`] and [`StableArena`] for shared resolution of keys.
 trait Resolve<T: Handle> {
     /// Returns a shared reference to the entity at `key` if any.
@@ -58,6 +61,15 @@ where
     #[inline]
     fn resolve(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError> {
         self.get(key)
+    }
+}
+
+// Note: this cannot be generic over `T` since coherence cannot prove the unnormalizable
+//       projection `<T as Handle>::Entity` disjoint from `Box<<T as Handle>::Entity>`.
+impl Resolve<Instance> for BoxedStoreArena<Instance> {
+    #[inline]
+    fn resolve(&self, key: RawHandle<Instance>) -> Result<&InstanceEntity, ArenaError> {
+        self.get(key).map(Box::as_ref)
     }
 }
 
@@ -109,7 +121,7 @@ pub struct StoreInner {
     /// [`InstanceEntity`] is dynamically sized and therefore owned via a [`Box`]. This also
     /// decouples its address from this arena's slot so that the `Inst` pointers held by the
     /// Wasmi executor survive the allocation of further instances.
-    instances: Arena<RawHandle<Instance>, Box<InstanceEntity>>,
+    instances: BoxedStoreArena<Instance>,
     /// Stored data segments.
     datas: StableStoreArena<DataSegment>,
     /// Stored data segments.
@@ -608,13 +620,7 @@ impl StoreInner {
         &self,
         key: &Instance,
     ) -> Result<&InstanceEntity, InternalStoreError> {
-        // Note: unlike the other entities this cannot use `Self::resolve` since the arena
-        //       stores a `Box<InstanceEntity>` instead of the (unsized) entity itself.
-        let idx = self.unwrap_stored(key.as_raw())?;
-        match self.instances.get(*idx) {
-            Ok(entity) => Ok(entity),
-            Err(_err) => Err(InternalStoreError::not_found()),
-        }
+        self.resolve(key.as_raw(), &self.instances)
     }
 
     /// Returns a shared reference to the [`ExternRefEntity`] associated to the given [`ExternRef`].
