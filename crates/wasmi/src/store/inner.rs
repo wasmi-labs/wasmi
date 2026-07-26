@@ -390,7 +390,7 @@ impl StoreInner {
     /// Unlike [`resolve_mut`](Self::resolve_mut) this never forms an intermediate `&mut Entity`,
     /// so the returned pointer carries the arena allocation's own provenance and stays valid to
     /// dereference even after the same slot is resolved again. This is what makes caching the
-    /// pointer in an instance's `HandleAndCache` sound.
+    /// pointer in an instance's `AnyHandleAndEntity` sound.
     ///
     /// # Errors
     ///

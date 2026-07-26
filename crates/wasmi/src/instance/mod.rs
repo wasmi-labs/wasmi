@@ -1,6 +1,6 @@
 pub(crate) use self::builder::InstanceEntityBuilder;
 use self::{
-    cache::{HandleAndCache, HandleAndEntity},
+    cache::{AnyHandleAndEntity, HandleAndEntity},
     handle::AnyHandle,
 };
 pub use self::{
@@ -54,12 +54,12 @@ mod tests;
 ///
 /// This is a dynamically sized type: its `handles` buffer is allocated inline behind the
 /// [`InstanceEntityHeader`] instead of behind another pointer. This allows the Wasmi executor to
-/// reach a [`HandleAndCache`] with a single indirection from its thin `Inst` pointer.
+/// reach a [`AnyHandleAndEntity`] with a single indirection from its thin `Inst` pointer.
 #[derive(Debug)]
 #[repr(C)]
 pub struct InstanceEntity {
     header: InstanceEntityHeader,
-    handles: [HandleAndCache],
+    handles: [AnyHandleAndEntity],
 }
 
 /// The sized header preceding the trailing `handles` buffer of an [`InstanceEntity`].
@@ -90,7 +90,7 @@ struct InstanceEntityHeader {
 /// This mirrors what `#[repr(C)]` computes for [`InstanceEntity`] and is asserted against
 /// [`Layout::extend`] in [`InstanceEntity::alloc`].
 const HANDLES_OFFSET: usize =
-    size_of::<InstanceEntityHeader>().next_multiple_of(align_of::<HandleAndCache>());
+    size_of::<InstanceEntityHeader>().next_multiple_of(align_of::<AnyHandleAndEntity>());
 
 /// The state of an [`InstanceEntity`].
 #[derive(Debug, Copy, Clone)]
@@ -143,7 +143,7 @@ impl InstanceEntity {
         handles: I,
     ) -> Box<Self>
     where
-        I: IntoIterator<Item = HandleAndCache, IntoIter: ExactSizeIterator>,
+        I: IntoIterator<Item = AnyHandleAndEntity, IntoIter: ExactSizeIterator>,
     {
         Self::alloc(
             InstanceState::Initialized,
@@ -168,7 +168,7 @@ impl InstanceEntity {
         handles: I,
     ) -> Box<Self>
     where
-        I: IntoIterator<Item = HandleAndCache, IntoIter: ExactSizeIterator>,
+        I: IntoIterator<Item = AnyHandleAndEntity, IntoIter: ExactSizeIterator>,
     {
         let mut handles = handles.into_iter();
         let len = handles.len();
@@ -182,7 +182,7 @@ impl InstanceEntity {
             exports,
             layout,
         };
-        let Ok(array) = Layout::array::<HandleAndCache>(len) else {
+        let Ok(array) = Layout::array::<AnyHandleAndEntity>(len) else {
             panic!("out of memory: too many instance handles: {len}")
         };
         let Ok((layout, offset)) = Layout::new::<InstanceEntityHeader>().extend(array) else {
@@ -201,7 +201,7 @@ impl InstanceEntity {
         let mut len_written = 0;
         unsafe {
             ptr.cast::<InstanceEntityHeader>().write(header);
-            let buffer = ptr.byte_add(HANDLES_OFFSET).cast::<HandleAndCache>();
+            let buffer = ptr.byte_add(HANDLES_OFFSET).cast::<AnyHandleAndEntity>();
             for handle in handles.by_ref().take(len) {
                 buffer.add(len_written).write(handle);
                 len_written += 1;
@@ -214,7 +214,7 @@ impl InstanceEntity {
         // Note: this fat-pointer cast is the stable-Rust replacement for the unstable
         //       `ptr::from_raw_parts`. Source and target metadata are both the trailing
         //       slice length, so the cast preserves it.
-        let ptr = ptr::slice_from_raw_parts_mut(ptr.as_ptr().cast::<HandleAndCache>(), len)
+        let ptr = ptr::slice_from_raw_parts_mut(ptr.as_ptr().cast::<AnyHandleAndEntity>(), len)
             as *mut InstanceEntity;
         // Safety: `ptr` points to a fully initialized `InstanceEntity` allocated with the
         //         global allocator using `layout`, which is asserted to be the very layout
@@ -423,7 +423,7 @@ impl ThinPtr<InstanceEntity> {
             let entry = self
                 .as_byte_ptr()
                 .byte_add(HANDLES_OFFSET)
-                .cast::<HandleAndCache>()
+                .cast::<AnyHandleAndEntity>()
                 .add(addr as usize)
                 .as_ref();
             HandleAndEntity::from_ref(entry)
@@ -488,9 +488,10 @@ impl ThinPtr<InstanceEntity> {
         let len_handles = unsafe {
             (&raw const (*ptr.cast::<InstanceEntityHeader>().as_ptr()).len_handles).read()
         };
-        let ptr =
-            ptr::slice_from_raw_parts(ptr.as_ptr().cast::<HandleAndCache>(), len_handles as usize)
-                as *const InstanceEntity;
+        let ptr = ptr::slice_from_raw_parts(
+            ptr.as_ptr().cast::<AnyHandleAndEntity>(),
+            len_handles as usize,
+        ) as *const InstanceEntity;
         // Safety: guaranteed by the caller.
         unsafe { &*ptr }
     }

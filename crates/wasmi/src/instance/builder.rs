@@ -11,7 +11,7 @@ use crate::{
     Table,
     collections::Map,
     engine::DedupFuncType,
-    instance::{HandleAndCache, InstanceLayout, handle::AnyHandle},
+    instance::{AnyHandleAndEntity, InstanceLayout, handle::AnyHandle},
     memory::DataSegment,
     module::FuncIdx,
 };
@@ -200,10 +200,10 @@ impl InstanceEntityBuilder {
     }
 
     /// Finishes construction of the [`AnyHandle`] buffer.
-    fn finish_handles(&self) -> Vec<HandleAndCache> {
+    fn finish_handles(&self) -> Vec<AnyHandleAndEntity> {
         fn handle_and_cache_iter<T>(
             slice: &[T],
-        ) -> impl ExactSizeIterator<Item = HandleAndCache> + FusedIterator
+        ) -> impl ExactSizeIterator<Item = AnyHandleAndEntity> + FusedIterator
         where
             T: Clone,
             AnyHandle: From<T>,
@@ -212,7 +212,7 @@ impl InstanceEntityBuilder {
                 .iter()
                 .cloned()
                 .map(AnyHandle::from)
-                .map(HandleAndCache::new)
+                .map(AnyHandleAndEntity::new)
         }
 
         // Note: this is not `InstanceLayout` based since modules without a `data_count`

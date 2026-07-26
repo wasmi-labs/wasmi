@@ -24,38 +24,38 @@ use core::{
 /// This is the type-erased storage type of an instance's `handles` buffer, which mixes all
 /// handle kinds. Access it as a [`HandleAndEntity<T>`] to get at the handle or entity.
 #[derive(Debug)]
-pub struct HandleAndCache {
+pub struct AnyHandleAndEntity {
     /// The cached entity pointer, warmed up at instantiation.
-    cache: NonNull<AnyEntity>,
+    entity: NonNull<AnyEntity>,
     /// The entity handle.
     handle: AnyHandle,
 }
 
 // SAFETY: `cache` only ever points at an entity owned by the same `StoreInner` that
-//         (transitively) owns this `HandleAndCache`, so it never crosses a thread
+//         (transitively) owns this `AnyHandleAndEntity`, so it never crosses a thread
 //         boundary on its own — it moves only when the whole `Store` moves, and
 //         `Store<T>: Send` already requires every stored entity to be `Send`.
 //         `StableArena`/`StableVec` addresses survive that move. `handle` is `Copy` data.
-unsafe impl Send for HandleAndCache {}
+unsafe impl Send for AnyHandleAndEntity {}
 
-// SAFETY: `&HandleAndCache` only hands out the `Copy` `handle` and a `NonNull` copy of
+// SAFETY: `&AnyHandleAndEntity` only hands out the `Copy` `handle` and a `NonNull` copy of
 //         `cache`; it never dereferences the pointee (only `HandleAndEntity::warmup` writes
 //         `cache`, via `&mut self`), so a shared reference can never observe entity data.
-unsafe impl Sync for HandleAndCache {}
+unsafe impl Sync for AnyHandleAndEntity {}
 
-impl HandleAndCache {
-    /// Creates a new [`HandleAndCache`] from the given `handle`.
+impl AnyHandleAndEntity {
+    /// Creates a new [`AnyHandleAndEntity`] from the given `handle`.
     ///
     /// The entity cache is left dangling and must be warmed up before any entity access.
     pub fn new(handle: AnyHandle) -> Self {
         Self {
-            cache: NonNull::dangling(),
+            entity: NonNull::dangling(),
             handle,
         }
     }
 }
 
-/// A [`HandleAndCache`] that is known to store a `T` handle and its entity.
+/// A [`AnyHandleAndEntity`] that is known to store a `T` handle and its entity.
 ///
 /// # Note
 ///
@@ -66,7 +66,7 @@ impl HandleAndCache {
 #[repr(transparent)]
 pub struct HandleAndEntity<T: Handle> {
     /// The type-erased entry.
-    inner: HandleAndCache,
+    inner: AnyHandleAndEntity,
     /// Marks the concrete handle type of `inner`.
     marker: PhantomData<T>,
 }
@@ -78,9 +78,9 @@ impl<T: Handle<Entity: Sized>> HandleAndEntity<T> {
     ///
     /// The caller must ensure that `entry` stores a `T` handle.
     #[inline]
-    pub(super) unsafe fn from_ref(entry: &HandleAndCache) -> &Self {
+    pub(super) unsafe fn from_ref(entry: &AnyHandleAndEntity) -> &Self {
         // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
-        //         `HandleAndCache` and the caller guarantees the handle kind.
+        //         `AnyHandleAndEntity` and the caller guarantees the handle kind.
         unsafe { &*ptr::from_ref(entry).cast::<Self>() }
     }
 
@@ -90,9 +90,9 @@ impl<T: Handle<Entity: Sized>> HandleAndEntity<T> {
     ///
     /// Same as for [`HandleAndEntity::from_ref`].
     #[inline]
-    pub(super) unsafe fn from_mut(entry: &mut HandleAndCache) -> &mut Self {
+    pub(super) unsafe fn from_mut(entry: &mut AnyHandleAndEntity) -> &mut Self {
         // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
-        //         `HandleAndCache` and the caller guarantees the handle kind.
+        //         `AnyHandleAndEntity` and the caller guarantees the handle kind.
         unsafe { &mut *ptr::from_mut(entry).cast::<Self>() }
     }
 
@@ -101,7 +101,7 @@ impl<T: Handle<Entity: Sized>> HandleAndEntity<T> {
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
     pub fn entity(&self) -> NonNull<<T as Handle>::Entity> {
-        self.inner.cache.cast::<<T as Handle>::Entity>()
+        self.inner.entity.cast::<<T as Handle>::Entity>()
     }
 }
 
@@ -128,7 +128,7 @@ macro_rules! impl_handle_and_entity {
                 #[inline]
                 pub(super) fn warmup(&mut self, store: &mut StoreInner) {
                     let handle = self.handle();
-                    self.inner.cache = $resolve(store, &handle).cast::<AnyEntity>();
+                    self.inner.entity = $resolve(store, &handle).cast::<AnyEntity>();
                 }
             }
         )*
@@ -166,6 +166,6 @@ impl_handle_and_entity! {
     }
 }
 
-/// Represents any entity kind and used for type pruning in [`HandleAndCache`].
+/// Represents any entity kind and used for type pruning in [`AnyHandleAndEntity`].
 #[derive(Debug)]
 pub struct AnyEntity;
