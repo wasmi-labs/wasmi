@@ -26,6 +26,7 @@ use crate::{
         id::StoreId,
     },
 };
+use alloc::boxed::Box;
 use core::{fmt::Debug, ptr::NonNull};
 
 /// An arena for the [`StoreInner`].
@@ -40,14 +41,20 @@ trait Resolve<T: Handle> {
     fn resolve(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError>;
 }
 
-impl<T: Handle> Resolve<T> for StoreArena<T> {
+impl<T> Resolve<T> for StoreArena<T>
+where
+    T: Handle<Entity: Sized>,
+{
     #[inline]
     fn resolve(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError> {
         self.get(key)
     }
 }
 
-impl<T: Handle> Resolve<T> for StableStoreArena<T> {
+impl<T> Resolve<T> for StableStoreArena<T>
+where
+    T: Handle<Entity: Sized>,
+{
     #[inline]
     fn resolve(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError> {
         self.get(key)
@@ -60,14 +67,20 @@ trait ResolveMut<T: Handle> {
     fn resolve_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError>;
 }
 
-impl<T: Handle> ResolveMut<T> for StoreArena<T> {
+impl<T> ResolveMut<T> for StoreArena<T>
+where
+    T: Handle<Entity: Sized>,
+{
     #[inline]
     fn resolve_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError> {
         self.get_mut(key)
     }
 }
 
-impl<T: Handle> ResolveMut<T> for StableStoreArena<T> {
+impl<T> ResolveMut<T> for StableStoreArena<T>
+where
+    T: Handle<Entity: Sized>,
+{
     #[inline]
     fn resolve_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError> {
         self.get_mut(key)
@@ -90,7 +103,13 @@ pub struct StoreInner {
     /// Stored global variables.
     globals: StableStoreArena<Global>,
     /// Stored module instances.
-    instances: StoreArena<Instance>,
+    ///
+    /// # Note
+    ///
+    /// [`InstanceEntity`] is dynamically sized and therefore owned via a [`Box`]. This also
+    /// decouples its address from this arena's slot so that the `Inst` pointers held by the
+    /// Wasmi executor survive the allocation of further instances.
+    instances: Arena<RawHandle<Instance>, Box<InstanceEntity>>,
     /// Stored data segments.
     datas: StableStoreArena<DataSegment>,
     /// Stored data segments.
@@ -275,7 +294,7 @@ impl StoreInner {
     /// - The returned [`Instance`] must later be initialized via the [`StoreInner::initialize_instance`]
     ///   method. Afterwards the [`Instance`] may be used.
     pub fn alloc_instance(&mut self) -> Instance {
-        let key = match self.instances.alloc(InstanceEntity::uninitialized()) {
+        let key = match self.instances.alloc(InstanceEntity::new_uninit()) {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc uninit instance"),
         };
@@ -294,7 +313,7 @@ impl StoreInner {
     /// - If the [`Instance`] is unknown to the [`StoreInner`].
     /// - If the [`Instance`] has already been initialized.
     /// - If the given [`InstanceEntity`] is itself not initialized, yet.
-    pub fn initialize_instance(&mut self, instance: Instance, mut init: InstanceEntity) {
+    pub fn initialize_instance(&mut self, instance: Instance, mut init: Box<InstanceEntity>) {
         assert!(
             init.is_initialized(),
             "encountered an uninitialized new instance entity: {init:?}",
@@ -381,7 +400,7 @@ impl StoreInner {
         entities: &mut StableStoreArena<T>,
     ) -> Result<NonNull<<T as Handle>::Entity>, InternalStoreError>
     where
-        T: Handle,
+        T: Handle<Entity: Sized>,
         RawHandle<T>: ArenaKey + Debug,
     {
         entities
@@ -589,7 +608,13 @@ impl StoreInner {
         &self,
         key: &Instance,
     ) -> Result<&InstanceEntity, InternalStoreError> {
-        self.resolve(key.as_raw(), &self.instances)
+        // Note: unlike the other entities this cannot use `Self::resolve` since the arena
+        //       stores a `Box<InstanceEntity>` instead of the (unsized) entity itself.
+        let idx = self.unwrap_stored(key.as_raw())?;
+        match self.instances.get(*idx) {
+            Ok(entity) => Ok(entity),
+            Err(_err) => Err(InternalStoreError::not_found()),
+        }
     }
 
     /// Returns a shared reference to the [`ExternRefEntity`] associated to the given [`ExternRef`].
