@@ -145,6 +145,22 @@ impl DoneReason {
 }
 
 /// A thin-wrapper around a non-owned [`InstanceEntity`].
+///
+/// # Validity
+///
+/// Every `Inst` is created from a live [`InstanceEntity`] that the [`Store`] currently owns,
+/// and the executor keeps that instance alive and warmed up for as long as the `Inst` is
+/// reachable — it is stored in [`Args`] and in the [`CallStack`] frames of the very execution
+/// that owns the [`Store`]. Since the entity is boxed, allocating further instances (e.g. from
+/// a host call) does not move it.
+///
+/// The `unsafe` methods of [`ThinPtr<InstanceEntity>`] therefore hold for any `Inst` reached
+/// through [`Inst::as_ptr`], and call sites need only justify the *kind* of the address they
+/// pass, not the liveness of the instance.
+///
+/// [`Store`]: crate::Store
+/// [`Args`]: super::Args
+/// [`ThinPtr<InstanceEntity>`]: ThinPtr
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Inst {
