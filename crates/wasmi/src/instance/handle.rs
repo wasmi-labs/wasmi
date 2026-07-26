@@ -29,6 +29,7 @@ define_handle! {
 /// Only [`AnyHandle`] storing the tag is `debug_assertions`-gated; the type itself always
 /// exists so that [`AnyHandle::assert_kind`] has the same signature in every profile.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(not(debug_assertions), expect(dead_code))]
 pub(super) enum HandleKind {
     Global,
     Memory,
@@ -62,6 +63,7 @@ pub struct AnyHandle {
 /// [`AnyHandle::assert_kind`] usable from generic code.
 pub(super) trait HasHandleKind: Handle {
     /// The [`HandleKind`] tag of `Self`.
+    #[cfg_attr(not(debug_assertions), expect(dead_code))]
     const KIND: HandleKind;
 }
 
