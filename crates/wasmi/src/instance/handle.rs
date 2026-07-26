@@ -1,4 +1,5 @@
 use crate::{
+    Handle,
     instance::{DataSegment, ElementSegment, Func, Global, Memory, Table},
     store::Stored,
 };
@@ -17,9 +18,13 @@ define_handle! {
 ///
 /// Used in debug builds to guard the type-erased [`AnyHandle::cast_global`] etc. casts
 /// against being applied to a handle of the wrong type.
-#[cfg(debug_assertions)]
+///
+/// # Note
+///
+/// Only [`AnyHandle`] storing the tag is `debug_assertions`-gated; the type itself always
+/// exists so that [`AnyHandle::assert_kind`] has the same signature in every profile.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum HandleKind {
+pub(super) enum HandleKind {
     Global,
     Memory,
     Table,
@@ -44,6 +49,35 @@ pub struct AnyHandle {
     kind: HandleKind,
 }
 
+/// A concrete handle type that an [`AnyHandle`] can be created from.
+///
+/// # Note
+///
+/// This exists solely to map a handle type to its [`HandleKind`] tag, which is what makes
+/// [`AnyHandle::assert_kind`] usable from generic code.
+pub(super) trait HasHandleKind: Handle {
+    /// The [`HandleKind`] tag of `Self`.
+    const KIND: HandleKind;
+}
+
+impl AnyHandle {
+    /// Asserts that `self` was created from a `T` handle.
+    ///
+    /// # Note
+    ///
+    /// Only debug builds store the [`HandleKind`] tag, so this is a no-op otherwise. Use it to
+    /// validate a handle kind once, where it is claimed, instead of on every access.
+    #[inline]
+    pub(super) fn assert_kind<T: HasHandleKind>(self) {
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(
+            self.kind,
+            <T as HasHandleKind>::KIND,
+            "unexpected instance handle kind",
+        );
+    }
+}
+
 macro_rules! impl_cast_for_any_handle {
     ( $(
         pub unsafe fn $cast_ident:ident(self) -> $handle:ident;
@@ -58,12 +92,7 @@ macro_rules! impl_cast_for_any_handle {
             #[doc = "Casting to any other handle type is undefined behavior."]
             #[inline]
             pub unsafe fn $cast_ident(self) -> $handle {
-                #[cfg(debug_assertions)]
-                debug_assert_eq!(
-                    self.kind,
-                    HandleKind::$handle,
-                    concat!("tried to cast an `AnyHandle` to a `", stringify!($handle), "`"),
-                );
+                self.assert_kind::<$handle>();
                 unsafe { ::core::mem::transmute::<RawAnyHandle, $handle>(self.raw) }
             }
         )*
@@ -85,6 +114,10 @@ macro_rules! impl_from_for_any_handle {
         $( $handle:ident ),* $(,)?
     ) => {
         $(
+            impl HasHandleKind for $handle {
+                const KIND: HandleKind = HandleKind::$handle;
+            }
+
             impl From<$handle> for AnyHandle {
                 #[inline]
                 fn from(handle: $handle) -> Self {
