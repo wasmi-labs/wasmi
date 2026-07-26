@@ -1,6 +1,11 @@
 use crate::{
+    ElementSegment,
+    Func,
+    Global,
     Handle,
-    instance::{DataSegment, ElementSegment, Func, Global, Memory, Table},
+    Memory,
+    Table,
+    memory::DataSegment,
     store::Stored,
 };
 

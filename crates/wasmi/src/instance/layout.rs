@@ -1,6 +1,6 @@
-#[cfg(doc)]
-use crate::instance::{DataSegment, ElementSegment, Func, Global, InstanceEntity, Memory, Table};
 use crate::limits::LimitsError;
+#[cfg(doc)]
+use crate::{ElementSegment, Func, Global, InstanceEntity, Memory, Table, memory::DataSegment};
 
 /// Offsets within [`InstanceEntity::handles`] buffer for various handle types.
 ///
