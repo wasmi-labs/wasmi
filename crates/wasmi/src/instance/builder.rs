@@ -11,7 +11,7 @@ use crate::{
     Table,
     collections::Map,
     engine::DedupFuncType,
-    instance::{HandleAndCache, InstanceLayout, InstanceState, handle::AnyHandle},
+    instance::{HandleAndCache, InstanceLayout, handle::AnyHandle},
     memory::DataSegment,
     module::FuncIdx,
 };
@@ -189,19 +189,18 @@ impl InstanceEntityBuilder {
     }
 
     /// Finishes constructing the [`InstanceEntity`].
-    pub fn finish(self) -> Result<InstanceEntity, Error> {
+    pub fn finish(self) -> Result<Box<InstanceEntity>, Error> {
         let handles = self.finish_handles();
-        Ok(InstanceEntity {
+        Ok(InstanceEntity::new_init(
+            self.func_types,
+            self.exports,
+            self.layout,
             handles,
-            func_types: self.func_types,
-            exports: self.exports,
-            layout: self.layout,
-            state: InstanceState::Initialized,
-        })
+        ))
     }
 
     /// Finishes construction of the [`AnyHandle`] buffer.
-    fn finish_handles(&self) -> Box<[HandleAndCache]> {
+    fn finish_handles(&self) -> Vec<HandleAndCache> {
         fn handle_and_cache_iter<T>(
             slice: &[T],
         ) -> impl ExactSizeIterator<Item = HandleAndCache> + FusedIterator
@@ -216,13 +215,21 @@ impl InstanceEntityBuilder {
                 .map(HandleAndCache::new)
         }
 
-        let mut handles = Vec::new();
+        // Note: this is not `InstanceLayout` based since modules without a `data_count`
+        //       section do not expose addresses for their data segments.
+        let len_handles = self.memories.len()
+            + self.globals.len()
+            + self.tables.len()
+            + self.funcs.len()
+            + self.elem_segments.len()
+            + self.data_segments.len();
+        let mut handles = Vec::with_capacity(len_handles);
         handles.extend(handle_and_cache_iter(&self.memories));
         handles.extend(handle_and_cache_iter(&self.globals));
         handles.extend(handle_and_cache_iter(&self.tables));
         handles.extend(handle_and_cache_iter(&self.funcs));
         handles.extend(handle_and_cache_iter(&self.elem_segments));
         handles.extend(handle_and_cache_iter(&self.data_segments));
-        handles.into()
+        handles
     }
 }

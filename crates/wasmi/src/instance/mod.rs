@@ -46,13 +46,39 @@ mod layout;
 mod tests;
 
 /// A module instance entity.
+///
+/// # Note
+///
+/// This is a dynamically sized type: its `handles` buffer is allocated inline behind the
+/// [`InstanceHeader`] instead of behind another pointer. This allows the Wasmi executor to
+/// reach a [`HandleAndCache`] with a single indirection from its thin `Inst` pointer.
 #[derive(Debug)]
+#[repr(C)]
 pub struct InstanceEntity {
-    handles: Box<[HandleAndCache]>,
+    header: InstanceHeader,
+    handles: [HandleAndCache],
+}
+
+/// The sized header preceding the trailing `handles` buffer of an [`InstanceEntity`].
+#[derive(Debug)]
+#[repr(C)]
+pub struct InstanceHeader {
+    /// The number of items in the trailing `handles` buffer.
+    ///
+    /// This is stored so that a thin pointer to an [`InstanceEntity`] can rebuild its fat
+    /// reference. `#[repr(C)]` puts it at offset 0 which is what [`InstanceEntity::ref_at`]
+    /// relies on.
+    ///
+    /// # Note
+    ///
+    /// This is not derivable from the [`InstanceLayout`]: modules without a `data_count`
+    /// section do not expose addresses for their data segments, so the buffer may hold more
+    /// handles than the layout accounts for.
+    len_handles: u32,
+    state: InstanceState,
     func_types: Arc<[DedupFuncType]>,
     exports: Map<Box<str>, Extern>,
     layout: InstanceLayout,
-    state: InstanceState,
 }
 
 /// The state of an [`InstanceEntity`].
@@ -66,15 +92,126 @@ pub enum InstanceState {
     WarmedUp,
 }
 
+impl InstanceHeader {
+    /// Returns the number of items in the trailing `handles` buffer.
+    #[inline]
+    pub fn len_handles(&self) -> u32 {
+        self.len_handles
+    }
+
+    /// Returns a shared reference to the [`InstanceLayout`].
+    #[inline]
+    pub fn layout(&self) -> &InstanceLayout {
+        &self.layout
+    }
+
+    /// Returns the signature at the `index` if any.
+    #[inline]
+    pub fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
+        self.func_types.get(index as usize)
+    }
+}
+
 impl InstanceEntity {
     /// Creates an uninitialized [`InstanceEntity`].
-    pub fn uninitialized() -> InstanceEntity {
-        Self {
-            handles: [].into(),
-            func_types: Arc::new([]),
-            exports: Map::new(),
-            layout: InstanceLayout::uninit(),
-            state: InstanceState::Uninitialized,
+    pub fn new_uninit() -> Box<Self> {
+        Self::alloc(
+            InstanceState::Uninitialized,
+            Arc::new([]),
+            Map::new(),
+            InstanceLayout::uninit(),
+            [],
+        )
+    }
+
+    /// Creates an initialized [`InstanceEntity`].
+    fn new_init<I>(
+        func_types: Arc<[DedupFuncType]>,
+        exports: Map<Box<str>, Extern>,
+        layout: InstanceLayout,
+        handles: I,
+    ) -> Box<Self>
+    where
+        I: IntoIterator<Item = HandleAndCache, IntoIter: ExactSizeIterator>,
+    {
+        Self::alloc(
+            InstanceState::Initialized,
+            func_types,
+            exports,
+            layout,
+            handles,
+        )
+    }
+
+    /// Allocates a new [`InstanceEntity`] with the trailing `handles` buffer.
+    ///
+    /// # Panics
+    ///
+    /// - If `handles` yields more items than fit into a `u32`.
+    /// - If `handles` yields fewer items than its [`ExactSizeIterator::len`] promised.
+    fn alloc<I>(
+        state: InstanceState,
+        func_types: Arc<[DedupFuncType]>,
+        exports: Map<Box<str>, Extern>,
+        layout: InstanceLayout,
+        handles: I,
+    ) -> Box<Self>
+    where
+        I: IntoIterator<Item = HandleAndCache, IntoIter: ExactSizeIterator>,
+    {
+        let mut handles = handles.into_iter();
+        let len = handles.len();
+        let Ok(len_handles) = u32::try_from(len) else {
+            panic!("out of memory: too many instance handles: {len}")
+        };
+        let header = InstanceHeader {
+            len_handles,
+            state,
+            func_types,
+            exports,
+            layout,
+        };
+        let Ok(array) = Layout::array::<HandleAndCache>(len) else {
+            panic!("out of memory: too many instance handles: {len}")
+        };
+        let Ok((layout, offset)) = Layout::new::<InstanceHeader>().extend(array) else {
+            panic!("out of memory: too many instance handles: {len}")
+        };
+        let layout = layout.pad_to_align();
+        debug_assert_eq!(offset, HANDLES_OFFSET);
+        // Safety: `layout` has a non-zero size since `InstanceHeader` is non-empty.
+        let Some(ptr) = NonNull::new(unsafe { alloc(layout) }) else {
+            handle_alloc_error(layout)
+        };
+        // Safety: `ptr` is a fresh allocation of at least `layout` bytes, so writing the
+        //         header at offset 0 and `len` handles at `HANDLES_OFFSET` stays in bounds
+        //         and properly aligned. The `take` caps the writes at `len` in case `handles`
+        //         yields more items than it promised.
+        let mut len_written = 0;
+        unsafe {
+            ptr.cast::<InstanceHeader>().write(header);
+            let buffer = ptr.byte_add(HANDLES_OFFSET).cast::<HandleAndCache>();
+            for handle in handles.by_ref().take(len) {
+                buffer.add(len_written).write(handle);
+                len_written += 1;
+            }
+        }
+        assert_eq!(
+            len_written, len,
+            "instance handles iterator yielded too few items",
+        );
+        // Note: this fat-pointer cast is the stable-Rust replacement for the unstable
+        //       `ptr::from_raw_parts`. Source and target metadata are both the trailing
+        //       slice length, so the cast preserves it.
+        let ptr = ptr::slice_from_raw_parts_mut(ptr.as_ptr().cast::<HandleAndCache>(), len)
+            as *mut InstanceEntity;
+        // Safety: `ptr` points to a fully initialized `InstanceEntity` allocated with the
+        //         global allocator using `layout`, which is asserted to be the very layout
+        //         that `Box` will use to deallocate it again.
+        let entity = unsafe { Box::from_raw(ptr) };
+        debug_assert_eq!(Layout::for_value::<Self>(&entity), layout);
+        entity
+    }
         }
     }
 
@@ -86,7 +223,7 @@ impl InstanceEntity {
     /// Returns `true` if the [`InstanceEntity`] has been fully initialized.
     pub fn is_initialized(&self) -> bool {
         matches!(
-            self.state,
+            self.header.state,
             InstanceState::Initialized | InstanceState::WarmedUp
         )
     }
@@ -94,7 +231,7 @@ impl InstanceEntity {
     /// Returns a shared reference to the [`InstanceLayout`] of `self`.
     #[inline]
     pub fn layout(&self) -> &InstanceLayout {
-        &self.layout
+        self.header.layout()
     }
 
     /// Returns the [`HandleAndCache`] entry for `addr` if any.
@@ -108,15 +245,15 @@ impl InstanceEntity {
     /// This must be called once before the [`InstanceEntity`] is used for execution.
     pub fn warmup(&mut self, store: &mut StoreInner) {
         assert!(
-            !matches!(self.state, InstanceState::Uninitialized),
+            !matches!(self.header.state, InstanceState::Uninitialized),
             "must not warm-up the cache of an uninitialized instance",
         );
-        if matches!(self.state, InstanceState::WarmedUp) {
+        if matches!(self.header.state, InstanceState::WarmedUp) {
             // Nothing to do as the instance already has warmed-up its cache.
             return;
         }
-        self.state = InstanceState::WarmedUp;
-        let layout = self.layout;
+        self.header.state = InstanceState::WarmedUp;
+        let layout = self.header.layout;
         macro_rules! warmup {
             ($addr:ident, $warmup:ident) => {{
                 let mut index = 0;
@@ -237,19 +374,19 @@ impl InstanceEntity {
     /// Returns the signature at the `index` if any.
     #[inline]
     pub fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
-        self.func_types.get(index as usize)
+        self.header.get_signature(index)
     }
 
     /// Returns the value exported to the given `name` if any.
     pub fn get_export(&self, name: &str) -> Option<Extern> {
-        self.exports.get(name).copied()
+        self.header.exports.get(name).copied()
     }
 
     /// Returns an iterator over the exports of the [`Instance`].
     ///
     /// The order of the yielded exports is not specified.
     pub fn exports(&self) -> ExportsIter<'_> {
-        ExportsIter::new(self.exports.iter())
+        ExportsIter::new(self.header.exports.iter())
     }
 }
 
