@@ -38,9 +38,12 @@ pub struct AnyHandleAndEntity {
 //         `StableArena`/`StableVec` addresses survive that move. `handle` is `Copy` data.
 unsafe impl Send for AnyHandleAndEntity {}
 
-// SAFETY: `&AnyHandleAndEntity` only hands out the `Copy` `handle` and a `NonNull` copy of
-//         `entity`; it never dereferences the pointee (only `HandleAndEntity::warmup` writes
-//         `entity`, via `&mut self`), so a shared reference can never observe entity data.
+// SAFETY: no safe method on `&AnyHandleAndEntity` reads or writes the pointee: `entity`
+//         is only handed out as a raw `NonNull` copy, whose dereference is `unsafe` and whose
+//         contract is the caller's to uphold against the owning `Store`, and writing it
+//         requires `&mut self` (`HandleAndEntity::warmup`). Together with the `Send` argument
+//         above — the pointee is owned by the very same `StoreInner` — sharing a
+//         `&AnyHandleAndEntity` across threads cannot by itself race on entity data.
 unsafe impl Sync for AnyHandleAndEntity {}
 
 impl AnyHandleAndEntity {
