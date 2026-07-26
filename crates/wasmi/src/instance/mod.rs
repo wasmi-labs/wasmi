@@ -90,6 +90,13 @@ struct InstanceEntityHeader {
     layout: InstanceLayout,
 }
 
+/// The byte offset of the `handles` buffer within an [`InstanceEntity`] allocation.
+///
+/// This mirrors what `#[repr(C)]` computes for [`InstanceEntity`] and is asserted against
+/// [`Layout::extend`] in [`InstanceEntity::alloc`].
+const HANDLES_OFFSET: usize =
+    size_of::<InstanceEntityHeader>().next_multiple_of(align_of::<HandleAndCache>());
+
 /// The state of an [`InstanceEntity`].
 #[derive(Debug, Copy, Clone)]
 pub enum InstanceState {
