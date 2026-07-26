@@ -186,7 +186,7 @@ impl From<&'_ InstanceEntity> for Inst {
 impl From<ThinPtr<InstanceEntity>> for Inst {
     #[inline]
     fn from(entity: ThinPtr<InstanceEntity>) -> Self {
-        let value = InstRepr::from_ne_bytes(entity.addr().to_ne_bytes());
+        let value = InstRepr::from_ne_bytes(entity.expose_provenance().to_ne_bytes());
         Self {
             value,
             marker: PhantomData,
@@ -216,7 +216,7 @@ impl Inst {
         let addr = usize::from_ne_bytes(self.value.to_ne_bytes());
         // Safety: `Inst` can only ever be created from a `ThinPtr<InstanceEntity>` whose
         //         provenance has been exposed.
-        unsafe { ThinPtr::from_addr(addr) }
+        unsafe { ThinPtr::with_exposed_provenance(addr) }
     }
 }
 

@@ -29,18 +29,18 @@ impl<T: ?Sized> ThinPtr<T> {
     pub fn from_ref(value: &T) -> Self {
         let addr = (value as *const T).cast::<u8>().expose_provenance();
         // Safety: `addr` stems from a `&T` whose provenance has just been exposed.
-        unsafe { Self::from_addr(addr) }
+        unsafe { Self::with_exposed_provenance(addr) }
     }
 
-    /// Creates a new [`ThinPtr`] from the given `addr`.
+    /// Creates a new [`ThinPtr`] from the given exposed `addr`.
     ///
     /// # Safety
     ///
-    /// The caller must ensure that `addr` originates from [`ThinPtr::addr`], or equivalently
-    /// from a `&T` whose provenance has been exposed. Dereferencing the returned [`ThinPtr`]
-    /// additionally requires its pointee to still be alive.
+    /// The caller must ensure that `addr` originates from [`ThinPtr::expose_provenance`], or
+    /// equivalently from a `&T` whose provenance has been exposed. Dereferencing the returned
+    /// [`ThinPtr`] additionally requires its pointee to still be alive.
     #[inline]
-    pub unsafe fn from_addr(addr: usize) -> Self {
+    pub unsafe fn with_exposed_provenance(addr: usize) -> Self {
         let ptr = ptr::with_exposed_provenance_mut::<u8>(addr);
         Self {
             // Safety: `addr` originates from a `&T` which is never null.
@@ -49,9 +49,15 @@ impl<T: ?Sized> ThinPtr<T> {
         }
     }
 
-    /// Returns the address of `self`.
+    /// Returns the address of `self`, exposing its provenance.
+    ///
+    /// # Note
+    ///
+    /// This mirrors `<*const T>::expose_provenance` and is deliberately *not* named `addr`:
+    /// `core`'s `addr` is the strict-provenance accessor that does not expose. The returned
+    /// address may be fed back to [`ThinPtr::with_exposed_provenance`].
     #[inline]
-    pub fn addr(self) -> usize {
+    pub fn expose_provenance(self) -> usize {
         self.ptr.as_ptr().expose_provenance()
     }
 
