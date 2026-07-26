@@ -8,11 +8,9 @@ pub use self::{
 use crate::{
     AsContext,
     AsContextMut,
-    DataSegmentEntity,
     ElementSegment,
     Error,
     Func,
-    FuncEntity,
     Global,
     Memory,
     Module,
@@ -22,12 +20,6 @@ use crate::{
     WasmParams,
     WasmResults,
     collections::Map,
-    core::{
-        CoreElementSegment as ElementSegmentEntity,
-        CoreGlobal as GlobalEntity,
-        CoreMemory as MemoryEntity,
-        CoreTable as TableEntity,
-    },
     engine::DedupFuncType,
     func::FuncError,
     memory::DataSegment,
@@ -284,63 +276,6 @@ impl InstanceEntity {
         warmup!(func_addr, warmup_func);
         warmup!(elem_addr, warmup_elem);
         warmup!(data_addr, warmup_data);
-    }
-
-    /// Returns a pointer to the [`MemoryEntity`] at the `addr` if any.
-    ///
-    /// The returned pointer is only sound to dereference once the cache has been warmed up.
-    #[inline]
-    pub fn get_memory_ptr(&self, addr: MemoryAddr) -> Option<NonNull<MemoryEntity>> {
-        self.entry(addr).map(HandleAndCache::get_memory)
-    }
-
-    /// Returns a pointer to the [`GlobalEntity`] at the `addr` if any.
-    ///
-    /// The returned pointer is only sound to dereference once the cache has been warmed up.
-    #[inline]
-    pub fn get_global_ptr(&self, addr: GlobalAddr) -> Option<NonNull<GlobalEntity>> {
-        self.entry(addr).map(HandleAndCache::get_global)
-    }
-
-    /// Returns a pointer to the [`TableEntity`] at the `addr` if any.
-    ///
-    /// The returned pointer is only sound to dereference once the cache has been warmed up.
-    #[inline]
-    pub fn get_table_ptr(&self, addr: TableAddr) -> Option<NonNull<TableEntity>> {
-        self.entry(addr).map(HandleAndCache::get_table)
-    }
-
-    /// Returns a pointer to the [`FuncEntity`] at the `addr` if any.
-    ///
-    /// The returned pointer is only sound to dereference once the cache has been warmed up.
-    #[inline]
-    pub fn get_func_ptr(&self, addr: FuncAddr) -> Option<NonNull<FuncEntity>> {
-        self.entry(addr).map(HandleAndCache::get_func)
-    }
-
-    /// Returns the [`Func`] handle and its cached [`FuncEntity`] pointer at `addr` if any.
-    ///
-    /// The returned pointer is only sound to dereference once the cache has been warmed up.
-    #[inline]
-    pub fn get_func_entry(&self, addr: FuncAddr) -> Option<(Func, NonNull<FuncEntity>)> {
-        let entry = self.entry(addr)?;
-        Some((unsafe { entry.handle.cast_func() }, entry.get_func()))
-    }
-
-    /// Returns a pointer to the [`DataSegmentEntity`] at the `addr` if any.
-    ///
-    /// The returned pointer is only sound to dereference once the cache has been warmed up.
-    #[inline]
-    pub fn get_data_ptr(&self, addr: DataAddr) -> Option<NonNull<DataSegmentEntity>> {
-        self.entry(addr).map(HandleAndCache::get_data)
-    }
-
-    /// Returns a pointer to the [`ElementSegmentEntity`] at the `addr` if any.
-    ///
-    /// The returned pointer is only sound to dereference once the cache has been warmed up.
-    #[inline]
-    pub fn get_elem_ptr(&self, addr: ElemAddr) -> Option<NonNull<ElementSegmentEntity>> {
-        self.entry(addr).map(HandleAndCache::get_elem)
     }
 
     /// Returns the [`Memory`] at the `addr` if any.
