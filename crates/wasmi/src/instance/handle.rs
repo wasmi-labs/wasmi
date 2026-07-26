@@ -135,4 +135,4 @@ macro_rules! impl_from_for_any_handle {
         )*
     };
 }
-impl_from_for_any_handle!(Global, Func, Memory, Table, DataSegment, ElementSegment,);
+impl_from_for_any_handle!(Global, Func, Memory, Table, DataSegment, ElementSegment);
