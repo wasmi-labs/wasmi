@@ -122,6 +122,7 @@ mod limits;
 mod linker;
 mod memory;
 mod module;
+mod ptr;
 mod reftype;
 mod store;
 mod table;
