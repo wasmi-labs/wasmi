@@ -379,7 +379,9 @@ macro_rules! impl_get_entry {
             #[inline]
             pub unsafe fn $get<'a>(self, addr: $addr_ty) -> Option<&'a HandleAndEntity<$handle>> {
                 // Safety: guaranteed by the caller.
-                unsafe { self.entry::<$handle>(u32::from(addr)) }
+                let entry = unsafe { self.entry(u32::from(addr)) }?;
+                // Safety: guaranteed by the caller.
+                Some(unsafe { entry.typed_ref::<$handle>() })
             }
         )*
     };
@@ -401,39 +403,40 @@ impl ThinPtr<InstanceEntity> {
     #[inline]
     unsafe fn header<'a>(self) -> &'a InstanceEntityHeader {
         // Safety: guaranteed by the caller.
-        unsafe { self.as_byte_ptr().cast::<InstanceEntityHeader>().as_ref() }
+        unsafe { self.cast::<InstanceEntityHeader>().as_ref() }
     }
 
-    /// Returns a shared reference to the [`HandleAndEntity`] at `addr` if any.
+    /// Returns a pointer to the first entry of the trailing `handles` buffer of the pointee.
     ///
     /// # Safety
     ///
-    /// Same as for the [`ThinPtr::get_memory`] family of methods.
+    /// Same as for [`ThinPtr::as_ref`].
     ///
     /// # Note
     ///
-    /// The entry address is computed from `self` alone. Deriving it from the
-    /// [`InstanceEntityHeader`] reference instead would be undefined behavior since that
-    /// reference only spans the header and not the trailing `handles` buffer.
+    /// This is the only place that knows where the trailing buffer starts. Deriving it from
+    /// the [`InstanceEntityHeader`] reference instead would be undefined behavior since that
+    /// reference only spans the header.
     #[inline]
-    unsafe fn entry<'a, T: Handle<Entity: Sized>>(
-        self,
-        addr: u32,
-    ) -> Option<&'a HandleAndEntity<T>> {
+    unsafe fn handles(self) -> NonNull<AnyHandleAndEntity> {
+        // Safety: guaranteed by the caller: `HANDLES_OFFSET` is within the pointee's
+        //         allocation, or one past its end for an instance without handles.
+        unsafe { self.cast::<u8>().byte_add(HANDLES_OFFSET).cast() }
+    }
+
+    /// Returns a shared reference to the [`AnyHandleAndEntity`] at `addr` if any.
+    ///
+    /// # Safety
+    ///
+    /// Same as for [`ThinPtr::as_ref`].
+    #[inline]
+    unsafe fn entry<'a>(self, addr: u32) -> Option<&'a AnyHandleAndEntity> {
         // Safety: guaranteed by the caller.
         if addr >= unsafe { self.header() }.len_handles() {
             return None;
         }
         // Safety: guaranteed by the caller and the bounds check above.
-        let entry = unsafe {
-            self.as_byte_ptr()
-                .byte_add(HANDLES_OFFSET)
-                .cast::<AnyHandleAndEntity>()
-                .add(addr as usize)
-                .as_ref()
-        };
-        // Safety: guaranteed by the caller.
-        Some(unsafe { HandleAndEntity::from_ref(entry) })
+        Some(unsafe { self.handles().add(addr as usize).as_ref() })
     }
 
     /// Returns a shared reference to the [`InstanceLayout`] of the pointee.
@@ -486,16 +489,14 @@ impl ThinPtr<InstanceEntity> {
     /// reference requires reading its trailing buffer length.
     #[inline]
     pub unsafe fn as_ref<'a>(self) -> &'a InstanceEntity {
-        let ptr = self.as_byte_ptr();
-        // Safety: `len_handles` is the first field of the `#[repr(C)]` `InstanceEntityHeader`
-        //         and thus resides at offset 0 of the allocation. The raw field projection
-        //         avoids forming an `&InstanceEntityHeader` which would shrink provenance to
-        //         the header.
+        // Safety: the raw field projection avoids forming an `&InstanceEntityHeader`, which
+        //         would shrink provenance to the header and make the `handles` tail derived
+        //         from it out of bounds.
         let len_handles = unsafe {
-            (&raw const (*ptr.cast::<InstanceEntityHeader>().as_ptr()).len_handles).read()
+            (&raw const (*self.cast::<InstanceEntityHeader>().as_ptr()).len_handles).read()
         };
         let ptr = ptr::slice_from_raw_parts(
-            ptr.as_ptr().cast::<AnyHandleAndEntity>(),
+            self.cast::<AnyHandleAndEntity>().as_ptr(),
             len_handles as usize,
         ) as *const InstanceEntity;
         // Safety: guaranteed by the caller.
