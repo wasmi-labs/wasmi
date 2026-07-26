@@ -1,7 +1,7 @@
 pub(crate) use self::builder::InstanceEntityBuilder;
 use self::{
     cache::{HandleAndCache, HandleAndEntity},
-    handle::{AnyHandle, InstanceHandle},
+    handle::AnyHandle,
 };
 pub use self::{
     exports::{Export, ExportsIter, Extern, ExternType},
@@ -14,6 +14,7 @@ use crate::{
     Error,
     Func,
     Global,
+    Handle,
     Memory,
     Module,
     StoreContext,
@@ -248,7 +249,10 @@ impl InstanceEntity {
     ///
     /// The caller must ensure that the entry at `addr` stores a `T` handle.
     #[inline]
-    unsafe fn entry<T: InstanceHandle>(&self, addr: impl Into<u32>) -> Option<&HandleAndEntity<T>> {
+    unsafe fn entry<T: Handle<Entity: Sized>>(
+        &self,
+        addr: impl Into<u32>,
+    ) -> Option<&HandleAndEntity<T>> {
         let entry = self.handles.get(addr.into() as usize)?;
         // Safety: guaranteed by the caller.
         Some(unsafe { HandleAndEntity::from_ref(entry) })
@@ -405,7 +409,7 @@ impl ThinPtr<InstanceEntity> {
     /// [`InstanceEntityHeader`] reference instead would be undefined behavior since that
     /// reference only spans the header and not the trailing `handles` buffer.
     #[inline]
-    unsafe fn entry<'a, T: InstanceHandle>(self, addr: u32) -> &'a HandleAndEntity<T> {
+    unsafe fn entry<'a, T: Handle<Entity: Sized>>(self, addr: u32) -> &'a HandleAndEntity<T> {
         if cfg!(debug_assertions) || cfg!(feature = "extra-checks") {
             // Safety: guaranteed by the caller.
             let len_handles = unsafe { self.header() }.len_handles();

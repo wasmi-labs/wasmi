@@ -1,6 +1,12 @@
 use crate::{
+    ElementSegment,
+    Func,
+    Global,
     Handle,
-    instance::{AnyHandle, InstanceHandle},
+    Memory,
+    Table,
+    instance::AnyHandle,
+    memory::DataSegment,
     store::StoreInner,
 };
 use core::{
@@ -58,14 +64,14 @@ impl HandleAndCache {
 /// [`HandleAndEntity::entity`] are safe whereas the constructors are not.
 #[derive(Debug)]
 #[repr(transparent)]
-pub struct HandleAndEntity<T: InstanceHandle> {
+pub struct HandleAndEntity<T: Handle> {
     /// The type-erased entry.
     inner: HandleAndCache,
     /// Marks the concrete handle type of `inner`.
     marker: PhantomData<T>,
 }
 
-impl<T: InstanceHandle> HandleAndEntity<T> {
+impl<T: Handle<Entity: Sized>> HandleAndEntity<T> {
     /// Returns a shared reference to `entry` as a [`HandleAndEntity<T>`].
     ///
     /// # Safety
@@ -90,13 +96,6 @@ impl<T: InstanceHandle> HandleAndEntity<T> {
         unsafe { &mut *ptr::from_mut(entry).cast::<Self>() }
     }
 
-    /// Returns the `T` handle of `self`.
-    #[inline]
-    pub fn handle(&self) -> T {
-        // Safety: constructing `self` asserted that `inner` stores a `T` handle.
-        unsafe { <T as InstanceHandle>::cast(self.inner.handle) }
-    }
-
     /// Returns a pointer to the cached entity of `self`.
     ///
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
@@ -104,12 +103,66 @@ impl<T: InstanceHandle> HandleAndEntity<T> {
     pub fn entity(&self) -> NonNull<<T as Handle>::Entity> {
         self.inner.cache.cast::<<T as Handle>::Entity>()
     }
+}
 
-    /// Warms up the cached entity pointer of `self` by resolving its handle in `store`.
-    #[inline]
-    pub(super) fn warmup(&mut self, store: &mut StoreInner) {
-        let handle = self.handle();
-        self.inner.cache = <T as InstanceHandle>::resolve_ptr(store, &handle).cast::<AnyEntity>();
+macro_rules! impl_handle_and_entity {
+    (
+        $(
+            impl HandleAndEntity<$handle:ident> {
+                cast: $cast:expr,
+                resolve: $resolve:expr,
+            }
+        )*
+    ) => {
+        $(
+            impl HandleAndEntity<$handle> {
+                #[doc = concat!("Returns the [`", stringify!($handle), "`] handle of `self`.")]
+                #[inline]
+                pub fn handle(&self) -> $handle {
+                    // Safety: constructing `self` asserted the handle kind of `inner`.
+                    unsafe { $cast(self.inner.handle) }
+                }
+
+                /// Warms up the cached entity pointer of `self` by resolving its handle
+                /// in `store`.
+                #[inline]
+                pub(super) fn warmup(&mut self, store: &mut StoreInner) {
+                    let handle = self.handle();
+                    self.inner.cache = $resolve(store, &handle).cast::<AnyEntity>();
+                }
+            }
+        )*
+    };
+}
+impl_handle_and_entity! {
+    impl HandleAndEntity<Memory> {
+        cast: AnyHandle::cast_memory,
+        resolve: StoreInner::resolve_memory_ptr,
+    }
+
+    impl HandleAndEntity<Global> {
+        cast: AnyHandle::cast_global,
+        resolve: StoreInner::resolve_global_ptr,
+    }
+
+    impl HandleAndEntity<Table> {
+        cast: AnyHandle::cast_table,
+        resolve: StoreInner::resolve_table_ptr,
+    }
+
+    impl HandleAndEntity<Func> {
+        cast: AnyHandle::cast_func,
+        resolve: StoreInner::resolve_func_ptr,
+    }
+
+    impl HandleAndEntity<ElementSegment> {
+        cast: AnyHandle::cast_elem,
+        resolve: StoreInner::resolve_element_ptr,
+    }
+
+    impl HandleAndEntity<DataSegment> {
+        cast: AnyHandle::cast_data,
+        resolve: StoreInner::resolve_data_ptr,
     }
 }
 
