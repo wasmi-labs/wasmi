@@ -1,0 +1,547 @@
+use super::{
+    AnyHandleAndEntity,
+    DataAddr,
+    ElemAddr,
+    ExportsIter,
+    Extern,
+    FuncAddr,
+    GlobalAddr,
+    HandleAndEntity,
+    InstanceEntityBuilder,
+    InstanceLayout,
+    MemoryAddr,
+    TableAddr,
+    ThinPtr,
+};
+use crate::{
+    ElementSegment,
+    Func,
+    Global,
+    Memory,
+    Module,
+    Table,
+    collections::Map,
+    engine::DedupFuncType,
+    memory::DataSegment,
+    store::StoreInner,
+};
+use alloc::{
+    alloc::{alloc, handle_alloc_error},
+    boxed::Box,
+    sync::Arc,
+};
+use core::{
+    alloc::Layout,
+    ptr::{self, NonNull},
+};
+
+/// A module instance entity.
+///
+/// # Note
+///
+/// This is a dynamically sized type: its `handles` buffer is allocated inline behind the
+/// [`InstanceEntityHeader`] instead of behind another pointer. This allows the Wasmi executor to
+/// reach a [`AnyHandleAndEntity`] with a single indirection from its thin `Inst` pointer.
+///
+/// The `#[repr(C)]` is important: it puts `header` at offset 0, which is what lets
+/// [`ThinPtr::header`] cast a thin pointer to the allocation into an [`InstanceEntityHeader`],
+/// and it puts `handles` at [`HANDLES_OFFSET`], which is what [`InstanceEntity::alloc`] writes
+/// to and [`ThinPtr::entry`] reads from.
+#[derive(Debug)]
+#[repr(C)]
+pub struct InstanceEntity {
+    header: InstanceEntityHeader,
+    handles: [AnyHandleAndEntity],
+}
+
+/// The sized header preceding the trailing `handles` buffer of an [`InstanceEntity`].
+#[derive(Debug)]
+#[repr(C)]
+struct InstanceEntityHeader {
+    /// The number of items in the trailing `handles` buffer.
+    ///
+    /// This is stored so that a [`ThinPtr<InstanceEntity>`] can rebuild its fat reference in
+    /// [`ThinPtr::as_ref`].
+    ///
+    /// [`ThinPtr<InstanceEntity>`]: ThinPtr
+    ///
+    /// # Note
+    ///
+    /// This is not derivable from the [`InstanceLayout`]: modules without a `data_count`
+    /// section do not expose addresses for their data segments, so the buffer may hold more
+    /// handles than the layout accounts for.
+    len_handles: u32,
+    state: InstanceState,
+    func_types: Arc<[DedupFuncType]>,
+    exports: Map<Box<str>, Extern>,
+    layout: InstanceLayout,
+}
+
+/// The byte offset of the `handles` buffer within an [`InstanceEntity`] allocation.
+///
+/// This mirrors what `#[repr(C)]` computes for [`InstanceEntity`], which
+/// [`InstanceEntity::alloc`] asserts on every allocation.
+const HANDLES_OFFSET: usize =
+    size_of::<InstanceEntityHeader>().next_multiple_of(align_of::<AnyHandleAndEntity>());
+
+/// The state of an [`InstanceEntity`].
+#[derive(Debug, Copy, Clone)]
+pub enum InstanceState {
+    /// The instance is in an uninitialized state.
+    Uninitialized,
+    /// The instance has been initialized.
+    Initialized,
+    /// The instance has been initialized and its cache has been warmed up.
+    WarmedUp,
+}
+
+/// Aborts the allocation of an [`InstanceEntity`] whose `handles` buffer is too large.
+fn too_many_handles(len: usize) -> ! {
+    panic!("out of memory: too many instance handles: {len}")
+}
+
+/// Returns the [`Layout`] of an [`InstanceEntity`] with a trailing buffer of `len` handles.
+///
+/// # Panics
+///
+/// If the resulting [`Layout`] exceeds the address space.
+fn layout_for_handles(len: usize) -> Layout {
+    let Ok(array) = Layout::array::<AnyHandleAndEntity>(len) else {
+        too_many_handles(len)
+    };
+    // Note: `extend` returns the offset of `array`, which is its own
+    //       `size.next_multiple_of(align)` and thus `HANDLES_OFFSET`'s definition verbatim.
+    //       Comparing the two would prove nothing; what needs checking is that `#[repr(C)]`
+    //       agrees, which `InstanceEntity::alloc` asserts on the finished `Box`.
+    let Ok((layout, _offset)) = Layout::new::<InstanceEntityHeader>().extend(array) else {
+        too_many_handles(len)
+    };
+    layout.pad_to_align()
+}
+
+impl InstanceEntityHeader {
+    /// Returns the number of items in the trailing `handles` buffer.
+    #[inline]
+    fn len_handles(&self) -> u32 {
+        self.len_handles
+    }
+
+    /// Returns a shared reference to the [`InstanceLayout`].
+    #[inline]
+    fn layout(&self) -> &InstanceLayout {
+        &self.layout
+    }
+
+    /// Returns the signature at the `index` if any.
+    #[inline]
+    fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
+        self.func_types.get(index as usize)
+    }
+}
+
+impl InstanceEntity {
+    /// Creates an uninitialized [`InstanceEntity`].
+    pub fn new_uninit() -> Box<Self> {
+        Self::alloc(
+            InstanceState::Uninitialized,
+            Arc::new([]),
+            Map::new(),
+            InstanceLayout::uninit(),
+            [],
+        )
+    }
+
+    /// Creates an initialized [`InstanceEntity`].
+    pub(super) fn new_init<I>(
+        func_types: Arc<[DedupFuncType]>,
+        exports: Map<Box<str>, Extern>,
+        layout: InstanceLayout,
+        handles: I,
+    ) -> Box<Self>
+    where
+        I: IntoIterator<Item = AnyHandleAndEntity, IntoIter: ExactSizeIterator>,
+    {
+        Self::alloc(
+            InstanceState::Initialized,
+            func_types,
+            exports,
+            layout,
+            handles,
+        )
+    }
+
+    /// Allocates a new [`InstanceEntity`] with the trailing `handles` buffer.
+    ///
+    /// # Panics
+    ///
+    /// - If `handles` yields more items than fit into a `u32`.
+    /// - If `handles` yields fewer items than its [`ExactSizeIterator::len`] promised.
+    fn alloc<I>(
+        state: InstanceState,
+        func_types: Arc<[DedupFuncType]>,
+        exports: Map<Box<str>, Extern>,
+        layout: InstanceLayout,
+        handles: I,
+    ) -> Box<Self>
+    where
+        I: IntoIterator<Item = AnyHandleAndEntity, IntoIter: ExactSizeIterator>,
+    {
+        let mut handles = handles.into_iter();
+        let len = handles.len();
+        let Ok(len_handles) = u32::try_from(len) else {
+            too_many_handles(len)
+        };
+        let header = InstanceEntityHeader {
+            len_handles,
+            state,
+            func_types,
+            exports,
+            layout,
+        };
+        let layout = layout_for_handles(len);
+        // Safety: `layout` has a non-zero size since `InstanceEntityHeader` is non-empty.
+        let Some(ptr) = NonNull::new(unsafe { alloc(layout) }) else {
+            handle_alloc_error(layout)
+        };
+        // Safety: `ptr` is a fresh allocation of at least `layout` bytes, so writing `len`
+        //         handles at `HANDLES_OFFSET` stays in bounds and properly aligned. The
+        //         `take` caps the writes at `len` in case `handles` yields more items than
+        //         it promised.
+        //
+        // Note: `header` is written only after this loop and the assert below. Unwinding out
+        //       of either would leak the raw allocation, but `header` is still an owned local
+        //       and drops normally, so its `Arc` and `exports` map are released.
+        //       `AnyHandleAndEntity` has no `Drop`, so nothing else is leaked.
+        let mut len_written = 0;
+        unsafe {
+            let buffer = ptr.byte_add(HANDLES_OFFSET).cast::<AnyHandleAndEntity>();
+            for handle in handles.by_ref().take(len) {
+                buffer.add(len_written).write(handle);
+                len_written += 1;
+            }
+        }
+        assert_eq!(
+            len_written, len,
+            "instance handles iterator yielded too few items",
+        );
+        // Safety: `ptr` is a fresh allocation of at least `layout` bytes and `#[repr(C)]` puts
+        //         the header at offset 0.
+        unsafe { ptr.cast::<InstanceEntityHeader>().write(header) };
+        // Note: this fat-pointer cast is the stable-Rust replacement for the unstable
+        //       `ptr::from_raw_parts`. Source and target metadata are both the trailing
+        //       slice length, so the cast preserves it.
+        let ptr = ptr::slice_from_raw_parts_mut(ptr.as_ptr().cast::<AnyHandleAndEntity>(), len)
+            as *mut InstanceEntity;
+        // Safety: `ptr` points to a fully initialized `InstanceEntity` allocated with the
+        //         global allocator using `layout`, which is asserted to be the very layout
+        //         that `Box` will use to deallocate it again.
+        let entity = unsafe { Box::from_raw(ptr) };
+        // Pins the assumption that the entire `ThinPtr<InstanceEntity>` API rests on: that
+        // `#[repr(C)]` places `handles` at the offset the buffer was just written to. This is
+        // checked unconditionally since it costs a single comparison per instantiation.
+        assert_eq!(
+            (&raw const entity.handles).cast::<u8>().addr()
+                - ptr::from_ref::<Self>(&entity).cast::<u8>().addr(),
+            HANDLES_OFFSET,
+            "unexpected offset of the trailing instance handles buffer",
+        );
+        // Note: unlike the assert above this only guards `Box`'s deallocation, which is local
+        //       to this type, and therefore stays a `debug_assert`.
+        debug_assert_eq!(Layout::for_value::<Self>(&entity), layout);
+        entity
+    }
+
+    /// Creates a new [`InstanceEntityBuilder`].
+    pub fn build(module: &Module) -> InstanceEntityBuilder {
+        InstanceEntityBuilder::new(module)
+    }
+
+    /// Returns `true` if the [`InstanceEntity`] has been fully initialized.
+    pub fn is_initialized(&self) -> bool {
+        matches!(
+            self.header.state,
+            InstanceState::Initialized | InstanceState::WarmedUp
+        )
+    }
+
+    /// Returns a shared reference to the [`InstanceLayout`] of `self`.
+    #[inline]
+    pub fn layout(&self) -> &InstanceLayout {
+        self.header.layout()
+    }
+
+    /// Returns the [`AnyHandleAndEntity`] entry for `addr` if any.
+    #[inline]
+    fn entry(&self, addr: impl Into<u32>) -> Option<&AnyHandleAndEntity> {
+        self.handles.get(addr.into() as usize)
+    }
+
+    /// Warms up the entity cache of every handle so that execution never resolves lazily.
+    ///
+    /// This must be called once before the [`InstanceEntity`] is used for execution.
+    pub fn warmup(&mut self, store: &mut StoreInner) {
+        assert!(
+            !matches!(self.header.state, InstanceState::Uninitialized),
+            "must not warm-up the cache of an uninitialized instance",
+        );
+        if matches!(self.header.state, InstanceState::WarmedUp) {
+            // Nothing to do as the instance already has warmed-up its cache.
+            return;
+        }
+        self.header.state = InstanceState::WarmedUp;
+        let layout = self.header.layout;
+        macro_rules! warmup {
+            ($addr:ident, $handle:ty) => {{
+                let mut index = 0;
+                while let Some(addr) = layout.$addr(index) {
+                    let entry = &mut self.handles[u32::from(addr) as usize];
+                    // Safety: the `InstanceLayout` only yields addresses of its own group.
+                    let entry = unsafe { entry.typed_mut::<$handle>() };
+                    entry.warmup(store);
+                    index += 1;
+                }
+            }};
+        }
+        warmup!(memory_addr, Memory);
+        warmup!(global_addr, Global);
+        warmup!(table_addr, Table);
+        warmup!(func_addr, Func);
+        warmup!(elem_addr, ElementSegment);
+        warmup!(data_addr, DataSegment);
+    }
+
+    /// Returns the [`Memory`] at the `addr` if any.
+    #[inline]
+    pub fn get_memory(&self, addr: MemoryAddr) -> Option<Memory> {
+        let entry = self.entry(addr)?;
+        // Safety: `addr` is a `MemoryAddr` and thus addresses a [`Memory`] entry.
+        Some(unsafe { entry.typed_ref::<Memory>() }.handle())
+    }
+
+    /// Returns the [`Table`] at the `addr` if any.
+    #[inline]
+    pub fn get_table(&self, addr: TableAddr) -> Option<Table> {
+        let entry = self.entry(addr)?;
+        // Safety: `addr` is a `TableAddr` and thus addresses a [`Table`] entry.
+        Some(unsafe { entry.typed_ref::<Table>() }.handle())
+    }
+
+    /// Returns the [`Global`] at the `addr` if any.
+    #[inline]
+    pub fn get_global(&self, addr: GlobalAddr) -> Option<Global> {
+        let entry = self.entry(addr)?;
+        // Safety: `addr` is a `GlobalAddr` and thus addresses a [`Global`] entry.
+        Some(unsafe { entry.typed_ref::<Global>() }.handle())
+    }
+
+    /// Returns the [`Func`] at the `addr` if any.
+    #[inline]
+    pub fn get_func(&self, addr: FuncAddr) -> Option<Func> {
+        let entry = self.entry(addr)?;
+        // Safety: `addr` is a `FuncAddr` and thus addresses a [`Func`] entry.
+        Some(unsafe { entry.typed_ref::<Func>() }.handle())
+    }
+
+    /// Returns the [`DataSegment`] at the `addr` if any.
+    #[inline]
+    pub fn get_data(&self, addr: DataAddr) -> Option<DataSegment> {
+        let entry = self.entry(addr)?;
+        // Safety: `addr` is a `DataAddr` and thus addresses a [`DataSegment`] entry.
+        Some(unsafe { entry.typed_ref::<DataSegment>() }.handle())
+    }
+
+    /// Returns the [`ElementSegment`] at the `addr` if any.
+    #[inline]
+    pub fn get_elem(&self, addr: ElemAddr) -> Option<ElementSegment> {
+        let entry = self.entry(addr)?;
+        // Safety: `addr` is a `ElemAddr` and thus addresses a [`ElementSegment`] entry.
+        Some(unsafe { entry.typed_ref::<ElementSegment>() }.handle())
+    }
+
+    /// Returns the signature at the `index` if any.
+    #[inline]
+    pub fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
+        self.header.get_signature(index)
+    }
+
+    /// Returns the value exported to the given `name` if any.
+    pub fn get_export(&self, name: &str) -> Option<Extern> {
+        self.header.exports.get(name).copied()
+    }
+
+    /// Returns an iterator over the exports of the [`Instance`].
+    ///
+    /// The order of the yielded exports is not specified.
+    ///
+    /// [`Instance`]: super::Instance
+    pub fn exports(&self) -> ExportsIter<'_> {
+        ExportsIter::new(self.header.exports.iter())
+    }
+}
+
+/// Introspection for the unit tests of the [`InstanceEntity`] allocation.
+///
+/// The trailing buffer and its length are private since nothing but [`InstanceEntity::alloc`]
+/// and the [`ThinPtr`] API may rely on them, yet both are exactly what the allocation tests
+/// need to observe.
+#[cfg(test)]
+impl InstanceEntity {
+    /// Returns the trailing `handles` buffer of `self`.
+    pub(super) fn handles(&self) -> &[AnyHandleAndEntity] {
+        &self.handles
+    }
+
+    /// Returns the buffer length stored in the header of `self`.
+    pub(super) fn len_handles(&self) -> u32 {
+        self.header.len_handles()
+    }
+}
+
+macro_rules! impl_get_entry {
+    (
+        $(
+            $(#[$attr:meta])*
+            pub unsafe fn $get:ident(self, addr: $addr_ty:ty) -> &HandleAndEntity<$handle:ty>;
+        )*
+    ) => {
+        $(
+            $(#[$attr])*
+            ///
+            /// # Safety
+            ///
+            /// In addition to the requirements of [`ThinPtr::as_ref`] the caller must ensure
+            #[doc = concat!("that the entry at `addr` stores a [`", stringify!($handle), "`] handle.")]
+            /// Wasmi's translation guarantees this for every address encoded into a Wasmi IR
+            /// operator.
+            #[inline]
+            pub unsafe fn $get<'a>(self, addr: $addr_ty) -> Option<&'a HandleAndEntity<$handle>> {
+                // Safety: guaranteed by the caller.
+                let entry = unsafe { self.entry(u32::from(addr)) }?;
+                // Safety: guaranteed by the caller.
+                Some(unsafe { entry.typed_ref::<$handle>() })
+            }
+        )*
+    };
+}
+
+/// The thin-pointer API of [`InstanceEntity`].
+///
+/// # Note
+///
+/// This is what the Wasmi executor uses to access an [`InstanceEntity`] from its `Inst`
+/// register. Only [`ThinPtr::as_ref`] reconstructs the fat [`InstanceEntity`] reference; every
+/// other method works off the thin pointer alone.
+///
+/// [`ThinPtr::entry`] does read the trailing buffer length for its bounds check, but that load
+/// is not the indirection this design removes: it is off the address-dependency chain of the
+/// returned entry, and it disappears entirely at the executor's call sites, which discard the
+/// `None` case via `unreachable_unchecked!`.
+impl ThinPtr<InstanceEntity> {
+    /// Returns a shared reference to the [`InstanceEntityHeader`] of the pointee.
+    ///
+    /// # Safety
+    ///
+    /// Same as for [`ThinPtr::as_ref`].
+    #[inline]
+    unsafe fn header<'a>(self) -> &'a InstanceEntityHeader {
+        // Safety: guaranteed by the caller.
+        unsafe { self.cast::<InstanceEntityHeader>().as_ref() }
+    }
+
+    /// Returns a pointer to the first entry of the trailing `handles` buffer of the pointee.
+    ///
+    /// # Safety
+    ///
+    /// Same as for [`ThinPtr::as_ref`].
+    ///
+    /// # Note
+    ///
+    /// This is the only place that knows where the trailing buffer starts. Deriving it from
+    /// the [`InstanceEntityHeader`] reference instead would be undefined behavior since that
+    /// reference only spans the header.
+    #[inline]
+    unsafe fn handles(self) -> NonNull<AnyHandleAndEntity> {
+        // Safety: guaranteed by the caller: `HANDLES_OFFSET` is within the pointee's
+        //         allocation, or one past its end for an instance without handles.
+        unsafe { self.cast::<u8>().byte_add(HANDLES_OFFSET).cast() }
+    }
+
+    /// Returns a shared reference to the [`AnyHandleAndEntity`] at `addr` if any.
+    ///
+    /// # Safety
+    ///
+    /// Same as for [`ThinPtr::as_ref`].
+    #[inline]
+    unsafe fn entry<'a>(self, addr: u32) -> Option<&'a AnyHandleAndEntity> {
+        // Safety: guaranteed by the caller.
+        if addr >= unsafe { self.header() }.len_handles() {
+            return None;
+        }
+        // Safety: guaranteed by the caller and the bounds check above.
+        Some(unsafe { self.handles().add(addr as usize).as_ref() })
+    }
+
+    /// Returns a shared reference to the [`InstanceLayout`] of the pointee.
+    ///
+    /// # Safety
+    ///
+    /// Same as for [`ThinPtr::as_ref`].
+    #[inline]
+    pub unsafe fn layout<'a>(self) -> &'a InstanceLayout {
+        // Safety: guaranteed by the caller.
+        unsafe { self.header() }.layout()
+    }
+
+    /// Returns the signature at the `index` of the pointee if any.
+    ///
+    /// # Safety
+    ///
+    /// Same as for [`ThinPtr::as_ref`].
+    #[inline]
+    pub unsafe fn get_signature<'a>(self, index: u32) -> Option<&'a DedupFuncType> {
+        // Safety: guaranteed by the caller.
+        unsafe { self.header() }.get_signature(index)
+    }
+
+    impl_get_entry! {
+        /// Returns the [`HandleAndEntity`] of the [`Memory`] at `addr`.
+        pub unsafe fn get_memory(self, addr: MemoryAddr) -> &HandleAndEntity<Memory>;
+        /// Returns the [`HandleAndEntity`] of the [`Global`] at `addr`.
+        pub unsafe fn get_global(self, addr: GlobalAddr) -> &HandleAndEntity<Global>;
+        /// Returns the [`HandleAndEntity`] of the [`Table`] at `addr`.
+        pub unsafe fn get_table(self, addr: TableAddr) -> &HandleAndEntity<Table>;
+        /// Returns the [`HandleAndEntity`] of the [`Func`] at `addr`.
+        pub unsafe fn get_func(self, addr: FuncAddr) -> &HandleAndEntity<Func>;
+        /// Returns the [`HandleAndEntity`] of the [`ElementSegment`] at `addr`.
+        pub unsafe fn get_elem(self, addr: ElemAddr) -> &HandleAndEntity<ElementSegment>;
+        /// Returns the [`HandleAndEntity`] of the [`DataSegment`] at `addr`.
+        pub unsafe fn get_data(self, addr: DataAddr) -> &HandleAndEntity<DataSegment>;
+    }
+
+    /// Returns a shared reference to the [`InstanceEntity`] pointee.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that `self` points to a live [`InstanceEntity`] that outlives
+    /// `'a` and that is not mutably accessed for the duration of `'a`.
+    ///
+    /// # Note
+    ///
+    /// Prefer any of the other methods where possible: rebuilding the fat [`InstanceEntity`]
+    /// reference requires reading its trailing buffer length.
+    #[inline]
+    pub unsafe fn as_ref<'a>(self) -> &'a InstanceEntity {
+        // Safety: the raw field projection avoids forming an `&InstanceEntityHeader`, which
+        //         would shrink provenance to the header and make the `handles` tail derived
+        //         from it out of bounds.
+        let len_handles = unsafe {
+            (&raw const (*self.cast::<InstanceEntityHeader>().as_ptr()).len_handles).read()
+        };
+        let ptr = ptr::slice_from_raw_parts(
+            self.cast::<AnyHandleAndEntity>().as_ptr(),
+            len_handles as usize,
+        ) as *const InstanceEntity;
+        // Safety: guaranteed by the caller.
+        unsafe { &*ptr }
+    }
+}
