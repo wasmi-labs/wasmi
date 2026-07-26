@@ -3,6 +3,7 @@ use self::cache::{AnyHandleAndEntity, HandleAndEntity};
 pub use self::{
     exports::{Export, ExportsIter, Extern, ExternType},
     layout::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceLayout, MemoryAddr, TableAddr},
+    thin_ptr::ThinPtr,
 };
 use crate::{
     AsContext,
@@ -22,7 +23,6 @@ use crate::{
     engine::DedupFuncType,
     func::FuncError,
     memory::DataSegment,
-    ptr::ThinPtr,
     store::{StoreInner, Stored},
 };
 use alloc::{
@@ -40,6 +40,7 @@ mod cache;
 mod exports;
 mod handle;
 mod layout;
+mod thin_ptr;
 
 #[cfg(test)]
 mod tests;

@@ -23,9 +23,8 @@ use crate::{
         },
         utils::unreachable_unchecked,
     },
-    instance::InstanceEntity,
+    instance::{InstanceEntity, ThinPtr},
     ir::{self, BoundedSlotSpan, Slot, SlotSpan},
-    ptr::ThinPtr,
     store::PrunedStore,
 };
 use alloc::vec::Vec;
