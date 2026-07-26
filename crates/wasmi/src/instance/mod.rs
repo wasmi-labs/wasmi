@@ -199,10 +199,15 @@ impl InstanceEntity {
         let Some(ptr) = NonNull::new(unsafe { alloc(layout) }) else {
             handle_alloc_error(layout)
         };
-        // Safety: `ptr` is a fresh allocation of at least `layout` bytes, so writing the
-        //         header at offset 0 and `len` handles at `HANDLES_OFFSET` stays in bounds
-        //         and properly aligned. The `take` caps the writes at `len` in case `handles`
-        //         yields more items than it promised.
+        // Safety: `ptr` is a fresh allocation of at least `layout` bytes, so writing `len`
+        //         handles at `HANDLES_OFFSET` stays in bounds and properly aligned. The
+        //         `take` caps the writes at `len` in case `handles` yields more items than
+        //         it promised.
+        //
+        // Note: `header` is written only after this loop and the assert below. Unwinding out
+        //       of either would leak the raw allocation, but `header` is still an owned local
+        //       and drops normally, so its `Arc` and `exports` map are released.
+        //       `AnyHandleAndEntity` has no `Drop`, so nothing else is leaked.
         let mut len_written = 0;
         unsafe {
             ptr.cast::<InstanceEntityHeader>().write(header);
