@@ -95,6 +95,10 @@ const HANDLES_OFFSET: usize = {
     offset_of!(HandlesOffset, handles)
 };
 
+// The `handles` buffer is moved into the allocation with a single bitwise copy, so its element
+// type must not have drop glue that would then run a second time on the source `Vec`.
+const _: () = assert!(!needs_drop::<AnyHandleAndEntity>());
+
 /// The state of an [`InstanceEntity`].
 #[derive(Debug, Copy, Clone)]
 pub enum InstanceState {
