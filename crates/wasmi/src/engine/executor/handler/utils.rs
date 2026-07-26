@@ -554,7 +554,7 @@ pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) 
     };
     // SAFETY: `addr` stems from the instance layout and its cache was warmed at
     //         instantiation; the `_store` borrow scopes exclusive memory access.
-    let mem0 = unsafe { inst.as_ptr().get_memory_entry(addr).get_memory() };
+    let mem0 = unsafe { inst.as_ptr().get_memory_entry(addr).entity() };
     let mem0 = unsafe { &mut *mem0.as_ptr() }.data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
@@ -583,7 +583,7 @@ pub fn memory_slice_mut(
 
 macro_rules! impl_resolve_from_instance {
     (
-        $( fn $fn:ident(inst: Inst, store: &mut StoreInner, $param:ident: ir::$param_ty:ident) -> &mut $ret:ty = $entry:ident . $getter:ident );* $(;)?
+        $( fn $fn:ident(inst: Inst, store: &mut StoreInner, $param:ident: ir::$param_ty:ident) -> &mut $ret:ty = $entry:ident );* $(;)?
     ) => {
         $(
             /// Resolves the entity from the warmed up instance cache.
@@ -597,7 +597,7 @@ macro_rules! impl_resolve_from_instance {
                 //         its cache was warmed at instantiation; the `_store` borrow scopes
                 //         the returned reference.
                 unsafe {
-                    let ptr = inst.as_ptr().$entry(addr).$getter();
+                    let ptr = inst.as_ptr().$entry(addr).entity();
                     &mut *ptr.as_ptr()
                 }
             }
@@ -605,16 +605,16 @@ macro_rules! impl_resolve_from_instance {
     };
 }
 impl_resolve_from_instance! {
-    fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = get_data_entry.get_data;
-    fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = get_elem_entry.get_elem;
-    fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = get_global_entry.get_global;
-    fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = get_memory_entry.get_memory;
-    fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = get_table_entry.get_table;
+    fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = get_data_entry;
+    fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = get_elem_entry;
+    fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = get_global_entry;
+    fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = get_memory_entry;
+    fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = get_table_entry;
 }
 
 macro_rules! impl_resolve_ptr_from_instance {
     (
-        $( fn $fn:ident(inst: Inst, $param:ident: ir::$param_ty:ident) -> $ret:ty = $entry:ident . $getter:ident );* $(;)?
+        $( fn $fn:ident(inst: Inst, $param:ident: ir::$param_ty:ident) -> $ret:ty = $entry:ident );* $(;)?
     ) => {
         $(
             /// Resolves a pointer to the entity from the warmed up instance cache.
@@ -634,16 +634,16 @@ macro_rules! impl_resolve_ptr_from_instance {
             pub unsafe fn $fn(inst: Inst, $param: ir::$param_ty) -> NonNull<$ret> {
                 let addr = <$param_ty>::from(::core::primitive::u32::from($param));
                 // Safety: guaranteed by the caller.
-                unsafe { inst.as_ptr().$entry(addr).$getter() }
+                unsafe { inst.as_ptr().$entry(addr).entity() }
             }
         )*
     };
 }
 impl_resolve_ptr_from_instance! {
-    fn load_memory_ptr(inst: Inst, memory: ir::MemoryAddr) -> MemoryEntity = get_memory_entry.get_memory;
-    fn load_table_ptr(inst: Inst, table: ir::TableAddr) -> TableEntity = get_table_entry.get_table;
-    fn load_data_ptr(inst: Inst, data: ir::DataAddr) -> DataSegmentEntity = get_data_entry.get_data;
-    fn load_elem_ptr(inst: Inst, elem: ir::ElemAddr) -> ElementSegmentEntity = get_elem_entry.get_elem;
+    fn load_memory_ptr(inst: Inst, memory: ir::MemoryAddr) -> MemoryEntity = get_memory_entry;
+    fn load_table_ptr(inst: Inst, table: ir::TableAddr) -> TableEntity = get_table_entry;
+    fn load_data_ptr(inst: Inst, data: ir::DataAddr) -> DataSegmentEntity = get_data_entry;
+    fn load_elem_ptr(inst: Inst, elem: ir::ElemAddr) -> ElementSegmentEntity = get_elem_entry;
 }
 
 /// Resolves the [`Func`] handle and its warmed up cached [`FuncEntity`] pointer from `inst`.
@@ -657,27 +657,27 @@ pub fn load_func_entry(inst: Inst, func: ir::FuncAddr) -> (Func, NonNull<FuncEnt
     //         was warmed at instantiation.
     unsafe {
         let entry = inst.as_ptr().get_func_entry(addr);
-        (entry.cast_func(), entry.get_func())
+        (entry.handle(), entry.entity())
     }
 }
 
 macro_rules! impl_fetch_from_instance {
     (
-        $( fn $fn:ident($param:ident: ir::$param_ty:ident) -> $ret:ty = $entry:ident . $getter:ident );* $(;)?
+        $( fn $fn:ident($param:ident: ir::$param_ty:ident) -> $ret:ty = $entry:ident );* $(;)?
     ) => {
         $(
             pub fn $fn(instance: Inst, $param: ir::$param_ty) -> $ret {
                 let addr = <$param_ty>::from(::core::primitive::u32::from($param));
                 // SAFETY: `addr` is a valid address into `instance` by translation invariant.
-                unsafe { instance.as_ptr().$entry(addr).$getter() }
+                unsafe { instance.as_ptr().$entry(addr).handle() }
             }
         )*
     };
 }
 impl_fetch_from_instance! {
-    fn fetch_func(func: ir::FuncAddr) -> Func = get_func_entry.cast_func;
-    fn fetch_memory(memory: ir::MemoryAddr) -> Memory = get_memory_entry.cast_memory;
-    fn fetch_table(table: ir::TableAddr) -> Table = get_table_entry.cast_table;
+    fn fetch_func(func: ir::FuncAddr) -> Func = get_func_entry;
+    fn fetch_memory(memory: ir::MemoryAddr) -> Memory = get_memory_entry;
+    fn fetch_table(table: ir::TableAddr) -> Table = get_table_entry;
 }
 
 /// Fetches the [`DedupFuncType`] at `func_type` from the instance's function types.
