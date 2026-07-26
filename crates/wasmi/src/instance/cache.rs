@@ -1,27 +1,22 @@
 use crate::{
-    DataSegmentEntity,
-    ElementSegment,
-    Func,
-    FuncEntity,
-    Global,
-    Memory,
-    Table,
-    core::{
-        CoreElementSegment as ElementSegmentEntity,
-        CoreGlobal as GlobalEntity,
-        CoreMemory as MemoryEntity,
-        CoreTable as TableEntity,
-    },
-    instance::AnyHandle,
-    memory::DataSegment,
+    Handle,
+    instance::{AnyHandle, InstanceHandle},
     store::StoreInner,
 };
-use core::ptr::NonNull;
+use core::{
+    marker::PhantomData,
+    ptr::{self, NonNull},
+};
 
 /// An [`AnyHandle`] and its cached entity pointer for fast reloading.
 ///
 /// The `cache` pointer is warmed up once at instantiation and must not be dereferenced before
 /// that. Entity addresses are stable since the `StoreInner` keeps them in `StableArena`s.
+///
+/// # Note
+///
+/// This is the type-erased storage type of an instance's `handles` buffer, which mixes all
+/// handle kinds. Access it as a [`HandleAndEntity<T>`] to get at the handle or entity.
 #[derive(Debug)]
 pub struct HandleAndCache {
     /// The cached entity pointer, warmed up at instantiation.
@@ -38,8 +33,8 @@ pub struct HandleAndCache {
 unsafe impl Send for HandleAndCache {}
 
 // SAFETY: `&HandleAndCache` only hands out the `Copy` `handle` and a `NonNull` copy of
-//         `cache`; it never dereferences the pointee (only `warmup_*` writes `cache`, via
-//         `&mut self`), so a shared reference can never observe entity data.
+//         `cache`; it never dereferences the pointee (only `HandleAndEntity::warmup` writes
+//         `cache`, via `&mut self`), so a shared reference can never observe entity data.
 unsafe impl Sync for HandleAndCache {}
 
 impl HandleAndCache {
@@ -54,130 +49,67 @@ impl HandleAndCache {
     }
 }
 
-macro_rules! impl_get_cache {
-    (
-        $(
-            $(#[$attr:meta])*
-            pub fn $get:ident(&self) -> NonNull<$ty:ty>;
-        )*
-    ) => {
-        $(
-            $(#[$attr])*
-            #[inline]
-            pub fn $get(&self) -> NonNull<$ty> {
-                self.cache.cast::<$ty>()
-            }
-        )*
-    };
+/// A [`HandleAndCache`] that is known to store a `T` handle and its entity.
+///
+/// # Note
+///
+/// This is a view on an entry of an instance's `handles` buffer. Obtaining one asserts the
+/// handle kind of the entry, which is why [`HandleAndEntity::handle`] and
+/// [`HandleAndEntity::entity`] are safe whereas the constructors are not.
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct HandleAndEntity<T: InstanceHandle> {
+    /// The type-erased entry.
+    inner: HandleAndCache,
+    /// Marks the concrete handle type of `inner`.
+    marker: PhantomData<T>,
 }
-impl HandleAndCache {
-    impl_get_cache! {
-        /// Returns a pointer to the cached [`MemoryEntity`] of `self`.
-        pub fn get_memory(&self) -> NonNull<MemoryEntity>;
-        /// Returns a pointer to the cached [`GlobalEntity`] of `self`.
-        pub fn get_global(&self) -> NonNull<GlobalEntity>;
-        /// Returns a pointer to the cached [`TableEntity`] of `self`.
-        pub fn get_table(&self) -> NonNull<TableEntity>;
-        /// Returns a pointer to the cached [`FuncEntity`] of `self`.
-        pub fn get_func(&self) -> NonNull<FuncEntity>;
-        /// Returns a pointer to the cached [`ElementSegmentEntity`] of `self`.
-        pub fn get_elem(&self) -> NonNull<ElementSegmentEntity>;
-        /// Returns a pointer to the cached [`DataSegmentEntity`] of `self`.
-        pub fn get_data(&self) -> NonNull<DataSegmentEntity>;
+
+impl<T: InstanceHandle> HandleAndEntity<T> {
+    /// Returns a shared reference to `entry` as a [`HandleAndEntity<T>`].
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that `entry` stores a `T` handle.
+    #[inline]
+    pub(super) unsafe fn from_ref(entry: &HandleAndCache) -> &Self {
+        // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
+        //         `HandleAndCache` and the caller guarantees the handle kind.
+        unsafe { &*ptr::from_ref(entry).cast::<Self>() }
     }
-}
 
-macro_rules! impl_cast_handle {
-    (
-        $(
-            $(#[$attr:meta])*
-            pub unsafe fn $cast:ident(&self) -> $ty:ty = $inner:expr;
-        )*
-    ) => {
-        $(
-            $(#[$attr])*
-            ///
-            /// # Safety
-            ///
-            /// The caller must ensure that `self`'s handle is of the requested kind.
-            #[inline]
-            pub unsafe fn $cast(&self) -> $ty {
-                // Safety: guaranteed by the caller.
-                unsafe { $inner(self.handle) }
-            }
-        )*
-    };
-}
-impl HandleAndCache {
-    impl_cast_handle! {
-        /// Returns the [`Memory`] handle of `self`.
-        pub unsafe fn cast_memory(&self) -> Memory = AnyHandle::cast_memory;
-        /// Returns the [`Global`] handle of `self`.
-        pub unsafe fn cast_global(&self) -> Global = AnyHandle::cast_global;
-        /// Returns the [`Table`] handle of `self`.
-        pub unsafe fn cast_table(&self) -> Table = AnyHandle::cast_table;
-        /// Returns the [`Func`] handle of `self`.
-        pub unsafe fn cast_func(&self) -> Func = AnyHandle::cast_func;
-        /// Returns the [`ElementSegment`] handle of `self`.
-        pub unsafe fn cast_elem(&self) -> ElementSegment = AnyHandle::cast_elem;
-        /// Returns the [`DataSegment`] handle of `self`.
-        pub unsafe fn cast_data(&self) -> DataSegment = AnyHandle::cast_data;
+    /// Returns an exclusive reference to `entry` as a [`HandleAndEntity<T>`].
+    ///
+    /// # Safety
+    ///
+    /// Same as for [`HandleAndEntity::from_ref`].
+    #[inline]
+    pub(super) unsafe fn from_mut(entry: &mut HandleAndCache) -> &mut Self {
+        // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
+        //         `HandleAndCache` and the caller guarantees the handle kind.
+        unsafe { &mut *ptr::from_mut(entry).cast::<Self>() }
     }
-}
 
-macro_rules! impl_warmup_cache {
-    (
-        $(
-            pub unsafe fn $warmup:ident(&mut self, store: &mut StoreInner) = {
-                cast: $cast:expr,
-                resolve: $resolve:expr,
-            };
-        )*
-    ) => {
-        $(
-            /// Warms up the cached entity pointer of `self` by resolving its handle in `store`.
-            ///
-            /// # Safety
-            ///
-            /// The caller must ensure that `self`'s handle matches the resolved entity type.
-            pub unsafe fn $warmup(&mut self, store: &mut StoreInner) {
-                let handle = unsafe { $cast(self.handle) };
-                self.cache = $resolve(store, &handle).cast::<AnyEntity>();
-            }
-        )*
-    };
-}
-impl HandleAndCache {
-    impl_warmup_cache! {
-        pub unsafe fn warmup_memory(&mut self, store: &mut StoreInner) = {
-            cast: AnyHandle::cast_memory,
-            resolve: StoreInner::resolve_memory_ptr,
-        };
+    /// Returns the `T` handle of `self`.
+    #[inline]
+    pub fn handle(&self) -> T {
+        // Safety: constructing `self` asserted that `inner` stores a `T` handle.
+        unsafe { <T as InstanceHandle>::cast(self.inner.handle) }
+    }
 
-        pub unsafe fn warmup_global(&mut self, store: &mut StoreInner) = {
-            cast: AnyHandle::cast_global,
-            resolve: StoreInner::resolve_global_ptr,
-        };
+    /// Returns a pointer to the cached entity of `self`.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    #[inline]
+    pub fn entity(&self) -> NonNull<<T as Handle>::Entity> {
+        self.inner.cache.cast::<<T as Handle>::Entity>()
+    }
 
-        pub unsafe fn warmup_table(&mut self, store: &mut StoreInner) = {
-            cast: AnyHandle::cast_table,
-            resolve: StoreInner::resolve_table_ptr,
-        };
-
-        pub unsafe fn warmup_func(&mut self, store: &mut StoreInner) = {
-            cast: AnyHandle::cast_func,
-            resolve: StoreInner::resolve_func_ptr,
-        };
-
-        pub unsafe fn warmup_elem(&mut self, store: &mut StoreInner) = {
-            cast: AnyHandle::cast_elem,
-            resolve: StoreInner::resolve_element_ptr,
-        };
-
-        pub unsafe fn warmup_data(&mut self, store: &mut StoreInner) = {
-            cast: AnyHandle::cast_data,
-            resolve: StoreInner::resolve_data_ptr,
-        };
+    /// Warms up the cached entity pointer of `self` by resolving its handle in `store`.
+    #[inline]
+    pub(super) fn warmup(&mut self, store: &mut StoreInner) {
+        let handle = self.handle();
+        self.inner.cache = <T as InstanceHandle>::resolve_ptr(store, &handle).cast::<AnyEntity>();
     }
 }
 

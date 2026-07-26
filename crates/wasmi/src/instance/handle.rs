@@ -1,7 +1,9 @@
 use crate::{
+    Handle,
     instance::{DataSegment, ElementSegment, Func, Global, Memory, Table},
-    store::Stored,
+    store::{StoreInner, Stored},
 };
+use core::ptr::NonNull;
 
 /// We just define it because we need it for the `define_handle` macro.
 pub struct AnyHandleEntity;
@@ -77,6 +79,89 @@ impl AnyHandle {
         pub unsafe fn cast_table(self) -> Table;
         pub unsafe fn cast_data(self) -> DataSegment;
         pub unsafe fn cast_elem(self) -> ElementSegment;
+    }
+}
+
+/// A [`Handle`] that an [`InstanceEntity`] stores in its `handles` buffer.
+///
+/// This is what makes [`HandleAndEntity<T>`] generic: it provides the two per-kind operations
+/// that a type-erased [`AnyHandle`] cannot perform on its own.
+///
+/// [`InstanceEntity`]: crate::InstanceEntity
+/// [`HandleAndEntity<T>`]: crate::instance::HandleAndEntity
+pub trait InstanceHandle: Handle<Entity: Sized> {
+    /// Casts the type-erased `handle` into `Self`.
+    ///
+    /// # Safety
+    ///
+    /// The caller must guarantee that `handle` was created from a `Self` handle.
+    unsafe fn cast(handle: AnyHandle) -> Self;
+
+    /// Resolves the entity pointer of `handle` in `store`.
+    ///
+    /// # Panics
+    ///
+    /// If `handle` is unknown to `store`.
+    fn resolve_ptr(store: &mut StoreInner, handle: &Self) -> NonNull<<Self as Handle>::Entity>;
+}
+
+macro_rules! impl_instance_handle {
+    (
+        $(
+            impl InstanceHandle for $handle:ident {
+                cast: $cast:expr,
+                resolve: $resolve:expr,
+            }
+        )*
+    ) => {
+        $(
+            impl InstanceHandle for $handle {
+                #[inline]
+                unsafe fn cast(handle: AnyHandle) -> Self {
+                    // Safety: guaranteed by the caller.
+                    unsafe { $cast(handle) }
+                }
+
+                #[inline]
+                fn resolve_ptr(
+                    store: &mut StoreInner,
+                    handle: &Self,
+                ) -> NonNull<<Self as Handle>::Entity> {
+                    $resolve(store, handle)
+                }
+            }
+        )*
+    };
+}
+impl_instance_handle! {
+    impl InstanceHandle for Memory {
+        cast: AnyHandle::cast_memory,
+        resolve: StoreInner::resolve_memory_ptr,
+    }
+
+    impl InstanceHandle for Global {
+        cast: AnyHandle::cast_global,
+        resolve: StoreInner::resolve_global_ptr,
+    }
+
+    impl InstanceHandle for Table {
+        cast: AnyHandle::cast_table,
+        resolve: StoreInner::resolve_table_ptr,
+    }
+
+    impl InstanceHandle for Func {
+        cast: AnyHandle::cast_func,
+        resolve: StoreInner::resolve_func_ptr,
+    }
+
+    impl InstanceHandle for ElementSegment {
+        cast: AnyHandle::cast_elem,
+        resolve: StoreInner::resolve_element_ptr,
+    }
+
+    impl InstanceHandle for DataSegment {
+        cast: AnyHandle::cast_data,
+        resolve: StoreInner::resolve_data_ptr,
     }
 }
 
