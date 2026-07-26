@@ -131,6 +131,16 @@ fn layout_for_handles(len: usize) -> Layout {
     layout.pad_to_align()
 }
 
+/// Returns the byte offset of the trailing `handles` buffer within `entity`.
+///
+/// # Note
+///
+/// Unlike [`HANDLES_OFFSET`], which is derived from a sized twin, this is what `#[repr(C)]`
+/// actually computed for the dynamically sized [`InstanceEntity`].
+fn handles_offset(entity: &InstanceEntity) -> usize {
+    (&raw const entity.handles).cast::<u8>().addr() - ptr::from_ref(entity).cast::<u8>().addr()
+}
+
 impl InstanceEntityHeader {
     /// Returns the number of items in the trailing `handles` buffer.
     #[inline]
@@ -252,8 +262,7 @@ impl InstanceEntity {
         // `#[repr(C)]` places `handles` at the offset the buffer was just written to. This is
         // checked unconditionally since it costs a single comparison per instantiation.
         assert_eq!(
-            (&raw const entity.handles).cast::<u8>().addr()
-                - ptr::from_ref::<Self>(&entity).cast::<u8>().addr(),
+            handles_offset(&entity),
             HANDLES_OFFSET,
             "unexpected offset of the trailing instance handles buffer",
         );
