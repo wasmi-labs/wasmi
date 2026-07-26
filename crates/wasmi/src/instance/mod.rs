@@ -1,8 +1,4 @@
 pub(crate) use self::builder::InstanceEntityBuilder;
-use self::{
-    cache::{AnyHandleAndEntity, HandleAndEntity},
-    handle::AnyHandle,
-};
 use self::cache::{AnyHandleAndEntity, HandleAndEntity};
 pub use self::{
     exports::{Export, ExportsIter, Extern, ExternType},
@@ -15,7 +11,6 @@ use crate::{
     Error,
     Func,
     Global,
-    Handle,
     Memory,
     Module,
     StoreContext,
