@@ -16,7 +16,7 @@ use core::{
 
 /// An [`AnyHandle`] and its cached entity pointer for fast reloading.
 ///
-/// The `cache` pointer is warmed up once at instantiation and must not be dereferenced before
+/// The `entity` pointer is warmed up once at instantiation and must not be dereferenced before
 /// that. Entity addresses are stable since the `StoreInner` keeps them in `StableArena`s.
 ///
 /// # Note
@@ -31,7 +31,7 @@ pub struct AnyHandleAndEntity {
     handle: AnyHandle,
 }
 
-// SAFETY: `cache` only ever points at an entity owned by the same `StoreInner` that
+// SAFETY: `entity` only ever points at an entity owned by the same `StoreInner` that
 //         (transitively) owns this `AnyHandleAndEntity`, so it never crosses a thread
 //         boundary on its own — it moves only when the whole `Store` moves, and
 //         `Store<T>: Send` already requires every stored entity to be `Send`.
@@ -39,8 +39,8 @@ pub struct AnyHandleAndEntity {
 unsafe impl Send for AnyHandleAndEntity {}
 
 // SAFETY: `&AnyHandleAndEntity` only hands out the `Copy` `handle` and a `NonNull` copy of
-//         `cache`; it never dereferences the pointee (only `HandleAndEntity::warmup` writes
-//         `cache`, via `&mut self`), so a shared reference can never observe entity data.
+//         `entity`; it never dereferences the pointee (only `HandleAndEntity::warmup` writes
+//         `entity`, via `&mut self`), so a shared reference can never observe entity data.
 unsafe impl Sync for AnyHandleAndEntity {}
 
 impl AnyHandleAndEntity {
