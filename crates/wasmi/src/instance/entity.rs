@@ -124,13 +124,10 @@ fn layout_for_handles(len: usize) -> Layout {
     let Ok(array) = Layout::array::<AnyHandleAndEntity>(len) else {
         too_many_handles(len)
     };
-    // Note: `extend` returns the offset of `array`, which is its own
-    //       `size.next_multiple_of(align)` and thus `HANDLES_OFFSET`'s definition verbatim.
-    //       Comparing the two would prove nothing; what needs checking is that `#[repr(C)]`
-    //       agrees, which `InstanceEntity::alloc` asserts on the finished `Box`.
-    let Ok((layout, _offset)) = Layout::new::<InstanceEntityHeader>().extend(array) else {
+    let Ok((layout, offset)) = Layout::new::<InstanceEntityHeader>().extend(array) else {
         too_many_handles(len)
     };
+    debug_assert_eq!(offset, HANDLES_OFFSET);
     layout.pad_to_align()
 }
 
