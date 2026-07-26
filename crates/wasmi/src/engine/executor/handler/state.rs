@@ -269,8 +269,8 @@ mod inst_tests {
     use super::*;
 
     const _: fn() = || {
-        fn assert_send<T: Send>() {}
-        fn assert_sync<T: Sync>() {}
+        fn assert_send<T: ?Sized + Send>() {}
+        fn assert_sync<T: ?Sized + Sync>() {}
 
         assert_send::<InstanceEntity>();
         assert_sync::<InstanceEntity>();
