@@ -454,17 +454,17 @@ impl ThinPtr<InstanceEntity> {
 
     impl_get_entry! {
         /// Returns the [`HandleAndEntity`] of the [`Memory`] at `addr`.
-        pub unsafe fn get_memory_entry(self, addr: MemoryAddr) -> &HandleAndEntity<Memory>;
+        pub unsafe fn get_memory(self, addr: MemoryAddr) -> &HandleAndEntity<Memory>;
         /// Returns the [`HandleAndEntity`] of the [`Global`] at `addr`.
-        pub unsafe fn get_global_entry(self, addr: GlobalAddr) -> &HandleAndEntity<Global>;
+        pub unsafe fn get_global(self, addr: GlobalAddr) -> &HandleAndEntity<Global>;
         /// Returns the [`HandleAndEntity`] of the [`Table`] at `addr`.
-        pub unsafe fn get_table_entry(self, addr: TableAddr) -> &HandleAndEntity<Table>;
+        pub unsafe fn get_table(self, addr: TableAddr) -> &HandleAndEntity<Table>;
         /// Returns the [`HandleAndEntity`] of the [`Func`] at `addr`.
-        pub unsafe fn get_func_entry(self, addr: FuncAddr) -> &HandleAndEntity<Func>;
+        pub unsafe fn get_func(self, addr: FuncAddr) -> &HandleAndEntity<Func>;
         /// Returns the [`HandleAndEntity`] of the [`ElementSegment`] at `addr`.
-        pub unsafe fn get_elem_entry(self, addr: ElemAddr) -> &HandleAndEntity<ElementSegment>;
+        pub unsafe fn get_elem(self, addr: ElemAddr) -> &HandleAndEntity<ElementSegment>;
         /// Returns the [`HandleAndEntity`] of the [`DataSegment`] at `addr`.
-        pub unsafe fn get_data_entry(self, addr: DataAddr) -> &HandleAndEntity<DataSegment>;
+        pub unsafe fn get_data(self, addr: DataAddr) -> &HandleAndEntity<DataSegment>;
     }
 
     /// Returns a shared reference to the [`InstanceEntity`] pointee.

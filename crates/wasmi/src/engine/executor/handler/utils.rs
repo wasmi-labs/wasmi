@@ -554,7 +554,7 @@ pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) 
     };
     // SAFETY: `addr` stems from the instance layout and its cache was warmed at
     //         instantiation; the `_store` borrow scopes exclusive memory access.
-    let mem0 = unsafe { inst.as_ptr().get_memory_entry(addr).entity() };
+    let mem0 = unsafe { inst.as_ptr().get_memory(addr).entity() };
     let mem0 = unsafe { &mut *mem0.as_ptr() }.data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
@@ -605,11 +605,11 @@ macro_rules! impl_resolve_from_instance {
     };
 }
 impl_resolve_from_instance! {
-    fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = get_data_entry;
-    fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = get_elem_entry;
-    fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = get_global_entry;
-    fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = get_memory_entry;
-    fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = get_table_entry;
+    fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = get_data;
+    fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = get_elem;
+    fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = get_global;
+    fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = get_memory;
+    fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = get_table;
 }
 
 macro_rules! impl_resolve_ptr_from_instance {
@@ -640,10 +640,10 @@ macro_rules! impl_resolve_ptr_from_instance {
     };
 }
 impl_resolve_ptr_from_instance! {
-    fn load_memory_ptr(inst: Inst, memory: ir::MemoryAddr) -> MemoryEntity = get_memory_entry;
-    fn load_table_ptr(inst: Inst, table: ir::TableAddr) -> TableEntity = get_table_entry;
-    fn load_data_ptr(inst: Inst, data: ir::DataAddr) -> DataSegmentEntity = get_data_entry;
-    fn load_elem_ptr(inst: Inst, elem: ir::ElemAddr) -> ElementSegmentEntity = get_elem_entry;
+    fn load_memory_ptr(inst: Inst, memory: ir::MemoryAddr) -> MemoryEntity = get_memory;
+    fn load_table_ptr(inst: Inst, table: ir::TableAddr) -> TableEntity = get_table;
+    fn load_data_ptr(inst: Inst, data: ir::DataAddr) -> DataSegmentEntity = get_data;
+    fn load_elem_ptr(inst: Inst, elem: ir::ElemAddr) -> ElementSegmentEntity = get_elem;
 }
 
 /// Resolves the [`Func`] handle and its warmed up cached [`FuncEntity`] pointer from `inst`.
@@ -656,7 +656,7 @@ pub fn load_func_entry(inst: Inst, func: ir::FuncAddr) -> (Func, NonNull<FuncEnt
     // SAFETY: `addr` is a valid address into `inst` by translation invariant and its cache
     //         was warmed at instantiation.
     unsafe {
-        let entry = inst.as_ptr().get_func_entry(addr);
+        let entry = inst.as_ptr().get_func(addr);
         (entry.handle(), entry.entity())
     }
 }
@@ -675,9 +675,9 @@ macro_rules! impl_fetch_from_instance {
     };
 }
 impl_fetch_from_instance! {
-    fn fetch_func(func: ir::FuncAddr) -> Func = get_func_entry;
-    fn fetch_memory(memory: ir::MemoryAddr) -> Memory = get_memory_entry;
-    fn fetch_table(table: ir::TableAddr) -> Table = get_table_entry;
+    fn fetch_func(func: ir::FuncAddr) -> Func = get_func;
+    fn fetch_memory(memory: ir::MemoryAddr) -> Memory = get_memory;
+    fn fetch_table(table: ir::TableAddr) -> Table = get_table;
 }
 
 /// Fetches the [`DedupFuncType`] at `func_type` from the instance's function types.
