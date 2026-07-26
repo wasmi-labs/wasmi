@@ -397,6 +397,147 @@ impl InstanceEntity {
     }
 }
 
+macro_rules! impl_get_entry {
+    (
+        $(
+            $(#[$attr:meta])*
+            pub unsafe fn $get:ident(self, addr: $addr_ty:ty) -> &HandleAndCache;
+        )*
+    ) => {
+        $(
+            $(#[$attr])*
+            ///
+            /// # Safety
+            ///
+            /// In addition to the requirements of [`ThinPtr::as_ref`] the caller must ensure
+            /// that `addr` is a valid address into the `handles` buffer of the pointee.
+            /// Wasmi's translation guarantees this for every address encoded into a Wasmi IR
+            /// operator.
+            #[inline]
+            pub unsafe fn $get<'a>(self, addr: $addr_ty) -> &'a HandleAndCache {
+                // Safety: guaranteed by the caller.
+                unsafe { self.entry(u32::from(addr)) }
+            }
+        )*
+    };
+}
+
+/// The thin-pointer API of [`InstanceEntity`].
+///
+/// # Note
+///
+/// This is what the Wasmi executor uses to access an [`InstanceEntity`] from its `Inst`
+/// register. All of it except [`ThinPtr::as_ref`] avoids reconstructing the fat
+/// [`InstanceEntity`] reference and thus never reads the trailing buffer length.
+impl ThinPtr<InstanceEntity> {
+    /// Returns a shared reference to the [`InstanceEntityHeader`] of the pointee.
+    ///
+    /// # Safety
+    ///
+    /// Same as for [`ThinPtr::as_ref`].
+    #[inline]
+    unsafe fn header<'a>(self) -> &'a InstanceEntityHeader {
+        // Safety: guaranteed by the caller.
+        unsafe { self.as_byte_ptr().cast::<InstanceEntityHeader>().as_ref() }
+    }
+
+    /// Returns a shared reference to the [`HandleAndCache`] at `addr`.
+    ///
+    /// # Safety
+    ///
+    /// Same as for the [`ThinPtr::get_memory_entry`] family of methods.
+    ///
+    /// # Note
+    ///
+    /// The entry address is computed from `self` alone. Deriving it from the
+    /// [`InstanceEntityHeader`] reference instead would be undefined behavior since that
+    /// reference only spans the header and not the trailing `handles` buffer.
+    #[inline]
+    unsafe fn entry<'a>(self, addr: u32) -> &'a HandleAndCache {
+        if cfg!(debug_assertions) || cfg!(feature = "extra-checks") {
+            // Safety: guaranteed by the caller.
+            let len_handles = unsafe { self.header() }.len_handles();
+            assert!(
+                addr < len_handles,
+                "out of bounds instance handle address: {addr} (len={len_handles})",
+            );
+        }
+        // Safety: guaranteed by the caller.
+        unsafe {
+            self.as_byte_ptr()
+                .byte_add(HANDLES_OFFSET)
+                .cast::<HandleAndCache>()
+                .add(addr as usize)
+                .as_ref()
+        }
+    }
+
+    /// Returns a shared reference to the [`InstanceLayout`] of the pointee.
+    ///
+    /// # Safety
+    ///
+    /// Same as for [`ThinPtr::as_ref`].
+    #[inline]
+    pub unsafe fn layout<'a>(self) -> &'a InstanceLayout {
+        // Safety: guaranteed by the caller.
+        unsafe { self.header() }.layout()
+    }
+
+    /// Returns the signature at the `index` of the pointee if any.
+    ///
+    /// # Safety
+    ///
+    /// Same as for [`ThinPtr::as_ref`].
+    #[inline]
+    pub unsafe fn get_signature<'a>(self, index: u32) -> Option<&'a DedupFuncType> {
+        // Safety: guaranteed by the caller.
+        unsafe { self.header() }.get_signature(index)
+    }
+
+    impl_get_entry! {
+        /// Returns the [`HandleAndCache`] of the [`Memory`] at `addr`.
+        pub unsafe fn get_memory_entry(self, addr: MemoryAddr) -> &HandleAndCache;
+        /// Returns the [`HandleAndCache`] of the [`Global`] at `addr`.
+        pub unsafe fn get_global_entry(self, addr: GlobalAddr) -> &HandleAndCache;
+        /// Returns the [`HandleAndCache`] of the [`Table`] at `addr`.
+        pub unsafe fn get_table_entry(self, addr: TableAddr) -> &HandleAndCache;
+        /// Returns the [`HandleAndCache`] of the [`Func`] at `addr`.
+        pub unsafe fn get_func_entry(self, addr: FuncAddr) -> &HandleAndCache;
+        /// Returns the [`HandleAndCache`] of the [`ElementSegment`] at `addr`.
+        pub unsafe fn get_elem_entry(self, addr: ElemAddr) -> &HandleAndCache;
+        /// Returns the [`HandleAndCache`] of the [`DataSegment`] at `addr`.
+        pub unsafe fn get_data_entry(self, addr: DataAddr) -> &HandleAndCache;
+    }
+
+    /// Returns a shared reference to the [`InstanceEntity`] pointee.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that `self` points to a live [`InstanceEntity`] that outlives
+    /// `'a` and that is not mutably accessed for the duration of `'a`.
+    ///
+    /// # Note
+    ///
+    /// Prefer any of the other methods where possible: rebuilding the fat [`InstanceEntity`]
+    /// reference requires reading its trailing buffer length.
+    #[inline]
+    pub unsafe fn as_ref<'a>(self) -> &'a InstanceEntity {
+        let ptr = self.as_byte_ptr();
+        // Safety: `len_handles` is the first field of the `#[repr(C)]` `InstanceEntityHeader`
+        //         and thus resides at offset 0 of the allocation. The raw field projection
+        //         avoids forming an `&InstanceEntityHeader` which would shrink provenance to
+        //         the header.
+        let len_handles = unsafe {
+            (&raw const (*ptr.cast::<InstanceEntityHeader>().as_ptr()).len_handles).read()
+        };
+        let ptr =
+            ptr::slice_from_raw_parts(ptr.as_ptr().cast::<HandleAndCache>(), len_handles as usize)
+                as *const InstanceEntity;
+        // Safety: guaranteed by the caller.
+        unsafe { &*ptr }
+    }
+}
+
 define_handle! {
     /// An instantiated WebAssembly [`Module`].
     ///
