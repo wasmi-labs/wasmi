@@ -55,6 +55,11 @@ mod tests;
 /// This is a dynamically sized type: its `handles` buffer is allocated inline behind the
 /// [`InstanceEntityHeader`] instead of behind another pointer. This allows the Wasmi executor to
 /// reach a [`AnyHandleAndEntity`] with a single indirection from its thin `Inst` pointer.
+///
+/// The `#[repr(C)]` is important: it puts `header` at offset 0, which is what lets
+/// [`ThinPtr::header`] cast a thin pointer to the allocation into an [`InstanceEntityHeader`],
+/// and it puts `handles` at [`HANDLES_OFFSET`], which is what [`InstanceEntity::alloc`] writes
+/// to and [`ThinPtr::entry`] reads from.
 #[derive(Debug)]
 #[repr(C)]
 pub struct InstanceEntity {
@@ -68,8 +73,8 @@ pub struct InstanceEntity {
 struct InstanceEntityHeader {
     /// The number of items in the trailing `handles` buffer.
     ///
-    /// This is stored so that a [`ThinPtr<InstanceEntity>`] can rebuild its fat reference.
-    /// `#[repr(C)]` puts it at offset 0 which is what [`ThinPtr::as_ref`] relies on.
+    /// This is stored so that a [`ThinPtr<InstanceEntity>`] can rebuild its fat reference in
+    /// [`ThinPtr::as_ref`].
     ///
     /// [`ThinPtr<InstanceEntity>`]: ThinPtr
     ///
