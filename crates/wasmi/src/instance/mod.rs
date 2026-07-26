@@ -3,6 +3,7 @@ use self::{
     cache::{AnyHandleAndEntity, HandleAndEntity},
     handle::AnyHandle,
 };
+use self::cache::{AnyHandleAndEntity, HandleAndEntity};
 pub use self::{
     exports::{Export, ExportsIter, Extern, ExternType},
     layout::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceLayout, MemoryAddr, TableAddr},
@@ -194,7 +195,11 @@ impl InstanceEntity {
             panic!("out of memory: too many instance handles: {len}")
         };
         let layout = layout.pad_to_align();
-        debug_assert_eq!(offset, HANDLES_OFFSET);
+        // Note: `offset` is `Layout::extend`'s own `size.next_multiple_of(align)`, i.e.
+        //       `HANDLES_OFFSET`'s definition verbatim, so comparing them proves nothing.
+        //       What needs checking is that `#[repr(C)]` puts the tail where we write it;
+        //       that is asserted on the finished `Box` below.
+        let _ = offset;
         // Safety: `layout` has a non-zero size since `InstanceEntityHeader` is non-empty.
         let Some(ptr) = NonNull::new(unsafe { alloc(layout) }) else {
             handle_alloc_error(layout)
@@ -210,7 +215,6 @@ impl InstanceEntity {
         //       `AnyHandleAndEntity` has no `Drop`, so nothing else is leaked.
         let mut len_written = 0;
         unsafe {
-            ptr.cast::<InstanceEntityHeader>().write(header);
             let buffer = ptr.byte_add(HANDLES_OFFSET).cast::<AnyHandleAndEntity>();
             for handle in handles.by_ref().take(len) {
                 buffer.add(len_written).write(handle);
@@ -221,6 +225,9 @@ impl InstanceEntity {
             len_written, len,
             "instance handles iterator yielded too few items",
         );
+        // Safety: `ptr` is a fresh allocation of at least `layout` bytes and `#[repr(C)]` puts
+        //         the header at offset 0.
+        unsafe { ptr.cast::<InstanceEntityHeader>().write(header) };
         // Note: this fat-pointer cast is the stable-Rust replacement for the unstable
         //       `ptr::from_raw_parts`. Source and target metadata are both the trailing
         //       slice length, so the cast preserves it.
@@ -230,7 +237,15 @@ impl InstanceEntity {
         //         global allocator using `layout`, which is asserted to be the very layout
         //         that `Box` will use to deallocate it again.
         let entity = unsafe { Box::from_raw(ptr) };
+        // Pins the two layout assumptions this function makes: that `Box` deallocates with the
+        // very `layout` we allocated, and that `#[repr(C)]` places `handles` at the offset we
+        // wrote the buffer to.
         debug_assert_eq!(Layout::for_value::<Self>(&entity), layout);
+        debug_assert_eq!(
+            (&raw const entity.handles).cast::<u8>().addr()
+                - ptr::from_ref::<Self>(&entity).cast::<u8>().addr(),
+            HANDLES_OFFSET,
+        );
         entity
     }
 
