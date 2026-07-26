@@ -29,6 +29,7 @@ use alloc::{
     alloc::{alloc, handle_alloc_error},
     boxed::Box,
     sync::Arc,
+    vec::Vec,
 };
 use core::{
     alloc::Layout,
@@ -196,8 +197,7 @@ impl InstanceEntity {
     ///
     /// # Panics
     ///
-    /// - If `handles` yields more items than fit into a `u32`.
-    /// - If `handles` yields fewer items than its [`ExactSizeIterator::len`] promised.
+    /// If `handles` yields more items than fit into a `u32`.
     fn alloc<I>(
         state: InstanceState,
         func_types: Arc<[DedupFuncType]>,
@@ -206,9 +206,9 @@ impl InstanceEntity {
         handles: I,
     ) -> Box<Self>
     where
-        I: IntoIterator<Item = AnyHandleAndEntity, IntoIter: ExactSizeIterator>,
+        I: IntoIterator<Item = AnyHandleAndEntity>,
     {
-        let mut handles = handles.into_iter();
+        let handles = Vec::from_iter(handles);
         let len = handles.len();
         let Ok(len_handles) = u32::try_from(len) else {
             too_many_handles(len)
