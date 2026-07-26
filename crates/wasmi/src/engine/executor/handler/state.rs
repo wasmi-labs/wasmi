@@ -25,17 +25,11 @@ use crate::{
     },
     instance::InstanceEntity,
     ir::{self, BoundedSlotSpan, Slot, SlotSpan},
+    ptr::ThinPtr,
     store::PrunedStore,
 };
 use alloc::vec::Vec;
-use core::{
-    cmp,
-    marker::PhantomData,
-    mem,
-    ops,
-    ptr::{self, NonNull},
-    slice,
-};
+use core::{cmp, marker::PhantomData, mem, ops, ptr, slice};
 
 pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
@@ -166,7 +160,7 @@ pub struct Inst {
     ///   integer and float won't be a terrible trade-off.
     value: InstRepr,
     /// Marks `Inst` as logically containing a shared raw pointer.
-    marker: PhantomData<*const InstanceEntity>,
+    marker: PhantomData<ThinPtr<InstanceEntity>>,
 }
 
 /// The underlying float representation of `Inst` for 64-bit platforms.
@@ -185,60 +179,44 @@ const _: () = {
 impl From<&'_ InstanceEntity> for Inst {
     #[inline]
     fn from(entity: &'_ InstanceEntity) -> Self {
-        let addr = (entity as *const InstanceEntity).expose_provenance();
-        Self::from_addr(addr)
+        Self::from(ThinPtr::from_ref(entity))
     }
 }
 
-impl From<NonNull<InstanceEntity>> for Inst {
+impl From<ThinPtr<InstanceEntity>> for Inst {
     #[inline]
-    fn from(entity: NonNull<InstanceEntity>) -> Self {
-        let addr = entity.as_ptr().expose_provenance();
-        Self::from_addr(addr)
+    fn from(entity: ThinPtr<InstanceEntity>) -> Self {
+        let value = InstRepr::from_ne_bytes(entity.addr().to_ne_bytes());
+        Self {
+            value,
+            marker: PhantomData,
+        }
     }
 }
 
 impl PartialEq for Inst {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.as_ptr().addr() == other.as_ptr().addr()
+        self.as_ptr() == other.as_ptr()
     }
 }
 impl Eq for Inst {}
 
 impl Inst {
-    /// Creates a new [`Inst`] from the given `addr` value.
-    #[inline]
-    fn from_addr(addr: usize) -> Self {
-        let value = InstRepr::from_ne_bytes(addr.to_ne_bytes());
-        Self {
-            value,
-            marker: PhantomData,
-        }
-    }
-
-    /// Converts the underlying representation back into its original pointer value.
-    #[inline]
-    pub fn as_ptr(&self) -> NonNull<InstanceEntity> {
-        let bits = usize::from_ne_bytes(self.value.to_ne_bytes());
-        let ptr = ptr::with_exposed_provenance::<InstanceEntity>(bits);
-        unsafe { NonNull::new_unchecked(ptr as *mut InstanceEntity) }
-    }
-
-    /// Returns a shared reference to the referenced [`InstanceEntity`].
+    /// Returns the thin pointer to the referenced [`InstanceEntity`].
     ///
-    /// # Safety
+    /// # Note
     ///
-    /// The caller must ensure that:
+    /// This cannot be a `NonNull<InstanceEntity>` since [`InstanceEntity`] is dynamically
+    /// sized. Its thin-pointer API is provided by [`ThinPtr<InstanceEntity>`].
     ///
-    /// - The [`Inst`] was constructed from a valid, properly aligned
-    ///   `InstanceEntity` pointer.
-    /// - The referenced [`InstanceEntity`] remains alive and is not
-    ///   mutably accessed for the entire duration of the returned
-    ///   reference.
+    /// [`ThinPtr<InstanceEntity>`]: ThinPtr
     #[inline]
-    pub unsafe fn as_ref(&self) -> &InstanceEntity {
-        unsafe { self.as_ptr().as_ref() }
+    pub fn as_ptr(&self) -> ThinPtr<InstanceEntity> {
+        let addr = usize::from_ne_bytes(self.value.to_ne_bytes());
+        // Safety: `Inst` can only ever be created from a `ThinPtr<InstanceEntity>` whose
+        //         provenance has been exposed.
+        unsafe { ThinPtr::from_addr(addr) }
     }
 }
 

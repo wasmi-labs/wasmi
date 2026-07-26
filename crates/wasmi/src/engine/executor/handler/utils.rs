@@ -539,22 +539,22 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
 /// so the default memory's address is not guaranteed to be zero.
 #[inline]
 pub fn is_default_memory(instance: Inst, memory: ir::MemoryAddr) -> bool {
-    let instance = unsafe { instance.as_ref() };
+    // SAFETY: `instance` refers to a live instance for the duration of the call.
+    let layout = unsafe { instance.as_ptr().layout() };
     matches!(
-        instance.layout().memory_addr(0),
+        layout.memory_addr(0),
         Some(addr) if u32::from(addr) == u32::from(memory)
     )
 }
 
 pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) {
-    let instance = unsafe { inst.as_ref() };
-    let Some(addr) = instance.layout().memory_addr(0) else {
+    // SAFETY: `inst` refers to a live instance for the duration of the call.
+    let Some(addr) = (unsafe { inst.as_ptr().layout() }).memory_addr(0) else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
     };
-    let Some(mem0) = instance.get_memory_ptr(addr) else {
-        unsafe { unreachable_unchecked!() }
-    };
-    // SAFETY: warmed at instantiation; the `_store` borrow scopes exclusive memory access.
+    // SAFETY: `addr` stems from the instance layout and its cache was warmed at
+    //         instantiation; the `_store` borrow scopes exclusive memory access.
+    let mem0 = unsafe { inst.as_ptr().get_memory_entry(addr).get_memory() };
     let mem0 = unsafe { &mut *mem0.as_ptr() }.data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
@@ -583,7 +583,7 @@ pub fn memory_slice_mut(
 
 macro_rules! impl_resolve_from_instance {
     (
-        $( fn $fn:ident(inst: Inst, store: &mut StoreInner, $param:ident: ir::$param_ty:ident) -> &mut $ret:ty = $getter:expr );* $(;)?
+        $( fn $fn:ident(inst: Inst, store: &mut StoreInner, $param:ident: ir::$param_ty:ident) -> &mut $ret:ty = $entry:ident . $getter:ident );* $(;)?
     ) => {
         $(
             /// Resolves the entity from the warmed up instance cache.
@@ -592,34 +592,29 @@ macro_rules! impl_resolve_from_instance {
             /// cannot alias a concurrent store mutation (this is the safe wrapper).
             #[inline]
             pub fn $fn(inst: Inst, _store: &mut StoreInner, $param: ir::$param_ty) -> &mut $ret {
-                let inst = unsafe { inst.as_ref() };
-                let raw_addr = ::core::primitive::u32::from($param);
-                let addr = <$param_ty>::from(raw_addr);
-                let Some(ptr) = $getter(inst, addr) else {
-                    unsafe {
-                        $crate::engine::utils::unreachable_unchecked!(
-                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
-                            addr,
-                        )
-                    }
-                };
-                // SAFETY: warmed at instantiation; the `_store` borrow scopes the reference.
-                unsafe { &mut *ptr.as_ptr() }
+                let addr = <$param_ty>::from(::core::primitive::u32::from($param));
+                // SAFETY: `addr` is a valid address into `inst` by translation invariant and
+                //         its cache was warmed at instantiation; the `_store` borrow scopes
+                //         the returned reference.
+                unsafe {
+                    let ptr = inst.as_ptr().$entry(addr).$getter();
+                    &mut *ptr.as_ptr()
+                }
             }
         )*
     };
 }
 impl_resolve_from_instance! {
-    fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = InstanceEntity::get_data_ptr;
-    fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = InstanceEntity::get_elem_ptr;
-    fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = InstanceEntity::get_global_ptr;
-    fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = InstanceEntity::get_memory_ptr;
-    fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = InstanceEntity::get_table_ptr;
+    fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = get_data_entry.get_data;
+    fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = get_elem_entry.get_elem;
+    fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = get_global_entry.get_global;
+    fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = get_memory_entry.get_memory;
+    fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = get_table_entry.get_table;
 }
 
 macro_rules! impl_resolve_ptr_from_instance {
     (
-        $( fn $fn:ident(inst: Inst, $param:ident: ir::$param_ty:ident) -> $ret:ty = $getter:expr );* $(;)?
+        $( fn $fn:ident(inst: Inst, $param:ident: ir::$param_ty:ident) -> $ret:ty = $entry:ident . $getter:ident );* $(;)?
     ) => {
         $(
             /// Resolves a pointer to the entity from the warmed up instance cache.
@@ -637,27 +632,18 @@ macro_rules! impl_resolve_ptr_from_instance {
             /// ensure the resulting reference does not alias any other live reference.
             #[inline]
             pub unsafe fn $fn(inst: Inst, $param: ir::$param_ty) -> NonNull<$ret> {
-                let inst = unsafe { inst.as_ref() };
-                let raw_addr = ::core::primitive::u32::from($param);
-                let addr = <$param_ty>::from(raw_addr);
-                let Some(ptr) = $getter(inst, addr) else {
-                    unsafe {
-                        $crate::engine::utils::unreachable_unchecked!(
-                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
-                            addr,
-                        )
-                    }
-                };
-                ptr
+                let addr = <$param_ty>::from(::core::primitive::u32::from($param));
+                // Safety: guaranteed by the caller.
+                unsafe { inst.as_ptr().$entry(addr).$getter() }
             }
         )*
     };
 }
 impl_resolve_ptr_from_instance! {
-    fn load_memory_ptr(inst: Inst, memory: ir::MemoryAddr) -> MemoryEntity = InstanceEntity::get_memory_ptr;
-    fn load_table_ptr(inst: Inst, table: ir::TableAddr) -> TableEntity = InstanceEntity::get_table_ptr;
-    fn load_data_ptr(inst: Inst, data: ir::DataAddr) -> DataSegmentEntity = InstanceEntity::get_data_ptr;
-    fn load_elem_ptr(inst: Inst, elem: ir::ElemAddr) -> ElementSegmentEntity = InstanceEntity::get_elem_ptr;
+    fn load_memory_ptr(inst: Inst, memory: ir::MemoryAddr) -> MemoryEntity = get_memory_entry.get_memory;
+    fn load_table_ptr(inst: Inst, table: ir::TableAddr) -> TableEntity = get_table_entry.get_table;
+    fn load_data_ptr(inst: Inst, data: ir::DataAddr) -> DataSegmentEntity = get_data_entry.get_data;
+    fn load_elem_ptr(inst: Inst, elem: ir::ElemAddr) -> ElementSegmentEntity = get_elem_entry.get_elem;
 }
 
 /// Resolves the [`Func`] handle and its warmed up cached [`FuncEntity`] pointer from `inst`.
@@ -666,43 +652,43 @@ impl_resolve_ptr_from_instance! {
 /// and must not be turned into a reference that aliases a concurrent store mutation.
 #[inline]
 pub fn load_func_entry(inst: Inst, func: ir::FuncAddr) -> (Func, NonNull<FuncEntity>) {
-    let instance = unsafe { inst.as_ref() };
     let addr = FuncAddr::from(u32::from(func));
-    let Some(func_entry) = instance.get_func_entry(addr) else {
-        unsafe { unreachable_unchecked!("missing func at: {:?}", addr) }
-    };
-    func_entry
+    // SAFETY: `addr` is a valid address into `inst` by translation invariant and its cache
+    //         was warmed at instantiation.
+    unsafe {
+        let entry = inst.as_ptr().get_func_entry(addr);
+        (entry.cast_func(), entry.get_func())
+    }
 }
 
 macro_rules! impl_fetch_from_instance {
     (
-        $( fn $fn:ident($param:ident: $ty:ty as $addr:ty) -> $ret:ty = $getter:expr );* $(;)?
+        $( fn $fn:ident($param:ident: ir::$param_ty:ident) -> $ret:ty = $entry:ident . $getter:ident );* $(;)?
     ) => {
         $(
-            pub fn $fn(instance: Inst, $param: $ty) -> $ret {
-                let instance = unsafe { instance.as_ref() };
-                let raw_addr = ::core::primitive::u32::from($param);
-                let addr = <$addr>::from(raw_addr);
-                let Some($param) = $getter(instance, addr) else {
-                    unsafe {
-                        $crate::engine::utils::unreachable_unchecked!(
-                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
-                            addr,
-                        )
-                    }
-                };
-                $param
+            pub fn $fn(instance: Inst, $param: ir::$param_ty) -> $ret {
+                let addr = <$param_ty>::from(::core::primitive::u32::from($param));
+                // SAFETY: `addr` is a valid address into `instance` by translation invariant.
+                unsafe { instance.as_ptr().$entry(addr).$getter() }
             }
         )*
     };
 }
 impl_fetch_from_instance! {
-    fn fetch_func(func: ir::FuncAddr as FuncAddr) -> Func = InstanceEntity::get_func;
-    fn fetch_memory(memory: ir::MemoryAddr as MemoryAddr) -> Memory = InstanceEntity::get_memory;
-    fn fetch_table(table: ir::TableAddr as TableAddr) -> Table = InstanceEntity::get_table;
-    fn fetch_func_type(func_type: ir::FuncType as u32) -> DedupFuncType = {
-        |instance: &InstanceEntity, index: u32| instance.get_signature(index).copied()
+    fn fetch_func(func: ir::FuncAddr) -> Func = get_func_entry.cast_func;
+    fn fetch_memory(memory: ir::MemoryAddr) -> Memory = get_memory_entry.cast_memory;
+    fn fetch_table(table: ir::TableAddr) -> Table = get_table_entry.cast_table;
+}
+
+/// Fetches the [`DedupFuncType`] at `func_type` from the instance's function types.
+#[inline]
+pub fn fetch_func_type(instance: Inst, func_type: ir::FuncType) -> DedupFuncType {
+    let index = u32::from(func_type);
+    // SAFETY: `instance` refers to a live instance for the duration of the call.
+    let Some(func_type) = (unsafe { instance.as_ptr().get_signature(index) }) else {
+        unsafe { unreachable_unchecked!("missing func type at: {index}") }
     };
+    *func_type
 }
 
 macro_rules! impl_resolve_from_store {
