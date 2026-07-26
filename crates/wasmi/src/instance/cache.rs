@@ -5,7 +5,7 @@ use crate::{
     Handle,
     Memory,
     Table,
-    instance::AnyHandle,
+    instance::handle::{AnyHandle, HasHandleKind},
     memory::DataSegment,
     store::StoreInner,
 };
@@ -53,15 +53,42 @@ impl AnyHandleAndEntity {
             handle,
         }
     }
+
+    /// Returns `self` as a shared [`HandleAndEntity<T>`].
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that `self` stores a `T` handle. Debug builds validate this
+    /// against the stored handle kind tag.
+    #[inline]
+    pub unsafe fn typed_ref<T: HasHandleKind>(&self) -> &HandleAndEntity<T> {
+        self.handle.assert_kind::<T>();
+        // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
+        //         `AnyHandleAndEntity` and the caller guarantees the handle kind.
+        unsafe { &*ptr::from_ref(self).cast::<HandleAndEntity<T>>() }
+    }
+
+    /// Returns `self` as an exclusive [`HandleAndEntity<T>`].
+    ///
+    /// # Safety
+    ///
+    /// Same as for [`AnyHandleAndEntity::typed_ref`].
+    #[inline]
+    pub unsafe fn typed_mut<T: HasHandleKind>(&mut self) -> &mut HandleAndEntity<T> {
+        self.handle.assert_kind::<T>();
+        // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
+        //         `AnyHandleAndEntity` and the caller guarantees the handle kind.
+        unsafe { &mut *ptr::from_mut(self).cast::<HandleAndEntity<T>>() }
+    }
 }
 
 /// A [`AnyHandleAndEntity`] that is known to store a `T` handle and its entity.
 ///
 /// # Note
 ///
-/// This is a view on an entry of an instance's `handles` buffer. Obtaining one asserts the
-/// handle kind of the entry, which is why [`HandleAndEntity::handle`] and
-/// [`HandleAndEntity::entity`] are safe whereas the constructors are not.
+/// This is a view on an entry of an instance's `handles` buffer. Its constructors assert the
+/// handle kind of the entry — and validate it in debug builds — which is why
+/// [`HandleAndEntity::handle`] and [`HandleAndEntity::entity`] are safe and check nothing.
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct HandleAndEntity<T: Handle> {
@@ -72,30 +99,6 @@ pub struct HandleAndEntity<T: Handle> {
 }
 
 impl<T: Handle<Entity: Sized>> HandleAndEntity<T> {
-    /// Returns a shared reference to `entry` as a [`HandleAndEntity<T>`].
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that `entry` stores a `T` handle.
-    #[inline]
-    pub(super) unsafe fn from_ref(entry: &AnyHandleAndEntity) -> &Self {
-        // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
-        //         `AnyHandleAndEntity` and the caller guarantees the handle kind.
-        unsafe { &*ptr::from_ref(entry).cast::<Self>() }
-    }
-
-    /// Returns an exclusive reference to `entry` as a [`HandleAndEntity<T>`].
-    ///
-    /// # Safety
-    ///
-    /// Same as for [`HandleAndEntity::from_ref`].
-    #[inline]
-    pub(super) unsafe fn from_mut(entry: &mut AnyHandleAndEntity) -> &mut Self {
-        // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
-        //         `AnyHandleAndEntity` and the caller guarantees the handle kind.
-        unsafe { &mut *ptr::from_mut(entry).cast::<Self>() }
-    }
-
     /// Returns a pointer to the cached entity of `self`.
     ///
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
