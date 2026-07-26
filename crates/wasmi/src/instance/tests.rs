@@ -243,8 +243,8 @@ fn instantiate_data_segments_without_data_count() {
     let mut store = Store::new(&engine, ());
     let instance = Instance::new(&mut store, &module, &[]).unwrap();
     let entity = store.inner.resolve_instance(&instance);
-    assert!(entity.header.layout.data_addr(0).is_none());
-    assert_eq!(entity.handles.len(), 3); // 1 memory + 2 data segments
+    assert!(entity.layout().data_addr(0).is_none());
+    assert_eq!(entity.handles().len(), 3); // 1 memory + 2 data segments
     let memory = instance.get_memory(&store, "mem").unwrap();
     assert_eq!(&memory.data(&store)[..3], b"abc");
     assert_eq!(&memory.data(&store)[8..10], b"de");
@@ -259,8 +259,8 @@ fn instantiate_without_handles() {
     let mut store = Store::new(&engine, ());
     let instance = Instance::new(&mut store, &module, &[]).unwrap();
     let entity = store.inner.resolve_instance(&instance);
-    assert_eq!(entity.header.len_handles(), 0);
-    assert!(entity.handles.is_empty());
+    assert_eq!(entity.len_handles(), 0);
+    assert!(entity.handles().is_empty());
     assert_eq!(instance.exports(&store).count(), 0);
 }
 
@@ -290,7 +290,7 @@ fn get_entry_of_wrong_handle_kind_panics() {
     let instance = Instance::new(&mut store, &module, &[]).unwrap();
     let entity = store.inner.resolve_instance(&instance);
     // Sanity check: address 1 really is the function, not a second memory.
-    assert!(entity.header.layout.memory_addr(1).is_none());
-    assert_eq!(u32::from(entity.header.layout.func_addr(0).unwrap()), 1);
+    assert!(entity.layout().memory_addr(1).is_none());
+    assert_eq!(u32::from(entity.layout().func_addr(0).unwrap()), 1);
     let _ = entity.get_memory(MemoryAddr::from(1));
 }
