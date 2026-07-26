@@ -31,10 +31,18 @@ use crate::{
     engine::DedupFuncType,
     func::FuncError,
     memory::DataSegment,
+    ptr::ThinPtr,
     store::{StoreInner, Stored},
 };
-use alloc::{boxed::Box, sync::Arc};
-use core::ptr::NonNull;
+use alloc::{
+    alloc::{alloc, handle_alloc_error},
+    boxed::Box,
+    sync::Arc,
+};
+use core::{
+    alloc::Layout,
+    ptr::{self, NonNull},
+};
 
 mod builder;
 mod cache;
@@ -50,24 +58,25 @@ mod tests;
 /// # Note
 ///
 /// This is a dynamically sized type: its `handles` buffer is allocated inline behind the
-/// [`InstanceHeader`] instead of behind another pointer. This allows the Wasmi executor to
+/// [`InstanceEntityHeader`] instead of behind another pointer. This allows the Wasmi executor to
 /// reach a [`HandleAndCache`] with a single indirection from its thin `Inst` pointer.
 #[derive(Debug)]
 #[repr(C)]
 pub struct InstanceEntity {
-    header: InstanceHeader,
+    header: InstanceEntityHeader,
     handles: [HandleAndCache],
 }
 
 /// The sized header preceding the trailing `handles` buffer of an [`InstanceEntity`].
 #[derive(Debug)]
 #[repr(C)]
-pub struct InstanceHeader {
+struct InstanceEntityHeader {
     /// The number of items in the trailing `handles` buffer.
     ///
-    /// This is stored so that a thin pointer to an [`InstanceEntity`] can rebuild its fat
-    /// reference. `#[repr(C)]` puts it at offset 0 which is what [`InstanceEntity::ref_at`]
-    /// relies on.
+    /// This is stored so that a [`ThinPtr<InstanceEntity>`] can rebuild its fat reference.
+    /// `#[repr(C)]` puts it at offset 0 which is what [`ThinPtr::as_ref`] relies on.
+    ///
+    /// [`ThinPtr<InstanceEntity>`]: ThinPtr
     ///
     /// # Note
     ///
@@ -92,7 +101,7 @@ pub enum InstanceState {
     WarmedUp,
 }
 
-impl InstanceHeader {
+impl InstanceEntityHeader {
     /// Returns the number of items in the trailing `handles` buffer.
     #[inline]
     pub fn len_handles(&self) -> u32 {
@@ -164,7 +173,7 @@ impl InstanceEntity {
         let Ok(len_handles) = u32::try_from(len) else {
             panic!("out of memory: too many instance handles: {len}")
         };
-        let header = InstanceHeader {
+        let header = InstanceEntityHeader {
             len_handles,
             state,
             func_types,
@@ -174,12 +183,12 @@ impl InstanceEntity {
         let Ok(array) = Layout::array::<HandleAndCache>(len) else {
             panic!("out of memory: too many instance handles: {len}")
         };
-        let Ok((layout, offset)) = Layout::new::<InstanceHeader>().extend(array) else {
+        let Ok((layout, offset)) = Layout::new::<InstanceEntityHeader>().extend(array) else {
             panic!("out of memory: too many instance handles: {len}")
         };
         let layout = layout.pad_to_align();
         debug_assert_eq!(offset, HANDLES_OFFSET);
-        // Safety: `layout` has a non-zero size since `InstanceHeader` is non-empty.
+        // Safety: `layout` has a non-zero size since `InstanceEntityHeader` is non-empty.
         let Some(ptr) = NonNull::new(unsafe { alloc(layout) }) else {
             handle_alloc_error(layout)
         };
@@ -189,7 +198,7 @@ impl InstanceEntity {
         //         yields more items than it promised.
         let mut len_written = 0;
         unsafe {
-            ptr.cast::<InstanceHeader>().write(header);
+            ptr.cast::<InstanceEntityHeader>().write(header);
             let buffer = ptr.byte_add(HANDLES_OFFSET).cast::<HandleAndCache>();
             for handle in handles.by_ref().take(len) {
                 buffer.add(len_written).write(handle);
@@ -211,8 +220,6 @@ impl InstanceEntity {
         let entity = unsafe { Box::from_raw(ptr) };
         debug_assert_eq!(Layout::for_value::<Self>(&entity), layout);
         entity
-    }
-        }
     }
 
     /// Creates a new [`InstanceEntityBuilder`].
