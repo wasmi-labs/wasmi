@@ -552,9 +552,13 @@ pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) 
     let Some(addr) = (unsafe { inst.as_ptr().layout() }).memory_addr(0) else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
     };
-    // SAFETY: `addr` stems from the instance layout and its cache was warmed at
-    //         instantiation; the `_store` borrow scopes exclusive memory access.
-    let mem0 = unsafe { inst.as_ptr().get_memory(addr).entity() };
+    // SAFETY: `addr` stems from the instance layout and thus addresses a memory entry
+    //         whose cache was warmed at instantiation.
+    let Some(mem0) = (unsafe { inst.as_ptr().get_memory(addr) }) else {
+        unsafe { unreachable_unchecked!("missing memory at: {addr:?}") }
+    };
+    // SAFETY: warmed at instantiation; the `_store` borrow scopes exclusive memory access.
+    let mem0 = mem0.entity();
     let mem0 = unsafe { &mut *mem0.as_ptr() }.data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
@@ -593,13 +597,17 @@ macro_rules! impl_resolve_from_instance {
             #[inline]
             pub fn $fn(inst: Inst, _store: &mut StoreInner, $param: ir::$param_ty) -> &mut $ret {
                 let addr = <$param_ty>::from(::core::primitive::u32::from($param));
-                // SAFETY: `addr` is a valid address into `inst` by translation invariant and
-                //         its cache was warmed at instantiation; the `_store` borrow scopes
-                //         the returned reference.
-                unsafe {
-                    let ptr = inst.as_ptr().$entry(addr).entity();
-                    &mut *ptr.as_ptr()
-                }
+                // SAFETY: `addr` addresses an entry of this kind by translation invariant.
+                let Some(entry) = (unsafe { inst.as_ptr().$entry(addr) }) else {
+                    unsafe {
+                        $crate::engine::utils::unreachable_unchecked!(
+                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
+                            addr,
+                        )
+                    }
+                };
+                // SAFETY: warmed at instantiation; the `_store` borrow scopes the reference.
+                unsafe { &mut *entry.entity().as_ptr() }
             }
         )*
     };
@@ -634,7 +642,15 @@ macro_rules! impl_resolve_ptr_from_instance {
             pub unsafe fn $fn(inst: Inst, $param: ir::$param_ty) -> NonNull<$ret> {
                 let addr = <$param_ty>::from(::core::primitive::u32::from($param));
                 // Safety: guaranteed by the caller.
-                unsafe { inst.as_ptr().$entry(addr).entity() }
+                let Some(entry) = (unsafe { inst.as_ptr().$entry(addr) }) else {
+                    unsafe {
+                        $crate::engine::utils::unreachable_unchecked!(
+                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
+                            addr,
+                        )
+                    }
+                };
+                entry.entity()
             }
         )*
     };
@@ -653,12 +669,12 @@ impl_resolve_ptr_from_instance! {
 #[inline]
 pub fn load_func_entry(inst: Inst, func: ir::FuncAddr) -> (Func, NonNull<FuncEntity>) {
     let addr = FuncAddr::from(u32::from(func));
-    // SAFETY: `addr` is a valid address into `inst` by translation invariant and its cache
-    //         was warmed at instantiation.
-    unsafe {
-        let entry = inst.as_ptr().get_func(addr);
-        (entry.handle(), entry.entity())
-    }
+    // SAFETY: `addr` addresses a func entry by translation invariant and its cache was
+    //         warmed at instantiation.
+    let Some(entry) = (unsafe { inst.as_ptr().get_func(addr) }) else {
+        unsafe { unreachable_unchecked!("missing func at: {addr:?}") }
+    };
+    (entry.handle(), entry.entity())
 }
 
 macro_rules! impl_fetch_from_instance {
@@ -668,8 +684,16 @@ macro_rules! impl_fetch_from_instance {
         $(
             pub fn $fn(instance: Inst, $param: ir::$param_ty) -> $ret {
                 let addr = <$param_ty>::from(::core::primitive::u32::from($param));
-                // SAFETY: `addr` is a valid address into `instance` by translation invariant.
-                unsafe { instance.as_ptr().$entry(addr).handle() }
+                // SAFETY: `addr` addresses an entry of this kind by translation invariant.
+                let Some(entry) = (unsafe { instance.as_ptr().$entry(addr) }) else {
+                    unsafe {
+                        $crate::engine::utils::unreachable_unchecked!(
+                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
+                            addr,
+                        )
+                    }
+                };
+                entry.handle()
             }
         )*
     };

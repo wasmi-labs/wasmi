@@ -366,11 +366,11 @@ macro_rules! impl_get_entry {
             /// # Safety
             ///
             /// In addition to the requirements of [`ThinPtr::as_ref`] the caller must ensure
-            /// that `addr` is a valid address into the `handles` buffer of the pointee.
+            #[doc = concat!("that the entry at `addr` stores a [`", stringify!($handle), "`] handle.")]
             /// Wasmi's translation guarantees this for every address encoded into a Wasmi IR
             /// operator.
             #[inline]
-            pub unsafe fn $get<'a>(self, addr: $addr_ty) -> &'a HandleAndEntity<$handle> {
+            pub unsafe fn $get<'a>(self, addr: $addr_ty) -> Option<&'a HandleAndEntity<$handle>> {
                 // Safety: guaranteed by the caller.
                 unsafe { self.entry::<$handle>(u32::from(addr)) }
             }
@@ -397,11 +397,11 @@ impl ThinPtr<InstanceEntity> {
         unsafe { self.as_byte_ptr().cast::<InstanceEntityHeader>().as_ref() }
     }
 
-    /// Returns a shared reference to the [`HandleAndEntity`] at `addr`.
+    /// Returns a shared reference to the [`HandleAndEntity`] at `addr` if any.
     ///
     /// # Safety
     ///
-    /// Same as for the [`ThinPtr::get_memory_entry`] family of methods.
+    /// Same as for the [`ThinPtr::get_memory`] family of methods.
     ///
     /// # Note
     ///
@@ -409,25 +409,24 @@ impl ThinPtr<InstanceEntity> {
     /// [`InstanceEntityHeader`] reference instead would be undefined behavior since that
     /// reference only spans the header and not the trailing `handles` buffer.
     #[inline]
-    unsafe fn entry<'a, T: Handle<Entity: Sized>>(self, addr: u32) -> &'a HandleAndEntity<T> {
-        if cfg!(debug_assertions) || cfg!(feature = "extra-checks") {
-            // Safety: guaranteed by the caller.
-            let len_handles = unsafe { self.header() }.len_handles();
-            assert!(
-                addr < len_handles,
-                "out of bounds instance handle address: {addr} (len={len_handles})",
-            );
-        }
+    unsafe fn entry<'a, T: Handle<Entity: Sized>>(
+        self,
+        addr: u32,
+    ) -> Option<&'a HandleAndEntity<T>> {
         // Safety: guaranteed by the caller.
-        unsafe {
-            let entry = self
-                .as_byte_ptr()
+        if addr >= unsafe { self.header() }.len_handles() {
+            return None;
+        }
+        // Safety: guaranteed by the caller and the bounds check above.
+        let entry = unsafe {
+            self.as_byte_ptr()
                 .byte_add(HANDLES_OFFSET)
                 .cast::<AnyHandleAndEntity>()
                 .add(addr as usize)
-                .as_ref();
-            HandleAndEntity::from_ref(entry)
-        }
+                .as_ref()
+        };
+        // Safety: guaranteed by the caller.
+        Some(unsafe { HandleAndEntity::from_ref(entry) })
     }
 
     /// Returns a shared reference to the [`InstanceLayout`] of the pointee.
