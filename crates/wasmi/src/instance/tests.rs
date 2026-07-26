@@ -220,3 +220,77 @@ fn instantiate_with_invalid_func_import() {
         ErrorKind::Instantiation(InstantiationError::FuncTypeMismatch { .. })
     ));
 }
+
+/// Modules without a `data_count` section still get a handle per data segment.
+///
+/// The [`InstanceLayout`] deliberately reports no data segments for such modules — their
+/// addresses are not queryable — so the trailing `handles` buffer holds *more* entries than
+/// the layout accounts for. Deriving the buffer length from the layout truncates it.
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn instantiate_data_segments_without_data_count() {
+    // Note: `data_count` is only emitted for modules using bulk-memory operators, so this
+    //       module (active data segments, no `memory.init`/`data.drop`) has none.
+    let wasm = r#"
+        (module
+            (memory (export "mem") 1)
+            (data (i32.const 0) "abc")
+            (data (i32.const 8) "de")
+        )
+    "#;
+    let engine = Engine::default();
+    let module = Module::new(&engine, wasm).unwrap();
+    let mut store = Store::new(&engine, ());
+    let instance = Instance::new(&mut store, &module, &[]).unwrap();
+    let entity = store.inner.resolve_instance(&instance);
+    assert!(entity.layout().data_addr(0).is_none());
+    assert_eq!(entity.handles().len(), 3); // 1 memory + 2 data segments
+    let memory = instance.get_memory(&store, "mem").unwrap();
+    assert_eq!(&memory.data(&store)[..3], b"abc");
+    assert_eq!(&memory.data(&store)[8..10], b"de");
+}
+
+/// An instance without any handles allocates a header-only [`InstanceEntity`].
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn instantiate_without_handles() {
+    let engine = Engine::default();
+    let module = Module::new(&engine, "(module)").unwrap();
+    let mut store = Store::new(&engine, ());
+    let instance = Instance::new(&mut store, &module, &[]).unwrap();
+    let entity = store.inner.resolve_instance(&instance);
+    assert_eq!(entity.len_handles(), 0);
+    assert!(entity.handles().is_empty());
+    assert_eq!(instance.exports(&store).count(), 0);
+}
+
+/// The handle kind of an instance entry is validated where it is claimed.
+///
+/// `MemoryAddr(1)` addresses the *function* entry below, since the layout groups are
+/// `[memory][global][table][func]…`. Constructing a `HandleAndEntity<Memory>` for it is
+/// exactly the mistake the `AnyHandle::assert_kind` guard exists to catch.
+///
+/// # Note
+///
+/// Only debug builds store the handle kind, so this can only be tested there.
+#[test]
+#[cfg(debug_assertions)]
+#[cfg_attr(not(feature = "wat"), ignore)]
+#[should_panic = "unexpected instance handle kind"]
+fn get_entry_of_wrong_handle_kind_panics() {
+    let wasm = r#"
+        (module
+            (memory 1)
+            (func)
+        )
+    "#;
+    let engine = Engine::default();
+    let module = Module::new(&engine, wasm).unwrap();
+    let mut store = Store::new(&engine, ());
+    let instance = Instance::new(&mut store, &module, &[]).unwrap();
+    let entity = store.inner.resolve_instance(&instance);
+    // Sanity check: address 1 really is the function, not a second memory.
+    assert!(entity.layout().memory_addr(1).is_none());
+    assert_eq!(u32::from(entity.layout().func_addr(0).unwrap()), 1);
+    let _ = entity.get_memory(MemoryAddr::from(1));
+}

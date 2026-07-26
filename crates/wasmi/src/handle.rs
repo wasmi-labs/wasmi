@@ -6,7 +6,10 @@ pub trait Handle: Copy {
     /// The raw representation of the handle.
     type Raw: ArenaKey;
     /// The store owned entity type of the handle.
-    type Entity;
+    ///
+    /// This may be unsized: [`InstanceEntity`](crate::InstanceEntity) is a dynamically
+    /// sized type and thus owned as a `Box<InstanceEntity>` by its arena.
+    type Entity: ?Sized;
     /// The owner associating reference.
     type Owned<T>;
 

@@ -23,19 +23,12 @@ use crate::{
         },
         utils::unreachable_unchecked,
     },
-    instance::InstanceEntity,
+    instance::{InstanceEntity, ThinPtr},
     ir::{self, BoundedSlotSpan, Slot, SlotSpan},
     store::PrunedStore,
 };
 use alloc::vec::Vec;
-use core::{
-    cmp,
-    marker::PhantomData,
-    mem,
-    ops,
-    ptr::{self, NonNull},
-    slice,
-};
+use core::{cmp, marker::PhantomData, mem, ops, ptr, slice};
 
 pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
@@ -151,6 +144,22 @@ impl DoneReason {
 }
 
 /// A thin-wrapper around a non-owned [`InstanceEntity`].
+///
+/// # Validity
+///
+/// Every `Inst` is created from a live [`InstanceEntity`] that the [`Store`] currently owns,
+/// and the executor keeps that instance alive and warmed up for as long as the `Inst` is
+/// reachable — it is stored in [`Args`] and in the [`CallStack`] frames of the very execution
+/// that owns the [`Store`]. Since the entity is boxed, allocating further instances (e.g. from
+/// a host call) does not move it.
+///
+/// The `unsafe` methods of [`ThinPtr<InstanceEntity>`] therefore hold for any `Inst` reached
+/// through [`Inst::as_ptr`], and call sites need only justify the *kind* of the address they
+/// pass, not the liveness of the instance.
+///
+/// [`Store`]: crate::Store
+/// [`Args`]: super::Args
+/// [`ThinPtr<InstanceEntity>`]: ThinPtr
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Inst {
@@ -166,7 +175,7 @@ pub struct Inst {
     ///   integer and float won't be a terrible trade-off.
     value: InstRepr,
     /// Marks `Inst` as logically containing a shared raw pointer.
-    marker: PhantomData<*const InstanceEntity>,
+    marker: PhantomData<ThinPtr<InstanceEntity>>,
 }
 
 /// The underlying float representation of `Inst` for 64-bit platforms.
@@ -185,60 +194,44 @@ const _: () = {
 impl From<&'_ InstanceEntity> for Inst {
     #[inline]
     fn from(entity: &'_ InstanceEntity) -> Self {
-        let addr = (entity as *const InstanceEntity).expose_provenance();
-        Self::from_addr(addr)
+        Self::from(ThinPtr::from_ref(entity))
     }
 }
 
-impl From<NonNull<InstanceEntity>> for Inst {
+impl From<ThinPtr<InstanceEntity>> for Inst {
     #[inline]
-    fn from(entity: NonNull<InstanceEntity>) -> Self {
-        let addr = entity.as_ptr().expose_provenance();
-        Self::from_addr(addr)
+    fn from(entity: ThinPtr<InstanceEntity>) -> Self {
+        let value = InstRepr::from_ne_bytes(entity.expose_provenance().to_ne_bytes());
+        Self {
+            value,
+            marker: PhantomData,
+        }
     }
 }
 
 impl PartialEq for Inst {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.as_ptr().addr() == other.as_ptr().addr()
+        self.as_ptr() == other.as_ptr()
     }
 }
 impl Eq for Inst {}
 
 impl Inst {
-    /// Creates a new [`Inst`] from the given `addr` value.
-    #[inline]
-    fn from_addr(addr: usize) -> Self {
-        let value = InstRepr::from_ne_bytes(addr.to_ne_bytes());
-        Self {
-            value,
-            marker: PhantomData,
-        }
-    }
-
-    /// Converts the underlying representation back into its original pointer value.
-    #[inline]
-    pub fn as_ptr(&self) -> NonNull<InstanceEntity> {
-        let bits = usize::from_ne_bytes(self.value.to_ne_bytes());
-        let ptr = ptr::with_exposed_provenance::<InstanceEntity>(bits);
-        unsafe { NonNull::new_unchecked(ptr as *mut InstanceEntity) }
-    }
-
-    /// Returns a shared reference to the referenced [`InstanceEntity`].
+    /// Returns the thin pointer to the referenced [`InstanceEntity`].
     ///
-    /// # Safety
+    /// # Note
     ///
-    /// The caller must ensure that:
+    /// This cannot be a `NonNull<InstanceEntity>` since [`InstanceEntity`] is dynamically
+    /// sized. Its thin-pointer API is provided by [`ThinPtr<InstanceEntity>`].
     ///
-    /// - The [`Inst`] was constructed from a valid, properly aligned
-    ///   `InstanceEntity` pointer.
-    /// - The referenced [`InstanceEntity`] remains alive and is not
-    ///   mutably accessed for the entire duration of the returned
-    ///   reference.
+    /// [`ThinPtr<InstanceEntity>`]: ThinPtr
     #[inline]
-    pub unsafe fn as_ref(&self) -> &InstanceEntity {
-        unsafe { self.as_ptr().as_ref() }
+    pub fn as_ptr(&self) -> ThinPtr<InstanceEntity> {
+        let addr = usize::from_ne_bytes(self.value.to_ne_bytes());
+        // Safety: `Inst` can only ever be created from a `ThinPtr<InstanceEntity>` whose
+        //         provenance has been exposed.
+        unsafe { ThinPtr::with_exposed_provenance(addr) }
     }
 }
 
@@ -269,8 +262,8 @@ mod inst_tests {
     use super::*;
 
     const _: fn() = || {
-        fn assert_send<T: Send>() {}
-        fn assert_sync<T: Sync>() {}
+        fn assert_send<T: ?Sized + Send>() {}
+        fn assert_sync<T: ?Sized + Sync>() {}
 
         assert_send::<InstanceEntity>();
         assert_sync::<InstanceEntity>();

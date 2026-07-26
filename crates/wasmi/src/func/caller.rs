@@ -37,7 +37,7 @@ impl<'a, T> Caller<'a, T> {
         let Some(instance) = &self.instance else {
             return None;
         };
-        let instance = unsafe { instance.as_ref() };
+        let instance = unsafe { instance.as_ptr().as_ref() };
         instance.get_export(name)
     }
 

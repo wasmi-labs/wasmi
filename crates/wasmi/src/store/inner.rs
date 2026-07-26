@@ -26,6 +26,7 @@ use crate::{
         id::StoreId,
     },
 };
+use alloc::boxed::Box;
 use core::{fmt::Debug, ptr::NonNull};
 
 /// An arena for the [`StoreInner`].
@@ -34,23 +35,41 @@ type StoreArena<T> = Arena<RawHandle<T>, <T as Handle>::Entity>;
 /// An arena for the [`StoreInner`] with stable addresses.
 type StableStoreArena<T> = StableArena<RawHandle<T>, <T as Handle>::Entity>;
 
+/// An arena for the [`StoreInner`] that owns its possibly unsized entities via a [`Box`].
+type BoxedStoreArena<T> = Arena<RawHandle<T>, Box<<T as Handle>::Entity>>;
+
 /// Trait to abstract over [`Arena`] and [`StableArena`] for shared resolution of keys.
 trait Resolve<T: Handle> {
     /// Returns a shared reference to the entity at `key` if any.
     fn resolve(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError>;
 }
 
-impl<T: Handle> Resolve<T> for StoreArena<T> {
+impl<T> Resolve<T> for StoreArena<T>
+where
+    T: Handle<Entity: Sized>,
+{
     #[inline]
     fn resolve(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError> {
         self.get(key)
     }
 }
 
-impl<T: Handle> Resolve<T> for StableStoreArena<T> {
+impl<T> Resolve<T> for StableStoreArena<T>
+where
+    T: Handle<Entity: Sized>,
+{
     #[inline]
     fn resolve(&self, key: RawHandle<T>) -> Result<&<T as Handle>::Entity, ArenaError> {
         self.get(key)
+    }
+}
+
+// Note: this cannot be generic over `T` since coherence cannot prove the unnormalizable
+//       projection `<T as Handle>::Entity` disjoint from `Box<<T as Handle>::Entity>`.
+impl Resolve<Instance> for BoxedStoreArena<Instance> {
+    #[inline]
+    fn resolve(&self, key: RawHandle<Instance>) -> Result<&InstanceEntity, ArenaError> {
+        self.get(key).map(Box::as_ref)
     }
 }
 
@@ -60,14 +79,20 @@ trait ResolveMut<T: Handle> {
     fn resolve_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError>;
 }
 
-impl<T: Handle> ResolveMut<T> for StoreArena<T> {
+impl<T> ResolveMut<T> for StoreArena<T>
+where
+    T: Handle<Entity: Sized>,
+{
     #[inline]
     fn resolve_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError> {
         self.get_mut(key)
     }
 }
 
-impl<T: Handle> ResolveMut<T> for StableStoreArena<T> {
+impl<T> ResolveMut<T> for StableStoreArena<T>
+where
+    T: Handle<Entity: Sized>,
+{
     #[inline]
     fn resolve_mut(&mut self, key: RawHandle<T>) -> Result<&mut <T as Handle>::Entity, ArenaError> {
         self.get_mut(key)
@@ -90,7 +115,13 @@ pub struct StoreInner {
     /// Stored global variables.
     globals: StableStoreArena<Global>,
     /// Stored module instances.
-    instances: StoreArena<Instance>,
+    ///
+    /// # Note
+    ///
+    /// [`InstanceEntity`] is dynamically sized and therefore owned via a [`Box`]. This also
+    /// decouples its address from this arena's slot so that the `Inst` pointers held by the
+    /// Wasmi executor survive the allocation of further instances.
+    instances: BoxedStoreArena<Instance>,
     /// Stored data segments.
     datas: StableStoreArena<DataSegment>,
     /// Stored data segments.
@@ -275,7 +306,7 @@ impl StoreInner {
     /// - The returned [`Instance`] must later be initialized via the [`StoreInner::initialize_instance`]
     ///   method. Afterwards the [`Instance`] may be used.
     pub fn alloc_instance(&mut self) -> Instance {
-        let key = match self.instances.alloc(InstanceEntity::uninitialized()) {
+        let key = match self.instances.alloc(InstanceEntity::new_uninit()) {
             Ok(key) => key,
             Err(err) => handle_arena_err(err, "alloc uninit instance"),
         };
@@ -294,7 +325,7 @@ impl StoreInner {
     /// - If the [`Instance`] is unknown to the [`StoreInner`].
     /// - If the [`Instance`] has already been initialized.
     /// - If the given [`InstanceEntity`] is itself not initialized, yet.
-    pub fn initialize_instance(&mut self, instance: Instance, mut init: InstanceEntity) {
+    pub fn initialize_instance(&mut self, instance: Instance, mut init: Box<InstanceEntity>) {
         assert!(
             init.is_initialized(),
             "encountered an uninitialized new instance entity: {init:?}",
@@ -371,7 +402,7 @@ impl StoreInner {
     /// Unlike [`resolve_mut`](Self::resolve_mut) this never forms an intermediate `&mut Entity`,
     /// so the returned pointer carries the arena allocation's own provenance and stays valid to
     /// dereference even after the same slot is resolved again. This is what makes caching the
-    /// pointer in [`HandleAndCache`](crate::instance::HandleAndCache) sound.
+    /// pointer in an instance's `AnyHandleAndEntity` sound.
     ///
     /// # Errors
     ///
@@ -381,7 +412,7 @@ impl StoreInner {
         entities: &mut StableStoreArena<T>,
     ) -> Result<NonNull<<T as Handle>::Entity>, InternalStoreError>
     where
-        T: Handle,
+        T: Handle<Entity: Sized>,
         RawHandle<T>: ArenaKey + Debug,
     {
         entities
