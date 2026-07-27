@@ -8,6 +8,46 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `2.0.0-beta.8` - 2026-07-27
+
+### Added
+
+- Added `Config` option to disallow running the `start` function of Wasm modules. [#1985]
+- Added some more optimizations to Wasmi:
+  - Greatly improved speed for accessing instance related objects in the executor. [#1940]
+    - This optimization builds on a new improved internal Wasm instance layout + caching.
+  - Improve performance of `call_imported` and `call_indirect` via caching. [#1996]
+  - Improve performance for accessing instance related objects on 32-bit platforms. [#1997]
+  - Resolve deduplicated function types at translation time to improve `call_indirect` performance. [#2006]
+  - All in all the `count/globals` benchmark saw a whopping ~35% improvement in performance.
+    - Despite Wasmi's module related bytecode, instance access is now as efficient as in Wasm3's
+      or Stitch'es executors with their instance-related bytecodes.
+
+### Fixed
+
+- Fix potential memory invadliation bug when tail calling host functions. [#1999]
+
+### Changed
+
+### Internal
+
+- Added benchmark to test `call_indirect` performance. [#1993]
+- Added benchmark to test `call_imported` performance for non-host calls. [#1994]
+- Added `Stable{Arena,Vec}` to `wasmi_collections`. [#1987]
+  - These new collections are similar to `Arena` and `Vec` respectively
+    but with stable internal pointers to their contained items.
+  - These collections were required to implement [#1940].
+
+[#1940]: https://github.com/wasmi-labs/wasmi/issues/1940
+[#1985]: https://github.com/wasmi-labs/wasmi/pull/1985
+[#1993]: https://github.com/wasmi-labs/wasmi/pull/1993
+[#1994]: https://github.com/wasmi-labs/wasmi/pull/1994
+[#1996]: https://github.com/wasmi-labs/wasmi/pull/1996
+[#1997]: https://github.com/wasmi-labs/wasmi/pull/1997
+[#1999]: https://github.com/wasmi-labs/wasmi/pull/1999
+[#2006]: https://github.com/wasmi-labs/wasmi/pull/2006
+[#1987]: https://github.com/wasmi-labs/wasmi/pull/1987
+
 ## `2.0.0-beta.7` - 2026-07-09
 
 ### Fixed
