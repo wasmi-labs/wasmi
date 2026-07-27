@@ -8,7 +8,13 @@ macro_rules! for_each_index {
         $mac! {
             /// A Wasmi function instance address.
             FuncAddr(pub(crate) u32);
-            /// A Wasm function type index.
+            /// A deduplicated Wasmi function type.
+            ///
+            /// # Note
+            ///
+            /// This is the raw representation of an engine's deduplicated function type and
+            /// not an index into the Wasm module's type section. Its engine association is
+            /// implied by the function body storing it.
             FuncType(pub(crate) u32);
             /// A Wasmi global variable instance address.
             GlobalAddr(pub(crate) u32);
