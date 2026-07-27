@@ -25,6 +25,19 @@ define_handle! {
     struct DedupFuncType(u32, EngineOwned) => FuncType;
 }
 
+impl DedupFuncType {
+    /// Returns the raw `u32` representation of `self`, dropping its engine association.
+    ///
+    /// # Note
+    ///
+    /// This is used to encode a [`DedupFuncType`] into Wasmi bytecode where the engine
+    /// association is implied by the function body that stores it.
+    #[inline]
+    pub(crate) fn repr_entity(self) -> u32 {
+        self.0.value.raw()
+    }
+}
+
 /// A [`FuncType`] registry that efficiently deduplicate stored function types.
 ///
 /// Can also be used to later resolve deduplicated function types into their
