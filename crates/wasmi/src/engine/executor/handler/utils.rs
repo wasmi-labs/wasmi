@@ -22,7 +22,6 @@ use crate::{
     },
     engine::{
         CodeView,
-        DedupFuncType,
         FuncEntry,
         InOutParams,
         executor::{
@@ -704,17 +703,6 @@ impl_fetch_from_instance! {
     fn fetch_table(table: ir::TableAddr) -> Table = get_table;
 }
 
-/// Fetches the [`DedupFuncType`] at `func_type` from the instance's function types.
-#[inline]
-pub fn fetch_func_type(instance: Inst, func_type: ir::FuncType) -> DedupFuncType {
-    let index = u32::from(func_type);
-    // SAFETY: `instance` refers to a live instance for the duration of the call.
-    let Some(func_type) = (unsafe { instance.as_ptr().get_signature(index) }) else {
-        unsafe { unreachable_unchecked!("missing func type at: {index}") }
-    };
-    *func_type
-}
-
 macro_rules! impl_resolve_from_store {
     (
         $( fn $fn:ident($param:ident: $ty:ty) -> $ret:ty = $getter:expr );* $(;)?
@@ -762,9 +750,11 @@ where
     let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;
     let func_entity = state.store.inner_mut().resolve_func_ptr(func);
     // SAFETY: freshly resolved from the store; only read here for the signature check.
-    let actual_fnty = unsafe { func_entity.as_ref() }.ty_dedup();
-    let expected_fnty = fetch_func_type(args.instance, func_type);
-    if expected_fnty.ne(actual_fnty) {
+    let actual_fnty = unsafe { func_entity.as_ref() }.ty_dedup().repr_entity();
+    // Note: `func_type` already stores the resolved deduplicated function type, thus the
+    //       engine association dropped by `repr_entity` is implied by both operands
+    //       belonging to the very engine that is executing them.
+    if actual_fnty != u32::from(func_type) {
         return Err(TrapCode::BadSignature);
     }
     Ok((*func, func_entity))
