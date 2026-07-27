@@ -10,18 +10,16 @@ use crate::{
     Module,
     Table,
     collections::Map,
-    engine::DedupFuncType,
     instance::{AnyHandleAndEntity, InstanceLayout, handle::AnyHandle},
     memory::DataSegment,
     module::FuncIdx,
 };
-use alloc::{boxed::Box, sync::Arc, vec::Vec};
+use alloc::{boxed::Box, vec::Vec};
 use core::iter::FusedIterator;
 
 /// A module instance entity builder.
 #[derive(Debug)]
 pub struct InstanceEntityBuilder {
-    func_types: Arc<[DedupFuncType]>,
     tables: Vec<Table>,
     funcs: Vec<Func>,
     memories: Vec<Memory>,
@@ -63,7 +61,6 @@ impl InstanceEntityBuilder {
         }
         let layout = *module.instance_layout();
         Self {
-            func_types: module.func_types_cloned(),
             tables: vec_with_capacity_exact(len_tables),
             funcs: vec_with_capacity_exact(len_funcs),
             memories: vec_with_capacity_exact(len_memories),
@@ -191,12 +188,7 @@ impl InstanceEntityBuilder {
     /// Finishes constructing the [`InstanceEntity`].
     pub fn finish(self) -> Result<Box<InstanceEntity>, Error> {
         let handles = self.finish_handles();
-        Ok(InstanceEntity::new_init(
-            self.func_types,
-            self.exports,
-            self.layout,
-            handles,
-        ))
+        Ok(InstanceEntity::new_init(self.exports, self.layout, handles))
     }
 
     /// Finishes construction of the [`AnyHandle`] buffer.

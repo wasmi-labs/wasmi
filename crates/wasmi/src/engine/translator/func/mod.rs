@@ -350,6 +350,17 @@ impl FuncTranslator {
             .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
+    /// Resolves the deduplicated function type at the given Wasm module `type_index`.
+    ///
+    /// # Note
+    ///
+    /// Resolving this at translation time is what allows the executor to compare function
+    /// types for indirect calls without querying the instance.
+    fn resolve_dedup_type(&self, type_index: u32) -> ir::FuncType {
+        let func_type_idx = FuncTypeIdx::from(type_index);
+        ir::FuncType::from(self.module.get_func_type(func_type_idx).repr_entity())
+    }
+
     /// Returns the [`GlobalAddr`] for the global at `index`.
     ///
     /// [`GlobalAddr`]: crate::instance::GlobalAddr
@@ -1683,7 +1694,7 @@ impl FuncTranslator {
         let callee_ty = self.resolve_type(type_index);
         let index = self.copy_immediate_to_slot(index)?;
         let params = self.adjust_stack_for_call(&callee_ty)?;
-        let func_type = ir::FuncType::from(type_index);
+        let func_type = self.resolve_dedup_type(type_index);
         let op = match index {
             Location::Slot(index) => op_s(table_addr, func_type, params, index),
             Location::Reg(_) => op_r(table_addr, func_type, params),

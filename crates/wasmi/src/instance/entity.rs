@@ -21,14 +21,12 @@ use crate::{
     Module,
     Table,
     collections::Map,
-    engine::DedupFuncType,
     memory::DataSegment,
     store::StoreInner,
 };
 use alloc::{
     alloc::{alloc, handle_alloc_error},
     boxed::Box,
-    sync::Arc,
     vec::Vec,
 };
 use core::{
@@ -74,7 +72,6 @@ struct InstanceEntityHeader {
     /// handles than the layout accounts for.
     len_handles: u32,
     state: InstanceState,
-    func_types: Arc<[DedupFuncType]>,
     exports: Map<Box<str>, Extern>,
     layout: InstanceLayout,
 }
@@ -154,12 +151,6 @@ impl InstanceEntityHeader {
     fn layout(&self) -> &InstanceLayout {
         &self.layout
     }
-
-    /// Returns the signature at the `index` if any.
-    #[inline]
-    fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
-        self.func_types.get(index as usize)
-    }
 }
 
 impl InstanceEntity {
@@ -167,7 +158,6 @@ impl InstanceEntity {
     pub fn new_uninit() -> Box<Self> {
         Self::alloc(
             InstanceState::Uninitialized,
-            Arc::new([]),
             Map::new(),
             InstanceLayout::uninit(),
             [],
@@ -176,7 +166,6 @@ impl InstanceEntity {
 
     /// Creates an initialized [`InstanceEntity`].
     pub(super) fn new_init<I>(
-        func_types: Arc<[DedupFuncType]>,
         exports: Map<Box<str>, Extern>,
         layout: InstanceLayout,
         handles: I,
@@ -184,13 +173,7 @@ impl InstanceEntity {
     where
         I: IntoIterator<Item = AnyHandleAndEntity, IntoIter: ExactSizeIterator>,
     {
-        Self::alloc(
-            InstanceState::Initialized,
-            func_types,
-            exports,
-            layout,
-            handles,
-        )
+        Self::alloc(InstanceState::Initialized, exports, layout, handles)
     }
 
     /// Allocates a new [`InstanceEntity`] with the trailing `handles` buffer.
@@ -200,7 +183,6 @@ impl InstanceEntity {
     /// If `handles` yields more items than fit into a `u32`.
     fn alloc<I>(
         state: InstanceState,
-        func_types: Arc<[DedupFuncType]>,
         exports: Map<Box<str>, Extern>,
         layout: InstanceLayout,
         handles: I,
@@ -216,7 +198,6 @@ impl InstanceEntity {
         let header = InstanceEntityHeader {
             len_handles,
             state,
-            func_types,
             exports,
             layout,
         };
@@ -366,12 +347,6 @@ impl InstanceEntity {
         Some(unsafe { entry.typed_ref::<ElementSegment>() }.handle())
     }
 
-    /// Returns the signature at the `index` if any.
-    #[inline]
-    pub fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
-        self.header.get_signature(index)
-    }
-
     /// Returns the value exported to the given `name` if any.
     pub fn get_export(&self, name: &str) -> Option<Extern> {
         self.header.exports.get(name).copied()
@@ -498,17 +473,6 @@ impl ThinPtr<InstanceEntity> {
     pub unsafe fn layout<'a>(self) -> &'a InstanceLayout {
         // Safety: guaranteed by the caller.
         unsafe { self.header() }.layout()
-    }
-
-    /// Returns the signature at the `index` of the pointee if any.
-    ///
-    /// # Safety
-    ///
-    /// Same as for [`ThinPtr::as_ref`].
-    #[inline]
-    pub unsafe fn get_signature<'a>(self, index: u32) -> Option<&'a DedupFuncType> {
-        // Safety: guaranteed by the caller.
-        unsafe { self.header() }.get_signature(index)
     }
 
     impl_get_entry! {

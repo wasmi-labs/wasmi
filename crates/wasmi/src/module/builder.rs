@@ -105,12 +105,11 @@ impl ModuleBuilder {
     fn finish_header(&mut self) -> Result<ModuleHeader, Error> {
         use core::mem::take;
         assert!(self.header.is_none());
-        let func_types: Box<[DedupFuncType]> = take(&mut self.func_types).into();
         let layout = self.finish_instance_layout()?;
         let header = ModuleHeader {
             inner: Arc::new(ModuleHeaderInner {
                 engine: self.engine.weak(),
-                func_types: func_types.into(),
+                func_types: take(&mut self.func_types).into(),
                 imports: take(&mut self.imports).finish(),
                 funcs: take(&mut self.funcs).into(),
                 tables: take(&mut self.tables).into(),

@@ -75,7 +75,7 @@ pub struct ModuleHeader {
 #[derive(Debug)]
 struct ModuleHeaderInner {
     engine: EngineWeak,
-    func_types: Arc<[DedupFuncType]>,
+    func_types: Box<[DedupFuncType]>,
     imports: ModuleImports,
     funcs: Box<[DedupFuncType]>,
     tables: Box<[TableType]>,
@@ -330,15 +330,6 @@ impl Module {
     /// Returns the [`InstanceLayout`] shared by all instances of this [`Module`].
     pub(crate) fn instance_layout(&self) -> &InstanceLayout {
         &self.module_header().layout
-    }
-
-    /// Returns a slice to the function types of the [`Module`].
-    ///
-    /// # Note
-    ///
-    /// The slice is stored in a `Arc` so that this operation is very cheap.
-    pub(crate) fn func_types_cloned(&self) -> Arc<[DedupFuncType]> {
-        self.module_header().func_types.clone()
     }
 
     /// Returns an iterator over the imports of the [`Module`].
