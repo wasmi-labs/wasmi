@@ -2194,7 +2194,7 @@ macro_rules! handler_load_ri {
                         memory,
                     } = unsafe { args.decode_op() };
                     let address = args.get(address);
-                    let bytes = args.fetch_memory_bytes(state, memory);
+                    let bytes = args.fetch_memory(state, memory).data();
                     let loaded = $load(bytes, usize::from(address)).into_control()?;
                     args.set(result, loaded);
                     dispatch!(state, args)
@@ -2353,7 +2353,7 @@ macro_rules! handler_store_ix {
                     } = unsafe { args.decode_op() };
                     let address = args.get(address);
                     let value: $hint = args.get(value);
-                    let bytes = args.fetch_memory_bytes(state, memory);
+                    let bytes = args.fetch_memory(state, memory).data_mut();
                     $store(bytes, usize::from(address), value.into()).into_control()?;
                     dispatch!(state, args)
                 }
