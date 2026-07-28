@@ -456,6 +456,7 @@ gen_store_fn! {
 ///
 /// - If `ptr + offset` overflows.
 /// - If `ptr + offset` stores out of bounds from `memory`.
+#[inline]
 pub fn store_f32(memory: &mut [u8], ptr: u64, offset: u64, value: f32) -> Result<(), TrapCode> {
     store32(memory, ptr, offset, value.to_bits())
 }
@@ -466,6 +467,7 @@ pub fn store_f32(memory: &mut [u8], ptr: u64, offset: u64, value: f32) -> Result
 ///
 /// - If `ptr + offset` overflows.
 /// - If `ptr + offset` stores out of bounds from `memory`.
+#[inline]
 pub fn store_f32_at(memory: &mut [u8], address: usize, value: f32) -> Result<(), TrapCode> {
     store32_at(memory, address, value.to_bits())
 }
@@ -476,6 +478,7 @@ pub fn store_f32_at(memory: &mut [u8], address: usize, value: f32) -> Result<(),
 ///
 /// - If `ptr + offset` overflows.
 /// - If `ptr + offset` stores out of bounds from `memory`.
+#[inline]
 pub fn store_f64_at(memory: &mut [u8], address: usize, value: f64) -> Result<(), TrapCode> {
     store64_at(memory, address, value.to_bits())
 }
@@ -486,6 +489,7 @@ pub fn store_f64_at(memory: &mut [u8], address: usize, value: f64) -> Result<(),
 ///
 /// - If `ptr + offset` overflows.
 /// - If `ptr + offset` stores out of bounds from `memory`.
+#[inline]
 pub fn store_f64(memory: &mut [u8], ptr: u64, offset: u64, value: f64) -> Result<(), TrapCode> {
     store64(memory, ptr, offset, value.to_bits())
 }
@@ -511,6 +515,7 @@ fn split128(value: i128) -> (i64, i64) {
 /// # Note
 ///
 /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+#[inline]
 pub fn i64_add128(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64) {
     let lhs = combine128(lhs_lo, lhs_hi);
     let rhs = combine128(rhs_lo, rhs_hi);
@@ -525,6 +530,7 @@ pub fn i64_add128(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i
 /// # Note
 ///
 /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+#[inline]
 pub fn i64_sub128(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64) {
     let lhs = combine128(lhs_lo, lhs_hi);
     let rhs = combine128(rhs_lo, rhs_hi);
@@ -539,6 +545,7 @@ pub fn i64_sub128(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i
 /// # Note
 ///
 /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+#[inline]
 pub fn i64_mul_wide_s(lhs: i64, rhs: i64) -> (i64, i64) {
     let lhs = i128::from(lhs);
     let rhs = i128::from(rhs);
@@ -553,6 +560,7 @@ pub fn i64_mul_wide_s(lhs: i64, rhs: i64) -> (i64, i64) {
 /// # Note
 ///
 /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+#[inline]
 pub fn i64_mul_wide_u(lhs: i64, rhs: i64) -> (i64, i64) {
     let lhs = u128::from(lhs as u64);
     let rhs = u128::from(rhs as u64);
