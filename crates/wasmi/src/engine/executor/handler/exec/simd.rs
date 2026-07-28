@@ -505,7 +505,7 @@ macro_rules! handler_store_lane_ss {
                     let ptr = args.get(ptr);
                     let offset = args.get(offset);
                     let value = args.get(value);
-                    let bytes = args.fetch_memory_bytes(state, memory);
+                    let bytes = args.fetch_memory(state, memory).data_mut();
                     $eval(bytes, ptr, offset, value, lane).into_control()?;
                     dispatch!(state, args)
                 }

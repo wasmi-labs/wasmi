@@ -145,19 +145,6 @@ impl Args {
         self.ip = unsafe { self.ip.offset(i32::from(offset) as isize) };
     }
 
-    /// Returns the bytes of the `memory`.
-    #[inline]
-    pub fn fetch_memory_bytes<'a>(
-        &mut self,
-        state: &'a mut VmState,
-        addr: ir::MemoryAddr,
-    ) -> &'a mut [u8] {
-        if utils::is_default_memory(self.instance, addr) {
-            return self.fetch_default_memory_bytes();
-        }
-        self.fetch_memory(state, addr).data_mut()
-    }
-
     /// Returns the bytes of the default memory at index 0.
     #[inline]
     pub fn fetch_default_memory_bytes<'a>(&mut self) -> &'a mut [u8] {
