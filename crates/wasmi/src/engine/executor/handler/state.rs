@@ -917,6 +917,7 @@ impl Stack {
     /// different [`Inst`]. This is sound because every operation that can grow a memory
     /// refreshes the cache at the growth site instead: the `memory.grow` handler and
     /// each of the host call paths.
+    #[inline(always)]
     pub fn pop_frame(
         &mut self,
         store: &mut PrunedStore,
@@ -1421,6 +1422,7 @@ impl CallStack {
     }
 
     /// Adjusts `self` after returning from a function.
+    #[inline(always)]
     fn pop(&mut self) -> Option<(Ip, SpOffset, Option<Inst>)> {
         let Some(popped) = self.frames.pop() else {
             unsafe { unreachable_unchecked!("call stack must not be empty") }
