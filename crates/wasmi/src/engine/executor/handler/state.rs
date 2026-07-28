@@ -163,32 +163,55 @@ impl DoneReason {
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct Inst {
-    /// The underlying reference to the [`InstanceEntity`].
-    ///
-    /// # Note
-    ///
-    /// - We use a float to represent [`Inst`] to avoid using a
-    ///   general purpose (integer) register as they are not as
-    ///   available as floating point registers on most platforms.
-    /// - Since [`Inst`] is only accessed by operators that are
-    ///   considered "slow" anyways an additional conversion between
-    ///   integer and float won't be a terrible trade-off.
+    /// The underlying reference to the [`InstanceEntity`], represented as [`InstRepr`].
     value: InstRepr,
     /// Marks `Inst` as logically containing a shared raw pointer.
     marker: PhantomData<ThinPtr<InstanceEntity>>,
 }
 
-/// The underlying float representation of `Inst` for 64-bit platforms.
-#[cfg(target_pointer_width = "64")]
-type InstRepr = f64;
+/// The underlying representation of `Inst` on targets with spare integer argument registers.
+///
+/// A handler takes 6 integer arguments besides `instance`, so targets with 8 integer argument
+/// registers (`x0`-`x7`, `a0`-`a7`) can pass `Inst` in a general purpose register and skip the
+/// integer-float roundtrip on every access.
+#[cfg(any(
+    target_arch = "aarch64",
+    target_arch = "loongarch64",
+    target_arch = "riscv32",
+    target_arch = "riscv64",
+    target_arch = "wasm32",
+    target_arch = "wasm64",
+))]
+type InstRepr = usize;
 
-/// The underlying float representation of `Inst` for 32-bit platforms.
+/// The underlying representation of `Inst` on targets short on integer argument registers.
+///
+/// Notably `x86_64`, whose `sysv64` ABI has just 6: a 7th integer argument would spill to the
+/// stack on every dispatch, so `Inst` travels in a float register instead. [`Inst`] is only
+/// accessed by operators that are considered "slow" anyways, thus the additional conversion
+/// between integer and float is not a terrible trade-off.
+#[cfg(not(any(
+    target_arch = "aarch64",
+    target_arch = "loongarch64",
+    target_arch = "riscv32",
+    target_arch = "riscv64",
+    target_arch = "wasm32",
+    target_arch = "wasm64",
+)))]
+type InstRepr = InstReprFloat;
+
+/// The float representation of `Inst` for 64-bit platforms.
+#[cfg(target_pointer_width = "64")]
+type InstReprFloat = f64;
+
+/// The float representation of `Inst` for 32-bit platforms.
 #[cfg(target_pointer_width = "32")]
-type InstRepr = f32;
+type InstReprFloat = f32;
 
 const _: () = {
     use core::mem::size_of;
     assert!(size_of::<InstRepr>() == size_of::<usize>());
+    assert!(size_of::<InstReprFloat>() == size_of::<usize>());
 };
 
 impl From<&'_ InstanceEntity> for Inst {
