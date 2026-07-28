@@ -288,6 +288,7 @@ impl Fuel {
     /// # Errors
     ///
     /// If out of fuel.
+    #[inline]
     pub fn consume_fuel_unchecked(&mut self, delta: u64) -> Result<u64, FuelError> {
         self.remaining = self
             .remaining
