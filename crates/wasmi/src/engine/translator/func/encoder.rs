@@ -555,7 +555,7 @@ impl OpEncoder {
     /// # Errors
     ///
     /// If consumed fuel is out of bounds after this operation.
-    fn bump_fuel_consumption_by(
+    pub fn bump_fuel_consumption_by(
         &mut self,
         fuel_pos: Option<Pos<BlockFuel>>,
         delta: FuelUsed,
