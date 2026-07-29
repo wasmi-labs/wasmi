@@ -8,6 +8,22 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `2.0.0-beta.9` - 2026-07-29
+
+### Internal
+
+- Add `inline` annotations to prevent spilling in some execution handlers.
+  - PRs: [#2008] [#2009]
+- Simplify fetching memory bytes in the executor. [#2010]
+  - This improves codegen for some `load` and `store` execution handlers.
+- Make the `Inst` type wrap usize on platforms with enough GPRs. [#2011]
+  - This improves performance on platforms such as `aarch64` (a.k.a Apple Silicon).
+
+[#2008]: https://github.com/wasmi-labs/wasmi/pull/2008
+[#2009]: https://github.com/wasmi-labs/wasmi/pull/2009
+[#2010]: https://github.com/wasmi-labs/wasmi/pull/2010
+[#2011]: https://github.com/wasmi-labs/wasmi/pull/2011
+
 ## `2.0.0-beta.8` - 2026-07-27
 
 ### Added
@@ -26,8 +42,6 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Fixed
 
 - Fix potential memory invadliation bug when tail calling host functions. [#1999]
-
-### Changed
 
 ### Internal
 
