@@ -1,5 +1,8 @@
 use super::{EnforcedLimits, StackConfig};
-use crate::core::FuelCostsProvider;
+use crate::{
+    core::FuelCostsProvider,
+    engine::{OperatorCost, OperatorCostStrategy},
+};
 use wasmparser::WasmFeatures;
 
 /// Configuration for an [`Engine`].
@@ -20,6 +23,8 @@ pub struct Config {
     allow_start_fn: bool,
     /// The configured fuel costs of all Wasmi bytecode instructions.
     fuel_costs: FuelCostsProvider,
+    /// The configured fuel costs for all Wasm operators.
+    operator_cost: OperatorCostStrategy,
     /// The mode of Wasm to Wasmi bytecode compilation.
     compilation_mode: CompilationMode,
     /// Enforced limits for Wasm module parsing and compilation.
@@ -57,6 +62,7 @@ impl Default for Config {
             ignore_custom_sections: false,
             allow_start_fn: true,
             fuel_costs: FuelCostsProvider::default(),
+            operator_cost: OperatorCostStrategy::default(),
             compilation_mode: CompilationMode::default(),
             limits: EnforcedLimits::default(),
         }
@@ -392,6 +398,19 @@ impl Config {
     /// Returns `true` if the [`Config`] mandates to ignore Wasm custom sections when parsing Wasm modules.
     pub(crate) fn get_ignore_custom_sections(&self) -> bool {
         self.ignore_custom_sections
+    }
+
+    /// Configures the fuel cost of each WebAssembly operator.
+    ///
+    /// This is only relevant when [`Config::consume_fuel`] is enabled.
+    pub fn operator_cost(&mut self, cost: OperatorCost) -> &mut Self {
+        self.operator_cost = OperatorCostStrategy::table(cost);
+        self
+    }
+
+    /// Returns the [`OperatorCostStrategy`] of `self`.
+    pub(crate) fn get_operator_cost(&self) -> &OperatorCostStrategy {
+        &self.operator_cost
     }
 
     /// Returns the configured [`FuelCostsProvider`].
