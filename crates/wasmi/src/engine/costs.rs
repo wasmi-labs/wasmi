@@ -223,17 +223,280 @@ macro_rules! for_each_wasm_operator {
             I64Sub128 { snake: i64_sub128 }
             I64MulWideS { snake: i64_mul_wide_s }
             I64MulWideU { snake: i64_mul_wide_u }
+
+            // simd
+            V128Load { snake: v128_load, feature = "simd" }
+            V128Load8x8S { snake: v128_load8x8_s, feature = "simd" }
+            V128Load8x8U { snake: v128_load8x8_u, feature = "simd" }
+            V128Load16x4S { snake: v128_load16x4_s, feature = "simd" }
+            V128Load16x4U { snake: v128_load16x4_u, feature = "simd" }
+            V128Load32x2S { snake: v128_load32x2_s, feature = "simd" }
+            V128Load32x2U { snake: v128_load32x2_u, feature = "simd" }
+            V128Load8Splat { snake: v128_load8_splat, feature = "simd" }
+            V128Load16Splat { snake: v128_load16_splat, feature = "simd" }
+            V128Load32Splat { snake: v128_load32_splat, feature = "simd" }
+            V128Load64Splat { snake: v128_load64_splat, feature = "simd" }
+            V128Load32Zero { snake: v128_load32_zero, feature = "simd" }
+            V128Load64Zero { snake: v128_load64_zero, feature = "simd" }
+            V128Store { snake: v128_store, feature = "simd" }
+            V128Load8Lane { snake: v128_load8_lane, feature = "simd" }
+            V128Load16Lane { snake: v128_load16_lane, feature = "simd" }
+            V128Load32Lane { snake: v128_load32_lane, feature = "simd" }
+            V128Load64Lane { snake: v128_load64_lane, feature = "simd" }
+            V128Store8Lane { snake: v128_store8_lane, feature = "simd" }
+            V128Store16Lane { snake: v128_store16_lane, feature = "simd" }
+            V128Store32Lane { snake: v128_store32_lane, feature = "simd" }
+            V128Store64Lane { snake: v128_store64_lane, feature = "simd" }
+            V128Const { snake: v128_const, feature = "simd" }
+            I8x16Shuffle { snake: i8x16_shuffle, feature = "simd" }
+            I8x16ExtractLaneS { snake: i8x16_extract_lane_s, feature = "simd" }
+            I8x16ExtractLaneU { snake: i8x16_extract_lane_u, feature = "simd" }
+            I8x16ReplaceLane { snake: i8x16_replace_lane, feature = "simd" }
+            I16x8ExtractLaneS { snake: i16x8_extract_lane_s, feature = "simd" }
+            I16x8ExtractLaneU { snake: i16x8_extract_lane_u, feature = "simd" }
+            I16x8ReplaceLane { snake: i16x8_replace_lane, feature = "simd" }
+            I32x4ExtractLane { snake: i32x4_extract_lane, feature = "simd" }
+            I32x4ReplaceLane { snake: i32x4_replace_lane, feature = "simd" }
+            I64x2ExtractLane { snake: i64x2_extract_lane, feature = "simd" }
+            I64x2ReplaceLane { snake: i64x2_replace_lane, feature = "simd" }
+            F32x4ExtractLane { snake: f32x4_extract_lane, feature = "simd" }
+            F32x4ReplaceLane { snake: f32x4_replace_lane, feature = "simd" }
+            F64x2ExtractLane { snake: f64x2_extract_lane, feature = "simd" }
+            F64x2ReplaceLane { snake: f64x2_replace_lane, feature = "simd" }
+            I8x16Swizzle { snake: i8x16_swizzle, feature = "simd" }
+            I8x16Splat { snake: i8x16_splat, feature = "simd" }
+            I16x8Splat { snake: i16x8_splat, feature = "simd" }
+            I32x4Splat { snake: i32x4_splat, feature = "simd" }
+            I64x2Splat { snake: i64x2_splat, feature = "simd" }
+            F32x4Splat { snake: f32x4_splat, feature = "simd" }
+            F64x2Splat { snake: f64x2_splat, feature = "simd" }
+            I8x16Eq { snake: i8x16_eq, feature = "simd" }
+            I8x16Ne { snake: i8x16_ne, feature = "simd" }
+            I8x16LtS { snake: i8x16_lt_s, feature = "simd" }
+            I8x16LtU { snake: i8x16_lt_u, feature = "simd" }
+            I8x16GtS { snake: i8x16_gt_s, feature = "simd" }
+            I8x16GtU { snake: i8x16_gt_u, feature = "simd" }
+            I8x16LeS { snake: i8x16_le_s, feature = "simd" }
+            I8x16LeU { snake: i8x16_le_u, feature = "simd" }
+            I8x16GeS { snake: i8x16_ge_s, feature = "simd" }
+            I8x16GeU { snake: i8x16_ge_u, feature = "simd" }
+            I16x8Eq { snake: i16x8_eq, feature = "simd" }
+            I16x8Ne { snake: i16x8_ne, feature = "simd" }
+            I16x8LtS { snake: i16x8_lt_s, feature = "simd" }
+            I16x8LtU { snake: i16x8_lt_u, feature = "simd" }
+            I16x8GtS { snake: i16x8_gt_s, feature = "simd" }
+            I16x8GtU { snake: i16x8_gt_u, feature = "simd" }
+            I16x8LeS { snake: i16x8_le_s, feature = "simd" }
+            I16x8LeU { snake: i16x8_le_u, feature = "simd" }
+            I16x8GeS { snake: i16x8_ge_s, feature = "simd" }
+            I16x8GeU { snake: i16x8_ge_u, feature = "simd" }
+            I32x4Eq { snake: i32x4_eq, feature = "simd" }
+            I32x4Ne { snake: i32x4_ne, feature = "simd" }
+            I32x4LtS { snake: i32x4_lt_s, feature = "simd" }
+            I32x4LtU { snake: i32x4_lt_u, feature = "simd" }
+            I32x4GtS { snake: i32x4_gt_s, feature = "simd" }
+            I32x4GtU { snake: i32x4_gt_u, feature = "simd" }
+            I32x4LeS { snake: i32x4_le_s, feature = "simd" }
+            I32x4LeU { snake: i32x4_le_u, feature = "simd" }
+            I32x4GeS { snake: i32x4_ge_s, feature = "simd" }
+            I32x4GeU { snake: i32x4_ge_u, feature = "simd" }
+            I64x2Eq { snake: i64x2_eq, feature = "simd" }
+            I64x2Ne { snake: i64x2_ne, feature = "simd" }
+            I64x2LtS { snake: i64x2_lt_s, feature = "simd" }
+            I64x2GtS { snake: i64x2_gt_s, feature = "simd" }
+            I64x2LeS { snake: i64x2_le_s, feature = "simd" }
+            I64x2GeS { snake: i64x2_ge_s, feature = "simd" }
+            F32x4Eq { snake: f32x4_eq, feature = "simd" }
+            F32x4Ne { snake: f32x4_ne, feature = "simd" }
+            F32x4Lt { snake: f32x4_lt, feature = "simd" }
+            F32x4Gt { snake: f32x4_gt, feature = "simd" }
+            F32x4Le { snake: f32x4_le, feature = "simd" }
+            F32x4Ge { snake: f32x4_ge, feature = "simd" }
+            F64x2Eq { snake: f64x2_eq, feature = "simd" }
+            F64x2Ne { snake: f64x2_ne, feature = "simd" }
+            F64x2Lt { snake: f64x2_lt, feature = "simd" }
+            F64x2Gt { snake: f64x2_gt, feature = "simd" }
+            F64x2Le { snake: f64x2_le, feature = "simd" }
+            F64x2Ge { snake: f64x2_ge, feature = "simd" }
+            V128Not { snake: v128_not, feature = "simd" }
+            V128And { snake: v128_and, feature = "simd" }
+            V128AndNot { snake: v128_and_not, feature = "simd" }
+            V128Or { snake: v128_or, feature = "simd" }
+            V128Xor { snake: v128_xor, feature = "simd" }
+            V128Bitselect { snake: v128_bitselect, feature = "simd" }
+            V128AnyTrue { snake: v128_any_true, feature = "simd" }
+            I8x16Abs { snake: i8x16_abs, feature = "simd" }
+            I8x16Neg { snake: i8x16_neg, feature = "simd" }
+            I8x16Popcnt { snake: i8x16_popcnt, feature = "simd" }
+            I8x16AllTrue { snake: i8x16_all_true, feature = "simd" }
+            I8x16Bitmask { snake: i8x16_bitmask, feature = "simd" }
+            I8x16NarrowI16x8S { snake: i8x16_narrow_i16x8_s, feature = "simd" }
+            I8x16NarrowI16x8U { snake: i8x16_narrow_i16x8_u, feature = "simd" }
+            I8x16Shl { snake: i8x16_shl, feature = "simd" }
+            I8x16ShrS { snake: i8x16_shr_s, feature = "simd" }
+            I8x16ShrU { snake: i8x16_shr_u, feature = "simd" }
+            I8x16Add { snake: i8x16_add, feature = "simd" }
+            I8x16AddSatS { snake: i8x16_add_sat_s, feature = "simd" }
+            I8x16AddSatU { snake: i8x16_add_sat_u, feature = "simd" }
+            I8x16Sub { snake: i8x16_sub, feature = "simd" }
+            I8x16SubSatS { snake: i8x16_sub_sat_s, feature = "simd" }
+            I8x16SubSatU { snake: i8x16_sub_sat_u, feature = "simd" }
+            I8x16MinS { snake: i8x16_min_s, feature = "simd" }
+            I8x16MinU { snake: i8x16_min_u, feature = "simd" }
+            I8x16MaxS { snake: i8x16_max_s, feature = "simd" }
+            I8x16MaxU { snake: i8x16_max_u, feature = "simd" }
+            I8x16AvgrU { snake: i8x16_avgr_u, feature = "simd" }
+            I16x8ExtAddPairwiseI8x16S { snake: i16x8_ext_add_pairwise_i8x16_s, feature = "simd" }
+            I16x8ExtAddPairwiseI8x16U { snake: i16x8_ext_add_pairwise_i8x16_u, feature = "simd" }
+            I16x8Abs { snake: i16x8_abs, feature = "simd" }
+            I16x8Neg { snake: i16x8_neg, feature = "simd" }
+            I16x8Q15MulrSatS { snake: i16x8_q15_mulr_sat_s, feature = "simd" }
+            I16x8AllTrue { snake: i16x8_all_true, feature = "simd" }
+            I16x8Bitmask { snake: i16x8_bitmask, feature = "simd" }
+            I16x8NarrowI32x4S { snake: i16x8_narrow_i32x4_s, feature = "simd" }
+            I16x8NarrowI32x4U { snake: i16x8_narrow_i32x4_u, feature = "simd" }
+            I16x8ExtendLowI8x16S { snake: i16x8_extend_low_i8x16_s, feature = "simd" }
+            I16x8ExtendHighI8x16S { snake: i16x8_extend_high_i8x16_s, feature = "simd" }
+            I16x8ExtendLowI8x16U { snake: i16x8_extend_low_i8x16_u, feature = "simd" }
+            I16x8ExtendHighI8x16U { snake: i16x8_extend_high_i8x16_u, feature = "simd" }
+            I16x8Shl { snake: i16x8_shl, feature = "simd" }
+            I16x8ShrS { snake: i16x8_shr_s, feature = "simd" }
+            I16x8ShrU { snake: i16x8_shr_u, feature = "simd" }
+            I16x8Add { snake: i16x8_add, feature = "simd" }
+            I16x8AddSatS { snake: i16x8_add_sat_s, feature = "simd" }
+            I16x8AddSatU { snake: i16x8_add_sat_u, feature = "simd" }
+            I16x8Sub { snake: i16x8_sub, feature = "simd" }
+            I16x8SubSatS { snake: i16x8_sub_sat_s, feature = "simd" }
+            I16x8SubSatU { snake: i16x8_sub_sat_u, feature = "simd" }
+            I16x8Mul { snake: i16x8_mul, feature = "simd" }
+            I16x8MinS { snake: i16x8_min_s, feature = "simd" }
+            I16x8MinU { snake: i16x8_min_u, feature = "simd" }
+            I16x8MaxS { snake: i16x8_max_s, feature = "simd" }
+            I16x8MaxU { snake: i16x8_max_u, feature = "simd" }
+            I16x8AvgrU { snake: i16x8_avgr_u, feature = "simd" }
+            I16x8ExtMulLowI8x16S { snake: i16x8_ext_mul_low_i8x16_s, feature = "simd" }
+            I16x8ExtMulHighI8x16S { snake: i16x8_ext_mul_high_i8x16_s, feature = "simd" }
+            I16x8ExtMulLowI8x16U { snake: i16x8_ext_mul_low_i8x16_u, feature = "simd" }
+            I16x8ExtMulHighI8x16U { snake: i16x8_ext_mul_high_i8x16_u, feature = "simd" }
+            I32x4ExtAddPairwiseI16x8S { snake: i32x4_ext_add_pairwise_i16x8_s, feature = "simd" }
+            I32x4ExtAddPairwiseI16x8U { snake: i32x4_ext_add_pairwise_i16x8_u, feature = "simd" }
+            I32x4Abs { snake: i32x4_abs, feature = "simd" }
+            I32x4Neg { snake: i32x4_neg, feature = "simd" }
+            I32x4AllTrue { snake: i32x4_all_true, feature = "simd" }
+            I32x4Bitmask { snake: i32x4_bitmask, feature = "simd" }
+            I32x4ExtendLowI16x8S { snake: i32x4_extend_low_i16x8_s, feature = "simd" }
+            I32x4ExtendHighI16x8S { snake: i32x4_extend_high_i16x8_s, feature = "simd" }
+            I32x4ExtendLowI16x8U { snake: i32x4_extend_low_i16x8_u, feature = "simd" }
+            I32x4ExtendHighI16x8U { snake: i32x4_extend_high_i16x8_u, feature = "simd" }
+            I32x4Shl { snake: i32x4_shl, feature = "simd" }
+            I32x4ShrS { snake: i32x4_shr_s, feature = "simd" }
+            I32x4ShrU { snake: i32x4_shr_u, feature = "simd" }
+            I32x4Add { snake: i32x4_add, feature = "simd" }
+            I32x4Sub { snake: i32x4_sub, feature = "simd" }
+            I32x4Mul { snake: i32x4_mul, feature = "simd" }
+            I32x4MinS { snake: i32x4_min_s, feature = "simd" }
+            I32x4MinU { snake: i32x4_min_u, feature = "simd" }
+            I32x4MaxS { snake: i32x4_max_s, feature = "simd" }
+            I32x4MaxU { snake: i32x4_max_u, feature = "simd" }
+            I32x4DotI16x8S { snake: i32x4_dot_i16x8_s, feature = "simd" }
+            I32x4ExtMulLowI16x8S { snake: i32x4_ext_mul_low_i16x8_s, feature = "simd" }
+            I32x4ExtMulHighI16x8S { snake: i32x4_ext_mul_high_i16x8_s, feature = "simd" }
+            I32x4ExtMulLowI16x8U { snake: i32x4_ext_mul_low_i16x8_u, feature = "simd" }
+            I32x4ExtMulHighI16x8U { snake: i32x4_ext_mul_high_i16x8_u, feature = "simd" }
+            I64x2Abs { snake: i64x2_abs, feature = "simd" }
+            I64x2Neg { snake: i64x2_neg, feature = "simd" }
+            I64x2AllTrue { snake: i64x2_all_true, feature = "simd" }
+            I64x2Bitmask { snake: i64x2_bitmask, feature = "simd" }
+            I64x2ExtendLowI32x4S { snake: i64x2_extend_low_i32x4_s, feature = "simd" }
+            I64x2ExtendHighI32x4S { snake: i64x2_extend_high_i32x4_s, feature = "simd" }
+            I64x2ExtendLowI32x4U { snake: i64x2_extend_low_i32x4_u, feature = "simd" }
+            I64x2ExtendHighI32x4U { snake: i64x2_extend_high_i32x4_u, feature = "simd" }
+            I64x2Shl { snake: i64x2_shl, feature = "simd" }
+            I64x2ShrS { snake: i64x2_shr_s, feature = "simd" }
+            I64x2ShrU { snake: i64x2_shr_u, feature = "simd" }
+            I64x2Add { snake: i64x2_add, feature = "simd" }
+            I64x2Sub { snake: i64x2_sub, feature = "simd" }
+            I64x2Mul { snake: i64x2_mul, feature = "simd" }
+            I64x2ExtMulLowI32x4S { snake: i64x2_ext_mul_low_i32x4_s, feature = "simd" }
+            I64x2ExtMulHighI32x4S { snake: i64x2_ext_mul_high_i32x4_s, feature = "simd" }
+            I64x2ExtMulLowI32x4U { snake: i64x2_ext_mul_low_i32x4_u, feature = "simd" }
+            I64x2ExtMulHighI32x4U { snake: i64x2_ext_mul_high_i32x4_u, feature = "simd" }
+            F32x4Ceil { snake: f32x4_ceil, feature = "simd" }
+            F32x4Floor { snake: f32x4_floor, feature = "simd" }
+            F32x4Trunc { snake: f32x4_trunc, feature = "simd" }
+            F32x4Nearest { snake: f32x4_nearest, feature = "simd" }
+            F32x4Abs { snake: f32x4_abs, feature = "simd" }
+            F32x4Neg { snake: f32x4_neg, feature = "simd" }
+            F32x4Sqrt { snake: f32x4_sqrt, feature = "simd" }
+            F32x4Add { snake: f32x4_add, feature = "simd" }
+            F32x4Sub { snake: f32x4_sub, feature = "simd" }
+            F32x4Mul { snake: f32x4_mul, feature = "simd" }
+            F32x4Div { snake: f32x4_div, feature = "simd" }
+            F32x4Min { snake: f32x4_min, feature = "simd" }
+            F32x4Max { snake: f32x4_max, feature = "simd" }
+            F32x4PMin { snake: f32x4_pmin, feature = "simd" }
+            F32x4PMax { snake: f32x4_pmax, feature = "simd" }
+            F64x2Ceil { snake: f64x2_ceil, feature = "simd" }
+            F64x2Floor { snake: f64x2_floor, feature = "simd" }
+            F64x2Trunc { snake: f64x2_trunc, feature = "simd" }
+            F64x2Nearest { snake: f64x2_nearest, feature = "simd" }
+            F64x2Abs { snake: f64x2_abs, feature = "simd" }
+            F64x2Neg { snake: f64x2_neg, feature = "simd" }
+            F64x2Sqrt { snake: f64x2_sqrt, feature = "simd" }
+            F64x2Add { snake: f64x2_add, feature = "simd" }
+            F64x2Sub { snake: f64x2_sub, feature = "simd" }
+            F64x2Mul { snake: f64x2_mul, feature = "simd" }
+            F64x2Div { snake: f64x2_div, feature = "simd" }
+            F64x2Min { snake: f64x2_min, feature = "simd" }
+            F64x2Max { snake: f64x2_max, feature = "simd" }
+            F64x2PMin { snake: f64x2_pmin, feature = "simd" }
+            F64x2PMax { snake: f64x2_pmax, feature = "simd" }
+            I32x4TruncSatF32x4S { snake: i32x4_trunc_sat_f32x4_s, feature = "simd" }
+            I32x4TruncSatF32x4U { snake: i32x4_trunc_sat_f32x4_u, feature = "simd" }
+            F32x4ConvertI32x4S { snake: f32x4_convert_i32x4_s, feature = "simd" }
+            F32x4ConvertI32x4U { snake: f32x4_convert_i32x4_u, feature = "simd" }
+            I32x4TruncSatF64x2SZero { snake: i32x4_trunc_sat_f64x2_szero, feature = "simd" }
+            I32x4TruncSatF64x2UZero { snake: i32x4_trunc_sat_f64x2_uzero, feature = "simd" }
+            F64x2ConvertLowI32x4S { snake: f64x2_convert_low_i32x4_s, feature = "simd" }
+            F64x2ConvertLowI32x4U { snake: f64x2_convert_low_i32x4_u, feature = "simd" }
+            F32x4DemoteF64x2Zero { snake: f32x4_demote_f64x2_zero, feature = "simd" }
+            F64x2PromoteLowF32x4 { snake: f64x2_promote_low_f32x4, feature = "simd" }
+
+            // relaxed-simd
+            I8x16RelaxedSwizzle { snake: i8x16_relaxed_swizzle, feature = "simd" }
+            I32x4RelaxedTruncF32x4S { snake: i32x4_relaxed_trunc_f32x4_s, feature = "simd" }
+            I32x4RelaxedTruncF32x4U { snake: i32x4_relaxed_trunc_f32x4_u, feature = "simd" }
+            I32x4RelaxedTruncF64x2SZero { snake: i32x4_relaxed_trunc_f64x2_szero, feature = "simd" }
+            I32x4RelaxedTruncF64x2UZero { snake: i32x4_relaxed_trunc_f64x2_uzero, feature = "simd" }
+            F32x4RelaxedMadd { snake: f32x4_relaxed_madd, feature = "simd" }
+            F32x4RelaxedNmadd { snake: f32x4_relaxed_nmadd, feature = "simd" }
+            F64x2RelaxedMadd { snake: f64x2_relaxed_madd, feature = "simd" }
+            F64x2RelaxedNmadd { snake: f64x2_relaxed_nmadd, feature = "simd" }
+            I8x16RelaxedLaneselect { snake: i8x16_relaxed_laneselect, feature = "simd" }
+            I16x8RelaxedLaneselect { snake: i16x8_relaxed_laneselect, feature = "simd" }
+            I32x4RelaxedLaneselect { snake: i32x4_relaxed_laneselect, feature = "simd" }
+            I64x2RelaxedLaneselect { snake: i64x2_relaxed_laneselect, feature = "simd" }
+            F32x4RelaxedMin { snake: f32x4_relaxed_min, feature = "simd" }
+            F32x4RelaxedMax { snake: f32x4_relaxed_max, feature = "simd" }
+            F64x2RelaxedMin { snake: f64x2_relaxed_min, feature = "simd" }
+            F64x2RelaxedMax { snake: f64x2_relaxed_max, feature = "simd" }
+            I16x8RelaxedQ15mulrS { snake: i16x8_relaxed_q15mulr_s, feature = "simd" }
+            I16x8RelaxedDotI8x16I7x16S { snake: i16x8_relaxed_dot_i8x16_i7x16_s, feature = "simd" }
+            I32x4RelaxedDotI8x16I7x16AddS { snake: i32x4_relaxed_dot_i8x16_i7x16_add_s, feature = "simd" }
         }
     };
 }
 
 macro_rules! define_wasm_operator {
-    ( $($camel:ident { snake: $snake:ident } )* ) => {
+    ( $($camel:ident { snake: $snake:ident $(, feature = $feature:literal )? } )* ) => {
         /// A Wasm operator supported by Wasmi.
         #[derive(Debug, Copy, Clone)]
         #[non_exhaustive]
         pub enum WasmOperator {
-            $( $camel ),*
+            $(
+                $( #[cfg(feature = $feature)] )?
+                $camel
+            ),*
         }
     };
 }
@@ -275,11 +538,12 @@ macro_rules! default_cost {
 }
 
 macro_rules! define_operator_cost {
-    ( $($camel:ident { snake: $snake:ident } )* ) => {
+    ( $($camel:ident { snake: $snake:ident $(, feature = $feature:literal )? } )* ) => {
         /// The fuel cost of each operator in a table.
         #[derive(Debug, Copy, Clone)]
         pub struct OperatorCost {
             $(
+                $( #[cfg(feature = $feature)] )?
                 pub $snake: u8
             ),*
         }
@@ -287,7 +551,10 @@ macro_rules! define_operator_cost {
         impl Default for OperatorCost {
             fn default() -> Self {
                 Self {
-                    $( $snake: default_cost!($camel) ),*
+                    $(
+                        $( #[cfg(feature = $feature)] )?
+                        $snake: default_cost!($camel)
+                    ),*
                 }
             }
         }
@@ -297,7 +564,10 @@ macro_rules! define_operator_cost {
             #[inline]
             pub fn cost(&self, op: WasmOperator) -> u64 {
                 let cost = match op {
-                    $( WasmOperator::$camel => self.$snake ),*
+                    $(
+                        $( #[cfg(feature = $feature)] )?
+                        WasmOperator::$camel => self.$snake,
+                    )*
                 };
                 u64::from(cost)
             }
@@ -332,12 +602,15 @@ impl OperatorCostStrategy {
 }
 
 macro_rules! impl_operator_cost_strategy {
-    ( $($camel:ident { snake: $snake:ident } )* ) => {
+    ( $($camel:ident { snake: $snake:ident $(, feature = $feature:literal )? } )* ) => {
         impl OperatorCostStrategy {
             /// Returns Wasmi's default costs for `op`.
             fn default_cost(op: WasmOperator) -> u64 {
                 match op {
-                    $( WasmOperator::$camel => default_cost!($camel) ),*
+                    $(
+                        $( #[cfg(feature = $feature)] )?
+                        WasmOperator::$camel => default_cost!($camel)
+                    ),*
                 }
             }
         }
