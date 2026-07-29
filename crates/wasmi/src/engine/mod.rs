@@ -3,6 +3,7 @@
 mod block_type;
 mod code_map;
 mod config;
+mod costs;
 pub mod eval;
 mod executor;
 mod func_types;
@@ -39,12 +40,14 @@ pub(crate) use self::{
 };
 use self::{
     code_map::{CodeMap, CompiledFuncEntry},
+    costs::{OperatorCostStrategy, WasmOperator},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
 };
 pub use self::{
     code_map::{EngineFunc, EngineFuncSpan, EngineFuncSpanIter},
     config::{CompilationMode, Config},
+    costs::OperatorCost,
     limits::{EnforcedLimits, EnforcedLimitsError, StackConfig},
     resumable::{
         ResumableCall,
