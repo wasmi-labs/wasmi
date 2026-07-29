@@ -231,6 +231,7 @@ macro_rules! define_wasm_operator {
     ( $($camel:ident { snake: $snake:ident } )* ) => {
         /// A Wasm operator supported by Wasmi.
         #[derive(Debug, Copy, Clone)]
+        #[non_exhaustive]
         pub enum WasmOperator {
             $( $camel ),*
         }
