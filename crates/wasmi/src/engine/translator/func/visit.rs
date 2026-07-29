@@ -114,17 +114,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_unreachable(&mut self) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::Unreachable);
         self.translate_trap(TrapCode::UnreachableCodeReached)
     }
 
     #[inline(never)]
     fn visit_nop(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::Nop);
         Ok(())
     }
 
     #[inline(never)]
     fn visit_block(&mut self, block_ty: wasmparser::BlockType) -> Self::Output {
+        self.bump_fuel_for_operator(WasmOperator::Block)?;
         if !self.reachable {
             self.stack.push_unreachable(ControlFrameKind::Block)?;
             return Ok(());
@@ -141,6 +143,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_loop(&mut self, block_ty: wasmparser::BlockType) -> Self::Output {
+        self.bump_fuel_for_operator(WasmOperator::Loop)?;
         if !self.reachable {
             self.stack.push_unreachable(ControlFrameKind::Loop)?;
             return Ok(());
@@ -161,6 +164,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_if(&mut self, block_ty: wasmparser::BlockType) -> Self::Output {
+        self.bump_fuel_for_operator(WasmOperator::If)?;
         if !self.reachable {
             self.stack.push_unreachable(ControlFrameKind::If)?;
             return Ok(());
@@ -222,6 +226,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_else(&mut self) -> Self::Output {
+        self.bump_fuel_for_operator(WasmOperator::Else)?;
         let mut frame = match self.stack.pop_control() {
             ControlFrame::If(frame) => frame,
             ControlFrame::Unreachable(ControlFrameKind::If) => {
@@ -254,6 +259,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_end(&mut self) -> Self::Output {
+        self.bump_fuel_for_operator(WasmOperator::End)?;
         match self.stack.pop_control() {
             ControlFrame::Block(frame) => self.translate_end_block(frame),
             ControlFrame::Loop(frame) => self.translate_end_loop(frame),
@@ -265,13 +271,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_br(&mut self, depth: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::Br);
         let Ok(depth) = usize::try_from(depth) else {
             panic!("out of bounds depth: {depth}")
         };
         let fuel_pos = self.stack.fuel_pos();
         match self.stack.peek_control_mut(depth) {
-            AcquiredTarget::Return(_) => self.visit_return(),
+            AcquiredTarget::Return(_) => self.visit_return(), // TODO: replace visit call
             AcquiredTarget::Branch(mut frame) => {
                 frame.branch_to();
                 let label = frame.label();
@@ -286,12 +292,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_br_if(&mut self, depth: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::BrIf);
         let condition = self.stack.pop();
         if let Operand::Immediate(condition) = condition {
             if i32::from(condition.val()) != 0 {
                 // Case (true): always takes the branch
-                self.visit_br(depth)?;
+                self.visit_br(depth)?; // TODO: replace visit call
             }
             return Ok(());
         }
@@ -324,12 +330,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_br_table(&mut self, table: wasmparser::BrTable<'a>) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::BrTable);
         let index = self.stack.pop();
         let default_target = table.default();
         if table.is_empty() {
             // Case: the `br_table` only has a single target `t` which is equal to a `br t`.
-            return self.visit_br(default_target);
+            return self.visit_br(default_target); // TODO: replace visit call
         }
         let index_loc = match self.resolve_operand::<RawVal>(index)? {
             ResolvedOperand::Slot(index) => Location::Slot(index),
@@ -343,7 +349,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     .nth(chosen_index)
                     .transpose()?
                     .unwrap_or(default_target);
-                return self.visit_br(chosen_target);
+                return self.visit_br(chosen_target); // TODO: replace visit call
             }
         };
         Self::copy_targets_from_br_table(&table, &mut self.immediates)?;
@@ -353,7 +359,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .all(|&target| u32::from(target) == default_target)
         {
             // Case: all targets are the same and thus the `br_table` is equal to a `br`.
-            return self.visit_br(default_target);
+            return self.visit_br(default_target); // TODO: replace visit call
         }
         // Note: The Wasm spec mandates that all `br_table` targets manipulate the
         //       Wasm value stack the same. This implies for Wasmi that all `br_table`
@@ -403,7 +409,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_return(&mut self) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::Return);
         let fuel_pos = self.stack.fuel_pos();
         self.encode_return(fuel_pos)?;
         let len_results = self.func_type_with(FuncType::len_results);
@@ -416,11 +422,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_call(&mut self, function_index: u32) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::Call);
         self.translate_call(function_index, Op::call_internal, Op::call_imported)
     }
 
     #[inline(never)]
     fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::CallIndirect);
         self.translate_call_indirect(
             type_index,
             table_index,
@@ -433,7 +441,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_drop(&mut self) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::Drop);
         _ = self.stack.pop();
         self.instrs.commit_staged_if_any()?;
         Ok(())
@@ -441,12 +449,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_select(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::Select);
         self.translate_select(None)
     }
 
     #[inline(never)]
     fn visit_local_get(&mut self, local_index: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::LocalGet);
         let local_idx = LocalIdx::from(local_index);
         let ty = self.locals.ty(local_idx);
         self.stack.push_local(local_idx, ty)?;
@@ -455,7 +464,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::LocalSet);
         let input = self.stack.pop();
         self.translate_local_set(local_index, input)?;
         Ok(())
@@ -463,7 +472,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_local_tee(&mut self, local_index: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::LocalTee);
         let input = self.stack.pop();
         let ty = input.ty();
         let local_idx = local_index.into();
@@ -512,7 +521,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_global_get(&mut self, global_index: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::GlobalGet);
         let global_idx = module::GlobalIdx::from(global_index);
         let (global_type, init_value) = self.module.get_global(global_idx);
         let content = global_type.content();
@@ -529,7 +538,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
             if let Some(func_index) = init_expr.funcref() {
                 // Case: forward to `ref.func x` translation.
-                self.visit_ref_func(func_index.into_u32())?;
+                self.visit_ref_func(func_index.into_u32())?; // TODO: replace visit call
                 return Ok(());
             }
         }
@@ -557,7 +566,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::GlobalSet);
         let (global_type, _init_value) = self
             .module
             .get_global(module::GlobalIdx::from(global_index));
@@ -602,122 +611,145 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Load);
         self.translate_load::<op::I32Load>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Load);
         self.translate_load::<op::I64Load>(memarg)
     }
 
     #[inline(never)]
     fn visit_f32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Load);
         self.translate_load::<op::F32Load>(memarg)
     }
 
     #[inline(never)]
     fn visit_f64_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Load);
         self.translate_load::<op::F64Load>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_load8_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Load8S);
         self.translate_load::<op::I32Load8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_load8_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Load8U);
         self.translate_load::<op::U32Load8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_load16_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Load16S);
         self.translate_load::<op::I32Load16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_load16_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Load16U);
         self.translate_load::<op::U32Load16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load8_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Load8S);
         self.translate_load::<op::I64Load8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load8_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Load8U);
         self.translate_load::<op::U64Load8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load16_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Load16S);
         self.translate_load::<op::I64Load16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load16_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Load16U);
         self.translate_load::<op::U64Load16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load32_s(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Load32S);
         self.translate_load::<op::I64Load32>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_load32_u(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Load32U);
         self.translate_load::<op::U64Load32>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Store);
         self.translate_store::<op::I32Store>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Store);
         self.translate_store::<op::I64Store>(memarg)
     }
 
     #[inline(never)]
     fn visit_f32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Store);
         self.translate_store::<op::F32Store>(memarg)
     }
 
     #[inline(never)]
     fn visit_f64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Store);
         self.translate_store::<op::F64Store>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Store8);
         self.translate_store::<op::I32Store8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i32_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Store16);
         self.translate_store::<op::I32Store16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Store8);
         self.translate_store::<op::I64Store8>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Store16);
         self.translate_store::<op::I64Store16>(memarg)
     }
 
     #[inline(never)]
     fn visit_i64_store32(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Store32);
         self.translate_store::<op::I64Store32>(memarg)
     }
 
     #[inline(never)]
     fn visit_memory_size(&mut self, mem: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::MemorySize);
         let index_ty = self
             .module
             .get_type_of_memory(MemoryIdx::from(mem))
@@ -734,7 +766,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_memory_grow(&mut self, mem: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::MemoryGrow);
         let index_ty = self
             .module
             .get_type_of_memory(MemoryIdx::from(mem))
@@ -773,21 +805,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i32_const(&mut self, value: i32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::I32Const);
         self.stack.push_immediate(value)?;
         Ok(())
     }
 
     #[inline(never)]
     fn visit_i64_const(&mut self, value: i64) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::I64Const);
         self.stack.push_immediate(value)?;
         Ok(())
     }
 
     #[inline(never)]
     fn visit_f32_const(&mut self, value: wasmparser::Ieee32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::F32Const);
         let value = F32::from_bits(value.bits());
         self.stack.push_immediate(value)?;
         Ok(())
@@ -795,7 +827,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_f64_const(&mut self, value: wasmparser::Ieee64) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::F64Const);
         let value = F64::from_bits(value.bits());
         self.stack.push_immediate(value)?;
         Ok(())
@@ -803,531 +835,633 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i32_eqz(&mut self) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::I32Eqz);
         self.stack.push_immediate(0_i32)?;
-        self.visit_i32_eq()
+        self.visit_i32_eq() // TODO: replace visit call
     }
 
     #[inline(never)]
     fn visit_i32_eq(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Eq);
         self.translate_binary_commutative_with_opt::<op::I32Eq>(Self::fuse_eqz)
     }
 
     #[inline(never)]
     fn visit_i32_ne(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Ne);
         self.translate_binary_commutative_with_opt::<op::I32NotEq>(Self::fuse_nez)
     }
 
     #[inline(never)]
     fn visit_i32_lt_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32LtS);
         self.translate_binary::<op::I32Lt>()
     }
 
     #[inline(never)]
     fn visit_i32_lt_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32LtU);
         self.translate_binary::<op::U32Lt>()
     }
 
     #[inline(never)]
     fn visit_i32_gt_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32GtS);
         self.translate_binary::<op::I32Gt>()
     }
 
     #[inline(never)]
     fn visit_i32_gt_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32GtU);
         self.translate_binary::<op::U32Gt>()
     }
 
     #[inline(never)]
     fn visit_i32_le_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32LeS);
         self.translate_binary::<op::I32Le>()
     }
 
     #[inline(never)]
     fn visit_i32_le_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32LeU);
         self.translate_binary::<op::U32Le>()
     }
 
     #[inline(never)]
     fn visit_i32_ge_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32GeS);
         self.translate_binary::<op::I32Ge>()
     }
 
     #[inline(never)]
     fn visit_i32_ge_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32GeU);
         self.translate_binary::<op::U32Ge>()
     }
 
     #[inline(never)]
     fn visit_i64_eqz(&mut self) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::I64Eqz);
         self.stack.push_immediate(0_i64)?;
-        self.visit_i64_eq()
+        self.visit_i64_eq() // TODO: replace visit call
     }
 
     #[inline(never)]
     fn visit_i64_eq(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Eq);
         self.translate_binary_commutative_with_opt::<op::I64Eq>(Self::fuse_eqz)
     }
 
     #[inline(never)]
     fn visit_i64_ne(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Ne);
         self.translate_binary_commutative_with_opt::<op::I64NotEq>(Self::fuse_nez)
     }
 
     #[inline(never)]
     fn visit_i64_lt_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64LtS);
         self.translate_binary::<op::I64Lt>()
     }
 
     #[inline(never)]
     fn visit_i64_lt_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64LtU);
         self.translate_binary::<op::U64Lt>()
     }
 
     #[inline(never)]
     fn visit_i64_gt_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64GtS);
         self.translate_binary::<op::I64Gt>()
     }
 
     #[inline(never)]
     fn visit_i64_gt_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64GtU);
         self.translate_binary::<op::U64Gt>()
     }
 
     #[inline(never)]
     fn visit_i64_le_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64LeS);
         self.translate_binary::<op::I64Le>()
     }
 
     #[inline(never)]
     fn visit_i64_le_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64LeU);
         self.translate_binary::<op::U64Le>()
     }
 
     #[inline(never)]
     fn visit_i64_ge_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64GeS);
         self.translate_binary::<op::I64Ge>()
     }
 
     #[inline(never)]
     fn visit_i64_ge_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64GeU);
         self.translate_binary::<op::U64Ge>()
     }
 
     #[inline(never)]
     fn visit_f32_eq(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Eq);
         self.translate_binary_commutative::<op::F32Eq>()
     }
 
     #[inline(never)]
     fn visit_f32_ne(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Ne);
         self.translate_binary_commutative::<op::F32NotEq>()
     }
 
     #[inline(never)]
     fn visit_f32_lt(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Lt);
         self.translate_binary::<op::F32Lt>()
     }
 
     #[inline(never)]
     fn visit_f32_gt(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Gt);
         self.translate_binary::<op::F32Gt>()
     }
 
     #[inline(never)]
     fn visit_f32_le(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Le);
         self.translate_binary::<op::F32Le>()
     }
 
     #[inline(never)]
     fn visit_f32_ge(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Ge);
         self.translate_binary::<op::F32Ge>()
     }
 
     #[inline(never)]
     fn visit_f64_eq(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Eq);
         self.translate_binary_commutative::<op::F64Eq>()
     }
 
     #[inline(never)]
     fn visit_f64_ne(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Ne);
         self.translate_binary_commutative::<op::F64NotEq>()
     }
 
     #[inline(never)]
     fn visit_f64_lt(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Lt);
         self.translate_binary::<op::F64Lt>()
     }
 
     #[inline(never)]
     fn visit_f64_gt(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Gt);
         self.translate_binary::<op::F64Gt>()
     }
 
     #[inline(never)]
     fn visit_f64_le(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Le);
         self.translate_binary::<op::F64Le>()
     }
 
     #[inline(never)]
     fn visit_f64_ge(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Ge);
         self.translate_binary::<op::F64Ge>()
     }
 
     #[inline(never)]
     fn visit_i32_clz(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Clz);
         self.translate_unary::<op::I32Clz>()
     }
 
     #[inline(never)]
     fn visit_i32_ctz(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Ctz);
         self.translate_unary::<op::I32Ctz>()
     }
 
     #[inline(never)]
     fn visit_i32_popcnt(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Popcnt);
         self.translate_unary::<op::I32Popcnt>()
     }
 
     #[inline(never)]
     fn visit_i32_add(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Add);
         self.translate_binary_commutative::<op::I32Add>()
     }
 
     #[inline(never)]
     fn visit_i32_sub(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Sub);
         self.translate_binary::<op::I32Sub>()
     }
 
     #[inline(never)]
     fn visit_i32_mul(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Mul);
         self.translate_binary_commutative::<op::I32Mul>()
     }
 
     #[inline(never)]
     fn visit_i32_div_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32DivS);
         self.translate_binary::<op::I32Div>()
     }
 
     #[inline(never)]
     fn visit_i32_div_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32DivU);
         self.translate_binary::<op::U32Div>()
     }
 
     #[inline(never)]
     fn visit_i32_rem_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32RemS);
         self.translate_binary::<op::I32Rem>()
     }
 
     #[inline(never)]
     fn visit_i32_rem_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32RemU);
         self.translate_binary::<op::U32Rem>()
     }
 
     #[inline(never)]
     fn visit_i32_and(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32And);
         self.translate_binary_commutative::<op::I32BitAnd>()
     }
 
     #[inline(never)]
     fn visit_i32_or(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Or);
         self.translate_binary_commutative::<op::I32BitOr>()
     }
 
     #[inline(never)]
     fn visit_i32_xor(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Xor);
         self.translate_binary_commutative::<op::I32BitXor>()
     }
 
     #[inline(never)]
     fn visit_i32_shl(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Shl);
         self.translate_binary::<op::I32Shl>()
     }
 
     #[inline(never)]
     fn visit_i32_shr_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32ShrS);
         self.translate_binary::<op::I32Shr>()
     }
 
     #[inline(never)]
     fn visit_i32_shr_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32ShrU);
         self.translate_binary::<op::U32Shr>()
     }
 
     #[inline(never)]
     fn visit_i32_rotl(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Rotl);
         self.translate_binary::<op::I32Rotl>()
     }
 
     #[inline(never)]
     fn visit_i32_rotr(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Rotr);
         self.translate_binary::<op::I32Rotr>()
     }
 
     #[inline(never)]
     fn visit_i64_clz(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Clz);
         self.translate_unary::<op::I64Clz>()
     }
 
     #[inline(never)]
     fn visit_i64_ctz(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Ctz);
         self.translate_unary::<op::I64Ctz>()
     }
 
     #[inline(never)]
     fn visit_i64_popcnt(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Popcnt);
         self.translate_unary::<op::I64Popcnt>()
     }
 
     #[inline(never)]
     fn visit_i64_add(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Add);
         self.translate_binary_commutative::<op::I64Add>()
     }
 
     #[inline(never)]
     fn visit_i64_sub(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Sub);
         self.translate_binary::<op::I64Sub>()
     }
 
     #[inline(never)]
     fn visit_i64_mul(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Mul);
         self.translate_binary_commutative::<op::I64Mul>()
     }
 
     #[inline(never)]
     fn visit_i64_div_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64DivS);
         self.translate_binary::<op::I64Div>()
     }
 
     #[inline(never)]
     fn visit_i64_div_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64DivU);
         self.translate_binary::<op::U64Div>()
     }
 
     #[inline(never)]
     fn visit_i64_rem_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64RemS);
         self.translate_binary::<op::I64Rem>()
     }
 
     #[inline(never)]
     fn visit_i64_rem_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64RemU);
         self.translate_binary::<op::U64Rem>()
     }
 
     #[inline(never)]
     fn visit_i64_and(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64And);
         self.translate_binary_commutative::<op::I64BitAnd>()
     }
 
     #[inline(never)]
     fn visit_i64_or(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Or);
         self.translate_binary_commutative::<op::I64BitOr>()
     }
 
     #[inline(never)]
     fn visit_i64_xor(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Xor);
         self.translate_binary_commutative::<op::I64BitXor>()
     }
 
     #[inline(never)]
     fn visit_i64_shl(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Shl);
         self.translate_binary::<op::I64Shl>()
     }
 
     #[inline(never)]
     fn visit_i64_shr_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64ShrS);
         self.translate_binary::<op::I64Shr>()
     }
 
     #[inline(never)]
     fn visit_i64_shr_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64ShrU);
         self.translate_binary::<op::U64Shr>()
     }
 
     #[inline(never)]
     fn visit_i64_rotl(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Rotl);
         self.translate_binary::<op::I64Rotl>()
     }
 
     #[inline(never)]
     fn visit_i64_rotr(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Rotr);
         self.translate_binary::<op::I64Rotr>()
     }
 
     #[inline(never)]
     fn visit_f32_abs(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Abs);
         self.translate_unary::<op::F32Abs>()
     }
 
     #[inline(never)]
     fn visit_f32_neg(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Neg);
         self.translate_unary_with_opt::<op::F32Neg>(Self::try_lower_f32_abs_neg)
     }
 
     #[inline(never)]
     fn visit_f32_ceil(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Ceil);
         self.translate_unary::<op::F32Ceil>()
     }
 
     #[inline(never)]
     fn visit_f32_floor(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Floor);
         self.translate_unary::<op::F32Floor>()
     }
 
     #[inline(never)]
     fn visit_f32_trunc(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Trunc);
         self.translate_unary::<op::F32Trunc>()
     }
 
     #[inline(never)]
     fn visit_f32_nearest(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Nearest);
         self.translate_unary::<op::F32Nearest>()
     }
 
     #[inline(never)]
     fn visit_f32_sqrt(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Sqrt);
         self.translate_unary::<op::F32Sqrt>()
     }
 
     #[inline(never)]
     fn visit_f32_add(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Add);
         self.translate_binary::<op::F32Add>()
     }
 
     #[inline(never)]
     fn visit_f32_sub(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Sub);
         self.translate_binary::<op::F32Sub>()
     }
 
     #[inline(never)]
     fn visit_f32_mul(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Mul);
         self.translate_binary::<op::F32Mul>()
     }
 
     #[inline(never)]
     fn visit_f32_div(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Div);
         self.translate_binary::<op::F32Div>()
     }
 
     #[inline(never)]
     fn visit_f32_min(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Min);
         self.translate_binary::<op::F32Min>()
     }
 
     #[inline(never)]
     fn visit_f32_max(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Max);
         self.translate_binary::<op::F32Max>()
     }
 
     #[inline(never)]
     fn visit_f32_copysign(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32Copysign);
         self.translate_binary::<op::F32Copysign>()
     }
 
     #[inline(never)]
     fn visit_f64_abs(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Abs);
         self.translate_unary::<op::F64Abs>()
     }
 
     #[inline(never)]
     fn visit_f64_neg(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Neg);
         self.translate_unary_with_opt::<op::F64Neg>(Self::try_lower_f64_abs_neg)
     }
 
     #[inline(never)]
     fn visit_f64_ceil(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Ceil);
         self.translate_unary::<op::F64Ceil>()
     }
 
     #[inline(never)]
     fn visit_f64_floor(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Floor);
         self.translate_unary::<op::F64Floor>()
     }
 
     #[inline(never)]
     fn visit_f64_trunc(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Trunc);
         self.translate_unary::<op::F64Trunc>()
     }
 
     #[inline(never)]
     fn visit_f64_nearest(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Nearest);
         self.translate_unary::<op::F64Nearest>()
     }
 
     #[inline(never)]
     fn visit_f64_sqrt(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Sqrt);
         self.translate_unary::<op::F64Sqrt>()
     }
 
     #[inline(never)]
     fn visit_f64_add(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Add);
         self.translate_binary::<op::F64Add>()
     }
 
     #[inline(never)]
     fn visit_f64_sub(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Sub);
         self.translate_binary::<op::F64Sub>()
     }
 
     #[inline(never)]
     fn visit_f64_mul(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Mul);
         self.translate_binary::<op::F64Mul>()
     }
 
     #[inline(never)]
     fn visit_f64_div(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Div);
         self.translate_binary::<op::F64Div>()
     }
 
     #[inline(never)]
     fn visit_f64_min(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Min);
         self.translate_binary::<op::F64Min>()
     }
 
     #[inline(never)]
     fn visit_f64_max(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Max);
         self.translate_binary::<op::F64Max>()
     }
 
     #[inline(never)]
     fn visit_f64_copysign(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64Copysign);
         self.translate_binary::<op::F64Copysign>()
     }
 
     #[inline(never)]
     fn visit_i32_wrap_i64(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32WrapI64);
         self.translate_unary::<op::I32WrapI64>()
     }
 
     #[inline(never)]
     fn visit_i32_trunc_f32_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32TruncF32S);
         self.translate_unary::<op::I32TruncF32>()
     }
 
     #[inline(never)]
     fn visit_i32_trunc_f32_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32TruncF32U);
         self.translate_unary::<op::U32TruncF32>()
     }
 
     #[inline(never)]
     fn visit_i32_trunc_f64_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32TruncF64S);
         self.translate_unary::<op::I32TruncF64>()
     }
 
     #[inline(never)]
     fn visit_i32_trunc_f64_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32TruncF64U);
         self.translate_unary::<op::U32TruncF64>()
     }
 
     #[inline(never)]
     fn visit_i64_extend_i32_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64ExtendI32S);
         self.translate_unary::<op::I64ExtendI32>()
     }
 
     #[inline(never)]
     fn visit_i64_extend_i32_u(&mut self) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::I64ExtendI32U);
         let input = self.stack.pop();
         debug_assert_eq!(input.ty(), ValType::I32);
         let result_ty = ValType::I64;
@@ -1348,162 +1482,193 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i64_trunc_f32_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64TruncF32S);
         self.translate_unary::<op::I64TruncF32>()
     }
 
     #[inline(never)]
     fn visit_i64_trunc_f32_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64TruncF32U);
         self.translate_unary::<op::U64TruncF32>()
     }
 
     #[inline(never)]
     fn visit_i64_trunc_f64_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64TruncF64S);
         self.translate_unary::<op::I64TruncF64>()
     }
 
     #[inline(never)]
     fn visit_i64_trunc_f64_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64TruncF64U);
         self.translate_unary::<op::U64TruncF64>()
     }
 
     #[inline(never)]
     fn visit_f32_convert_i32_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32ConvertI32S);
         self.translate_unary::<op::F32ConvertI32>()
     }
 
     #[inline(never)]
     fn visit_f32_convert_i32_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32ConvertI32U);
         self.translate_unary::<op::F32ConvertU32>()
     }
 
     #[inline(never)]
     fn visit_f32_convert_i64_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32ConvertI64S);
         self.translate_unary::<op::F32ConvertI64>()
     }
 
     #[inline(never)]
     fn visit_f32_convert_i64_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32ConvertI64U);
         self.translate_unary::<op::F32ConvertU64>()
     }
 
     #[inline(never)]
     fn visit_f32_demote_f64(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32DemoteF64);
         self.translate_unary::<op::F32DemoteF64>()
     }
 
     #[inline(never)]
     fn visit_f64_convert_i32_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64ConvertI32S);
         self.translate_unary::<op::F64ConvertI32>()
     }
 
     #[inline(never)]
     fn visit_f64_convert_i32_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64ConvertI32U);
         self.translate_unary::<op::F64ConvertU32>()
     }
 
     #[inline(never)]
     fn visit_f64_convert_i64_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64ConvertI64S);
         self.translate_unary::<op::F64ConvertI64>()
     }
 
     #[inline(never)]
     fn visit_f64_convert_i64_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64ConvertI64U);
         self.translate_unary::<op::F64ConvertU64>()
     }
 
     #[inline(never)]
     fn visit_f64_promote_f32(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64PromoteF32);
         self.translate_unary::<op::F64PromoteF32>()
     }
 
     #[inline(never)]
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32ReinterpretF32);
         self.translate_reinterpret(Op::i32_reinterpret_f32_rr, wasm::i32_reinterpret_f32)
     }
 
     #[inline(never)]
     fn visit_i64_reinterpret_f64(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64ReinterpretF64);
         self.translate_reinterpret(Op::i64_reinterpret_f64_rr, wasm::i64_reinterpret_f64)
     }
 
     #[inline(never)]
     fn visit_f32_reinterpret_i32(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F32ReinterpretI32);
         self.translate_reinterpret(Op::f32_reinterpret_i32_rr, wasm::f32_reinterpret_i32)
     }
 
     #[inline(never)]
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::F64ReinterpretI64);
         self.translate_reinterpret(Op::f64_reinterpret_i64_rr, wasm::f64_reinterpret_i64)
     }
 
     #[inline(never)]
     fn visit_i32_extend8_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Extend8S);
         self.translate_unary::<op::I32Sext8>()
     }
 
     #[inline(never)]
     fn visit_i32_extend16_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32Extend16S);
         self.translate_unary::<op::I32Sext16>()
     }
 
     #[inline(never)]
     fn visit_i64_extend8_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Extend8S);
         self.translate_unary::<op::I64Sext8>()
     }
 
     #[inline(never)]
     fn visit_i64_extend16_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Extend16S);
         self.translate_unary::<op::I64Sext16>()
     }
 
     #[inline(never)]
     fn visit_i64_extend32_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Extend32S);
         self.translate_unary::<op::I64Sext32>()
     }
 
     #[inline(never)]
     fn visit_i32_trunc_sat_f32_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32TruncSatF32S);
         self.translate_unary::<op::I32TruncSatF32>()
     }
 
     #[inline(never)]
     fn visit_i32_trunc_sat_f32_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32TruncSatF32U);
         self.translate_unary::<op::U32TruncSatF32>()
     }
 
     #[inline(never)]
     fn visit_i32_trunc_sat_f64_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32TruncSatF64S);
         self.translate_unary::<op::I32TruncSatF64>()
     }
 
     #[inline(never)]
     fn visit_i32_trunc_sat_f64_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I32TruncSatF64U);
         self.translate_unary::<op::U32TruncSatF64>()
     }
 
     #[inline(never)]
     fn visit_i64_trunc_sat_f32_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64TruncSatF32S);
         self.translate_unary::<op::I64TruncSatF32>()
     }
 
     #[inline(never)]
     fn visit_i64_trunc_sat_f32_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64TruncSatF32U);
         self.translate_unary::<op::U64TruncSatF32>()
     }
 
     #[inline(never)]
     fn visit_i64_trunc_sat_f64_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64TruncSatF64S);
         self.translate_unary::<op::I64TruncSatF64>()
     }
 
     #[inline(never)]
     fn visit_i64_trunc_sat_f64_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64TruncSatF64U);
         self.translate_unary::<op::U64TruncSatF64>()
     }
 
     #[inline(never)]
     fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::MemoryInit);
         let (dst, src, len) = self.stack.pop3();
         let memory_addr = self.memory_addr(mem)?;
         let data_addr = self.data_addr(data_index);
@@ -1519,7 +1684,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::DataDrop);
         let data_addr = self.data_addr(data_index);
         self.push_instr(Op::data_drop(data_addr), FuelCostsProvider::instance)?;
         Ok(())
@@ -1527,7 +1692,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_memory_copy(&mut self, dst_mem: u32, src_mem: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::MemoryCopy);
         let (dst, src, len) = self.stack.pop3();
         let dst_memory_addr = self.memory_addr(dst_mem)?;
         let src_memory_addr = self.memory_addr(src_mem)?;
@@ -1543,7 +1708,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_memory_fill(&mut self, mem: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::MemoryFill);
         let (dst, value, len) = self.stack.pop3();
         let memory_addr = self.memory_addr(mem)?;
         let dst = self.copy_operand_to_slot(dst)?;
@@ -1558,7 +1723,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_table_init(&mut self, elem_index: u32, table: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::TableInit);
         let (dst, src, len) = self.stack.pop3();
         let table_addr = self.table_addr(table);
         let elem_addr = self.elem_addr(elem_index);
@@ -1574,7 +1739,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::ElemDrop);
         let elem_addr = self.elem_addr(elem_index);
         self.push_instr(Op::elem_drop(elem_addr), FuelCostsProvider::instance)?;
         Ok(())
@@ -1582,7 +1747,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::TableCopy);
         let (dst, src, len) = self.stack.pop3();
         let dst_table_addr = self.table_addr(dst_table);
         let src_table_addr = self.table_addr(src_table);
@@ -1598,13 +1763,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_typed_select(&mut self, ty: wasmparser::ValType) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::TypedSelect);
         let type_hint = WasmiValueType::from(ty).into_inner();
         self.translate_select(Some(type_hint))
     }
 
     #[inline(never)]
     fn visit_ref_null(&mut self, ty: wasmparser::HeapType) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::RefNull);
         let type_hint = WasmiValueType::from(ty).into_inner();
         let null = match type_hint {
             ValType::FuncRef => TypedRawRef::null(RefType::Func),
@@ -1617,7 +1783,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_ref_is_null(&mut self) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::RefIsNull);
         // Note: `funcref` and `externref` both serialize to `RawValue`
         //       as `u32` so we can forward to `i32.eqz` translation for
         //       `ref.is_null` via reinterpretation of the value's type.
@@ -1630,12 +1796,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.stack.push_immediate(i32::from(is_null))?;
             return Ok(());
         }
-        self.visit_i32_eqz()
+        self.visit_i32_eqz() // TODO: replace visit call
     }
 
     #[inline(never)]
     fn visit_ref_func(&mut self, function_index: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::RefFunc);
         let func_addr = self.func_addr(function_index);
         self.push_op_with_result_reg(
             ValType::FuncRef,
@@ -1647,7 +1813,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_table_fill(&mut self, table: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::TableFill);
         let (dst, value, len) = self.stack.pop3();
         let table_addr = self.table_addr(table);
         let dst = self.copy_operand_to_slot(dst)?;
@@ -1662,7 +1828,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_table_get(&mut self, table: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::TableGet);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let table_addr = self.table_addr(table);
         let index = self.stack.pop();
@@ -1684,7 +1850,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_table_set(&mut self, table: u32) -> Self::Output {
         use ResolvedOperand as Opd;
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::TableSet);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let table_addr = self.table_addr(table);
         let index_ty = table_type.index_ty();
@@ -1713,7 +1879,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_table_grow(&mut self, table: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::TableGrow);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let table_addr = self.table_addr(table);
         let index_ty = table_type.index_ty();
@@ -1750,7 +1916,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_table_size(&mut self, table: u32) -> Self::Output {
-        bail_unreachable!(self);
+        prepare_wasm_operator!(self, WasmOperator::TableSize);
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let table_addr = self.table_addr(table);
         let index_ty = table_type.index_ty();
@@ -1764,6 +1930,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_return_call(&mut self, function_index: u32) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::ReturnCall);
         self.translate_call(
             function_index,
             Op::return_call_internal,
@@ -1775,6 +1942,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::ReturnCallIndirect);
         self.translate_call_indirect(
             type_index,
             table_index,
@@ -1789,21 +1957,25 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     #[inline(never)]
     fn visit_i64_add128(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Add128);
         self.translate_i64_binop128(Op::i64_add128, wasm::i64_add128)
     }
 
     #[inline(never)]
     fn visit_i64_sub128(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64Sub128);
         self.translate_i64_binop128(Op::i64_sub128, wasm::i64_sub128)
     }
 
     #[inline(never)]
     fn visit_i64_mul_wide_s(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64MulWideS);
         self.translate_i64_mul_wide_sx(Op::i64_mul_wide, wasm::i64_mul_wide_s, true)
     }
 
     #[inline(never)]
     fn visit_i64_mul_wide_u(&mut self) -> Self::Output {
+        prepare_wasm_operator!(self, WasmOperator::I64MulWideU);
         self.translate_i64_mul_wide_sx(Op::u64_mul_wide, wasm::i64_mul_wide_u, false)
     }
 }
