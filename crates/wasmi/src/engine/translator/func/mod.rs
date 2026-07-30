@@ -5,10 +5,11 @@ mod labels;
 mod layout;
 mod locals;
 mod op;
+#[macro_use]
+mod visit;
 #[cfg(feature = "simd")]
 mod simd;
 mod stack;
-mod visit;
 
 #[cfg(doc)]
 use self::stack::ImmediateOperand;
