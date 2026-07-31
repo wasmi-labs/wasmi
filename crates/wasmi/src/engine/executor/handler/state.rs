@@ -863,7 +863,7 @@ impl Stack {
         let Some((ip, start, instance)) = self.frames.restore_frame() else {
             panic!("restore_frame: missing top-frame")
         };
-        let sp = self.values.sp_or_dangling(start);
+        let sp = self.values.sp(start);
         (ip, sp, instance, self.ireg, self.freg32, self.freg64)
     }
 
@@ -926,7 +926,7 @@ impl Stack {
         instance: Inst,
     ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, Inst)> {
         let (ip, start, changed_instance) = self.frames.pop()?;
-        let sp = self.values.sp_or_dangling(start);
+        let sp = self.values.sp(start);
         let (mem0, mem0_len, instance) = match changed_instance {
             Some(instance) => {
                 let (mem0, mem0_len) = extract_mem0(store, instance);
@@ -1034,19 +1034,6 @@ impl ValueStack {
         );
         let value = unsafe { self.cells.as_mut_ptr().add(offset) };
         Sp::new(value)
-    }
-
-    /// Returns an [`Sp`] pointing to the cell at the `start` index if `self` is non-empty.
-    ///
-    /// Otherwise returns a dangling [`Sp`] that must not be dereferenced.
-    fn sp_or_dangling(&mut self, start: SpOffset) -> Sp {
-        match self.cells.is_empty() {
-            true => {
-                debug_assert_eq!(start.into_inner(), 0);
-                Sp::dangling()
-            }
-            false => self.sp(start),
-        }
     }
 
     /// Grows the number of cells to `new_len` if the current number is less than `new_len`.
