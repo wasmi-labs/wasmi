@@ -142,23 +142,6 @@ impl CodeMap {
             func_to_validate,
         ));
     }
-
-    /// Returns a cheap, lock-free [`CodeView`] snapshot of this [`CodeMap`].
-    ///
-    /// # Note
-    ///
-    /// The snapshot borrows `self` and caches the currently published function count; it is used by
-    /// the executor to resolve calls without locking or per-call atomics.
-    #[inline]
-    pub fn view(&self) -> CodeView<'_> {
-        // Note: a single `Acquire` load establishes the happens-before for every bucket published before
-        //       this length; subsequent per-call reads through the snapshot are plain (non-atomic).
-        let len_funcs = self.funcs.len_funcs.load(Ordering::Acquire);
-        CodeView {
-            code_map: self,
-            len_funcs,
-        }
-    }
 }
 
 /// An append-only collection for [`FuncEntry`] definitions.
