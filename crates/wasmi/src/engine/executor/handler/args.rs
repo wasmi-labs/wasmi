@@ -216,7 +216,8 @@ impl Args {
         params: BoundedSlotSpan,
         instance: Option<Inst>,
     ) -> Control<(), Break> {
-        (self.ip, self.sp) = utils::call_func_entry(state, self.ip, params, func, instance)?;
+        (self.ip, self.sp) =
+            utils::call_func_entry(state, self.ip, self.sp, params, func, instance)?;
         Control::Continue(())
     }
 
@@ -229,7 +230,7 @@ impl Args {
         params: BoundedSlotSpan,
         instance: Option<Inst>,
     ) -> Control<(), Break> {
-        (self.ip, self.sp) = utils::return_call_func_entry(state, params, func, instance)?;
+        (self.ip, self.sp) = utils::return_call_func_entry(state, self.sp, params, func, instance)?;
         Control::Continue(())
     }
 
@@ -266,6 +267,7 @@ impl Args {
         ) = utils::call_wasm_or_host(
             state,
             self.ip,
+            self.sp,
             func,
             func_entity,
             params,
@@ -293,6 +295,7 @@ impl Args {
             self.instance,
         ) = utils::return_call_wasm_or_host(
             state,
+            self.sp,
             func,
             func_entity,
             params,

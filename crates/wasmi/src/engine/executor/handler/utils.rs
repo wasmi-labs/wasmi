@@ -772,6 +772,7 @@ pub fn update_instance(
 pub fn call_func_entry(
     state: &mut VmState,
     caller_ip: Ip,
+    caller_sp: Sp,
     params: BoundedSlotSpan,
     func: &FuncEntry,
     instance: Option<Inst>,
@@ -780,6 +781,7 @@ pub fn call_func_entry(
     let callee_sp = state
         .stack
         .push_frame(
+            caller_sp,
             Some(caller_ip),
             callee_ip,
             params,
@@ -794,6 +796,7 @@ pub fn call_func_entry(
 #[inline(always)]
 pub fn return_call_func_entry(
     state: &mut VmState,
+    caller_sp: Sp,
     params: BoundedSlotSpan,
     func: &FuncEntry,
     instance: Option<Inst>,
@@ -802,6 +805,7 @@ pub fn return_call_func_entry(
     let callee_sp = state
         .stack
         .replace_frame(
+            caller_sp,
             callee_ip,
             params,
             len_local_slots,
@@ -912,6 +916,7 @@ pub fn return_call_host(
 pub fn call_wasm_or_host(
     state: &mut VmState,
     caller_ip: Ip,
+    caller_sp: Sp,
     func: Func,
     func_entity: NonNull<FuncEntity>,
     params: BoundedSlotSpan,
@@ -947,6 +952,7 @@ pub fn call_wasm_or_host(
     let (callee_ip, callee_sp) = call_func_entry(
         state,
         caller_ip,
+        caller_sp,
         params,
         wasm_func.func_entry(),
         Some(callee_instance),
@@ -958,8 +964,10 @@ pub fn call_wasm_or_host(
 
 /// Tail-call (`return_call`) twin of [`call_wasm_or_host`].
 #[inline]
+#[expect(clippy::too_many_arguments)]
 pub fn return_call_wasm_or_host(
     state: &mut VmState,
+    caller_sp: Sp,
     func: Func,
     func_entity: NonNull<FuncEntity>,
     params: BoundedSlotSpan,
@@ -983,8 +991,13 @@ pub fn return_call_wasm_or_host(
     };
     // Hot path: tail-calling a Wasm function. See `call_wasm_or_host` for the shape.
     let callee_instance: Inst = resolve_instance(state.store, wasm_func.instance()).into();
-    let (callee_ip, callee_sp) =
-        return_call_func_entry(state, params, wasm_func.func_entry(), Some(callee_instance))?;
+    let (callee_ip, callee_sp) = return_call_func_entry(
+        state,
+        caller_sp,
+        params,
+        wasm_func.func_entry(),
+        Some(callee_instance),
+    )?;
     let (instance, mem0, mem0_len) =
         update_instance(state.store, instance, callee_instance, mem0, mem0_len);
     Control::Continue((callee_ip, callee_sp, mem0, mem0_len, instance))

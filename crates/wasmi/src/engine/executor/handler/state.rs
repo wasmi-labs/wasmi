@@ -863,7 +863,7 @@ impl Stack {
         let Some((ip, start, instance)) = self.frames.restore_frame() else {
             panic!("restore_frame: missing top-frame")
         };
-        let sp = self.values.sp_or_dangling(start);
+        let sp = self.values.sp(start);
         (ip, sp, instance, self.ireg, self.freg32, self.freg64)
     }
 
@@ -891,10 +891,27 @@ impl Stack {
             .prepare_host_frame(caller_start, callee_params, results_len)
     }
 
+    /// Returns an [`Sp`] pointing at the base of the value stack.
+    ///
+    /// # Note
+    ///
+    /// Only valid as the `caller_sp` of the very first frame pushed onto an empty [`Stack`].
+    pub fn base_sp(&mut self) -> Sp {
+        self.values.base_sp()
+    }
+
     /// Adjusts `self` for a normal function call.
+    ///
+    /// # Note
+    ///
+    /// `caller_sp` must be the [`Sp`] of the currently executing frame. The callee's [`Sp`]
+    /// is derived from it by pointer arithmetic instead of being re-loaded from the frame
+    /// table, which keeps it off the call's dependent-load chain.
     #[inline(always)]
+    #[expect(clippy::too_many_arguments)]
     pub fn push_frame(
         &mut self,
+        caller_sp: Sp,
         caller_ip: Option<Ip>,
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
@@ -902,11 +919,19 @@ impl Stack {
         callee_slots: u16,
         callee_instance: Option<Inst>,
     ) -> Result<Sp, TrapCode> {
+        // Note: the callee's frame starts with its first parameter and its stack pointer
+        //       can be inferred from its parameter slot span and its caller's stack pointer.
+        let callee_sp = caller_sp.offset(callee_params.span().head());
         let start = self
             .frames
             .push(caller_ip, callee_ip, callee_params, callee_instance)?;
-        self.values
-            .push(start, callee_locals, callee_slots, callee_params.len())
+        self.values.push(
+            callee_sp,
+            start,
+            callee_locals,
+            callee_slots,
+            callee_params.len(),
+        )
     }
 
     /// Adjusts `self` after returning from a function.
@@ -926,7 +951,7 @@ impl Stack {
         instance: Inst,
     ) -> Option<(Ip, Sp, Mem0Ptr, Mem0Len, Inst)> {
         let (ip, start, changed_instance) = self.frames.pop()?;
-        let sp = self.values.sp_or_dangling(start);
+        let sp = self.values.sp(start);
         let (mem0, mem0_len, instance) = match changed_instance {
             Some(instance) => {
                 let (mem0, mem0_len) = extract_mem0(store, instance);
@@ -938,18 +963,24 @@ impl Stack {
     }
 
     /// Adjusts `self` for a function tail call.
+    ///
+    /// # Note
+    ///
+    /// A tail call reuses the caller's frame, so the callee's [`Sp`] is `caller_sp` itself.
+    /// See [`Stack::push_frame`] for why it is threaded through instead of re-loaded.
     #[inline(always)]
     pub fn replace_frame(
         &mut self,
+        caller_sp: Sp,
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
         callee_locals: u16,
-        callee_size: u16,
+        callee_slots: u16,
         callee_instance: Option<Inst>,
     ) -> Result<Sp, TrapCode> {
         let start = self.frames.replace(callee_ip, callee_instance)?;
         self.values
-            .replace(start, callee_locals, callee_size, callee_params)
+            .replace(caller_sp, start, callee_locals, callee_slots, callee_params)
     }
 }
 
@@ -968,6 +999,14 @@ impl Stack {
 pub struct ValueStack {
     /// The cells of the value stack.
     cells: Vec<Cell>,
+    /// The number of cells that fit without reallocating, capped by [`Self::max_height`].
+    ///
+    /// # Note
+    ///
+    /// Kept in sync with `cells` so that the hot path of [`ValueStack::grow_if_needed`]
+    /// is a single comparison: `Vec::try_reserve` may over-allocate past `max_height`,
+    /// so `cells.capacity()` alone is not a sound bound to test against.
+    usable: usize,
     /// The maximum height of the value stack.
     max_height: usize,
 }
@@ -981,13 +1020,19 @@ impl ValueStack {
         let min_height = min_height / sizeof_cell;
         let max_height = max_height / sizeof_cell;
         let cells = Vec::with_capacity(min_height);
-        Self { cells, max_height }
+        let usable = cmp::min(cells.capacity(), max_height);
+        Self {
+            cells,
+            usable,
+            max_height,
+        }
     }
 
     /// Create an empty [`ValueStack`] which uses no heap allocations.
     fn empty() -> Self {
         Self {
             cells: Vec::new(),
+            usable: 0,
             max_height: 0,
         }
     }
@@ -995,6 +1040,17 @@ impl ValueStack {
     /// Reset `self` for reuse.
     fn reset(&mut self) {
         self.cells.clear();
+    }
+
+    /// Returns an [`Sp`] pointing at the base of the value stack.
+    ///
+    /// # Note
+    ///
+    /// Only used to seed the very first frame, where `start` is 0. If the buffer has
+    /// not been allocated yet the returned [`Sp`] is dangling, but pushing that frame
+    /// then reallocates and re-derives it.
+    fn base_sp(&mut self) -> Sp {
+        Sp::new(self.cells.as_mut_ptr())
     }
 
     /// Returns the number of heap allocated bytes of `self`.
@@ -1008,6 +1064,12 @@ impl ValueStack {
     }
 
     /// Returns an [`Sp`] pointing to the cell at the `start` index.
+    ///
+    /// # Note
+    ///
+    /// This is the single definition of a frame's [`Sp`]: every one of them equals
+    /// `cells.as_ptr().add(start)`, including on an empty stack where `start` is 0 and the
+    /// result is the (never dereferenced) base pointer.
     fn sp(&mut self, start: SpOffset) -> Sp {
         let offset = start.into_inner();
         debug_assert!(
@@ -1023,39 +1085,56 @@ impl ValueStack {
         Sp::new(value)
     }
 
-    /// Returns an [`Sp`] pointing to the cell at the `start` index if `self` is non-empty.
-    ///
-    /// Otherwise returns a dangling [`Sp`] that must not be dereferenced.
-    fn sp_or_dangling(&mut self, start: SpOffset) -> Sp {
-        match self.cells.is_empty() {
-            true => {
-                debug_assert_eq!(start.into_inner(), 0);
-                Sp::dangling()
-            }
-            false => self.sp(start),
-        }
-    }
-
     /// Grows the number of cells to `new_len` if the current number is less than `new_len`.
     ///
     /// Does nothing if the number of cells is already at least `new_len`.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the underlying buffer was reallocated, which invalidates every [`Sp`]
+    /// derived from it before the call.
     ///
     /// # Errors
     ///
     /// - Returns [`TrapCode::OutOfSystemMemory`] if the machine ran out of memory.
     /// - Returns [`TrapCode::StackOverflow`] if this exceeds the stack's predefined limits.
-    fn grow_if_needed(&mut self, new_len: SpOffset) -> Result<(), TrapCode> {
+    #[inline(always)]
+    fn grow_if_needed(&mut self, new_len: SpOffset) -> Result<bool, TrapCode> {
         let new_len = new_len.into_inner();
+        if new_len > self.usable {
+            self.grow_cold(new_len)?;
+            return Ok(true);
+        }
+        if new_len > self.cells.len() {
+            // Safety: `new_len <= self.usable <= self.cells.capacity()`. There is no need to
+            //         initialize the cells since we are operating on `Cell` which only has
+            //         valid bit patterns.
+            // Note: non-security related initialization of function parameters
+            //       and zero-initialization of function locals happens elsewhere.
+            unsafe { self.cells.set_len(new_len) };
+        }
+        Ok(false)
+    }
+
+    /// Reallocates the value stack so that it holds at least `new_len` cells.
+    ///
+    /// # Note
+    ///
+    /// Split out of [`ValueStack::grow_if_needed`] and marked `#[cold]` so that the
+    /// common no-growth path stays a single comparison and keeps its caller's [`Sp`]
+    /// valid in a register.
+    #[cold]
+    #[inline(never)]
+    fn grow_cold(&mut self, new_len: usize) -> Result<(), TrapCode> {
         if new_len > self.max_height {
             return Err(TrapCode::StackOverflow);
         }
-        let capacity = self.cells.capacity();
         let len = self.cells.len();
-        if new_len > capacity {
-            debug_assert!(
-                self.cells.len() <= self.cells.capacity(),
-                "capacity must always be larger or equal to the actual number of the cells"
-            );
+        debug_assert!(
+            len <= self.cells.capacity(),
+            "capacity must always be larger or equal to the actual number of the cells"
+        );
+        if new_len > self.cells.capacity() {
             let additional = new_len - len;
             self.cells
                 .try_reserve(additional)
@@ -1066,12 +1145,9 @@ impl ValueStack {
                 self.cells.capacity()
             );
         }
-        let max_len = cmp::max(new_len, len);
-        // Safety: there is no need to initialize the cells since we are operating
-        //         on `RawVal` which only has valid bit patterns.
-        // Note: non-security related initialization of function parameters
-        //       and zero-initialization of function locals happens elsewhere.
-        unsafe { self.cells.set_len(max_len) };
+        self.usable = cmp::min(self.cells.capacity(), self.max_height);
+        // Safety: see `grow_if_needed`.
+        unsafe { self.cells.set_len(cmp::max(new_len, len)) };
         Ok(())
     }
 
@@ -1171,6 +1247,7 @@ impl ValueStack {
     #[inline(always)]
     fn push(
         &mut self,
+        callee_sp: Sp,
         start: SpOffset,
         len_local_slots: u16,
         len_stack_slots: u16,
@@ -1195,17 +1272,25 @@ impl ValueStack {
         let len_stack_slots = usize::from(len_stack_slots);
         let len_params = usize::from(len_params);
         if len_stack_slots == 0 {
-            return Ok(Sp::dangling());
+            // Note: a callee without stack slots also has no parameters, so the translator
+            //       encodes a zero `params` head and `callee_sp == caller_sp`. Propagate it
+            //       rather than a fresh dangling pointer, so that any call this frame goes on
+            //       to make can still derive its callee's `Sp` from this one.
+            return Ok(callee_sp);
         }
         let end = start.add(len_stack_slots)?;
-        self.grow_if_needed(end)?;
+        // Note: `callee_sp` was derived from the caller's `Sp` register, so it only survives
+        //       if the buffer was not reallocated. Re-deriving is confined to the cold path.
+        let sp = match self.grow_if_needed(end)? {
+            true => self.sp(start),
+            false => callee_sp,
+        };
         let start_locals = start.into_inner().wrapping_add(len_params);
         let end_locals = start.into_inner().wrapping_add(len_local_slots);
         let Some(local_cells) = self.cells.get_mut(start_locals..end_locals) else {
             unsafe { unreachable_unchecked!() }
         };
         local_cells.fill_with(Cell::default);
-        let sp = self.sp(start);
         Ok(sp)
     }
 
@@ -1213,22 +1298,29 @@ impl ValueStack {
     #[inline(always)]
     fn replace(
         &mut self,
+        callee_sp: Sp,
         callee_start: SpOffset,
         callee_locals: u16,
-        callee_size: u16,
+        callee_slots: u16,
         callee_params: BoundedSlotSpan,
     ) -> Result<Sp, TrapCode> {
-        debug_assert!(callee_locals <= callee_size);
+        debug_assert!(callee_locals <= callee_slots);
         let callee_locals = usize::from(callee_locals);
-        let callee_size = usize::from(callee_size);
+        let callee_size = usize::from(callee_slots);
         let params_len = usize::from(callee_params.len());
         let params_start = usize::from(u16::from(callee_params.span().head()));
         let params_end = params_start.wrapping_add(params_len);
         if callee_size == 0 {
-            return Ok(Sp::dangling());
+            // Note: see `ValueStack::push` — the frame is reused, so this is the caller's `Sp`.
+            return Ok(callee_sp);
         }
         let callee_end = callee_start.add(callee_size)?;
-        self.grow_if_needed(callee_end)?;
+        // Note: a tail call reuses the caller's frame, so `callee_sp` is the caller's `Sp`
+        //       unchanged and only needs re-deriving if the buffer was reallocated.
+        let sp = match self.grow_if_needed(callee_end)? {
+            true => self.sp(callee_start),
+            false => callee_sp,
+        };
         let Some(callee_cells) = self.cells_from(callee_start) else {
             unsafe { unreachable_unchecked!("ValueStack::replace: out of bounds callee cells") }
         };
@@ -1237,7 +1329,6 @@ impl ValueStack {
             unsafe { unreachable_unchecked!() }
         };
         local_cells.fill_with(Cell::default);
-        let sp = self.sp(callee_start);
         Ok(sp)
     }
 
