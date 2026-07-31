@@ -28,6 +28,7 @@ use crate::{
 };
 use alloc::boxed::Box;
 use core::{fmt::Debug, ptr::NonNull};
+use wasmparser::WasmFeatures;
 
 /// An arena for the [`StoreInner`].
 type StoreArena<T> = Arena<RawHandle<T>, <T as Handle>::Entity>;
@@ -136,6 +137,12 @@ pub struct StoreInner {
     engine: Engine,
     /// The fuel of the [`StoreInner`].
     pub(super) fuel: Fuel,
+    /// The [`WasmFeatures`] of the [`Engine`], required for lazy function compilation.
+    ///
+    /// # Note
+    ///
+    /// Stored by value so that the executor reaches them without a dependent load.
+    features: WasmFeatures,
 }
 
 impl StoreInner {
@@ -145,6 +152,7 @@ impl StoreInner {
         let fuel_enabled = config.get_consume_fuel();
         let fuel_costs = config.fuel_costs().clone();
         let fuel = Fuel::new(fuel_enabled, fuel_costs);
+        let features = config.wasm_features();
         StoreInner {
             engine: engine.clone(),
             id: StoreId::new(),
@@ -157,6 +165,7 @@ impl StoreInner {
             elems: StableArena::new(),
             extern_objects: Arena::new(),
             fuel,
+            features,
         }
     }
 
@@ -173,6 +182,11 @@ impl StoreInner {
     /// Returns an exclusive reference to the [`Fuel`] counters.
     pub fn fuel_mut(&mut self) -> &mut Fuel {
         &mut self.fuel
+    }
+
+    /// Returns the [`Fuel`] counters and the [`WasmFeatures`] required for lazy compilation.
+    pub fn fuel_and_features(&mut self) -> (&mut Fuel, &WasmFeatures) {
+        (&mut self.fuel, &self.features)
     }
 
     /// Returns the remaining fuel of the [`StoreInner`] if fuel metering is enabled.
