@@ -1253,22 +1253,30 @@ impl ValueStack {
     #[inline(always)]
     fn replace(
         &mut self,
+        callee_sp: Sp,
         callee_start: SpOffset,
         callee_locals: u16,
-        callee_size: u16,
+        callee_slots: u16,
         callee_params: BoundedSlotSpan,
     ) -> Result<Sp, TrapCode> {
-        debug_assert!(callee_locals <= callee_size);
+        debug_assert!(callee_locals <= callee_slots);
         let callee_locals = usize::from(callee_locals);
-        let callee_size = usize::from(callee_size);
+        let callee_size = usize::from(callee_slots);
         let params_len = usize::from(callee_params.len());
         let params_start = usize::from(u16::from(callee_params.span().head()));
         let params_end = params_start.wrapping_add(params_len);
         if callee_size == 0 {
-            return Ok(Sp::dangling());
+            // Note: see `ValueStack::push` — the frame is reused, so this is the caller's `Sp`.
+            return Ok(callee_sp);
         }
         let callee_end = callee_start.add(callee_size)?;
-        self.grow_if_needed(callee_end)?;
+        // Note: a tail call reuses the caller's frame, so `callee_sp` is the caller's `Sp`
+        //       unchanged and only needs re-deriving if the buffer was reallocated.
+        let sp = match self.grow_if_needed(callee_end)? {
+            true => self.sp(callee_start),
+            false => callee_sp,
+        };
+        self.debug_check_sp(sp, callee_start);
         let Some(callee_cells) = self.cells_from(callee_start) else {
             unsafe { unreachable_unchecked!("ValueStack::replace: out of bounds callee cells") }
         };
@@ -1277,7 +1285,6 @@ impl ValueStack {
             unsafe { unreachable_unchecked!() }
         };
         local_cells.fill_with(Cell::default);
-        let sp = self.sp(callee_start);
         Ok(sp)
     }
 
