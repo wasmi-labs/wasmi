@@ -4,8 +4,7 @@ use crate::{
     Instance,
     Store,
     engine::{
-        CodeView,
-        EngineFunc,
+        FuncEntryPtr,
         LiftFromCells,
         LowerToCells,
         executor::handler::{
@@ -23,7 +22,6 @@ use core::marker::PhantomData;
 pub struct WasmFuncCall<'a, T, State> {
     store: &'a mut Store<T>,
     stack: &'a mut Stack,
-    code: CodeView<'a>,
     callee_ip: Ip,
     callee_sp: Sp,
     instance: Inst,
@@ -38,7 +36,6 @@ impl<'a, T, State> WasmFuncCall<'a, T, State> {
         WasmFuncCall {
             store: self.store,
             stack: self.stack,
-            code: self.code,
             callee_ip: self.callee_ip,
             callee_sp: self.callee_sp,
             instance: self.instance,
@@ -110,7 +107,7 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
     fn execute_until_done(&mut self) -> Result<Sp, ExecutionOutcome> {
         let store = self.store.prune();
         let (mem0, mem0_len) = utils::extract_mem0(store, self.instance);
-        let mut state = VmState::new(store, self.stack, self.code);
+        let mut state = VmState::new(store, self.stack);
         execute_until_done(
             &mut state,
             self.callee_ip,
@@ -157,14 +154,15 @@ impl<'a, T> WasmFuncCall<'a, T, state::Done> {
 
 pub fn init_wasm_func_call<'a, T>(
     store: &'a mut Store<T>,
-    code: CodeView<'a>,
     stack: &'a mut Stack,
-    func: EngineFunc,
+    func_entry: FuncEntryPtr,
     instance: Instance,
 ) -> Result<WasmFuncCall<'a, T, state::Uninit>, Error> {
-    let Some(compiled_func) = code.get_or_compile(Some(store.inner.fuel_mut()), func)? else {
-        panic!("missing function entry at: {func:?}")
-    };
+    // SAFETY: `func_entry` stems from a `WasmFuncEntity` owned by `store`, thus the engine
+    //         owning the `FuncEntry` outlives this call.
+    let func_entry = unsafe { func_entry.get() };
+    let (fuel, features) = store.inner.fuel_and_features();
+    let compiled_func = func_entry.get_or_compile(Some(fuel), features)?;
     let callee_ip = Ip::from(compiled_func.ops());
     let len_local_slots = compiled_func.len_local_slots();
     let len_stack_slots = compiled_func.len_stack_slots();
@@ -189,7 +187,6 @@ pub fn init_wasm_func_call<'a, T>(
     Ok(WasmFuncCall {
         store,
         stack,
-        code,
         callee_ip,
         callee_sp,
         instance,
@@ -202,14 +199,12 @@ pub fn init_wasm_func_call<'a, T>(
 
 pub fn resume_wasm_func_call<'a, T>(
     store: &'a mut Store<T>,
-    code: CodeView<'a>,
     stack: &'a mut Stack,
 ) -> Result<WasmFuncCall<'a, T, state::Resumed>, Error> {
     let (callee_ip, callee_sp, instance, ireg, freg32, freg64) = stack.restore_frame();
     Ok(WasmFuncCall {
         store,
         stack,
-        code,
         callee_ip,
         callee_sp,
         instance,
