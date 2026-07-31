@@ -14,7 +14,6 @@ use self::utils::SmallByteSlice;
 use super::ValidatingFuncTranslator;
 use super::{FuncToValidate, FuncTranslationDriver, FuncTranslator, TranslationError};
 use crate::{
-    Config,
     Error,
     TrapCode,
     core::{Fuel, FuelCostsProvider, hint},
@@ -58,26 +57,21 @@ const LEN_BUCKET0: u64 = 1 << LEN_BUCKET0_LOG2;
 const MAX_BUCKETS: usize = Funcs::required_buckets_for_len(MAX_FUNCS);
 
 /// A data structure to store and manage [`FuncEntry`] definitions.
-#[derive(Debug)]
+///
+/// # Note
+///
+/// The [`WasmFeatures`] required to compile a [`FuncEntry`] are not stored here but in the
+/// [`StoreInner`](crate::store::StoreInner) driving the compilation, where the executor
+/// reaches them without a dependent load.
+#[derive(Debug, Default)]
 pub struct CodeMap {
     /// The append-only, lock-free-readable storage for all [`FuncEntry`] definitions.
     funcs: Funcs,
     /// Serializes concurrent writers ([`Self::alloc_funcs`]); readers never take this lock.
     alloc_lock: Mutex<()>,
-    /// Shared Wasm features across all [`FuncEntry`] definitions within the [`CodeMap`].
-    features: WasmFeatures,
 }
 
 impl CodeMap {
-    /// Creates a new [`CodeMap`].
-    pub fn new(config: &Config) -> Self {
-        Self {
-            funcs: Funcs::default(),
-            alloc_lock: Mutex::new(()),
-            features: config.wasm_features(),
-        }
-    }
-
     /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
     ///
     /// # Note
@@ -154,8 +148,8 @@ pub struct Funcs {
     /// - The first `required_buckets_for_len(len_funcs)` slots are `Some` and, once published,
     ///   are never written or moved again.
     /// - The `buckets` array lives behind an [`UnsafeCell`] so that new buckets can be
-    ///   published through a shared `&Funcs` (no `&mut Funcs` is ever formed), which is what lets a
-    ///   [`CodeView`] snapshot read `buckets` lock-free and without atomics on the per-call path.
+    ///   published through a shared `&Funcs` (no `&mut Funcs` is ever formed), which is what lets
+    ///   readers resolve a [`FuncEntry`] lock-free.
     buckets: UnsafeCell<[Option<RawFuncsBucket>; MAX_BUCKETS]>,
     /// The number of [`FuncEntry`] definitions published across all `buckets`.
     ///
