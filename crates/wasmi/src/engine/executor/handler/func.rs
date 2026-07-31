@@ -174,7 +174,10 @@ pub fn init_wasm_func_call<'a, T>(
     //       so we simply default to 0.
     let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), 0);
     let instance = resolve_instance(store.prune(), &instance).into();
+    // Note: the call stack is empty here, so the first frame starts at the value stack base.
+    let caller_sp = stack.base_sp();
     let callee_sp = stack.push_frame(
+        caller_sp,
         None,
         callee_ip,
         callee_params,
