@@ -1016,6 +1016,7 @@ impl ValueStack {
     fn empty() -> Self {
         Self {
             cells: Vec::new(),
+            usable: 0,
             max_height: 0,
         }
     }
