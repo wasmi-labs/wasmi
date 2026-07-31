@@ -14,7 +14,6 @@ use self::utils::SmallByteSlice;
 use super::ValidatingFuncTranslator;
 use super::{FuncToValidate, FuncTranslationDriver, FuncTranslator, TranslationError};
 use crate::{
-    Config,
     Error,
     TrapCode,
     core::{Fuel, FuelCostsProvider, hint},
@@ -58,26 +57,21 @@ const LEN_BUCKET0: u64 = 1 << LEN_BUCKET0_LOG2;
 const MAX_BUCKETS: usize = Funcs::required_buckets_for_len(MAX_FUNCS);
 
 /// A data structure to store and manage [`FuncEntry`] definitions.
-#[derive(Debug)]
+///
+/// # Note
+///
+/// The [`WasmFeatures`] required to compile a [`FuncEntry`] are not stored here but in the
+/// [`StoreInner`](crate::store::StoreInner) driving the compilation, where the executor
+/// reaches them without a dependent load.
+#[derive(Debug, Default)]
 pub struct CodeMap {
     /// The append-only, lock-free-readable storage for all [`FuncEntry`] definitions.
     funcs: Funcs,
     /// Serializes concurrent writers ([`Self::alloc_funcs`]); readers never take this lock.
     alloc_lock: Mutex<()>,
-    /// Shared Wasm features across all [`FuncEntry`] definitions within the [`CodeMap`].
-    features: WasmFeatures,
 }
 
 impl CodeMap {
-    /// Creates a new [`CodeMap`].
-    pub fn new(config: &Config) -> Self {
-        Self {
-            funcs: Funcs::default(),
-            alloc_lock: Mutex::new(()),
-            features: config.wasm_features(),
-        }
-    }
-
     /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
     ///
     /// # Note
@@ -93,6 +87,14 @@ impl CodeMap {
             Ok(span) => span,
             Err(err) => panic!("failed to alloc funcs: {err}"),
         }
+    }
+
+    /// Returns a shared reference to the [`FuncEntry`] of `func` if published.
+    ///
+    /// Returns `None` if `func` is not (yet) published to this [`CodeMap`].
+    #[inline]
+    pub fn entry(&self, func: EngineFunc) -> Option<&FuncEntry> {
+        self.funcs.get(func)
     }
 
     /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntry`].
@@ -134,110 +136,6 @@ impl CodeMap {
             func_to_validate,
         ));
     }
-
-    /// Returns a cheap, lock-free [`CodeView`] snapshot of this [`CodeMap`].
-    ///
-    /// # Note
-    ///
-    /// The snapshot borrows `self` and caches the currently published function count; it is used by
-    /// the executor to resolve calls without locking or per-call atomics.
-    #[inline]
-    pub fn view(&self) -> CodeView<'_> {
-        // Note: a single `Acquire` load establishes the happens-before for every bucket published before
-        //       this length; subsequent per-call reads through the snapshot are plain (non-atomic).
-        let len_funcs = self.funcs.len_funcs.load(Ordering::Acquire);
-        CodeView {
-            code_map: self,
-            len_funcs,
-        }
-    }
-}
-
-/// A cheap, lock-free, stale-but-valid snapshot of a [`CodeMap`].
-///
-/// Borrows the source [`CodeMap`] and caches the number of published functions, so the executor
-/// can resolve functions without locking and without any atomic load on the per-call path.
-///
-/// # Note
-///
-/// - Represents a potentially stale view: functions appended after the snapshot are not visible
-///   until [`CodeView::refresh`] is called. Since [`Funcs`] is append-only and pointer-stable, a
-///   stale view is never invalid, only outdated.
-/// - Holding `&CodeMap` is sound under both Stacked and Tree Borrows because no `&mut CodeMap`
-///   (or `&mut Funcs`) is ever formed while a view is alive: all publication goes through interior
-///   mutability under the writer lock.
-/// - Upon execution an [`Engine`] derives a [`CodeView`] of the current [`CodeMap`] state and uses
-///   it to drive call-based executions without taking the writer lock. After a host function call
-///   the view must be [`refresh`](CodeView::refresh)ed, since the host may have appended functions
-///   (e.g. by compiling and instantiating new modules) that the resuming Wasm can reach.
-///
-/// [`Engine`]: crate::Engine
-#[derive(Copy, Clone)]
-pub struct CodeView<'a> {
-    /// The source [`CodeMap`]. The bucket-array base address and `features` are stable for its
-    /// lifetime; only the published function count grows (tracked by `len_funcs`).
-    code_map: &'a CodeMap,
-    /// Cached number of published [`FuncEntry`] definitions; bounds visibility.
-    ///
-    /// # Note
-    ///
-    /// This is only updated by [`CodeView::refresh`], so the per-call read path performs no atomic load.
-    len_funcs: usize,
-}
-
-impl fmt::Debug for CodeView<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("CodeView")
-            .field("len_funcs", &self.len_funcs)
-            .finish_non_exhaustive()
-    }
-}
-
-impl<'a> CodeView<'a> {
-    /// Re-materializes the snapshot to reflect functions published since it was last (re)created.
-    ///
-    /// Must be called after a host function call: the host may have compiled and/or instantiated
-    /// new Wasm modules (appending to the [`CodeMap`]) that the resuming Wasm code can then reach.
-    #[inline]
-    pub fn refresh(&mut self) {
-        self.len_funcs = self.code_map.funcs.len_funcs.load(Ordering::Acquire);
-    }
-
-    /// Returns a shared reference to the [`FuncEntry`] of `func` if visible in this snapshot.
-    ///
-    /// Returns `None` if `func` is not (yet) visible to this snapshot.
-    #[inline]
-    pub fn entry(&self, func: EngineFunc) -> Option<&'a FuncEntry> {
-        // Safety: `len_funcs` is loaded via acquire upon creation of `self` so that `buckets` are published.
-        unsafe { self.code_map.funcs.get_within(func, self.len_funcs) }
-    }
-
-    /// Returns the [`CompiledFuncRef`] of `func`, compiling it lazily if still uncompiled.
-    ///
-    /// Returns `None` if the `func` index is out of bounds for `self`.
-    ///
-    /// # Errors
-    ///
-    /// - If translation or Wasm validation of `func` failed.
-    /// - If `fuel` ran out in case fuel consumption is enabled.
-    #[track_caller]
-    #[inline]
-    pub fn get_or_compile(
-        &self,
-        fuel: Option<&mut Fuel>,
-        func: EngineFunc,
-    ) -> Result<Option<CompiledFuncRef<'a>>, Error> {
-        let Some(entry) = self.entry(func) else {
-            return Ok(None);
-        };
-        let compiled = entry.get_or_compile(fuel, &self.code_map.features)?;
-        Ok(Some(compiled))
-    }
-
-    /// Returns the [`WasmFeatures`] of the underlying [`CodeMap`].
-    pub fn features(&self) -> &WasmFeatures {
-        &self.code_map.features
-    }
 }
 
 /// An append-only collection for [`FuncEntry`] definitions.
@@ -250,8 +148,8 @@ pub struct Funcs {
     /// - The first `required_buckets_for_len(len_funcs)` slots are `Some` and, once published,
     ///   are never written or moved again.
     /// - The `buckets` array lives behind an [`UnsafeCell`] so that new buckets can be
-    ///   published through a shared `&Funcs` (no `&mut Funcs` is ever formed), which is what lets a
-    ///   [`CodeView`] snapshot read `buckets` lock-free and without atomics on the per-call path.
+    ///   published through a shared `&Funcs` (no `&mut Funcs` is ever formed), which is what lets
+    ///   readers resolve a [`FuncEntry`] lock-free.
     buckets: UnsafeCell<[Option<RawFuncsBucket>; MAX_BUCKETS]>,
     /// The number of [`FuncEntry`] definitions published across all `buckets`.
     ///

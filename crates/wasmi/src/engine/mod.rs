@@ -37,7 +37,7 @@ pub(crate) use self::{
     },
 };
 use self::{
-    code_map::{CodeMap, CodeView, CompiledFuncEntry},
+    code_map::{CodeMap, CompiledFuncEntry},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
 };
@@ -618,7 +618,7 @@ impl EngineInner {
         let engine_idx = EngineId::new();
         Self {
             config: config.clone(),
-            code_map: CodeMap::new(config),
+            code_map: CodeMap::default(),
             func_types: RwLock::new(FuncTypeRegistry::new(engine_idx)),
             allocs: Mutex::new(ReusableAllocationStack::default()),
             stacks: Mutex::new(EngineStacks::new(&config.stack)),
@@ -637,7 +637,7 @@ impl EngineInner {
 
     /// Returns a reference to the [`FuncEntry`] at `func` if any.
     pub(super) fn resolve_func(&self, func: EngineFunc) -> Option<&FuncEntry> {
-        self.code_map.view().entry(func)
+        self.code_map.entry(func)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.

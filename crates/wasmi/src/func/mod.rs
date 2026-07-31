@@ -174,6 +174,11 @@ impl WasmFuncEntity {
         self.body
     }
 
+    /// Returns the cached [`FuncEntryPtr`] of the Wasm function.
+    pub fn func_entry_ptr(&self) -> FuncEntryPtr {
+        self.func_entry
+    }
+
     /// Returns the cached [`FuncEntry`] of the Wasm function.
     pub fn func_entry(&self) -> &FuncEntry {
         // SAFETY: the `FuncEntry` lives in the owning engine's `CodeMap`, which outlives this

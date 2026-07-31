@@ -21,7 +21,6 @@ use crate::{
         ShiftAmount,
     },
     engine::{
-        CodeView,
         FuncEntry,
         InOutParams,
         executor::{
@@ -67,9 +66,8 @@ pub fn compile_or_get_func_entry(
     state: &mut VmState,
     func: &FuncEntry,
 ) -> Result<(Ip, u16, u16), Error> {
-    let fuel_mut = state.store.inner_mut().fuel_mut();
-    let features = state.code.features();
-    let compiled_func = func.get_or_compile(Some(fuel_mut), features)?;
+    let (fuel, features) = state.store.inner_mut().fuel_and_features();
+    let compiled_func = func.get_or_compile(Some(fuel), features)?;
     let ip = Ip::from(compiled_func.ops());
     let len_local_slots = compiled_func.len_local_slots();
     let len_stack_slots = compiled_func.len_stack_slots();
@@ -822,14 +820,12 @@ pub fn return_call_func_entry(
 ///
 /// # Note
 ///
-/// Takes `store` and `code` instead of the whole [`VmState`] since `inout` already
-/// borrows its [`Stack`].
+/// Takes `store` instead of the whole [`VmState`] since `inout` already borrows its [`Stack`].
 ///
 /// [`Stack`]: crate::engine::executor::Stack
 #[inline]
 fn invoke_host(
     store: &mut PrunedStore,
-    code: &mut CodeView,
     trampoline: Trampoline,
     instance: Option<Inst>,
     inout: InOutParams<'_>,
@@ -844,7 +840,6 @@ fn invoke_host(
             )
         },
     }
-    code.refresh();
     Ok(())
 }
 
@@ -863,14 +858,7 @@ pub fn call_host(
         .stack
         .prepare_host_frame(caller_ip, params, host_func.len_result_cells())
         .into_control()?;
-    if let Err(error) = invoke_host(
-        state.store,
-        &mut state.code,
-        trampoline,
-        instance,
-        inout,
-        call_hooks,
-    ) {
+    if let Err(error) = invoke_host(state.store, trampoline, instance, inout, call_hooks) {
         done!(state, DoneReason::host_error(error, func, params.span()))
     }
     Control::Continue(sp)
@@ -891,7 +879,6 @@ pub fn return_call_host(
         .into_control()?;
     if let Err(error) = invoke_host(
         state.store,
-        &mut state.code,
         trampoline,
         Some(instance),
         inout,

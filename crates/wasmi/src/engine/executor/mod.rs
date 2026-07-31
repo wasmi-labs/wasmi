@@ -18,7 +18,6 @@ pub use self::{
     },
     inout::{InOutParams, InOutResults},
 };
-use super::code_map::{CodeMap, CodeView};
 use crate::{
     Error,
     Func,
@@ -58,7 +57,7 @@ impl EngineInner {
         Results: LiftFromCells,
     {
         let mut stack = self.stacks.lock().reuse_or_new();
-        let value = EngineExecutor::new(&self.code_map, &mut stack)
+        let value = EngineExecutor::new(&mut stack)
             .execute_root_func(ctx.store, func, params, results)
             .map_err(ExecutionOutcome::into_non_resumable)?;
         self.stacks.lock().recycle(stack);
@@ -85,8 +84,8 @@ impl EngineInner {
     {
         let store = ctx.store;
         let mut stack = self.stacks.lock().reuse_or_new();
-        let outcome = EngineExecutor::new(&self.code_map, &mut stack)
-            .execute_root_func(store, func, params, results);
+        let outcome =
+            EngineExecutor::new(&mut stack).execute_root_func(store, func, params, results);
         let value = match outcome {
             Ok(value) => value,
             Err(ExecutionOutcome::Host(error)) => {
@@ -139,7 +138,7 @@ impl EngineInner {
         Results: LiftFromCells,
     {
         let caller_results = invocation.caller_results();
-        let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
+        let mut executor = EngineExecutor::new(invocation.common.stack_mut());
         let outcome = executor.resume_func_host_trap(ctx.store, params, caller_results, results);
         let results = match outcome {
             Ok(results) => results,
@@ -179,7 +178,7 @@ impl EngineInner {
     where
         Results: LiftFromCells,
     {
-        let mut executor = EngineExecutor::new(&self.code_map, invocation.common.stack_mut());
+        let mut executor = EngineExecutor::new(invocation.common.stack_mut());
         let outcome = executor.resume_func_out_of_fuel(ctx.store, results);
         let results = match outcome {
             Ok(results) => results,
@@ -207,19 +206,14 @@ impl EngineInner {
 /// The internal state of the Wasmi engine.
 #[derive(Debug)]
 pub struct EngineExecutor<'engine> {
-    /// A cheap, lock-free snapshot of the engine's [`CodeMap`].
-    code: CodeView<'engine>,
     /// The value and call stacks.
     stack: &'engine mut Stack,
 }
 
 impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] for the given [`Stack`].
-    fn new(code_map: &'engine CodeMap, stack: &'engine mut Stack) -> Self {
-        Self {
-            code: code_map.view(),
-            stack,
-        }
+    fn new(stack: &'engine mut Stack) -> Self {
+        Self { stack }
     }
 
     /// Executes the given [`Func`] using the given `params`.
@@ -247,9 +241,8 @@ impl<'engine> EngineExecutor<'engine> {
             FuncEntity::Wasm(wasm_func) => {
                 // We reserve space on the stack to write the results of the root function execution.
                 let instance = *wasm_func.instance();
-                let engine_func = wasm_func.func_body();
-                let call =
-                    init_wasm_func_call(store, self.code, self.stack, engine_func, instance)?;
+                let func_entry = wasm_func.func_entry_ptr();
+                let call = init_wasm_func_call(store, self.stack, func_entry, instance)?;
                 call.write_params(params).execute()?.write_results(results)
             }
             FuncEntity::Host(host_func) => {
@@ -285,7 +278,7 @@ impl<'engine> EngineExecutor<'engine> {
         Params: LowerToCells,
         Results: LiftFromCells,
     {
-        let value = resume_wasm_func_call(store, self.code, self.stack)?
+        let value = resume_wasm_func_call(store, self.stack)?
             .provide_host_results(params, params_slots)
             .execute()?
             .write_results(results);
@@ -308,7 +301,7 @@ impl<'engine> EngineExecutor<'engine> {
     where
         Results: LiftFromCells,
     {
-        let value = resume_wasm_func_call(store, self.code, self.stack)?
+        let value = resume_wasm_func_call(store, self.stack)?
             .execute()?
             .write_results(results);
         Ok(value)
