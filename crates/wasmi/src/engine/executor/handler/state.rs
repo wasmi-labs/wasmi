@@ -901,9 +901,17 @@ impl Stack {
     }
 
     /// Adjusts `self` for a normal function call.
+    ///
+    /// # Note
+    ///
+    /// `caller_sp` must be the [`Sp`] of the currently executing frame. The callee's [`Sp`]
+    /// is derived from it by pointer arithmetic instead of being re-loaded from the frame
+    /// table, which keeps it off the call's dependent-load chain.
     #[inline(always)]
+    #[expect(clippy::too_many_arguments)]
     pub fn push_frame(
         &mut self,
+        caller_sp: Sp,
         caller_ip: Option<Ip>,
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
@@ -911,11 +919,19 @@ impl Stack {
         callee_slots: u16,
         callee_instance: Option<Inst>,
     ) -> Result<Sp, TrapCode> {
+        // Note: the callee's frame starts with its first parameter and its stack pointer
+        //       can be inferred from its parameter slot span and its caller's stack pointer.
+        let callee_sp = caller_sp.offset(callee_params.span().head());
         let start = self
             .frames
             .push(caller_ip, callee_ip, callee_params, callee_instance)?;
-        self.values
-            .push(start, callee_locals, callee_slots, callee_params.len())
+        self.values.push(
+            callee_sp,
+            start,
+            callee_locals,
+            callee_slots,
+            callee_params.len(),
+        )
     }
 
     /// Adjusts `self` after returning from a function.
@@ -1225,6 +1241,7 @@ impl ValueStack {
     #[inline(always)]
     fn push(
         &mut self,
+        callee_sp: Sp,
         start: SpOffset,
         len_local_slots: u16,
         len_stack_slots: u16,
@@ -1249,17 +1266,25 @@ impl ValueStack {
         let len_stack_slots = usize::from(len_stack_slots);
         let len_params = usize::from(len_params);
         if len_stack_slots == 0 {
-            return Ok(Sp::dangling());
+            // Note: a callee without stack slots also has no parameters, so the translator
+            //       encodes a zero `params` head and `callee_sp == caller_sp`. Propagating it
+            //       (rather than a fresh dangling pointer) keeps the invariant checked by
+            //       `debug_check_sp` intact for any call this frame goes on to make.
+            return Ok(callee_sp);
         }
         let end = start.add(len_stack_slots)?;
-        self.grow_if_needed(end)?;
+        // Note: `callee_sp` was derived from the caller's `Sp` register, so it only survives
+        //       if the buffer was not reallocated. Re-deriving is confined to the cold path.
+        let sp = match self.grow_if_needed(end)? {
+            true => self.sp(start),
+            false => callee_sp,
+        };
         let start_locals = start.into_inner().wrapping_add(len_params);
         let end_locals = start.into_inner().wrapping_add(len_local_slots);
         let Some(local_cells) = self.cells.get_mut(start_locals..end_locals) else {
             unsafe { unreachable_unchecked!() }
         };
         local_cells.fill_with(Cell::default);
-        let sp = self.sp(start);
         Ok(sp)
     }
 
