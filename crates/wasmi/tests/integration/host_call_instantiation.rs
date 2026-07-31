@@ -74,15 +74,12 @@ fn test_instantiate_in_host_call() {
     run.call(&mut store, ()).unwrap();
 }
 
-/// Regression test for [`CodeView`] staleness across host calls.
+/// Regression test for reaching functions appended to the engine during a host call.
 ///
 /// A host function compiles and instantiates a *new* Wasm module (appending its functions to the
-/// engine `CodeMap` with indices beyond the running executor's snapshot) and wires one of those
+/// engine `CodeMap` beyond what the running execution started with) and wires one of those
 /// functions into the caller's table. The resuming Wasm then calls that function via
-/// `call_indirect`. Without re-materializing the executor's `CodeView` after the host call, the
-/// indirect call would panic with "missing function entry".
-///
-/// [`CodeView`]: (internal)
+/// `call_indirect`.
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
 fn test_call_func_added_during_host_call() {
