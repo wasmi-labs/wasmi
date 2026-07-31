@@ -12,7 +12,6 @@ use crate::{
             CellError,
             CellsReader,
             CellsWriter,
-            CodeView,
             InOutParams,
             LoadFromCellsByValue,
             StoreToCells,
@@ -33,16 +32,14 @@ use core::{cmp, marker::PhantomData, mem, ops, ptr, slice};
 pub struct VmState<'vm> {
     pub store: &'vm mut PrunedStore,
     pub stack: &'vm mut Stack,
-    pub code: CodeView<'vm>,
     done_reason: Option<DoneReason>,
 }
 
 impl<'vm> VmState<'vm> {
-    pub fn new(store: &'vm mut PrunedStore, stack: &'vm mut Stack, code: CodeView<'vm>) -> Self {
+    pub fn new(store: &'vm mut PrunedStore, stack: &'vm mut Stack) -> Self {
         Self {
             store,
             stack,
-            code,
             done_reason: None,
         }
     }
