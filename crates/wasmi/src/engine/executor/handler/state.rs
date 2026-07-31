@@ -891,6 +891,15 @@ impl Stack {
             .prepare_host_frame(caller_start, callee_params, results_len)
     }
 
+    /// Returns an [`Sp`] pointing at the base of the value stack.
+    ///
+    /// # Note
+    ///
+    /// Only valid as the `caller_sp` of the very first frame pushed onto an empty [`Stack`].
+    pub fn base_sp(&mut self) -> Sp {
+        self.values.base_sp()
+    }
+
     /// Adjusts `self` for a normal function call.
     #[inline(always)]
     pub fn push_frame(
@@ -1008,6 +1017,17 @@ impl ValueStack {
     /// Reset `self` for reuse.
     fn reset(&mut self) {
         self.cells.clear();
+    }
+
+    /// Returns an [`Sp`] pointing at the base of the value stack.
+    ///
+    /// # Note
+    ///
+    /// Only used to seed the very first frame, where `start` is 0. If the buffer has
+    /// not been allocated yet the returned [`Sp`] is dangling, but pushing that frame
+    /// then reallocates and re-derives it.
+    fn base_sp(&mut self) -> Sp {
+        Sp::new(self.cells.as_mut_ptr())
     }
 
     /// Returns the number of heap allocated bytes of `self`.
