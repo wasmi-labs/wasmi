@@ -968,6 +968,14 @@ impl Stack {
 pub struct ValueStack {
     /// The cells of the value stack.
     cells: Vec<Cell>,
+    /// The number of cells that fit without reallocating, capped by [`Self::max_height`].
+    ///
+    /// # Note
+    ///
+    /// Kept in sync with `cells` so that the hot path of [`ValueStack::grow_if_needed`]
+    /// is a single comparison: `Vec::try_reserve` may over-allocate past `max_height`,
+    /// so `cells.capacity()` alone is not a sound bound to test against.
+    usable: usize,
     /// The maximum height of the value stack.
     max_height: usize,
 }
@@ -981,7 +989,12 @@ impl ValueStack {
         let min_height = min_height / sizeof_cell;
         let max_height = max_height / sizeof_cell;
         let cells = Vec::with_capacity(min_height);
-        Self { cells, max_height }
+        let usable = cmp::min(cells.capacity(), max_height);
+        Self {
+            cells,
+            usable,
+            max_height,
+        }
     }
 
     /// Create an empty [`ValueStack`] which uses no heap allocations.
@@ -1040,22 +1053,52 @@ impl ValueStack {
     ///
     /// Does nothing if the number of cells is already at least `new_len`.
     ///
+    /// # Returns
+    ///
+    /// `true` if the underlying buffer was reallocated, which invalidates every [`Sp`]
+    /// derived from it before the call.
+    ///
     /// # Errors
     ///
     /// - Returns [`TrapCode::OutOfSystemMemory`] if the machine ran out of memory.
     /// - Returns [`TrapCode::StackOverflow`] if this exceeds the stack's predefined limits.
-    fn grow_if_needed(&mut self, new_len: SpOffset) -> Result<(), TrapCode> {
+    #[inline(always)]
+    fn grow_if_needed(&mut self, new_len: SpOffset) -> Result<bool, TrapCode> {
         let new_len = new_len.into_inner();
+        if new_len > self.usable {
+            self.grow_cold(new_len)?;
+            return Ok(true);
+        }
+        if new_len > self.cells.len() {
+            // Safety: `new_len <= self.usable <= self.cells.capacity()`. There is no need to
+            //         initialize the cells since we are operating on `Cell` which only has
+            //         valid bit patterns.
+            // Note: non-security related initialization of function parameters
+            //       and zero-initialization of function locals happens elsewhere.
+            unsafe { self.cells.set_len(new_len) };
+        }
+        Ok(false)
+    }
+
+    /// Reallocates the value stack so that it holds at least `new_len` cells.
+    ///
+    /// # Note
+    ///
+    /// Split out of [`ValueStack::grow_if_needed`] and marked `#[cold]` so that the
+    /// common no-growth path stays a single comparison and keeps its caller's [`Sp`]
+    /// valid in a register.
+    #[cold]
+    #[inline(never)]
+    fn grow_cold(&mut self, new_len: usize) -> Result<(), TrapCode> {
         if new_len > self.max_height {
             return Err(TrapCode::StackOverflow);
         }
-        let capacity = self.cells.capacity();
         let len = self.cells.len();
-        if new_len > capacity {
-            debug_assert!(
-                self.cells.len() <= self.cells.capacity(),
-                "capacity must always be larger or equal to the actual number of the cells"
-            );
+        debug_assert!(
+            len <= self.cells.capacity(),
+            "capacity must always be larger or equal to the actual number of the cells"
+        );
+        if new_len > self.cells.capacity() {
             let additional = new_len - len;
             self.cells
                 .try_reserve(additional)
@@ -1066,12 +1109,9 @@ impl ValueStack {
                 self.cells.capacity()
             );
         }
-        let max_len = cmp::max(new_len, len);
-        // Safety: there is no need to initialize the cells since we are operating
-        //         on `RawVal` which only has valid bit patterns.
-        // Note: non-security related initialization of function parameters
-        //       and zero-initialization of function locals happens elsewhere.
-        unsafe { self.cells.set_len(max_len) };
+        self.usable = cmp::min(self.cells.capacity(), self.max_height);
+        // Safety: see `grow_if_needed`.
+        unsafe { self.cells.set_len(cmp::max(new_len, len)) };
         Ok(())
     }
 
