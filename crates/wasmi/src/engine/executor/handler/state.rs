@@ -1064,6 +1064,12 @@ impl ValueStack {
     }
 
     /// Returns an [`Sp`] pointing to the cell at the `start` index.
+    ///
+    /// # Note
+    ///
+    /// This is the single definition of a frame's [`Sp`]: every one of them equals
+    /// `cells.as_ptr().add(start)`, including on an empty stack where `start` is 0 and the
+    /// result is the (never dereferenced) base pointer.
     fn sp(&mut self, start: SpOffset) -> Sp {
         let offset = start.into_inner();
         debug_assert!(
