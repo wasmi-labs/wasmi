@@ -947,18 +947,24 @@ impl Stack {
     }
 
     /// Adjusts `self` for a function tail call.
+    ///
+    /// # Note
+    ///
+    /// A tail call reuses the caller's frame, so the callee's [`Sp`] is `caller_sp` itself.
+    /// See [`Stack::push_frame`] for why it is threaded through instead of re-loaded.
     #[inline(always)]
     pub fn replace_frame(
         &mut self,
+        caller_sp: Sp,
         callee_ip: Ip,
         callee_params: BoundedSlotSpan,
         callee_locals: u16,
-        callee_size: u16,
+        callee_slots: u16,
         callee_instance: Option<Inst>,
     ) -> Result<Sp, TrapCode> {
         let start = self.frames.replace(callee_ip, callee_instance)?;
         self.values
-            .replace(start, callee_locals, callee_size, callee_params)
+            .replace(caller_sp, start, callee_locals, callee_slots, callee_params)
     }
 }
 
