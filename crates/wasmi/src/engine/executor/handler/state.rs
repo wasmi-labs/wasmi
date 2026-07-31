@@ -1315,7 +1315,6 @@ impl ValueStack {
             true => self.sp(callee_start),
             false => callee_sp,
         };
-        self.debug_check_sp(sp, callee_start);
         let Some(callee_cells) = self.cells_from(callee_start) else {
             unsafe { unreachable_unchecked!("ValueStack::replace: out of bounds callee cells") }
         };
