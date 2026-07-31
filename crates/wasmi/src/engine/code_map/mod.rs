@@ -95,6 +95,14 @@ impl CodeMap {
         }
     }
 
+    /// Returns a shared reference to the [`FuncEntry`] of `func` if published.
+    ///
+    /// Returns `None` if `func` is not (yet) published to this [`CodeMap`].
+    #[inline]
+    pub fn entry(&self, func: EngineFunc) -> Option<&FuncEntry> {
+        self.funcs.get(func)
+    }
+
     /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntry`].
     ///
     /// # Panics
