@@ -1273,9 +1273,9 @@ impl ValueStack {
         let len_params = usize::from(len_params);
         if len_stack_slots == 0 {
             // Note: a callee without stack slots also has no parameters, so the translator
-            //       encodes a zero `params` head and `callee_sp == caller_sp`. Propagating it
-            //       (rather than a fresh dangling pointer) keeps the invariant checked by
-            //       `debug_check_sp` intact for any call this frame goes on to make.
+            //       encodes a zero `params` head and `callee_sp == caller_sp`. Propagate it
+            //       rather than a fresh dangling pointer, so that any call this frame goes on
+            //       to make can still derive its callee's `Sp` from this one.
             return Ok(callee_sp);
         }
         let end = start.add(len_stack_slots)?;
