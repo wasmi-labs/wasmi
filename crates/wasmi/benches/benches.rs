@@ -708,7 +708,7 @@ fn bench_execute_sort_dyn(c: &mut Criterion) {
         let benchmark = instance
             .get_typed_func::<u32, u32>(&store, "setup")
             .unwrap()
-            .call(&mut store, 500_000)
+            .call(&mut store, 400_000)
             .unwrap();
         let run = instance.get_typed_func::<u32, ()>(&store, "run").unwrap();
         b.iter(|| {
