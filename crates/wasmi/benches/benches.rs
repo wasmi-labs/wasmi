@@ -262,7 +262,7 @@ fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
 }
 
 fn bench_translate_tiny_keccak(c: &mut Criterion) {
-    bench_translate_for_all(c, "tiny_keccak", "benches/rust/cases/tiny_keccak/out.wasm");
+    bench_translate_for_all(c, "tiny_keccak", "benches/rust/cases/tiny-keccak/out.wasm");
 }
 
 fn bench_translate_reverse_complement(c: &mut Criterion) {
@@ -478,7 +478,7 @@ fn bench_instantiate_using(c: &mut Criterion, name: &str) {
 }
 
 fn bench_instantiate_tiny_keccak(c: &mut Criterion) {
-    bench_instantiate_using(c, "tiny_keccak");
+    bench_instantiate_using(c, "tiny-keccak");
 }
 
 fn bench_instantiate_reverse_complement(c: &mut Criterion) {
