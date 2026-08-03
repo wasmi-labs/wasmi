@@ -482,11 +482,11 @@ fn bench_instantiate_tiny_keccak(c: &mut Criterion) {
 }
 
 fn bench_instantiate_reverse_complement(c: &mut Criterion) {
-    bench_instantiate_using(c, "reverse_complement");
+    bench_instantiate_using(c, "reverse-complement");
 }
 
 fn bench_instantiate_regex_redux(c: &mut Criterion) {
-    bench_instantiate_using(c, "regex_redux");
+    bench_instantiate_using(c, "regex-redux");
 }
 
 fn bench_linker_setup_same(c: &mut Criterion) {
