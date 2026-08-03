@@ -274,7 +274,7 @@ fn bench_translate_reverse_complement(c: &mut Criterion) {
 }
 
 fn bench_translate_regex_redux(c: &mut Criterion) {
-    bench_translate_for_all(c, "regex_redux", "benches/rust/cases/regex_redux/out.wasm");
+    bench_translate_for_all(c, "regex_redux", "benches/rust/cases/regex-redux/out.wasm");
 }
 
 fn bench_translate_spidermonkey(c: &mut Criterion) {
