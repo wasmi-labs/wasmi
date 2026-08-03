@@ -106,6 +106,7 @@ criterion_group! {
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_execute_sort,
+        bench_execute_sort_dyn,
         bench_execute_prime_sieve,
         bench_execute_matrix_mul,
         bench_execute_nbody,
@@ -688,6 +689,26 @@ fn bench_execute_sort(c: &mut Criterion) {
             .get_typed_func::<u32, u32>(&store, "setup")
             .unwrap()
             .call(&mut store, 1_000_000)
+            .unwrap();
+        let run = instance.get_typed_func::<u32, ()>(&store, "run").unwrap();
+        b.iter(|| {
+            run.call(&mut store, benchmark).unwrap();
+        });
+        instance
+            .get_typed_func::<u32, ()>(&store, "teardown")
+            .unwrap()
+            .call(&mut store, benchmark)
+            .unwrap();
+    });
+}
+
+fn bench_execute_sort_dyn(c: &mut Criterion) {
+    c.bench_function("execute/sort_dyn", |b| {
+        let (mut store, instance) = load_instance_from_file("benches/rust/cases/sort-dyn/out.wasm");
+        let benchmark = instance
+            .get_typed_func::<u32, u32>(&store, "setup")
+            .unwrap()
+            .call(&mut store, 500_000)
             .unwrap();
         let run = instance.get_typed_func::<u32, ()>(&store, "run").unwrap();
         b.iter(|| {
