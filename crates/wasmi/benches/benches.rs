@@ -269,7 +269,7 @@ fn bench_translate_reverse_complement(c: &mut Criterion) {
     bench_translate_for_all(
         c,
         "reverse_complement",
-        "benches/rust/cases/reverse_complement/out.wasm",
+        "benches/rust/cases/reverse-complement/out.wasm",
     );
 }
 
@@ -1027,7 +1027,7 @@ fn bench_execute_json_parse(c: &mut Criterion) {
 fn bench_execute_reverse_complement(c: &mut Criterion) {
     c.bench_function("execute/reverse_complement", |b| {
         let (mut store, instance) =
-            load_instance_from_file("benches/rust/cases/reverse_complement/out.wasm");
+            load_instance_from_file("benches/rust/cases/reverse-complement/out.wasm");
 
         // Allocate buffers for the input and output.
         let data_ptr = instance
