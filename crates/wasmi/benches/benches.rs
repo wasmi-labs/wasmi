@@ -106,6 +106,7 @@ criterion_group! {
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_execute_sort,
+        bench_execute_sort_dyn,
         bench_execute_prime_sieve,
         bench_execute_matrix_mul,
         bench_execute_nbody,
@@ -148,8 +149,8 @@ criterion_main!(
     bench_group_linker,
 );
 
-const REVCOMP_INPUT: &[u8] = include_bytes!("rust/cases/reverse_complement/input.txt");
-const REVCOMP_OUTPUT: &[u8] = include_bytes!("rust/cases/reverse_complement/output.txt");
+const REVCOMP_INPUT: &[u8] = include_bytes!("rust/cases/reverse-complement/input.txt");
+const REVCOMP_OUTPUT: &[u8] = include_bytes!("rust/cases/reverse-complement/output.txt");
 
 enum FuelMetering {
     Enabled,
@@ -261,19 +262,19 @@ fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
 }
 
 fn bench_translate_tiny_keccak(c: &mut Criterion) {
-    bench_translate_for_all(c, "tiny_keccak", "benches/rust/cases/tiny_keccak/out.wasm");
+    bench_translate_for_all(c, "tiny_keccak", "benches/rust/cases/tiny-keccak/out.wasm");
 }
 
 fn bench_translate_reverse_complement(c: &mut Criterion) {
     bench_translate_for_all(
         c,
         "reverse_complement",
-        "benches/rust/cases/reverse_complement/out.wasm",
+        "benches/rust/cases/reverse-complement/out.wasm",
     );
 }
 
 fn bench_translate_regex_redux(c: &mut Criterion) {
-    bench_translate_for_all(c, "regex_redux", "benches/rust/cases/regex_redux/out.wasm");
+    bench_translate_for_all(c, "regex_redux", "benches/rust/cases/regex-redux/out.wasm");
 }
 
 fn bench_translate_spidermonkey(c: &mut Criterion) {
@@ -477,15 +478,15 @@ fn bench_instantiate_using(c: &mut Criterion, name: &str) {
 }
 
 fn bench_instantiate_tiny_keccak(c: &mut Criterion) {
-    bench_instantiate_using(c, "tiny_keccak");
+    bench_instantiate_using(c, "tiny-keccak");
 }
 
 fn bench_instantiate_reverse_complement(c: &mut Criterion) {
-    bench_instantiate_using(c, "reverse_complement");
+    bench_instantiate_using(c, "reverse-complement");
 }
 
 fn bench_instantiate_regex_redux(c: &mut Criterion) {
-    bench_instantiate_using(c, "regex_redux");
+    bench_instantiate_using(c, "regex-redux");
 }
 
 fn bench_linker_setup_same(c: &mut Criterion) {
@@ -701,10 +702,30 @@ fn bench_execute_sort(c: &mut Criterion) {
     });
 }
 
+fn bench_execute_sort_dyn(c: &mut Criterion) {
+    c.bench_function("execute/sort_dyn", |b| {
+        let (mut store, instance) = load_instance_from_file("benches/rust/cases/sort-dyn/out.wasm");
+        let benchmark = instance
+            .get_typed_func::<u32, u32>(&store, "setup")
+            .unwrap()
+            .call(&mut store, 400_000)
+            .unwrap();
+        let run = instance.get_typed_func::<u32, ()>(&store, "run").unwrap();
+        b.iter(|| {
+            run.call(&mut store, benchmark).unwrap();
+        });
+        instance
+            .get_typed_func::<u32, ()>(&store, "teardown")
+            .unwrap()
+            .call(&mut store, benchmark)
+            .unwrap();
+    });
+}
+
 fn bench_execute_prime_sieve(c: &mut Criterion) {
     c.bench_function("execute/prime_sieve", |b| {
         let (mut store, instance) =
-            load_instance_from_file("benches/rust/cases/prime_sieve/out.wasm");
+            load_instance_from_file("benches/rust/cases/prime-sieve/out.wasm");
         let benchmark = instance
             .get_typed_func::<u64, u32>(&store, "setup")
             .unwrap()
@@ -733,7 +754,7 @@ fn bench_execute_prime_sieve(c: &mut Criterion) {
 fn bench_execute_matrix_mul(c: &mut Criterion) {
     c.bench_function("execute/matrix_mul", |b| {
         let (mut store, instance) =
-            load_instance_from_file("benches/rust/cases/matrix_mul/out.wasm");
+            load_instance_from_file("benches/rust/cases/matrix-mul/out.wasm");
         let benchmark = instance
             .get_typed_func::<u32, u32>(&store, "setup")
             .unwrap()
@@ -777,7 +798,7 @@ fn bench_execute_argon2(c: &mut Criterion) {
         let benchmark = instance
             .get_typed_func::<u32, u32>(&store, "setup")
             .unwrap()
-            .call(&mut store, 10_000)
+            .call(&mut store, 3_000)
             .unwrap();
         let run = instance.get_typed_func::<u32, ()>(&store, "run").unwrap();
         b.iter(|| {
@@ -788,7 +809,7 @@ fn bench_execute_argon2(c: &mut Criterion) {
             .unwrap();
         assert_eq!(
             output.call(&mut store, benchmark).unwrap(),
-            0x4CDBBC7DE0EAA94,
+            8516746375935431256,
         );
         instance
             .get_typed_func::<u32, ()>(&store, "teardown")
@@ -801,7 +822,7 @@ fn bench_execute_argon2(c: &mut Criterion) {
 fn bench_execute_tiny_keccak(c: &mut Criterion) {
     c.bench_function("execute/tiny_keccak", |b| {
         let (mut store, instance) =
-            load_instance_from_file("benches/rust/cases/tiny_keccak/out.wasm");
+            load_instance_from_file("benches/rust/cases/tiny-keccak/out.wasm");
         let data_ptr = instance
             .get_typed_func::<(), i32>(&store, "setup")
             .unwrap()
@@ -914,7 +935,7 @@ fn bench_execute_compression(c: &mut Criterion) {
 fn bench_execute_word_count(c: &mut Criterion) {
     c.bench_function("execute/word_count", |b| {
         let (mut store, instance) =
-            load_instance_from_file("benches/rust/cases/word_count/out.wasm");
+            load_instance_from_file("benches/rust/cases/word-count/out.wasm");
         let input_data = std::fs::read_to_string("benches/rust/res/alice29.txt").unwrap();
         // Allocate buffers for the input and output.
         let data_ptr = instance
@@ -963,7 +984,7 @@ fn bench_execute_word_count(c: &mut Criterion) {
 fn bench_execute_json_parse(c: &mut Criterion) {
     c.bench_function("execute/json_parse", |b| {
         let (mut store, instance) =
-            load_instance_from_file("benches/rust/cases/json_parse/out.wasm");
+            load_instance_from_file("benches/rust/cases/json-parse/out.wasm");
         let input_data = std::fs::read_to_string("benches/rust/res/citm_catalog.json").unwrap();
         // Allocate buffers for the input and output.
         let data_ptr = instance
@@ -1006,7 +1027,7 @@ fn bench_execute_json_parse(c: &mut Criterion) {
 fn bench_execute_reverse_complement(c: &mut Criterion) {
     c.bench_function("execute/reverse_complement", |b| {
         let (mut store, instance) =
-            load_instance_from_file("benches/rust/cases/reverse_complement/out.wasm");
+            load_instance_from_file("benches/rust/cases/reverse-complement/out.wasm");
 
         // Allocate buffers for the input and output.
         let data_ptr = instance
@@ -1059,7 +1080,7 @@ fn bench_execute_reverse_complement(c: &mut Criterion) {
 fn bench_execute_regex_redux(c: &mut Criterion) {
     c.bench_function("execute/regex_redux", |b| {
         let (mut store, instance) =
-            load_instance_from_file("benches/rust/cases/regex_redux/out.wasm");
+            load_instance_from_file("benches/rust/cases/regex-redux/out.wasm");
 
         // Allocate buffers for the input and output.
         let data_ptr = instance
