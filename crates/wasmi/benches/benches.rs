@@ -777,7 +777,7 @@ fn bench_execute_argon2(c: &mut Criterion) {
         let benchmark = instance
             .get_typed_func::<u32, u32>(&store, "setup")
             .unwrap()
-            .call(&mut store, 10_000)
+            .call(&mut store, 3_000)
             .unwrap();
         let run = instance.get_typed_func::<u32, ()>(&store, "run").unwrap();
         b.iter(|| {
@@ -788,7 +788,7 @@ fn bench_execute_argon2(c: &mut Criterion) {
             .unwrap();
         assert_eq!(
             output.call(&mut store, benchmark).unwrap(),
-            0x4CDBBC7DE0EAA94,
+            8516746375935431256,
         );
         instance
             .get_typed_func::<u32, ()>(&store, "teardown")
