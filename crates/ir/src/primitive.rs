@@ -5,6 +5,10 @@ use core::{
     marker::PhantomData,
 };
 
+/// Always refers to `(table 0)`.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Table0 {}
+
 /// A fixed local or stack slot index.
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Local<const N: u16> {

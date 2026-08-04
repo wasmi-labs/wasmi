@@ -21,6 +21,7 @@ use crate::{
     Reg,
     Slot,
     SlotAndReg,
+    Table0,
     TableAddr,
     core::{ShiftAmount, TrapCode, ValType},
 };
