@@ -2,7 +2,7 @@ use crate::{
     DataSegmentEntity,
     Func,
     FuncEntity,
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable},
+    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable as TableEntity, CoreTable},
     engine::{
         code_map::FuncEntry,
         executor::handler::{
@@ -20,7 +20,7 @@ use crate::{
                 Sp,
                 VmState,
             },
-            utils::{self, GetValue, IntoControl as _, SetValue, get_value, set_value},
+            utils::{self, GetValue, IntoControl as _, LoadEntity, SetValue, get_value, set_value},
         },
     },
     ir::{self, BoundedSlotSpan, BranchOffset},
@@ -173,12 +173,11 @@ impl Args {
 
     /// Returns an exclusive reference to the table at `index`.
     #[inline]
-    pub fn fetch_table<'a>(
-        &mut self,
-        state: &'a mut VmState,
-        addr: ir::TableAddr,
-    ) -> &'a mut CoreTable {
-        utils::load_table(self.instance, state.store.inner_mut(), addr)
+    pub fn fetch_table<'a, Addr>(&mut self, state: &'a mut VmState, addr: Addr) -> &'a mut CoreTable
+    where
+        Inst: LoadEntity<Addr, Entity = TableEntity>,
+    {
+        self.instance.load(state.store.inner_mut(), addr)
     }
 
     /// Returns an exclusive reference to the element segment at `index`.
@@ -236,15 +235,16 @@ impl Args {
 
     /// Resolves the [`Func`] at `table[index]` of type `func_type` using `state`.
     #[inline]
-    pub fn resolve_indirect_func<Idx>(
+    pub fn resolve_indirect_func<Idx, Table>(
         &mut self,
         state: &mut VmState<'_>,
         index: Idx,
-        table: ir::TableAddr,
+        table: Table,
         func_type: ir::FuncType,
     ) -> Control<(Func, NonNull<FuncEntity>), Break>
     where
         Idx: GetValue<u64>,
+        Inst: LoadEntity<Table, Entity = TableEntity>,
     {
         utils::resolve_indirect_func(index, table, func_type, state, self).into_control()
     }

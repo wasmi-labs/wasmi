@@ -796,15 +796,16 @@ impl_resolve_from_store! {
 }
 
 #[inline]
-pub fn resolve_indirect_func<I>(
-    index: I,
-    table: ir::TableAddr,
+pub fn resolve_indirect_func<Idx, Table>(
+    index: Idx,
+    table: Table,
     func_type: ir::FuncType,
     state: &mut VmState<'_>,
     args: &mut Args,
 ) -> Result<(Func, NonNull<FuncEntity>), TrapCode>
 where
-    I: GetValue<u64>,
+    Idx: GetValue<u64>,
+    Inst: LoadEntity<Table, Entity = TableEntity>,
 {
     let index = get_value(index, args.sp, args.ireg, args.freg32, args.freg64);
     let table = args.fetch_table(state, table);
