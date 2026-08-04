@@ -656,8 +656,8 @@ macro_rules! impl_resolve_ptr_from_instance {
         $(
             /// Resolves a pointer to the entity from the warmed up instance cache.
             ///
-            /// Unlike [`load_memory`] and friends this returns a raw [`NonNull`] instead of a
-            /// reference tied to the store. This lets the caller hold several entity pointers
+            /// Unlike `<Inst as LoadEntity<Memory>>::load` and friends this returns a raw [`NonNull`]
+            /// instead of a reference tied to the store. This lets the caller hold several entity pointers
             /// (or an entity pointer alongside a `&mut` borrow of `fuel`) at once and materialize
             /// a reference only in the narrow scope where the entity is actually accessed.
             ///
