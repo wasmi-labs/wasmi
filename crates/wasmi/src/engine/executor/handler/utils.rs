@@ -649,40 +649,6 @@ impl LoadEntity<Table0> for Inst {
     }
 }
 
-macro_rules! impl_resolve_from_instance {
-    (
-        $( fn $fn:ident(inst: Inst, store: &mut StoreInner, $param:ident: ir::$param_ty:ident) -> &mut $ret:ty = $entry:ident );* $(;)?
-    ) => {
-        $(
-            /// Resolves the entity from the warmed up instance cache.
-            ///
-            /// The `store` borrow is not read; it ties the returned reference so that it
-            /// cannot alias a concurrent store mutation (this is the safe wrapper).
-            #[inline]
-            pub fn $fn(inst: Inst, _store: &mut StoreInner, $param: ir::$param_ty) -> &mut $ret {
-                let addr = <$param_ty>::from(::core::primitive::u32::from($param));
-                // SAFETY: `addr` addresses an entry of this kind by translation invariant.
-                let Some(entry) = (unsafe { inst.as_ptr().$entry(addr) }) else {
-                    unsafe {
-                        $crate::engine::utils::unreachable_unchecked!(
-                            ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
-                            addr,
-                        )
-                    }
-                };
-                // SAFETY: warmed at instantiation; the `_store` borrow scopes the reference.
-                unsafe { &mut *entry.entity().as_ptr() }
-            }
-        )*
-    };
-}
-impl_resolve_from_instance! {
-    fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = get_data;
-    fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = get_elem;
-    fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = get_global;
-    fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = get_memory;
-}
-
 macro_rules! impl_resolve_ptr_from_instance {
     (
         $( fn $fn:ident(inst: Inst, $param:ident: ir::$param_ty:ident) -> $ret:ty = $entry:ident );* $(;)?
