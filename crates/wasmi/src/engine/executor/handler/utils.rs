@@ -4,7 +4,6 @@ use crate::core::simd::ImmLaneIdx;
 use crate::{
     Error,
     Func,
-    Instance,
     Memory,
     Nullable,
     RefType,
@@ -31,7 +30,7 @@ use crate::{
         utils::unreachable_unchecked,
     },
     func::{FuncEntity, HostFuncEntity, Trampoline},
-    instance::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, InstanceEntity, MemoryAddr, TableAddr},
+    instance::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, MemoryAddr, TableAddr},
     ir::{self, Address, BoundedSlotSpan, Local, Offset, Offset16, Slot, SlotAndReg, SlotSpan},
     memory::DataSegmentEntity,
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
@@ -625,8 +624,9 @@ macro_rules! impl_resolve_ptr_from_instance {
             ///
             /// # Safety
             ///
-            /// The caller must ensure that `inst` refers to a live, warmed up [`InstanceEntity`]
-            /// and that `$param` is a valid address within it. The returned pointer is only sound
+            /// The caller must ensure that `inst` refers to a live, warmed up
+            /// [`InstanceEntity`](crate::InstanceEntity) and that `$param` is a valid address
+            /// within it. The returned pointer is only sound
             /// to dereference while the instance cache remains warmed up, and the caller must
             /// ensure the resulting reference does not alias any other live reference.
             #[inline]
@@ -935,7 +935,7 @@ pub fn call_wasm_or_host(
     };
     // Hot path: calling a Wasm function. Uses the cached `FuncEntry` and the same inlined
     // machinery as `call_internal`, differing only in the possible instance switch.
-    let callee_instance: Inst = resolve_instance(state.store, wasm_func.instance()).into();
+    let callee_instance: Inst = wasm_func.instance();
     let (callee_ip, callee_sp) = call_func_entry(
         state,
         caller_ip,
@@ -977,7 +977,7 @@ pub fn return_call_wasm_or_host(
         }
     };
     // Hot path: tail-calling a Wasm function. See `call_wasm_or_host` for the shape.
-    let callee_instance: Inst = resolve_instance(state.store, wasm_func.instance()).into();
+    let callee_instance: Inst = wasm_func.instance();
     let (callee_ip, callee_sp) = return_call_func_entry(
         state,
         caller_sp,

@@ -1,7 +1,6 @@
 use crate::{
     CallHook,
     Error,
-    Instance,
     Store,
     engine::{
         FuncEntryPtr,
@@ -10,7 +9,7 @@ use crate::{
         executor::handler::{
             dispatch::{ExecutionOutcome, execute_until_done},
             state::{Freg32, Freg64, Inst, Ip, Ireg, Sp, Stack, VmState},
-            utils::{self, resolve_instance},
+            utils,
         },
     },
     func::HostFuncEntity,
@@ -156,7 +155,7 @@ pub fn init_wasm_func_call<'a, T>(
     store: &'a mut Store<T>,
     stack: &'a mut Stack,
     func_entry: FuncEntryPtr,
-    instance: Instance,
+    instance: Inst,
 ) -> Result<WasmFuncCall<'a, T, state::Uninit>, Error> {
     // SAFETY: `func_entry` stems from a `WasmFuncEntity` owned by `store`, thus the engine
     //         owning the `FuncEntry` outlives this call.
@@ -171,7 +170,6 @@ pub fn init_wasm_func_call<'a, T>(
     //       an easy and efficient way to get the number of parameter cells at this point
     //       so we simply default to 0.
     let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), 0);
-    let instance = resolve_instance(store.prune(), &instance).into();
     // Note: the call stack is empty here, so the first frame starts at the value stack base.
     let caller_sp = stack.base_sp();
     let callee_sp = stack.push_frame(

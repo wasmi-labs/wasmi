@@ -240,7 +240,7 @@ impl<'engine> EngineExecutor<'engine> {
         let results = match store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
                 // We reserve space on the stack to write the results of the root function execution.
-                let instance = *wasm_func.instance();
+                let instance = wasm_func.instance();
                 let func_entry = wasm_func.func_entry_ptr();
                 let call = init_wasm_func_call(store, self.stack, func_entry, instance)?;
                 call.write_params(params).execute()?.write_results(results)
