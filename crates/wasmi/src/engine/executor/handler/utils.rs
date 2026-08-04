@@ -719,7 +719,7 @@ impl_resolve_from_store! {
     // fn resolve_global(global: &Global) -> &'a CoreGlobal = StoreInner::try_resolve_global;
     fn resolve_memory(memory: &Memory) -> &'a MemoryEntity = StoreInner::try_resolve_memory;
     fn resolve_table(table: &Table) -> &'a CoreTable = StoreInner::try_resolve_table;
-    fn resolve_instance(instance: &Instance) -> &'a InstanceEntity = StoreInner::try_resolve_instance;
+    // fn resolve_instance(instance: &Instance) -> &'a InstanceEntity = StoreInner::try_resolve_instance;
     // fn resolve_func_type(func_type: DedupFuncType) -> DedupFuncType = StoreInner::resolve_func_type;
 }
 
