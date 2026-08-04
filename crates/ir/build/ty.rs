@@ -222,6 +222,15 @@ impl FieldTy {
     pub fn is_reg(&self) -> bool {
         matches!(self, Self::RegInt | Self::RegF32 | Self::RegF64)
     }
+
+    /// Returns `true` if the field type is like a unit type and
+    /// doesn't need to provide a value for construction.
+    pub fn is_unit(&self) -> bool {
+        matches!(
+            self,
+            Self::Local(_) | Self::Table0 | Self::RegInt | Self::RegF32 | Self::RegF64
+        )
+    }
 }
 
 impl From<Ty> for FieldTy {
