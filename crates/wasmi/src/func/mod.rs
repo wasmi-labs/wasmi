@@ -17,6 +17,8 @@ use super::{
     StoreContext,
     engine::{DedupFuncType, EngineFunc, FuncEntry, FuncEntryPtr},
 };
+#[cfg(doc)]
+use crate::Instance;
 use crate::{
     Engine,
     Error,
@@ -350,7 +352,7 @@ impl Func {
     /// - `func`:
     ///   The native code invoked whenever this Func will be called.
     ///   The closure is provided a [`Caller`] as its first argument
-    ///   which allows it to query information about the [`Instance`](crate::Instance)
+    ///   which allows it to query information about the [`Instance`]
     ///   that is associated to the call.
     ///
     /// # Note
