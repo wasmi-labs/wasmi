@@ -638,13 +638,14 @@ impl_load_entity_for_inst! {
 impl LoadEntity<Table0> for Inst {
     type Entity = TableEntity;
 
+    #[inline]
     fn load(self, _store: &mut StoreInner, _addr: Table0) -> &mut Self::Entity {
         // SAFETY: `addr` addresses an entry of this kind by translation invariant.
-        let Some(entry) = (unsafe { self.as_ptr().get_table0() }) else {
+        let Some(entity) = (unsafe { self.as_ptr().get_table0() }) else {
             unsafe { unreachable_unchecked!("missing table entity for table 0") }
         };
         // SAFETY: warmed at instantiation; the `_store` borrow scopes the reference.
-        unsafe { &mut *entry.entity().as_ptr() }
+        unsafe { &mut *entity.as_ptr() }
     }
 }
 

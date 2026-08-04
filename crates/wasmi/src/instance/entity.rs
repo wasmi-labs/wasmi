@@ -10,6 +10,7 @@ use super::{
     InstanceEntityBuilder,
     InstanceLayout,
     MemoryAddr,
+    Table0Ptr,
     TableAddr,
     ThinPtr,
 };
@@ -21,6 +22,7 @@ use crate::{
     Module,
     Table,
     collections::Map,
+    core::CoreTable,
     memory::DataSegment,
     store::StoreInner,
 };
@@ -74,7 +76,7 @@ struct InstanceEntityHeader {
     state: InstanceState,
     exports: Map<Box<str>, Extern>,
     layout: InstanceLayout,
-    table0: Option<HandleAndEntity<Table>>,
+    table0: Option<Table0Ptr>,
 }
 
 /// The byte offset of the `handles` buffer within an [`InstanceEntity`] allocation.
@@ -307,7 +309,7 @@ impl InstanceEntity {
             let entry = &self.handles[u32::from(addr) as usize];
             // Safety: the `InstanceLayout` only yields addresses of its own group.
             let entry = unsafe { entry.typed_ref::<Table>() };
-            self.header.table0 = Some(entry.clone());
+            self.header.table0 = Some(Table0Ptr::new(entry.entity()));
         }
     }
 
@@ -487,9 +489,9 @@ impl ThinPtr<InstanceEntity> {
         unsafe { self.header() }.layout()
     }
 
-    /// Returns the [`HandleAndEntity`] for `(table 0)` if any.
-    pub unsafe fn get_table0<'a>(self) -> Option<&'a HandleAndEntity<Table>> {
-        unsafe { self.header() }.table0.as_ref()
+    /// Returns the cached entity pointer for `(table 0)` if any.
+    pub unsafe fn get_table0(self) -> Option<NonNull<CoreTable>> {
+        unsafe { self.header() }.table0.map(Table0Ptr::get)
     }
 
     impl_get_entry! {
