@@ -20,6 +20,7 @@ use crate::{
     Table,
     Val,
     core::RawRef,
+    engine::Inst,
     error::ErrorKind,
     errors::MemoryError,
     func::WasmFuncEntity,
@@ -66,6 +67,7 @@ impl Module {
         let mut builder = InstanceEntity::build(self);
 
         self.extract_imports(&context, &mut builder, externals)?;
+        let len_imported_funcs = builder.len_funcs();
         self.extract_functions(&mut context, &mut builder, handle);
         self.extract_tables(&mut context, &mut builder)?;
         self.extract_memories(&mut context, &mut builder)?;
@@ -74,7 +76,7 @@ impl Module {
         self.extract_start_fn(&mut builder);
         self.initialize_table_elements(&mut context, &mut builder)?;
         self.initialize_memory_data(&mut context, &mut builder)?;
-        Self::start(&mut context, builder, handle)?;
+        Self::start(&mut context, builder, handle, len_imported_funcs)?;
         Ok(handle)
     }
 
@@ -83,13 +85,14 @@ impl Module {
         mut store: impl AsContextMut,
         builder: InstanceEntityBuilder,
         instance: Instance,
+        len_imported_funcs: u32,
     ) -> Result<(), Error> {
         let opt_start_index = builder.get_start().map(FuncIdx::into_u32);
-        store
-            .as_context_mut()
-            .store
-            .inner
-            .initialize_instance(instance, builder.finish()?);
+        store.as_context_mut().store.inner.initialize_instance(
+            instance,
+            builder.finish()?,
+            len_imported_funcs,
+        );
         if let Some(start_index) = opt_start_index {
             let entity = store.as_context().store.inner.resolve_instance(&instance);
             let addr = entity.layout().func_addr(start_index).expect(
@@ -209,11 +212,15 @@ impl Module {
         builder: &mut InstanceEntityBuilder,
         handle: Instance,
     ) {
+        // Note: this is the uninitialized placeholder entity of `handle`. Successful
+        //       instantiation re-points the created functions to the real entity in
+        //       `InstanceEntity::warmup`.
+        let instance = Inst::from(context.as_context().store.inner.resolve_instance(&handle));
         for (func_type, func_body) in self.internal_funcs() {
             let Some(func_entry) = self.engine().resolve_func(func_body) else {
                 unreachable!("missing func entry at: {func_body:?}")
             };
-            let wasm_func = WasmFuncEntity::new(func_type, func_body, func_entry, handle);
+            let wasm_func = WasmFuncEntity::new(func_type, func_body, func_entry, instance);
             let func = context
                 .as_context_mut()
                 .store
