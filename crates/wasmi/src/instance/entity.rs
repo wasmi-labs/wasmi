@@ -74,6 +74,7 @@ struct InstanceEntityHeader {
     state: InstanceState,
     exports: Map<Box<str>, Extern>,
     layout: InstanceLayout,
+    table0: Option<HandleAndEntity<Table>>,
 }
 
 /// The byte offset of the `handles` buffer within an [`InstanceEntity`] allocation.
@@ -200,6 +201,7 @@ impl InstanceEntity {
             state,
             exports,
             layout,
+            table0: None,
         };
         let alloc_layout = layout_for_handles(len);
         // Safety: `alloc_layout` has a non-zero size since `InstanceEntityHeader` is non-empty.
@@ -300,6 +302,13 @@ impl InstanceEntity {
         warmup!(func_addr, Func);
         warmup!(elem_addr, ElementSegment);
         warmup!(data_addr, DataSegment);
+        // initialize `table0`
+        if let Some(addr) = self.header.layout.table_addr(0) {
+            let entry = &self.handles[u32::from(addr) as usize];
+            // Safety: the `InstanceLayout` only yields addresses of its own group.
+            let entry = unsafe { entry.typed_ref::<Table>() };
+            self.header.table0 = Some(entry.clone());
+        }
     }
 
     /// Returns the [`Memory`] at the `addr` if any.
@@ -476,6 +485,11 @@ impl ThinPtr<InstanceEntity> {
     pub unsafe fn layout<'a>(self) -> &'a InstanceLayout {
         // Safety: guaranteed by the caller.
         unsafe { self.header() }.layout()
+    }
+
+    /// Returns the [`HandleAndEntity`] for `(table 0)` if any.
+    pub unsafe fn get_table0<'a>(self) -> Option<&'a HandleAndEntity<Table>> {
+        unsafe { self.header() }.table0.as_ref()
     }
 
     impl_get_entry! {

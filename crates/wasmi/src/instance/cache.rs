@@ -23,7 +23,7 @@ use core::{
 ///
 /// This is the type-erased storage type of an instance's `handles` buffer, which mixes all
 /// handle kinds. Access it as a [`HandleAndEntity<T>`] to get at the handle or entity.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AnyHandleAndEntity {
     /// The cached entity pointer, warmed up at instantiation.
     entity: NonNull<AnyEntity>,
@@ -92,7 +92,7 @@ impl AnyHandleAndEntity {
 /// This is a view on an entry of an instance's `handles` buffer. Its constructors assert the
 /// handle kind of the entry — and validate it in debug builds — which is why
 /// [`HandleAndEntity::handle`] and [`HandleAndEntity::entity`] are safe and check nothing.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[repr(transparent)]
 pub struct HandleAndEntity<T: Handle> {
     /// The type-erased entry.
