@@ -388,6 +388,10 @@ impl StoreInner {
         let Ok(len_imported_funcs) = u32::try_from(len_imported_funcs) else {
             panic!("too many imported functions: {len_imported_funcs}")
         };
+        assert!(
+            len_imported_funcs <= layout.len_funcs(),
+            "out of bounds number of imported functions: {len_imported_funcs}",
+        );
         let mut index = len_imported_funcs;
         while let Some(addr) = layout.func_addr(index) {
             let Some(func) = self.resolve_instance(&instance).get_func(addr) else {
