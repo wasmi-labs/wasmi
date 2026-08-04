@@ -33,7 +33,18 @@ use crate::{
     },
     func::{FuncEntity, HostFuncEntity, Trampoline},
     instance::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, MemoryAddr, TableAddr},
-    ir::{self, Address, BoundedSlotSpan, Local, Offset, Offset16, Slot, SlotAndReg, SlotSpan},
+    ir::{
+        self,
+        Address,
+        BoundedSlotSpan,
+        Local,
+        Offset,
+        Offset16,
+        Slot,
+        SlotAndReg,
+        SlotSpan,
+        Table0,
+    },
     memory::DataSegmentEntity,
     store::{CallHooks, PrunedStore, StoreError, StoreInner},
 };
@@ -575,6 +586,66 @@ pub fn memory_slice_mut(
         .get_mut(pos..)
         .and_then(|memory| memory.get_mut(..len))
         .ok_or(TrapCode::MemoryOutOfBounds)
+}
+
+/// Extension trait for [`Inst`] to safely(ish) load entities from their addresses.
+pub trait LoadEntity<Addr> {
+    /// The loaded entity type.
+    type Entity;
+
+    /// Loads the entity from the warmed up instance cache.
+    ///
+    /// The `store` borrow is not read; it ties the returned reference so that it
+    /// cannot alias a concurrent store mutation making this a safe wrapper.
+    fn load(self, store: &mut StoreInner, addr: Addr) -> &mut Self::Entity;
+}
+
+macro_rules! impl_load_entity_for_inst {
+    (
+        $( fn $fn:ident(inst: Inst, store: &mut StoreInner, $param:ident: ir::$param_ty:ident) -> &mut $ret:ty = $entry:ident );* $(;)?
+    ) => {
+        $(
+            impl LoadEntity<ir::$param_ty> for Inst {
+                type Entity = $ret;
+
+                #[inline]
+                fn load(self, _store: &mut StoreInner, $param: ir::$param_ty) -> &mut Self::Entity {
+                    let addr = <$param_ty>::from(::core::primitive::u32::from($param));
+                    // SAFETY: `addr` addresses an entry of this kind by translation invariant.
+                    let Some(entry) = (unsafe { self.as_ptr().$entry(addr) }) else {
+                        unsafe {
+                            $crate::engine::utils::unreachable_unchecked!(
+                                ::core::concat!("missing ", ::core::stringify!($param), " at: {:?}"),
+                                addr,
+                            )
+                        }
+                    };
+                    // SAFETY: warmed at instantiation; the `_store` borrow scopes the reference.
+                    unsafe { &mut *entry.entity().as_ptr() }
+                }
+            }
+        )*
+    };
+}
+impl_load_entity_for_inst! {
+    fn load_data(inst: Inst, store: &mut StoreInner, data: ir::DataAddr) -> &mut DataSegmentEntity = get_data;
+    fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = get_elem;
+    fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = get_global;
+    fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = get_memory;
+    fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = get_table;
+}
+
+impl LoadEntity<Table0> for Inst {
+    type Entity = TableEntity;
+
+    fn load(self, _store: &mut StoreInner, _addr: Table0) -> &mut Self::Entity {
+        // SAFETY: `addr` addresses an entry of this kind by translation invariant.
+        let Some(entry) = (unsafe { self.as_ptr().get_table0() }) else {
+            unsafe { unreachable_unchecked!("missing table entity for table 0") }
+        };
+        // SAFETY: warmed at instantiation; the `_store` borrow scopes the reference.
+        unsafe { &mut *entry.entity().as_ptr() }
+    }
 }
 
 macro_rules! impl_resolve_from_instance {
