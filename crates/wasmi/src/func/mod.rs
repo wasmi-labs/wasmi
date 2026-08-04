@@ -14,7 +14,6 @@ pub use self::{
 use super::{
     AsContext,
     AsContextMut,
-    Instance,
     StoreContext,
     engine::{DedupFuncType, EngineFunc, FuncEntry, FuncEntryPtr},
 };
@@ -135,8 +134,19 @@ pub struct WasmFuncEntity {
     ///
     /// [`Engine`]: crate::Engine
     func_entry: FuncEntryPtr,
-    /// The instance associated to the Wasm function.
-    instance: Instance,
+    /// A cached pointer to the [`InstanceEntity`] that the Wasm function belongs to.
+    ///
+    /// Lets the executor reach the instance without a [`Store`] lookup.
+    ///
+    /// Instantiation is circular: the [`InstanceEntity`] refers to its functions and vice
+    /// versa. Therefore this initially points to the uninitialized placeholder entity of the
+    /// instance and is re-pointed to the real entity at the end of instantiation via
+    /// [`WasmFuncEntity::init_instance`]. A failed instantiation leaves it at the placeholder,
+    /// which is exactly what resolving the instance handle used to yield in that case.
+    ///
+    /// [`InstanceEntity`]: crate::InstanceEntity
+    /// [`Store`]: crate::Store
+    instance: Inst,
 }
 
 impl WasmFuncEntity {
@@ -149,7 +159,7 @@ impl WasmFuncEntity {
         signature: DedupFuncType,
         body: EngineFunc,
         func_entry: &FuncEntry,
-        instance: Instance,
+        instance: Inst,
     ) -> Self {
         Self {
             ty: signature,
@@ -159,14 +169,22 @@ impl WasmFuncEntity {
         }
     }
 
+    /// Points the Wasm function to the initialized [`InstanceEntity`] it belongs to.
+    ///
+    /// [`InstanceEntity`]: crate::InstanceEntity
+    pub fn init_instance(&mut self, instance: Inst) {
+        self.instance = instance;
+    }
+
     /// Returns the signature of the Wasm function.
     pub fn ty_dedup(&self) -> &DedupFuncType {
         &self.ty
     }
 
-    /// Returns the instance where the [`Func`] belong to.
-    pub fn instance(&self) -> &Instance {
-        &self.instance
+    /// Returns the [`Inst`] of the instance that the [`Func`] belongs to.
+    #[inline]
+    pub fn instance(&self) -> Inst {
+        self.instance
     }
 
     /// Returns the Wasm function body of the [`Func`].
@@ -330,7 +348,7 @@ impl Func {
     /// - `func`:
     ///   The native code invoked whenever this Func will be called.
     ///   The closure is provided a [`Caller`] as its first argument
-    ///   which allows it to query information about the [`Instance`]
+    ///   which allows it to query information about the [`Instance`](crate::Instance)
     ///   that is associated to the call.
     ///
     /// # Note
