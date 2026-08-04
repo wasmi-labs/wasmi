@@ -13,7 +13,7 @@ use crate::{
     Table,
     collections::arena::{Arena, ArenaError, ArenaKey, StableArena},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
-    engine::DedupFuncType,
+    engine::{DedupFuncType, Inst},
     memory::DataSegment,
     reftype::{ExternRef, ExternRefEntity},
     store::{
@@ -349,10 +349,10 @@ impl StoreInner {
             init.is_initialized(),
             "encountered an uninitialized new instance entity: {init:?}",
         );
-        // Warm up `init` while it is still separate from `self.instances`. The cached pointers
-        // target other (stable) arenas and `init` itself is already at its final address since
-        // only its `Box` moves into place afterwards.
-        init.warmup(self, len_imported_funcs);
+        // Warm up the entity cache while `init` is still separate from `self.instances`.
+        // The cached pointers target other (stable) arenas, so moving `init` into place
+        // afterwards keeps them valid.
+        init.warmup(self);
         let idx = match self.unwrap_stored(instance.as_raw()) {
             Ok(idx) => idx,
             Err(error) => panic!("failed to unwrap stored entity: {error}"),
@@ -366,6 +366,38 @@ impl StoreInner {
             "encountered an already initialized instance: {uninit:?}",
         );
         *uninit = init;
+        self.warmup_instance_funcs(instance, len_imported_funcs);
+    }
+
+    /// Points the Wasm functions defined by `instance` to its [`InstanceEntity`].
+    ///
+    /// # Note
+    ///
+    /// - Until now those functions point to the uninitialized placeholder entity created by
+    ///   [`StoreInner::alloc_instance`].
+    /// - This must only be called once `instance` has been initialized: the [`Inst`] has to be
+    ///   derived after the [`Box`] of its entity has been moved into `self`. The entity itself
+    ///   never moves but Stacked Borrows retags on that move and thereby invalidates pointers
+    ///   that have been derived beforehand.
+    /// - The first `len_imported_funcs` functions are imported and thus already point to the
+    ///   [`InstanceEntity`] that defined them.
+    fn warmup_instance_funcs(&mut self, instance: Instance, len_imported_funcs: u32) {
+        let mut index = len_imported_funcs;
+        loop {
+            let entity = self.resolve_instance(&instance);
+            let Some(addr) = entity.layout().func_addr(index) else {
+                break;
+            };
+            let Some(func) = entity.get_func(addr) else {
+                panic!("missing function at instance address: {addr:?}")
+            };
+            let inst = Inst::from(entity);
+            let FuncEntity::Wasm(wasm_func) = self.resolve_func_mut(&func) else {
+                panic!("unexpected host function at instance address: {addr:?}")
+            };
+            wasm_func.init_instance(inst);
+            index += 1;
+        }
     }
 
     /// Returns a shared reference to the entity at `key`.

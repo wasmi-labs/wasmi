@@ -21,8 +21,6 @@ use crate::{
     Module,
     Table,
     collections::Map,
-    engine::Inst,
-    func::FuncEntity,
     memory::DataSegment,
     store::StoreInner,
 };
@@ -267,13 +265,13 @@ impl InstanceEntity {
         self.handles.get(addr.into() as usize)
     }
 
-    /// Warms up `self` so that execution never resolves lazily.
+    /// Warms up the entity cache of every handle so that execution never resolves lazily.
     ///
-    /// This must be called once before the [`InstanceEntity`] is used for execution.
+    /// This must be called once before the [`InstanceEntity`] is used for execution, followed
+    /// by [`StoreInner::warmup_instance_funcs`] once `self` has been moved into its store.
     ///
-    /// The first `len_imported_funcs` [`Func`]s of `self` are imported and thus already point to
-    /// the [`InstanceEntity`] that defined them.
-    pub fn warmup(&mut self, store: &mut StoreInner, len_imported_funcs: u32) {
+    /// [`StoreInner::warmup_instance_funcs`]: crate::store::StoreInner::warmup_instance_funcs
+    pub fn warmup(&mut self, store: &mut StoreInner) {
         assert!(
             !matches!(self.header.state, InstanceState::Uninitialized),
             "must not warm-up the cache of an uninitialized instance",
@@ -283,12 +281,6 @@ impl InstanceEntity {
             return;
         }
         self.header.state = InstanceState::WarmedUp;
-        self.warmup_handles(store);
-        self.warmup_funcs(store, len_imported_funcs);
-    }
-
-    /// Warms up the entity cache of every handle of `self`.
-    fn warmup_handles(&mut self, store: &mut StoreInner) {
         let layout = self.header.layout;
         macro_rules! warmup {
             ($addr:ident, $handle:ty) => {{
@@ -308,32 +300,6 @@ impl InstanceEntity {
         warmup!(func_addr, Func);
         warmup!(elem_addr, ElementSegment);
         warmup!(data_addr, DataSegment);
-    }
-
-    /// Points the Wasm functions defined by `self` to `self`.
-    ///
-    /// # Note
-    ///
-    /// Until now those functions point to the uninitialized placeholder entity created by
-    /// [`StoreInner::alloc_instance`].
-    ///
-    /// [`StoreInner::alloc_instance`]: crate::store::StoreInner::alloc_instance
-    fn warmup_funcs(&mut self, store: &mut StoreInner, len_imported_funcs: u32) {
-        // Note: this is derived after `Self::warmup_handles` since writing through `&mut self`
-        //       invalidates shared re-borrows that have been taken from it beforehand.
-        let inst = Inst::from(&*self);
-        let layout = self.header.layout;
-        let mut index = len_imported_funcs;
-        while let Some(addr) = layout.func_addr(index) {
-            let Some(func) = self.get_func(addr) else {
-                panic!("missing function at instance address: {addr:?}")
-            };
-            let FuncEntity::Wasm(wasm_func) = store.resolve_func_mut(&func) else {
-                panic!("unexpected host function at instance address: {addr:?}")
-            };
-            wasm_func.init_instance(inst);
-            index += 1;
-        }
     }
 
     /// Returns the [`Memory`] at the `addr` if any.
