@@ -400,7 +400,7 @@ impl StoreInner {
             let FuncEntity::Wasm(wasm_func) = self.resolve_func_mut(&func) else {
                 panic!("unexpected host function at instance address: {addr:?}")
             };
-            wasm_func.init_instance(inst);
+            wasm_func.set_instance(inst);
             index += 1;
         }
     }
