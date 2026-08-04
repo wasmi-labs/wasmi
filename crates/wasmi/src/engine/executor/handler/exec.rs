@@ -266,6 +266,8 @@ macro_rules! call_indirect_execution_handler {
 call_indirect_execution_handler! {
     fn call_indirect_r(CallIndirect_R);
     fn call_indirect_s(CallIndirect_S);
+    fn call_indirect_table0_r(CallIndirectTable0_R);
+    fn call_indirect_table0_s(CallIndirectTable0_S);
 }
 
 execution_handler! {
@@ -342,6 +344,8 @@ macro_rules! return_call_indirect_execution_handler {
 return_call_indirect_execution_handler! {
     fn return_call_indirect_r(ReturnCallIndirect_R);
     fn return_call_indirect_s(ReturnCallIndirect_S);
+    fn return_call_indirect_table0_r(ReturnCallIndirectTable0_R);
+    fn return_call_indirect_table0_s(ReturnCallIndirectTable0_S);
 }
 
 execution_handler! {
