@@ -382,16 +382,14 @@ impl StoreInner {
     /// - The first `len_imported_funcs` functions are imported and thus already point to the
     ///   [`InstanceEntity`] that defined them.
     fn warmup_instance_funcs(&mut self, instance: Instance, len_imported_funcs: u32) {
+        let entity = self.resolve_instance(&instance);
+        let inst = Inst::from(entity);
+        let layout = *entity.layout();
         let mut index = len_imported_funcs;
-        loop {
-            let entity = self.resolve_instance(&instance);
-            let Some(addr) = entity.layout().func_addr(index) else {
-                break;
-            };
-            let Some(func) = entity.get_func(addr) else {
+        while let Some(addr) = layout.func_addr(index) {
+            let Some(func) = self.resolve_instance(&instance).get_func(addr) else {
                 panic!("missing function at instance address: {addr:?}")
             };
-            let inst = Inst::from(entity);
             let FuncEntity::Wasm(wasm_func) = self.resolve_func_mut(&func) else {
                 panic!("unexpected host function at instance address: {addr:?}")
             };
