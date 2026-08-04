@@ -680,7 +680,6 @@ impl_resolve_from_instance! {
     fn load_elem(inst: Inst, store: &mut StoreInner, elem: ir::ElemAddr) -> &mut ElementSegmentEntity = get_elem;
     fn load_global(inst: Inst, store: &mut StoreInner, global: ir::GlobalAddr) -> &mut GlobalEntity = get_global;
     fn load_memory(inst: Inst, store: &mut StoreInner, memory: ir::MemoryAddr) -> &mut MemoryEntity = get_memory;
-    fn load_table(inst: Inst, store: &mut StoreInner, table: ir::TableAddr) -> &mut TableEntity = get_table;
 }
 
 macro_rules! impl_resolve_ptr_from_instance {
