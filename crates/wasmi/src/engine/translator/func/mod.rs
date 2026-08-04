@@ -1687,17 +1687,22 @@ impl FuncTranslator {
             index: Slot,
         ) -> Op,
         op_r: fn(table: ir::TableAddr, func_type: ir::FuncType, params: BoundedSlotSpan) -> Op,
+        op_table0_s: fn(func_type: ir::FuncType, params: BoundedSlotSpan, index: Slot) -> Op,
+        op_table0_r: fn(func_type: ir::FuncType, params: BoundedSlotSpan) -> Op,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let index = self.stack.pop();
+        let table0 = table_index == 0;
         let table_addr = self.table_addr(table_index);
         let callee_ty = self.resolve_type(type_index);
         let index = self.copy_immediate_to_slot(index)?;
         let params = self.adjust_stack_for_call(&callee_ty)?;
         let func_type = self.resolve_dedup_type(type_index);
-        let op = match index {
-            Location::Slot(index) => op_s(table_addr, func_type, params, index),
-            Location::Reg(_) => op_r(table_addr, func_type, params),
+        let op = match (table0, index) {
+            (true, Location::Slot(index)) => op_table0_s(func_type, params, index),
+            (true, Location::Reg(_)) => op_table0_r(func_type, params),
+            (false, Location::Slot(index)) => op_s(table_addr, func_type, params, index),
+            (false, Location::Reg(_)) => op_r(table_addr, func_type, params),
         };
         self.push_instr(op, FuelCostsProvider::call)?;
         Ok(())
