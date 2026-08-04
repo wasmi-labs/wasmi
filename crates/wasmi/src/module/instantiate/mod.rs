@@ -67,7 +67,6 @@ impl Module {
         let mut builder = InstanceEntity::build(self);
 
         self.extract_imports(&context, &mut builder, externals)?;
-        let len_imported_funcs = builder.len_funcs();
         self.extract_functions(&mut context, &mut builder, handle);
         self.extract_tables(&mut context, &mut builder)?;
         self.extract_memories(&mut context, &mut builder)?;
@@ -76,7 +75,7 @@ impl Module {
         self.extract_start_fn(&mut builder);
         self.initialize_table_elements(&mut context, &mut builder)?;
         self.initialize_memory_data(&mut context, &mut builder)?;
-        Self::start(&mut context, builder, handle, len_imported_funcs)?;
+        Self::start(&mut context, builder, handle, self.len_imported_funcs())?;
         Ok(handle)
     }
 

@@ -160,15 +160,6 @@ impl InstanceEntityBuilder {
         self.funcs.push(func);
     }
 
-    /// Returns the number of [`Func`]s pushed to the [`InstanceEntity`] under construction.
-    pub fn len_funcs(&self) -> u32 {
-        let len = self.funcs.len();
-        let Ok(len) = u32::try_from(len) else {
-            panic!("out of bounds number of instance functions: {len}")
-        };
-        len
-    }
-
     /// Pushes a new [`Extern`] under the given `name` to the [`InstanceEntity`] under construction.
     ///
     /// # Panics
