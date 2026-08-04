@@ -863,11 +863,30 @@ pub enum CallKind {
 pub struct CallIndirectOp {
     pub kind: CallKind,
     pub index: OperandKind,
+    pub table: TableOperand,
+}
+
+/// The table operand kind.
+#[derive(Copy, Clone)]
+pub enum TableOperand {
+    /// Always uses `(table 0)`.
+    Table0,
+    /// Encodes a 32-bit table address.
+    Table,
+}
+
+impl From<TableOperand> for FieldTy {
+    fn from(value: TableOperand) -> Self {
+        match value {
+            TableOperand::Table0 => FieldTy::Table0,
+            TableOperand::Table => FieldTy::TableAddr,
+        }
+    }
 }
 
 impl CallIndirectOp {
-    pub fn new(kind: CallKind, index: OperandKind) -> Self {
-        Self { kind, index }
+    pub fn new(kind: CallKind, index: OperandKind, table: TableOperand) -> Self {
+        Self { kind, index, table }
     }
 
     pub fn func_type_field(&self) -> Field {
@@ -875,7 +894,7 @@ impl CallIndirectOp {
     }
 
     pub fn table_field(&self) -> Field {
-        Field::new(Ident::Table, FieldTy::TableAddr)
+        Field::new(Ident::Table, self.table.into())
     }
 
     pub fn params_field(&self) -> Field {

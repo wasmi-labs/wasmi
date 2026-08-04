@@ -376,14 +376,14 @@ impl<I: Decode, V: Decode> Decode for TableSet<I, V> {
 }
 
 #[derive(Copy, Clone)]
-pub struct CallIndirect<I> {
-    pub table: TableAddr,
+pub struct CallIndirect<Table, Idx> {
+    pub table: Table,
     pub func_type: FuncType,
     pub params: BoundedSlotSpan,
-    pub index: I,
+    pub index: Idx,
 }
 
-impl<I: Decode> Decode for CallIndirect<I> {
+impl<Table: Decode, Idx: Decode> Decode for CallIndirect<Table, Idx> {
     fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
             table: Decode::decode(decoder)?,

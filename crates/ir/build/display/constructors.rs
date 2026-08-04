@@ -21,7 +21,6 @@ use crate::build::{
         UnaryOp,
         V128ExtractLaneOp,
     },
-    ty::FieldTy,
 };
 use core::fmt::{self, Display};
 
@@ -56,7 +55,7 @@ impl<'a, T> DisplayConstructor<&'a T> {
             fields
                 .iter()
                 .filter_map(Option::as_ref)
-                .filter(|field| !field.ty.is_reg() && !matches!(field.ty, FieldTy::Local(_))),
+                .filter(|field| !field.ty.is_reg() && !field.ty.is_unit()),
         );
         let struct_params = DisplaySequence::new(
             ", ",
@@ -64,9 +63,7 @@ impl<'a, T> DisplayConstructor<&'a T> {
                 .iter()
                 .filter_map(Option::as_ref)
                 .map(|param| match param.ty {
-                    FieldTy::RegInt | FieldTy::RegF32 | FieldTy::RegF64 | FieldTy::Local(_) => {
-                        DisplayConstructorInit::Default(*param)
-                    }
+                    ty if ty.is_unit() => DisplayConstructorInit::Default(*param),
                     _ => DisplayConstructorInit::Param(param.ident),
                 }),
         );

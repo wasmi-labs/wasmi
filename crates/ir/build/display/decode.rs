@@ -260,7 +260,11 @@ impl Display for DisplayDecode<&'_ CallIndirectOp> {
         let op = self.value;
         let camel_ident = DisplayIdent::camel(op);
         let index_ty = op.index_field().ty;
-        writeln!(f, "pub type {camel_ident} = CallIndirect<{index_ty}>;")
+        let table = FieldTy::from(op.table);
+        writeln!(
+            f,
+            "pub type {camel_ident} = CallIndirect<{table}, {index_ty}>;"
+        )
     }
 }
 

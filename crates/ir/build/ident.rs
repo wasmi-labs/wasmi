@@ -140,6 +140,7 @@ define_ident!(
     Reinterpret: reinterpret,
 
     Table: table,
+    Table0: table0,
     Memory: memory,
     Func: func,
     FuncType: func_type,
