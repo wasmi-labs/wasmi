@@ -89,42 +89,42 @@ impl InstanceLayout {
 
     /// Returns the number of linear memories in the associated instance.
     #[inline]
-    fn len_memories(&self) -> u32 {
+    pub fn len_memories(&self) -> u32 {
         // Note: memories are placed first.
         self.end_memories
     }
 
     /// Returns the number of global variables in the associated instance.
     #[inline]
-    fn len_globals(&self) -> u32 {
+    pub fn len_globals(&self) -> u32 {
         // Note: globals are placed directly after memories.
         self.end_globals - self.end_memories
     }
 
     /// Returns the number of tables in the associated instance.
     #[inline]
-    fn len_tables(&self) -> u32 {
+    pub fn len_tables(&self) -> u32 {
         // Note: tables are placed directly after global variables.
         self.end_tables - self.end_globals
     }
 
     /// Returns the number of functions in the associated instance.
     #[inline]
-    fn len_funcs(&self) -> u32 {
+    pub fn len_funcs(&self) -> u32 {
         // Note: functions are placed directly after tables.
         self.end_funcs - self.end_tables
     }
 
     /// Returns the number of element segments in the associated instance.
     #[inline]
-    fn len_elems(&self) -> u32 {
+    pub fn len_elems(&self) -> u32 {
         // Note: element segments are placed directly after functions.
         self.end_elems - self.end_funcs
     }
 
     /// Returns the number of data segments in the associated instance.
     #[inline]
-    fn len_datas(&self) -> u32 {
+    pub fn len_datas(&self) -> u32 {
         // Note: data segments are placed directly after element segments.
         self.end_datas - self.end_elems
     }
