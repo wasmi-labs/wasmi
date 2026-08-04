@@ -343,7 +343,7 @@ impl StoreInner {
         &mut self,
         instance: Instance,
         mut init: Box<InstanceEntity>,
-        len_imported_funcs: u32,
+        len_imported_funcs: usize,
     ) {
         assert!(
             init.is_initialized(),
@@ -381,10 +381,13 @@ impl StoreInner {
     ///   that have been derived beforehand.
     /// - The first `len_imported_funcs` functions are imported and thus already point to the
     ///   [`InstanceEntity`] that defined them.
-    fn warmup_instance_funcs(&mut self, instance: Instance, len_imported_funcs: u32) {
+    fn warmup_instance_funcs(&mut self, instance: Instance, len_imported_funcs: usize) {
         let entity = self.resolve_instance(&instance);
         let inst = Inst::from(entity);
         let layout = *entity.layout();
+        let Ok(len_imported_funcs) = u32::try_from(len_imported_funcs) else {
+            panic!("too many imported functions: {len_imported_funcs}")
+        };
         let mut index = len_imported_funcs;
         while let Some(addr) = layout.func_addr(index) {
             let Some(func) = self.resolve_instance(&instance).get_func(addr) else {

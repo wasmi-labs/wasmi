@@ -75,7 +75,12 @@ impl Module {
         self.extract_start_fn(&mut builder);
         self.initialize_table_elements(&mut context, &mut builder)?;
         self.initialize_memory_data(&mut context, &mut builder)?;
-        Self::start(&mut context, builder, handle, self.len_imported_funcs())?;
+        Self::start(
+            &mut context,
+            builder,
+            handle,
+            self.get_imports().len_funcs(),
+        )?;
         Ok(handle)
     }
 
@@ -84,7 +89,7 @@ impl Module {
         mut store: impl AsContextMut,
         builder: InstanceEntityBuilder,
         instance: Instance,
-        len_imported_funcs: u32,
+        len_imported_funcs: usize,
     ) -> Result<(), Error> {
         let opt_start_index = builder.get_start().map(FuncIdx::into_u32);
         store.as_context_mut().store.inner.initialize_instance(
