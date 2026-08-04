@@ -213,7 +213,7 @@ impl Module {
     ) {
         // Note: this is the uninitialized placeholder entity of `handle`. Successful
         //       instantiation re-points the created functions to the real entity in
-        //       `InstanceEntity::warmup`.
+        //       `StoreInner::warmup_instance_funcs`.
         let instance = Inst::from(context.as_context().store.inner.resolve_instance(&handle));
         for (func_type, func_body) in self.internal_funcs() {
             let Some(func_entry) = self.engine().resolve_func(func_body) else {
