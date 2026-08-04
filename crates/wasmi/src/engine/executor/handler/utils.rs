@@ -1,6 +1,8 @@
 use super::state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState};
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
+#[cfg(doc)]
+use crate::instance::InstanceEntity;
 use crate::{
     Error,
     Func,
@@ -624,9 +626,8 @@ macro_rules! impl_resolve_ptr_from_instance {
             ///
             /// # Safety
             ///
-            /// The caller must ensure that `inst` refers to a live, warmed up
-            /// [`InstanceEntity`](crate::InstanceEntity) and that `$param` is a valid address
-            /// within it. The returned pointer is only sound
+            /// The caller must ensure that `inst` refers to a live, warmed up [`InstanceEntity`]
+            /// and that `$param` is a valid address within it. The returned pointer is only sound
             /// to dereference while the instance cache remains warmed up, and the caller must
             /// ensure the resulting reference does not alias any other live reference.
             #[inline]
