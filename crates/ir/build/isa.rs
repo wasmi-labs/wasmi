@@ -24,6 +24,7 @@ use crate::build::{
         StoreKind,
         StoreOp,
         TableGetOp,
+        TableOperand,
         TableSetOp,
         TernaryOp,
         TernaryOpKind,
@@ -623,10 +624,6 @@ fn add_call_ops(isa: &mut Isa) {
                 Field::new(Ident::Func, FieldTy::FuncAddr),
             ],
         )),
-        Op::from(CallIndirectOp::new(CallKind::Nested, OperandKind::Reg)),
-        Op::from(CallIndirectOp::new(CallKind::Nested, OperandKind::Slot)),
-        Op::from(CallIndirectOp::new(CallKind::Tail, OperandKind::Reg)),
-        Op::from(CallIndirectOp::new(CallKind::Tail, OperandKind::Slot)),
         Op::from(GenericOp::new(
             Ident::ReturnCallInternal,
             [
@@ -643,6 +640,14 @@ fn add_call_ops(isa: &mut Isa) {
         )),
     ];
     isa.push_ops(ops);
+    // call_indirect ops
+    for call_kind in [CallKind::Nested, CallKind::Tail] {
+        for index in [OperandKind::Reg, OperandKind::Slot] {
+            for table in [TableOperand::Table0, TableOperand::Table] {
+                isa.push_op(CallIndirectOp::new(call_kind, index, table));
+            }
+        }
+    }
 }
 
 fn add_global_ops(isa: &mut Isa) {

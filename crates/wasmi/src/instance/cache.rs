@@ -5,6 +5,7 @@ use crate::{
     Handle,
     Memory,
     Table,
+    core::CoreTable,
     instance::handle::{AnyHandle, HasHandleKind},
     memory::DataSegment,
     store::StoreInner,
@@ -45,6 +46,41 @@ unsafe impl Send for AnyHandleAndEntity {}
 //         above — the pointee is owned by the very same `StoreInner` — sharing a
 //         `&AnyHandleAndEntity` across threads cannot by itself race on entity data.
 unsafe impl Sync for AnyHandleAndEntity {}
+
+/// The cached entity pointer of an instance's `(table 0)`.
+///
+/// # Note
+///
+/// Unlike [`HandleAndEntity`] this drops the handle: `(table 0)` is only ever resolved to its
+/// entity, and halving the field keeps the instance header small.
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct Table0Ptr(NonNull<CoreTable>);
+
+// SAFETY: same argument as for `AnyHandleAndEntity`: the pointee is owned by the very
+//         `StoreInner` that (transitively) owns the instance holding this pointer, so it never
+//         crosses a thread boundary on its own, and `StableArena` addresses survive a `Store` move.
+unsafe impl Send for Table0Ptr {}
+
+// SAFETY: no safe method on `&Table0Ptr` reads or writes the pointee — `get` only hands out a
+//         raw `NonNull` copy whose dereference is `unsafe` and the caller's contract against the
+//         owning `Store`.
+unsafe impl Sync for Table0Ptr {}
+
+impl Table0Ptr {
+    /// Creates a new [`Table0Ptr`] from the warmed up `entity` pointer.
+    pub fn new(entity: NonNull<CoreTable>) -> Self {
+        Self(entity)
+    }
+
+    /// Returns the cached entity pointer of `self`.
+    ///
+    /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    #[inline]
+    pub fn get(self) -> NonNull<CoreTable> {
+        self.0
+    }
+}
 
 impl AnyHandleAndEntity {
     /// Creates a new [`AnyHandleAndEntity`] from the given `handle`.

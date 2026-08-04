@@ -2,7 +2,12 @@ use crate::{
     DataSegmentEntity,
     Func,
     FuncEntity,
-    core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable},
+    core::{
+        CoreElementSegment as ElementSegmentEntity,
+        CoreGlobal as GlobalEntity,
+        CoreMemory as MemoryEntity,
+        CoreTable as TableEntity,
+    },
     engine::{
         code_map::FuncEntry,
         executor::handler::{
@@ -20,7 +25,7 @@ use crate::{
                 Sp,
                 VmState,
             },
-            utils::{self, GetValue, IntoControl as _, SetValue, get_value, set_value},
+            utils::{self, GetValue, IntoControl as _, LoadEntity, SetValue, get_value, set_value},
         },
     },
     ir::{self, BoundedSlotSpan, BranchOffset},
@@ -153,52 +158,67 @@ impl Args {
 
     /// Returns an exclusive reference to the memory at `index`.
     #[inline]
-    pub fn fetch_memory<'a>(
+    pub fn fetch_memory<'a, Addr>(
         &mut self,
         state: &'a mut VmState,
-        addr: ir::MemoryAddr,
-    ) -> &'a mut CoreMemory {
-        utils::load_memory(self.instance, state.store.inner_mut(), addr)
+        addr: Addr,
+    ) -> &'a mut MemoryEntity
+    where
+        Inst: LoadEntity<Addr, Entity = MemoryEntity>,
+    {
+        self.instance.load(state.store.inner_mut(), addr)
     }
 
     /// Returns an exclusive reference to the global at `index`.
     #[inline]
-    pub fn fetch_global<'a>(
+    pub fn fetch_global<'a, Addr>(
         &mut self,
         state: &'a mut VmState,
-        addr: ir::GlobalAddr,
-    ) -> &'a mut CoreGlobal {
-        utils::load_global(self.instance, state.store.inner_mut(), addr)
+        addr: Addr,
+    ) -> &'a mut GlobalEntity
+    where
+        Inst: LoadEntity<Addr, Entity = GlobalEntity>,
+    {
+        self.instance.load(state.store.inner_mut(), addr)
     }
 
     /// Returns an exclusive reference to the table at `index`.
     #[inline]
-    pub fn fetch_table<'a>(
+    pub fn fetch_table<'a, Addr>(
         &mut self,
         state: &'a mut VmState,
-        addr: ir::TableAddr,
-    ) -> &'a mut CoreTable {
-        utils::load_table(self.instance, state.store.inner_mut(), addr)
+        addr: Addr,
+    ) -> &'a mut TableEntity
+    where
+        Inst: LoadEntity<Addr, Entity = TableEntity>,
+    {
+        self.instance.load(state.store.inner_mut(), addr)
     }
 
     /// Returns an exclusive reference to the element segment at `index`.
     #[inline]
-    pub fn fetch_elem<'a>(
+    pub fn fetch_elem<'a, Addr>(
         &mut self,
         state: &'a mut VmState,
-        addr: ir::ElemAddr,
-    ) -> &'a mut CoreElementSegment {
-        utils::load_elem(self.instance, state.store.inner_mut(), addr)
+        addr: Addr,
+    ) -> &'a mut ElementSegmentEntity
+    where
+        Inst: LoadEntity<Addr, Entity = ElementSegmentEntity>,
+    {
+        self.instance.load(state.store.inner_mut(), addr)
     }
 
     /// Returns an exclusive reference to the data segment at `index`.
     #[inline]
-    pub fn fetch_data<'a>(
+    pub fn fetch_data<'a, Addr>(
         &mut self,
         state: &'a mut VmState,
-        addr: ir::DataAddr,
-    ) -> &'a mut DataSegmentEntity {
-        utils::load_data(self.instance, state.store.inner_mut(), addr)
+        addr: Addr,
+    ) -> &'a mut DataSegmentEntity
+    where
+        Inst: LoadEntity<Addr, Entity = DataSegmentEntity>,
+    {
+        self.instance.load(state.store.inner_mut(), addr)
     }
 
     /// Reloads the data pointer and length of the default memory at index 0 from `state`.
@@ -236,15 +256,16 @@ impl Args {
 
     /// Resolves the [`Func`] at `table[index]` of type `func_type` using `state`.
     #[inline]
-    pub fn resolve_indirect_func<Idx>(
+    pub fn resolve_indirect_func<Idx, Table>(
         &mut self,
         state: &mut VmState<'_>,
         index: Idx,
-        table: ir::TableAddr,
+        table: Table,
         func_type: ir::FuncType,
     ) -> Control<(Func, NonNull<FuncEntity>), Break>
     where
         Idx: GetValue<u64>,
+        Inst: LoadEntity<Table, Entity = TableEntity>,
     {
         utils::resolve_indirect_func(index, table, func_type, state, self).into_control()
     }

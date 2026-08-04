@@ -19,6 +19,7 @@ use crate::build::{
         SelectOp,
         StoreOp,
         TableGetOp,
+        TableOperand,
         TableSetOp,
         TernaryOp,
         UnaryOp,
@@ -525,8 +526,13 @@ impl Display for DisplayIdent<&'_ CallIndirectOp> {
             CallKind::Tail => Some(DisplayConcat((return_ident, sep))),
         }
         .display_maybe();
+        let table_suffix = match op.table {
+            TableOperand::Table0 => Some(DisplayConcat((sep, case.wrap(Ident::Table0)))),
+            TableOperand::Table => None,
+        }
+        .display_maybe();
         let index_suffix = case.wrap(Suffix(op.index));
-        write!(f, "{prefix}{ident}_{index_suffix}")
+        write!(f, "{prefix}{ident}{table_suffix}_{index_suffix}")
     }
 }
 

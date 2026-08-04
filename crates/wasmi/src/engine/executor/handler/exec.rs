@@ -192,6 +192,24 @@ global_set_execution_handler! {
 }
 
 execution_handler! {
+    fn r#return(
+        state: &mut VmState,
+        ip: Ip,
+        sp: Sp,
+        mem0: Mem0Ptr,
+        mem0_len: Mem0Len,
+        instance: Inst,
+        ireg: Ireg,
+        freg32: Freg32,
+        freg64: Freg64,
+    ) -> Done = {
+        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+        args.pop_frame(state)?;
+        dispatch!(state, args)
+    }
+}
+
+execution_handler! {
     fn call_internal(
         state: &mut VmState,
         ip: Ip,
@@ -266,6 +284,8 @@ macro_rules! call_indirect_execution_handler {
 call_indirect_execution_handler! {
     fn call_indirect_r(CallIndirect_R);
     fn call_indirect_s(CallIndirect_S);
+    fn call_indirect_table0_r(CallIndirectTable0_R);
+    fn call_indirect_table0_s(CallIndirectTable0_S);
 }
 
 execution_handler! {
@@ -342,24 +362,8 @@ macro_rules! return_call_indirect_execution_handler {
 return_call_indirect_execution_handler! {
     fn return_call_indirect_r(ReturnCallIndirect_R);
     fn return_call_indirect_s(ReturnCallIndirect_S);
-}
-
-execution_handler! {
-    fn r#return(
-        state: &mut VmState,
-        ip: Ip,
-        sp: Sp,
-        mem0: Mem0Ptr,
-        mem0_len: Mem0Len,
-        instance: Inst,
-        ireg: Ireg,
-        freg32: Freg32,
-        freg64: Freg64,
-    ) -> Done = {
-        let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
-        args.pop_frame(state)?;
-        dispatch!(state, args)
-    }
+    fn return_call_indirect_table0_r(ReturnCallIndirectTable0_R);
+    fn return_call_indirect_table0_s(ReturnCallIndirectTable0_S);
 }
 
 execution_handler! {

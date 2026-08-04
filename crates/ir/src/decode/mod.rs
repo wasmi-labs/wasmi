@@ -47,6 +47,7 @@ use crate::{
     Slot,
     SlotAndReg,
     SlotSpan,
+    Table0,
     core::{ShiftAmount, TrapCode},
     index::{
         DataAddr,
@@ -260,6 +261,13 @@ impl<const N: u8> Decode for ImmLaneIdx<N> {
 }
 
 impl<const N: u16> Decode for Local<N> {
+    #[inline]
+    fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self::default())
+    }
+}
+
+impl Decode for Table0 {
     #[inline]
     fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self::default())

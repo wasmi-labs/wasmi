@@ -417,6 +417,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             table_index,
             Op::call_indirect_s,
             Op::call_indirect_r,
+            Op::call_indirect_table0_s,
+            Op::call_indirect_table0_r,
         )
     }
 
@@ -1769,6 +1771,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             table_index,
             Op::return_call_indirect_s,
             Op::return_call_indirect_r,
+            Op::return_call_indirect_table0_s,
+            Op::return_call_indirect_table0_r,
         )?;
         self.reachable = false;
         Ok(())

@@ -196,6 +196,7 @@ pub enum FieldTy {
     Offset,
     Offset16,
     BranchOffset,
+    Table0,
     MemoryAddr,
     TableAddr,
     GlobalAddr,
@@ -221,6 +222,15 @@ pub enum FieldTy {
 impl FieldTy {
     pub fn is_reg(&self) -> bool {
         matches!(self, Self::RegInt | Self::RegF32 | Self::RegF64)
+    }
+
+    /// Returns `true` if the field type is like a unit type and
+    /// doesn't need to provide a value for construction.
+    pub fn is_unit(&self) -> bool {
+        matches!(
+            self,
+            Self::Local(_) | Self::Table0 | Self::RegInt | Self::RegF32 | Self::RegF64
+        )
     }
 }
 
@@ -297,6 +307,7 @@ impl Display for FieldTy {
             Self::Offset => "Offset",
             Self::Offset16 => "Offset16",
             Self::BranchOffset => "BranchOffset",
+            Self::Table0 => "Table0",
             Self::MemoryAddr => "MemoryAddr",
             Self::TableAddr => "TableAddr",
             Self::GlobalAddr => "GlobalAddr",

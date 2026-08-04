@@ -44,6 +44,7 @@ pub use self::{
         Offset16,
         Reg,
         SlotAndReg,
+        Table0,
     },
     span::{BoundedSlotSpan, FixedSlotSpan, SlotSpan, SlotSpanIter},
 };
