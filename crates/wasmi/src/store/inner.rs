@@ -13,7 +13,7 @@ use crate::{
     Table,
     collections::arena::{Arena, ArenaError, ArenaKey, StableArena},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
-    engine::DedupFuncType,
+    engine::{DedupFuncType, Inst},
     memory::DataSegment,
     reftype::{ExternRef, ExternRefEntity},
     store::{
@@ -339,7 +339,12 @@ impl StoreInner {
     /// - If the [`Instance`] is unknown to the [`StoreInner`].
     /// - If the [`Instance`] has already been initialized.
     /// - If the given [`InstanceEntity`] is itself not initialized, yet.
-    pub fn initialize_instance(&mut self, instance: Instance, mut init: Box<InstanceEntity>) {
+    pub fn initialize_instance(
+        &mut self,
+        instance: Instance,
+        mut init: Box<InstanceEntity>,
+        len_imported_funcs: usize,
+    ) {
         assert!(
             init.is_initialized(),
             "encountered an uninitialized new instance entity: {init:?}",
@@ -361,6 +366,43 @@ impl StoreInner {
             "encountered an already initialized instance: {uninit:?}",
         );
         *uninit = init;
+        self.warmup_instance_funcs(instance, len_imported_funcs);
+    }
+
+    /// Points the Wasm functions defined by `instance` to its [`InstanceEntity`].
+    ///
+    /// # Note
+    ///
+    /// - Until now those functions point to the uninitialized placeholder entity created by
+    ///   [`StoreInner::alloc_instance`].
+    /// - This must only be called once `instance` has been initialized: the [`Inst`] has to be
+    ///   derived after the [`Box`] of its entity has been moved into `self`. The entity itself
+    ///   never moves but Stacked Borrows retags on that move and thereby invalidates pointers
+    ///   that have been derived beforehand.
+    /// - The first `len_imported_funcs` functions are imported and thus already point to the
+    ///   [`InstanceEntity`] that defined them.
+    fn warmup_instance_funcs(&mut self, instance: Instance, len_imported_funcs: usize) {
+        let entity = self.resolve_instance(&instance);
+        let inst = Inst::from(entity);
+        let layout = *entity.layout();
+        let Ok(len_imported_funcs) = u32::try_from(len_imported_funcs) else {
+            panic!("too many imported functions: {len_imported_funcs}")
+        };
+        assert!(
+            len_imported_funcs <= layout.len_funcs(),
+            "out of bounds number of imported functions: {len_imported_funcs}",
+        );
+        let mut index = len_imported_funcs;
+        while let Some(addr) = layout.func_addr(index) {
+            let Some(func) = self.resolve_instance(&instance).get_func(addr) else {
+                panic!("missing function at instance address: {addr:?}")
+            };
+            let FuncEntity::Wasm(wasm_func) = self.resolve_func_mut(&func) else {
+                panic!("unexpected host function at instance address: {addr:?}")
+            };
+            wasm_func.set_instance(inst);
+            index += 1;
+        }
     }
 
     /// Returns a shared reference to the entity at `key`.
@@ -659,6 +701,20 @@ impl StoreInner {
     pub fn try_resolve_func(&self, key: &Func) -> Result<&FuncEntity, InternalStoreError> {
         self.resolve(key.as_raw(), &self.funcs)
     }
+
+    /// Returns an exclusive reference to the associated entity of the Wasm or host function.
+    ///
+    /// # Errors
+    ///
+    /// - If the [`Func`] does not originate from this [`StoreInner`].
+    /// - If the [`Func`] cannot be resolved to its entity.
+    pub fn try_resolve_func_mut(
+        &mut self,
+        key: &Func,
+    ) -> Result<&mut FuncEntity, InternalStoreError> {
+        let idx = self.unwrap_stored(key.as_raw())?;
+        Self::resolve_mut(*idx, &mut self.funcs)
+    }
 }
 
 macro_rules! impl_try_resolve_ptr {
@@ -750,6 +806,7 @@ impl StoreInner {
         pub fn resolve_element(&Self, elem: &ElementSegment) -> &CoreElementSegment = Self::try_resolve_element;
 
         pub fn resolve_func(&Self, func: &Func) -> &FuncEntity = Self::try_resolve_func;
+        pub fn resolve_func_mut(&mut Self, func: &Func) -> &mut FuncEntity = Self::try_resolve_func_mut;
 
         pub fn resolve_instance(&Self, instance: &Instance) -> &InstanceEntity = Self::try_resolve_instance;
         pub fn resolve_externref(&Self, data: &ExternRef) -> &ExternRefEntity = Self::try_resolve_externref;

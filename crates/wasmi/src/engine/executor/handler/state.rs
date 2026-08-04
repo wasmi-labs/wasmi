@@ -146,9 +146,12 @@ impl DoneReason {
 ///
 /// Every `Inst` is created from a live [`InstanceEntity`] that the [`Store`] currently owns,
 /// and the executor keeps that instance alive and warmed up for as long as the `Inst` is
-/// reachable — it is stored in [`Args`] and in the [`CallStack`] frames of the very execution
-/// that owns the [`Store`]. Since the entity is boxed, allocating further instances (e.g. from
-/// a host call) does not move it.
+/// reachable — it is stored in [`Args`], in the [`CallStack`] frames of the very execution
+/// that owns the [`Store`], and in the [`WasmFuncEntity`]s of the instance's own functions.
+/// Since the entity is boxed, allocating further instances (e.g. from a host call) does not
+/// move it, and the [`Store`] never removes an instance.
+///
+/// [`WasmFuncEntity`]: crate::func::WasmFuncEntity
 ///
 /// The `unsafe` methods of [`ThinPtr<InstanceEntity>`] therefore hold for any `Inst` reached
 /// through [`Inst::as_ptr`], and call sites need only justify the *kind* of the address they

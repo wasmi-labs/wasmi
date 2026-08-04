@@ -267,7 +267,10 @@ impl InstanceEntity {
 
     /// Warms up the entity cache of every handle so that execution never resolves lazily.
     ///
-    /// This must be called once before the [`InstanceEntity`] is used for execution.
+    /// This must be called once before the [`InstanceEntity`] is used for execution, followed
+    /// by [`StoreInner::warmup_instance_funcs`] once `self` has been moved into its store.
+    ///
+    /// [`StoreInner::warmup_instance_funcs`]: crate::store::StoreInner::warmup_instance_funcs
     pub fn warmup(&mut self, store: &mut StoreInner) {
         assert!(
             !matches!(self.header.state, InstanceState::Uninitialized),
