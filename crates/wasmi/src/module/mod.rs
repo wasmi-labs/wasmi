@@ -346,6 +346,11 @@ impl Module {
         }
     }
 
+    /// Returns the imports of the [`Module`].
+    pub(crate) fn get_imports(&self) -> &ModuleImports {
+        &self.module_header().imports
+    }
+
     /// Returns an iterator over the internally defined [`Func`].
     ///
     /// [`Func`]: [`crate::Func`]
