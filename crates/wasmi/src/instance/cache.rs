@@ -97,8 +97,9 @@ impl AnyHandleAndEntity {
     ///
     /// # Safety
     ///
-    /// The caller must ensure that `self` stores a `T` handle.
-    /// Debug builds validate this against the stored handle kind tag.
+    /// The caller must ensure that `this` points to a live entry that stores a `T` handle and
+    /// that is not mutably accessed for the duration of the call.
+    /// Debug builds validate the handle kind against the stored handle kind tag.
     #[inline]
     pub fn into_typed_ptr<T: HasHandleKind>(
         this: NonNull<AnyHandleAndEntity>,
@@ -168,6 +169,11 @@ impl<T: Handle<Entity: Sized>> HandleAndEntity<T> {
     /// Maps `this` to the internal pointer to the cached entity of the pointee.
     ///
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that `this` points to a live entry that is not accessed through
+    /// any other pointer for the duration of the call.
     #[inline]
     pub fn map_entity(this: NonNull<Self>) -> NonNull<<T as Handle>::Entity> {
         let mut this = this;
