@@ -121,84 +121,23 @@ Wasmi is suitable for safety critical use cases and has been audited twice.
 
 If you want your project on this list [please inform me](mailto:robin.freyler@gmail.com) about you project and how Wasmi is used.
 
-<a href="https://stellar.org/soroban">
-  <picture>
-    <source srcset="./resources/logos/users/soroban-white.svg" media="(prefers-color-scheme: dark)">
-    <source srcset="./resources/logos/users/soroban-black.svg" media="(prefers-color-scheme: light)">
-    <img
-      src="./resources/logos/users/soroban-black.svg"
-      height="32"
-      style="vertical-align: middle;"
-      alt="Stellar Soroban"
-    />
-  </picture>
-</a>&nbsp;
-<a href="https://wasmer.io">
-  <img
-    src="./resources/logos/users/wasmer.svg"
-    height="32" style="vertical-align: middle;" alt="Wasmer"
-  />
-</a>&nbsp;
-<a href="https://fireflyzero.com">
-  <img
-    src="./resources/logos/users/firefly-zero.png"
-    height="32" style="vertical-align: middle;" alt="Firefly Zero"
-  />
-</a>&nbsp;
-<a href="https://typst.app">
-  <img
-    src="./resources/logos/users/typst.png"
-    height="32" style="vertical-align: middle;" alt="Typst"
-  />
-</a>&nbsp;
-<a href="https://orbitinghail.dev">
-  <picture>
-    <source srcset="./resources/logos/users/orbitinghail-white.png" media="(prefers-color-scheme: dark)">
-    <source srcset="./resources/logos/users/orbitinghail-black.png" media="(prefers-color-scheme: light)">
-    <img
-      src="./resources/logos/users/orbitinghail-black.svg"
-      height="32"
-      style="vertical-align: middle;"
-      alt="Orbitinghail"
-    />
-  </picture>
-</a>&nbsp;
-<a href="https://github.com/smol-dot/smoldot">
-  <img
-    src="./resources/logos/users/smoldot.png"
-    height="32" style="vertical-align: middle;" alt="Smoldot"
-  />
-</a>&nbsp;
-<a href="https://github.com/Askannz/munal-os">
-  <img
-    src="./resources/logos/users/munal-os.png"
-    height="32" style="vertical-align: middle;" alt="Munal OS"
-  />
-</a>&nbsp;
-<a href="https://github.com/unicode-org/icu4x">
-  <img
-    src="./resources/logos/users/icu4x.png"
-    height="32" style="vertical-align: middle;" alt="icu4x"
-  />
-</a>&nbsp;
-<a href="https://github.com/Uni-Gal/Ayaka">
-  <img
-    src="./resources/logos/users/ayaka.png"
-    height="32" style="vertical-align: middle;" alt="Ayaka"
-  />
-</a>&nbsp;
-<a href="https://github.com/project-oak/oak">
-  <picture>
-    <source srcset="./resources/logos/users/project-oak-dark.svg" media="(prefers-color-scheme: dark)">
-    <source srcset="./resources/logos/users/project-oak-light.svg" media="(prefers-color-scheme: light)">
-    <img
-      src="./resources/logos/users/project-oak-light.svg"
-      height="32"
-      style="vertical-align: middle;"
-      alt="Project Oak"
-    />
-  </picture>
-</a>&nbsp;
+[Soroban] &middot; [Wasmer] &middot; [Firefly Zero] &middot; [Typst] &middot; [orbitinghail] &middot;
+[smoldot] &middot; [Munal OS] &middot; [icu4x] &middot; [Ayaka] &middot; [Project Oak] &middot;
+[Zellij] &middot; [Ripple] &middot; [Josh]
+
+[Soroban]: https://stellar.org/soroban
+[Wasmer]: https://wasmer.io
+[Firefly Zero]: https://fireflyzero.com
+[Typst]: https://typst.app
+[orbitinghail]: https://orbitinghail.dev
+[smoldot]: https://github.com/smol-dot/smoldot
+[Munal OS]: https://github.com/Askannz/munal-os
+[icu4x]: https://github.com/unicode-org/icu4x
+[Ayaka]: https://github.com/Uni-Gal/Ayaka
+[Project Oak]: https://github.com/project-oak/oak
+[Zellij]: https://zellij.dev
+[Ripple]: https://ripple.com
+[Josh]: https://github.com/josh-project/josh
 
 ## Sponsors
 
