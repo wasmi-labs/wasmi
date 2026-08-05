@@ -165,22 +165,6 @@ impl<T: Handle<Entity: Sized>> HandleAndEntity<T> {
         // TODO: use `&mut self`
         self.inner.entity.cast::<<T as Handle>::Entity>()
     }
-
-    /// Maps `this` to the internal pointer to the cached entity of the pointee.
-    ///
-    /// The returned pointer is only sound to dereference once the cache has been warmed up.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that `this` points to a live entry that is not accessed through
-    /// any other pointer for the duration of the call.
-    #[inline]
-    pub fn map_entity(this: NonNull<Self>) -> NonNull<<T as Handle>::Entity> {
-        let mut this = this;
-        // Safety: guaranteed by the caller.
-        let this_ref = unsafe { this.as_mut() };
-        this_ref.entity()
-    }
 }
 
 macro_rules! impl_handle_and_entity {

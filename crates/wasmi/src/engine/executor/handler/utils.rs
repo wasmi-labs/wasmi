@@ -686,8 +686,10 @@ macro_rules! impl_load_entity_for_inst {
 
                 #[inline]
                 unsafe fn load_entity_ptr(self, addr: ir::$addr) -> NonNull<Self::Entity> {
-                    let entry = unsafe { self.load_entry_ptr(addr) };
-                    <HandleAndEntity<$handle>>::map_entity(entry)
+                    // SAFETY: guaranteed by the caller; the reference does not outlive the call
+                    //         and the returned pointer is a copy of the cached entity pointer,
+                    //         so it does not derive its provenance from that reference.
+                    unsafe { self.load_entry_ptr(addr).as_ref() }.entity()
                 }
 
                 #[inline]
