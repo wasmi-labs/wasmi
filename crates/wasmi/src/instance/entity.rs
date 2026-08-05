@@ -292,7 +292,7 @@ impl InstanceEntity {
                 while let Some(addr) = layout.$addr(index) {
                     let entry = &mut self.handles[u32::from(addr) as usize];
                     // Safety: the `InstanceLayout` only yields addresses of its own group.
-                    let entry = unsafe { entry.typed_mut::<$handle>() };
+                    let entry = unsafe { entry.as_typed_mut::<$handle>() };
                     entry.warmup(store);
                     index += 1;
                 }
@@ -308,7 +308,7 @@ impl InstanceEntity {
         if let Some(addr) = self.header.layout.table_addr(0) {
             let entry = &self.handles[u32::from(addr) as usize];
             // Safety: the `InstanceLayout` only yields addresses of its own group.
-            let entry = unsafe { entry.typed_ref::<Table>() };
+            let entry = unsafe { entry.as_typed_ref::<Table>() };
             self.header.table0 = Some(Table0Ptr::new(entry.entity()));
         }
     }
@@ -318,7 +318,7 @@ impl InstanceEntity {
     pub fn get_memory(&self, addr: MemoryAddr) -> Option<Memory> {
         let entry = self.entry(addr)?;
         // Safety: `addr` is a `MemoryAddr` and thus addresses a [`Memory`] entry.
-        Some(unsafe { entry.typed_ref::<Memory>() }.handle())
+        Some(unsafe { entry.as_typed_ref::<Memory>() }.handle())
     }
 
     /// Returns the [`Table`] at the `addr` if any.
@@ -326,7 +326,7 @@ impl InstanceEntity {
     pub fn get_table(&self, addr: TableAddr) -> Option<Table> {
         let entry = self.entry(addr)?;
         // Safety: `addr` is a `TableAddr` and thus addresses a [`Table`] entry.
-        Some(unsafe { entry.typed_ref::<Table>() }.handle())
+        Some(unsafe { entry.as_typed_ref::<Table>() }.handle())
     }
 
     /// Returns the [`Global`] at the `addr` if any.
@@ -334,7 +334,7 @@ impl InstanceEntity {
     pub fn get_global(&self, addr: GlobalAddr) -> Option<Global> {
         let entry = self.entry(addr)?;
         // Safety: `addr` is a `GlobalAddr` and thus addresses a [`Global`] entry.
-        Some(unsafe { entry.typed_ref::<Global>() }.handle())
+        Some(unsafe { entry.as_typed_ref::<Global>() }.handle())
     }
 
     /// Returns the [`Func`] at the `addr` if any.
@@ -342,7 +342,7 @@ impl InstanceEntity {
     pub fn get_func(&self, addr: FuncAddr) -> Option<Func> {
         let entry = self.entry(addr)?;
         // Safety: `addr` is a `FuncAddr` and thus addresses a [`Func`] entry.
-        Some(unsafe { entry.typed_ref::<Func>() }.handle())
+        Some(unsafe { entry.as_typed_ref::<Func>() }.handle())
     }
 
     /// Returns the [`DataSegment`] at the `addr` if any.
@@ -350,7 +350,7 @@ impl InstanceEntity {
     pub fn get_data(&self, addr: DataAddr) -> Option<DataSegment> {
         let entry = self.entry(addr)?;
         // Safety: `addr` is a `DataAddr` and thus addresses a [`DataSegment`] entry.
-        Some(unsafe { entry.typed_ref::<DataSegment>() }.handle())
+        Some(unsafe { entry.as_typed_ref::<DataSegment>() }.handle())
     }
 
     /// Returns the [`ElementSegment`] at the `addr` if any.
@@ -358,7 +358,7 @@ impl InstanceEntity {
     pub fn get_elem(&self, addr: ElemAddr) -> Option<ElementSegment> {
         let entry = self.entry(addr)?;
         // Safety: `addr` is a `ElemAddr` and thus addresses a [`ElementSegment`] entry.
-        Some(unsafe { entry.typed_ref::<ElementSegment>() }.handle())
+        Some(unsafe { entry.as_typed_ref::<ElementSegment>() }.handle())
     }
 
     /// Returns the value exported to the given `name` if any.
