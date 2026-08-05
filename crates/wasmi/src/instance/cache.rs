@@ -162,7 +162,6 @@ impl<T: Handle<Entity: Sized>> HandleAndEntity<T> {
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
     pub fn entity(&self) -> NonNull<<T as Handle>::Entity> {
-        // TODO: use `&mut self`
         self.inner.entity.cast::<<T as Handle>::Entity>()
     }
 }
