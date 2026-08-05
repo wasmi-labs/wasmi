@@ -442,13 +442,13 @@ impl ThinPtr<InstanceEntity> {
     ///
     /// Same as for [`ThinPtr::as_ref`].
     #[inline]
-    unsafe fn entry<'a>(self, addr: u32) -> Option<&'a AnyHandleAndEntity> {
+    unsafe fn entry<'a>(self, addr: u32) -> Option<NonNull<AnyHandleAndEntity>> {
         // Safety: guaranteed by the caller.
         if addr >= unsafe { self.header() }.len_handles() {
             return None;
         }
         // Safety: guaranteed by the caller and the bounds check above.
-        Some(unsafe { self.handles().add(addr as usize).as_ref() })
+        Some(unsafe { self.handles().add(addr as usize) })
     }
 
     /// Returns a shared reference to the [`InstanceLayout`] of the pointee.
@@ -499,7 +499,7 @@ macro_rules! impl_get_entry {
     (
         $(
             $(#[$attr:meta])*
-            pub unsafe fn $get:ident(self, addr: $addr_ty:ty) -> &HandleAndEntity<$handle:ty>;
+            pub unsafe fn $get:ident(self, addr: $addr_ty:ty) -> Option<NonNull<HandleAndEntity<$handle:ty>>>;
         )*
     ) => {
         $(
@@ -512,11 +512,11 @@ macro_rules! impl_get_entry {
             /// Wasmi's translation guarantees this for every address encoded into a Wasmi IR
             /// operator.
             #[inline]
-            pub unsafe fn $get<'a>(self, addr: $addr_ty) -> Option<&'a HandleAndEntity<$handle>> {
+            pub unsafe fn $get<'a>(self, addr: $addr_ty) -> Option<NonNull<HandleAndEntity<$handle>>> {
                 // Safety: guaranteed by the caller.
                 let entry = unsafe { self.entry(u32::from(addr)) }?;
                 // Safety: guaranteed by the caller.
-                Some(unsafe { entry.typed_ref::<$handle>() })
+                Some(AnyHandleAndEntity::into_typed_ptr::<$handle>(entry))
             }
         )*
     };
@@ -525,16 +525,16 @@ macro_rules! impl_get_entry {
 impl ThinPtr<InstanceEntity> {
     impl_get_entry! {
         /// Returns the [`HandleAndEntity`] of the [`Memory`] at `addr`.
-        pub unsafe fn get_memory(self, addr: MemoryAddr) -> &HandleAndEntity<Memory>;
+        pub unsafe fn get_memory(self, addr: MemoryAddr) -> Option<NonNull<HandleAndEntity<Memory>>>;
         /// Returns the [`HandleAndEntity`] of the [`Global`] at `addr`.
-        pub unsafe fn get_global(self, addr: GlobalAddr) -> &HandleAndEntity<Global>;
+        pub unsafe fn get_global(self, addr: GlobalAddr) -> Option<NonNull<HandleAndEntity<Global>>>;
         /// Returns the [`HandleAndEntity`] of the [`Table`] at `addr`.
-        pub unsafe fn get_table(self, addr: TableAddr) -> &HandleAndEntity<Table>;
+        pub unsafe fn get_table(self, addr: TableAddr) -> Option<NonNull<HandleAndEntity<Table>>>;
         /// Returns the [`HandleAndEntity`] of the [`Func`] at `addr`.
-        pub unsafe fn get_func(self, addr: FuncAddr) -> &HandleAndEntity<Func>;
+        pub unsafe fn get_func(self, addr: FuncAddr) -> Option<NonNull<HandleAndEntity<Func>>>;
         /// Returns the [`HandleAndEntity`] of the [`ElementSegment`] at `addr`.
-        pub unsafe fn get_elem(self, addr: ElemAddr) -> &HandleAndEntity<ElementSegment>;
+        pub unsafe fn get_elem(self, addr: ElemAddr) -> Option<NonNull<HandleAndEntity<ElementSegment>>>;
         /// Returns the [`HandleAndEntity`] of the [`DataSegment`] at `addr`.
-        pub unsafe fn get_data(self, addr: DataAddr) -> &HandleAndEntity<DataSegment>;
+        pub unsafe fn get_data(self, addr: DataAddr) -> Option<NonNull<HandleAndEntity<DataSegment>>>;
     }
 }
