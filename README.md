@@ -132,8 +132,7 @@ If you want your project on this list [please inform me](mailto:robin.freyler@gm
 [smoldot] &middot;
 [Munal OS] &middot;
 [Ayaka] &middot;
-[Project Oak] &middot;
-[Wasmer]
+[Project Oak]
 
 [Soroban]: https://stellar.org/soroban
 [Firefly Zero]: https://fireflyzero.com
@@ -147,7 +146,6 @@ If you want your project on this list [please inform me](mailto:robin.freyler@gm
 [Ayaka]: https://github.com/Uni-Gal/Ayaka
 [Project Oak]: https://github.com/project-oak/oak
 [smoldot]: https://github.com/smol-dot/smoldot
-[Wasmer]: https://wasmer.io
 
 ## Sponsors
 
