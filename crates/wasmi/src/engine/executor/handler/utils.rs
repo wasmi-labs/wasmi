@@ -694,6 +694,8 @@ macro_rules! impl_load_entity_for_inst {
 
                 #[inline]
                 unsafe fn load_entity_mut(self, _store: &mut PrunedStore, addr: ir::$addr) -> &mut Self::Entity {
+                    // SAFETY: guaranteed by the caller; the `_store` borrow scopes the returned
+                    //         reference against a concurrent store mutation.
                     unsafe { self.load_entity_ptr(addr).as_mut() }
                 }
             }
@@ -724,6 +726,8 @@ impl LoadEntity<Table0> for Inst {
 
     #[inline]
     unsafe fn load_entity_mut(self, _store: &mut PrunedStore, addr: Table0) -> &mut Self::Entity {
+        // SAFETY: guaranteed by the caller; the `_store` borrow scopes the returned reference
+        //         against a concurrent store mutation.
         unsafe { self.load_entity_ptr(addr).as_mut() }
     }
 }
