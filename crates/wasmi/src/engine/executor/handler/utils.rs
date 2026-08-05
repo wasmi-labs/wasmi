@@ -558,8 +558,8 @@ pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) 
     // SAFETY: the entry stems from the instance layout and is thus in bounds; the reference
     //         does not outlive this function.
     let mem0 = unsafe { mem0.as_ref() };
-    // SAFETY: warmed at instantiation; the `_store` borrow scopes exclusive memory access.
     let mem0 = mem0.entity();
+    // SAFETY: warmed at instantiation; the `_store` borrow scopes exclusive memory access.
     let mem0 = unsafe { &mut *mem0.as_ptr() }.data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
