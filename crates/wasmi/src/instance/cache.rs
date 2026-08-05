@@ -93,7 +93,7 @@ impl AnyHandleAndEntity {
         }
     }
 
-    /// Returns `self` as a [`HandleAndEntity<T>`].
+    /// Returns `this` as a pointer to a [`HandleAndEntity<T>`].
     ///
     /// # Safety
     ///
@@ -165,7 +165,7 @@ impl<T: Handle<Entity: Sized>> HandleAndEntity<T> {
         self.inner.entity.cast::<<T as Handle>::Entity>()
     }
 
-    /// Maps `self` to the internal pointer to the cached entity of `self`.
+    /// Maps `this` to the internal pointer to the cached entity of the pointee.
     ///
     /// The returned pointer is only sound to dereference once the cache has been warmed up.
     #[inline]
