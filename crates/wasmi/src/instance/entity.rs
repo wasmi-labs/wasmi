@@ -516,7 +516,8 @@ macro_rules! impl_get_entry {
                 // Safety: guaranteed by the caller.
                 let entry = unsafe { self.entry(u32::from(addr)) }?;
                 // Safety: guaranteed by the caller.
-                Some(AnyHandleAndEntity::into_typed_ptr::<$handle>(entry))
+                let typed = unsafe { AnyHandleAndEntity::into_typed_ptr::<$handle>(entry) };
+                Some(typed)
             }
         )*
     };

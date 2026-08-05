@@ -101,7 +101,7 @@ impl AnyHandleAndEntity {
     /// that is not mutably accessed for the duration of the call.
     /// Debug builds validate the handle kind against the stored handle kind tag.
     #[inline]
-    pub fn into_typed_ptr<T: HasHandleKind>(
+    pub unsafe fn into_typed_ptr<T: HasHandleKind>(
         this: NonNull<AnyHandleAndEntity>,
     ) -> NonNull<HandleAndEntity<T>> {
         // Safety: guaranteed by the caller.
