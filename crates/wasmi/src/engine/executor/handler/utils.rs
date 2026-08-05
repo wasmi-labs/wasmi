@@ -2,7 +2,7 @@ use super::state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState
 #[cfg(feature = "simd")]
 use crate::core::simd::ImmLaneIdx;
 #[cfg(doc)]
-use crate::instance::InstanceEntity;
+use crate::instance::{InstanceEntity, ThinPtr};
 use crate::{
     DataSegment,
     ElementSegment,
@@ -586,15 +586,12 @@ pub fn memory_slice_mut(
         .ok_or(TrapCode::MemoryOutOfBounds)
 }
 
-/// Extension trait for [`Inst`] to load typed entries.
+/// Extension trait for [`Inst`] to load typed entries from their addresses.
 trait LoadEntry<Addr> {
-    /// The loaded entity type.
+    /// The type of the loaded entry.
     type Entry;
 
-    /// Loads the entity from the warmed up instance cache.
-    ///
-    /// The `store` borrow is not read; it ties the returned reference so that it
-    /// cannot alias a concurrent store mutation making this a safe wrapper.
+    /// Returns a pointer to the entry at `addr` of the instance cache.
     ///
     /// # Safety
     ///
@@ -645,15 +642,17 @@ impl_load_entry_for_inst! {
     ir::ElemAddr -> ElementSegment = get_elem;
 }
 
-/// Extension trait for [`Inst`] to safely(ish) load entities from their addresses.
+/// Extension trait for [`Inst`] to load entities from their addresses.
 pub trait LoadEntity<Addr> {
     /// The type of the loaded handle entity.
     type Entity;
 
-    /// Loads the entity from the warmed up instance cache.
+    /// Returns a pointer to the entity at `addr` of the warmed up instance cache.
     ///
-    /// The `store` borrow is not read; it ties the returned reference so that it
-    /// cannot alias a concurrent store mutation making this a safe wrapper.
+    /// Unlike [`LoadEntity::load_entity_mut`] this returns a raw [`NonNull`] instead of a
+    /// reference tied to the store. This lets the caller hold several entity pointers (or an
+    /// entity pointer alongside a `&mut` borrow of `fuel`) at once and materialize a reference
+    /// only in the narrow scope where the entity is actually accessed.
     ///
     /// # Safety
     ///
@@ -662,10 +661,10 @@ pub trait LoadEntity<Addr> {
     /// concurrent store mutation or another live reference to the same entity.
     unsafe fn load_entity_ptr(self, addr: Addr) -> NonNull<Self::Entity>;
 
-    /// Loads the entity from the warmed up instance cache.
+    /// Returns an exclusive reference to the entity at `addr` of the warmed up instance cache.
     ///
     /// The `store` borrow is not read; it ties the returned reference so that it
-    /// cannot alias a concurrent store mutation making this a safe wrapper.
+    /// cannot alias a concurrent store mutation.
     ///
     /// # Safety
     ///
@@ -727,15 +726,15 @@ impl LoadEntity<Table0> for Inst {
     }
 }
 
-/// Extension trait for [`Inst`] to safely(ish) load entities from their addresses.
+/// Extension trait for [`Inst`] to load handles from their addresses.
 pub trait LoadHandle<Addr> {
     /// The type of the loaded handle.
     type Handle;
 
-    /// Loads the entity from the warmed up instance cache.
+    /// Returns the handle at `addr` of the instance.
     ///
-    /// The `store` borrow is not read; it ties the returned reference so that it
-    /// cannot alias a concurrent store mutation making this a safe wrapper.
+    /// Unlike the [`LoadEntity`] methods this does not touch the entity cache and therefore
+    /// does not require it to be warmed up.
     ///
     /// # Safety
     ///
