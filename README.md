@@ -126,18 +126,18 @@ If you want your project on this list [please inform me](mailto:robin.freyler@gm
 [Zellij] &middot; [Ripple] &middot; [Josh]
 
 [Soroban]: https://stellar.org/soroban
-[Wasmer]: https://wasmer.io
 [Firefly Zero]: https://fireflyzero.com
 [Typst]: https://typst.app
-[orbitinghail]: https://orbitinghail.dev
-[smoldot]: https://github.com/smol-dot/smoldot
-[Munal OS]: https://github.com/Askannz/munal-os
-[icu4x]: https://github.com/unicode-org/icu4x
-[Ayaka]: https://github.com/Uni-Gal/Ayaka
-[Project Oak]: https://github.com/project-oak/oak
 [Zellij]: https://zellij.dev
 [Ripple]: https://ripple.com
 [Josh]: https://github.com/josh-project/josh
+[icu4x]: https://github.com/unicode-org/icu4x
+[orbitinghail]: https://orbitinghail.dev
+[Munal OS]: https://github.com/Askannz/munal-os
+[Ayaka]: https://github.com/Uni-Gal/Ayaka
+[Project Oak]: https://github.com/project-oak/oak
+[smoldot]: https://github.com/smol-dot/smoldot
+[Wasmer]: https://wasmer.io
 
 ## Sponsors
 
