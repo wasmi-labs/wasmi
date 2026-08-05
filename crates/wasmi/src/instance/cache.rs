@@ -93,14 +93,32 @@ impl AnyHandleAndEntity {
         }
     }
 
+    /// Returns `this` as a pointer to a [`HandleAndEntity<T>`].
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that `this` points to a live entry that stores a `T` handle and
+    /// that is not mutably accessed for the duration of the call.
+    /// Debug builds validate the handle kind against the stored handle kind tag.
+    #[inline]
+    pub unsafe fn into_typed_ptr<T: HasHandleKind>(
+        this: NonNull<AnyHandleAndEntity>,
+    ) -> NonNull<HandleAndEntity<T>> {
+        // Safety: guaranteed by the caller.
+        unsafe { this.as_ref() }.handle.assert_kind::<T>();
+        // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
+        //         `AnyHandleAndEntity` and the caller guarantees the handle kind.
+        this.cast::<HandleAndEntity<T>>()
+    }
+
     /// Returns `self` as a shared [`HandleAndEntity<T>`].
     ///
     /// # Safety
     ///
-    /// The caller must ensure that `self` stores a `T` handle. Debug builds validate this
-    /// against the stored handle kind tag.
+    /// The caller must ensure that `self` stores a `T` handle.
+    /// Debug builds validate this against the stored handle kind tag.
     #[inline]
-    pub unsafe fn typed_ref<T: HasHandleKind>(&self) -> &HandleAndEntity<T> {
+    pub unsafe fn as_typed_ref<T: HasHandleKind>(&self) -> &HandleAndEntity<T> {
         self.handle.assert_kind::<T>();
         // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
         //         `AnyHandleAndEntity` and the caller guarantees the handle kind.
@@ -111,9 +129,10 @@ impl AnyHandleAndEntity {
     ///
     /// # Safety
     ///
-    /// Same as for [`AnyHandleAndEntity::typed_ref`].
+    /// The caller must ensure that `self` stores a `T` handle.
+    /// Debug builds validate this against the stored handle kind tag.
     #[inline]
-    pub unsafe fn typed_mut<T: HasHandleKind>(&mut self) -> &mut HandleAndEntity<T> {
+    pub unsafe fn as_typed_mut<T: HasHandleKind>(&mut self) -> &mut HandleAndEntity<T> {
         self.handle.assert_kind::<T>();
         // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
         //         `AnyHandleAndEntity` and the caller guarantees the handle kind.

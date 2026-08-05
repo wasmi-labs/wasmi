@@ -1,5 +1,5 @@
-pub(crate) use self::builder::InstanceEntityBuilder;
-use self::cache::{AnyHandleAndEntity, HandleAndEntity, Table0Ptr};
+use self::cache::{AnyHandleAndEntity, Table0Ptr};
+pub(crate) use self::{builder::InstanceEntityBuilder, cache::HandleAndEntity};
 pub use self::{
     entity::InstanceEntity,
     exports::{Export, ExportsIter, Extern, ExternType},

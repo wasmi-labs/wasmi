@@ -152,7 +152,7 @@ impl Args {
 
     /// Returns the bytes of the default memory at index 0.
     #[inline]
-    pub fn fetch_default_memory_bytes<'a>(&mut self) -> &'a mut [u8] {
+    pub fn fetch_default_memory_bytes<'a>(&mut self, _state: &'a mut VmState) -> &'a mut [u8] {
         state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len)
     }
 
@@ -166,7 +166,10 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = MemoryEntity>,
     {
-        self.instance.load(state.store.inner_mut(), addr)
+        // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a memory entry of
+        //         `self.instance` whose cache was warmed at instantiation. The `state` borrow
+        //         scopes the returned reference.
+        unsafe { self.instance.load_entity_mut(state.store, addr) }
     }
 
     /// Returns an exclusive reference to the global at `index`.
@@ -179,7 +182,10 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = GlobalEntity>,
     {
-        self.instance.load(state.store.inner_mut(), addr)
+        // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a global entry of
+        //         `self.instance` whose cache was warmed at instantiation. The `state` borrow
+        //         scopes the returned reference.
+        unsafe { self.instance.load_entity_mut(state.store, addr) }
     }
 
     /// Returns an exclusive reference to the table at `index`.
@@ -192,7 +198,10 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = TableEntity>,
     {
-        self.instance.load(state.store.inner_mut(), addr)
+        // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a table entry of
+        //         `self.instance` whose cache was warmed at instantiation. The `state` borrow
+        //         scopes the returned reference.
+        unsafe { self.instance.load_entity_mut(state.store, addr) }
     }
 
     /// Returns an exclusive reference to the element segment at `index`.
@@ -205,7 +214,10 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = ElementSegmentEntity>,
     {
-        self.instance.load(state.store.inner_mut(), addr)
+        // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses an element segment
+        //         entry of `self.instance` whose cache was warmed at instantiation. The `state`
+        //         borrow scopes the returned reference.
+        unsafe { self.instance.load_entity_mut(state.store, addr) }
     }
 
     /// Returns an exclusive reference to the data segment at `index`.
@@ -218,7 +230,10 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = DataSegmentEntity>,
     {
-        self.instance.load(state.store.inner_mut(), addr)
+        // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a data segment entry
+        //         of `self.instance` whose cache was warmed at instantiation. The `state` borrow
+        //         scopes the returned reference.
+        unsafe { self.instance.load_entity_mut(state.store, addr) }
     }
 
     /// Reloads the data pointer and length of the default memory at index 0 from `state`.

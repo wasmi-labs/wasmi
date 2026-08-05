@@ -11,7 +11,6 @@ use super::{
     Args,
     dispatch::Done,
     state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
-    utils::fetch_func,
 };
 #[cfg(feature = "simd")]
 use crate::V128;
@@ -25,7 +24,7 @@ use crate::{
             Control,
             dispatch::Break,
             state::DoneReason,
-            utils::{self, GetValue, IntoControl as _},
+            utils::{self, GetValue, IntoControl as _, LoadEntity, LoadHandle as _},
         },
         utils::unreachable_unchecked,
     },
@@ -405,7 +404,7 @@ execution_handler! {
             delta,
         } = unsafe { args.decode_op() };
         let delta: u64 = args.get(delta);
-        let memref = utils::fetch_memory(instance, memory);
+        let memref = unsafe { instance.load_handle(memory) };
         let return_value = match state.store.grow_memory(&memref, delta) {
             Ok(return_value) => {
                 // The `memory.grow` operation might have invalidated the cached
@@ -419,7 +418,8 @@ execution_handler! {
             Err(StoreError::External(
                 MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory,
             )) => {
-                let memory_ty = utils::resolve_memory(state.store, &memref).ty();
+                let memory = unsafe { instance.load_entity_mut(state.store, memory) };
+                let memory_ty = memory.ty();
                 match memory_ty.is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),
@@ -480,8 +480,8 @@ execution_handler! {
             memory_copy_within(state, &mut args, ip, dst_memory, dst_index, src_index, len)?;
             dispatch!(state, args)
         }
-        let src_ptr = unsafe { utils::load_memory_ptr(instance, src_memory) };
-        let mut dst_ptr = unsafe { utils::load_memory_ptr(instance, dst_memory) };
+        let src_ptr = unsafe { instance.load_entity_ptr(src_memory) };
+        let mut dst_ptr = unsafe { instance.load_entity_ptr(dst_memory) };
         if src_ptr == dst_ptr {
             // Distinct memory indices can still resolve to the same store entity (e.g. the same
             // memory imported under two names), so branch on the resolved entity before forming
@@ -520,7 +520,7 @@ fn memory_copy_within(
     len: usize,
 ) -> Control<(), Break> {
     // SAFETY: `args.instance` is live and warmed up; `memory` is the only entity accessed here.
-    let memory = unsafe { utils::load_memory_ptr(args.instance, dst_memory).as_mut() };
+    let memory = unsafe { args.instance.load_entity_ptr(dst_memory).as_mut() };
     let fuel = state.store.inner_mut().fuel_mut();
     // These accesses just perform the bounds checks required by the Wasm spec.
     utils::memory_slice(memory, src_index, len).into_control()?;
@@ -562,7 +562,7 @@ execution_handler! {
             trap!(TrapCode::MemoryOutOfBounds)
         };
         // SAFETY: `instance` is live and warmed up; `memory` is the only entity accessed here.
-        let memory = unsafe { utils::load_memory_ptr(instance, memory).as_mut() };
+        let memory = unsafe { instance.load_entity_ptr(memory).as_mut() };
         let fuel = state.store.inner_mut().fuel_mut();
         let slice = utils::memory_slice_mut(memory, dst, len).into_control()?;
         consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
@@ -605,8 +605,8 @@ execution_handler! {
         };
         // SAFETY: `instance` is live and warmed up. `memory` and `data` live in different
         // arenas, so their references are to distinct entities and cannot alias.
-        let memory = unsafe { utils::load_memory_ptr(instance, memory).as_mut() };
-        let data = unsafe { utils::load_data_ptr(instance, data).as_ref() };
+        let memory = unsafe { instance.load_entity_ptr(memory).as_mut() };
+        let data = unsafe { instance.load_entity_ptr(data).as_ref() };
         let fuel = state.store.inner_mut().fuel_mut();
         let memory = utils::memory_slice_mut(memory, dst_index, len).into_control()?;
         let Some(data) = data
@@ -680,13 +680,13 @@ execution_handler! {
             delta,
             value,
         } = unsafe { args.decode_op() };
-        let table = utils::fetch_table(instance, table);
+        let table_ref = unsafe { instance.load_handle(table) };
         let delta = args.get(delta);
         let value = args.get(value);
-        let return_value = match state.store.grow_table(&table, delta, value) {
+        let return_value = match state.store.grow_table(&table_ref, delta, value) {
             Ok(return_value) => return_value,
             Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
-                let table = utils::resolve_table(state.store, &table);
+                let table = unsafe { instance.load_entity_mut(state.store, table) };
                 match table.ty().is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),
@@ -733,8 +733,8 @@ execution_handler! {
         let dst: u64 = args.get(dst);
         let src: u64 = args.get(src);
         let len: u64 = args.get(len);
-        let src_ptr = unsafe { utils::load_table_ptr(instance, src_table) };
-        let mut dst_ptr = unsafe { utils::load_table_ptr(instance, dst_table) };
+        let src_ptr = unsafe { instance.load_entity_ptr(src_table) };
+        let mut dst_ptr = unsafe { instance.load_entity_ptr(dst_table) };
         // Distinct table indices can still resolve to the same store entity (e.g. the same table
         // imported under two names), so branch on the resolved entity, not just the index.
         let result = if src_ptr == dst_ptr {
@@ -791,7 +791,7 @@ execution_handler! {
         let len: u64 = args.get(len);
         let value: RawRef = args.get(value);
         // SAFETY: `instance` is live and warmed up; `table` is the only entity accessed here.
-        let table = unsafe { utils::load_table_ptr(instance, table).as_mut() };
+        let table = unsafe { instance.load_entity_ptr(table).as_mut() };
         let fuel = state.store.inner_mut().fuel_mut();
         if let Err(error) = table.fill_raw(dst, value, len, Some(fuel)) {
             let trap_code = match error {
@@ -834,8 +834,8 @@ execution_handler! {
         let len: u32 = args.get(len);
         // SAFETY: `args.instance` is live and warmed up. `table` and `elem` live in different
         //         arenas, so their references are to distinct entities and cannot alias.
-        let table = unsafe { utils::load_table_ptr(args.instance, table).as_mut() };
-        let element = unsafe { utils::load_elem_ptr(args.instance, elem).as_ref() };
+        let table = unsafe { args.instance.load_entity_ptr(table).as_mut() };
+        let element = unsafe { args.instance.load_entity_ptr(elem).as_ref() };
         let fuel = state.store.inner_mut().fuel_mut();
         if let Err(error) = table.init(element.as_ref(), dst, src, len, Some(fuel)) {
             let trap_code = match error {
@@ -961,7 +961,7 @@ execution_handler! {
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::RefFunc { func, result } = unsafe { args.decode_op() };
-        let func = fetch_func(instance, func);
+        let func = unsafe { instance.load_handle(func) };
         let Some(rawref) = func.unwrap_raw(&*state.store) else {
             unsafe { unreachable_unchecked!("store mismatch with: {func:?}") }
         };
