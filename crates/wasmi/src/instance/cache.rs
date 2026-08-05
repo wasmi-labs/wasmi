@@ -103,6 +103,7 @@ impl AnyHandleAndEntity {
     pub fn into_typed_ptr<T: HasHandleKind>(
         this: NonNull<AnyHandleAndEntity>,
     ) -> NonNull<HandleAndEntity<T>> {
+        // Safety: guaranteed by the caller.
         unsafe { this.as_ref() }.handle.assert_kind::<T>();
         // Safety: `HandleAndEntity<T>` is a `repr(transparent)` wrapper around
         //         `AnyHandleAndEntity` and the caller guarantees the handle kind.
@@ -170,7 +171,7 @@ impl<T: Handle<Entity: Sized>> HandleAndEntity<T> {
     #[inline]
     pub fn map_entity(this: NonNull<Self>) -> NonNull<<T as Handle>::Entity> {
         let mut this = this;
-        // SAFETY: todo
+        // Safety: guaranteed by the caller.
         let this_ref = unsafe { this.as_mut() };
         this_ref.entity()
     }
