@@ -394,33 +394,6 @@ impl InstanceEntity {
     }
 }
 
-macro_rules! impl_get_entry {
-    (
-        $(
-            $(#[$attr:meta])*
-            pub unsafe fn $get:ident(self, addr: $addr_ty:ty) -> &HandleAndEntity<$handle:ty>;
-        )*
-    ) => {
-        $(
-            $(#[$attr])*
-            ///
-            /// # Safety
-            ///
-            /// In addition to the requirements of [`ThinPtr::as_ref`] the caller must ensure
-            #[doc = concat!("that the entry at `addr` stores a [`", stringify!($handle), "`] handle.")]
-            /// Wasmi's translation guarantees this for every address encoded into a Wasmi IR
-            /// operator.
-            #[inline]
-            pub unsafe fn $get<'a>(self, addr: $addr_ty) -> Option<&'a HandleAndEntity<$handle>> {
-                // Safety: guaranteed by the caller.
-                let entry = unsafe { self.entry(u32::from(addr)) }?;
-                // Safety: guaranteed by the caller.
-                Some(unsafe { entry.typed_ref::<$handle>() })
-            }
-        )*
-    };
-}
-
 /// The thin-pointer API of [`InstanceEntity`].
 ///
 /// # Note
@@ -494,21 +467,6 @@ impl ThinPtr<InstanceEntity> {
         unsafe { self.header() }.table0.map(Table0Ptr::get)
     }
 
-    impl_get_entry! {
-        /// Returns the [`HandleAndEntity`] of the [`Memory`] at `addr`.
-        pub unsafe fn get_memory(self, addr: MemoryAddr) -> &HandleAndEntity<Memory>;
-        /// Returns the [`HandleAndEntity`] of the [`Global`] at `addr`.
-        pub unsafe fn get_global(self, addr: GlobalAddr) -> &HandleAndEntity<Global>;
-        /// Returns the [`HandleAndEntity`] of the [`Table`] at `addr`.
-        pub unsafe fn get_table(self, addr: TableAddr) -> &HandleAndEntity<Table>;
-        /// Returns the [`HandleAndEntity`] of the [`Func`] at `addr`.
-        pub unsafe fn get_func(self, addr: FuncAddr) -> &HandleAndEntity<Func>;
-        /// Returns the [`HandleAndEntity`] of the [`ElementSegment`] at `addr`.
-        pub unsafe fn get_elem(self, addr: ElemAddr) -> &HandleAndEntity<ElementSegment>;
-        /// Returns the [`HandleAndEntity`] of the [`DataSegment`] at `addr`.
-        pub unsafe fn get_data(self, addr: DataAddr) -> &HandleAndEntity<DataSegment>;
-    }
-
     /// Returns a shared reference to the [`InstanceEntity`] pointee.
     ///
     /// # Safety
@@ -534,5 +492,49 @@ impl ThinPtr<InstanceEntity> {
         ) as *const InstanceEntity;
         // Safety: guaranteed by the caller.
         unsafe { &*ptr }
+    }
+}
+
+macro_rules! impl_get_entry {
+    (
+        $(
+            $(#[$attr:meta])*
+            pub unsafe fn $get:ident(self, addr: $addr_ty:ty) -> &HandleAndEntity<$handle:ty>;
+        )*
+    ) => {
+        $(
+            $(#[$attr])*
+            ///
+            /// # Safety
+            ///
+            /// In addition to the requirements of [`ThinPtr::as_ref`] the caller must ensure
+            #[doc = concat!("that the entry at `addr` stores a [`", stringify!($handle), "`] handle.")]
+            /// Wasmi's translation guarantees this for every address encoded into a Wasmi IR
+            /// operator.
+            #[inline]
+            pub unsafe fn $get<'a>(self, addr: $addr_ty) -> Option<&'a HandleAndEntity<$handle>> {
+                // Safety: guaranteed by the caller.
+                let entry = unsafe { self.entry(u32::from(addr)) }?;
+                // Safety: guaranteed by the caller.
+                Some(unsafe { entry.typed_ref::<$handle>() })
+            }
+        )*
+    };
+}
+
+impl ThinPtr<InstanceEntity> {
+    impl_get_entry! {
+        /// Returns the [`HandleAndEntity`] of the [`Memory`] at `addr`.
+        pub unsafe fn get_memory(self, addr: MemoryAddr) -> &HandleAndEntity<Memory>;
+        /// Returns the [`HandleAndEntity`] of the [`Global`] at `addr`.
+        pub unsafe fn get_global(self, addr: GlobalAddr) -> &HandleAndEntity<Global>;
+        /// Returns the [`HandleAndEntity`] of the [`Table`] at `addr`.
+        pub unsafe fn get_table(self, addr: TableAddr) -> &HandleAndEntity<Table>;
+        /// Returns the [`HandleAndEntity`] of the [`Func`] at `addr`.
+        pub unsafe fn get_func(self, addr: FuncAddr) -> &HandleAndEntity<Func>;
+        /// Returns the [`HandleAndEntity`] of the [`ElementSegment`] at `addr`.
+        pub unsafe fn get_elem(self, addr: ElemAddr) -> &HandleAndEntity<ElementSegment>;
+        /// Returns the [`HandleAndEntity`] of the [`DataSegment`] at `addr`.
+        pub unsafe fn get_data(self, addr: DataAddr) -> &HandleAndEntity<DataSegment>;
     }
 }
