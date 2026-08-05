@@ -555,7 +555,8 @@ pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) 
     let Some(mem0) = (unsafe { inst.as_ptr().get_memory(addr) }) else {
         unsafe { unreachable_unchecked!("missing memory at: {addr:?}") }
     };
-    // SAFETY: TODO
+    // SAFETY: the entry stems from the instance layout and is thus in bounds; the reference
+    //         does not outlive this function.
     let mem0 = unsafe { mem0.as_ref() };
     // SAFETY: warmed at instantiation; the `_store` borrow scopes exclusive memory access.
     let mem0 = mem0.entity();
@@ -597,7 +598,13 @@ trait LoadEntry<Addr> {
     ///
     /// # Safety
     ///
-    /// todo
+    /// In addition to the requirements of [`ThinPtr::as_ref`] the caller must ensure that
+    /// `addr` is in bounds of `self` and that the entry it addresses stores a handle of the
+    /// associated kind. Wasmi's translation guarantees both for every address encoded into a
+    /// Wasmi IR operator.
+    ///
+    /// The returned pointer is only sound to dereference while `self` refers to a live
+    /// [`InstanceEntity`].
     unsafe fn load_entry_ptr(self, addr: Addr) -> NonNull<Self::Entry>;
 }
 
@@ -650,7 +657,9 @@ pub trait LoadEntity<Addr> {
     ///
     /// # Safety
     ///
-    /// todo
+    /// Same as for [`LoadEntry::load_entry_ptr`]. Additionally the entry's cache must have been
+    /// warmed up, and the returned pointer must not be turned into a reference that aliases a
+    /// concurrent store mutation or another live reference to the same entity.
     unsafe fn load_entity_ptr(self, addr: Addr) -> NonNull<Self::Entity>;
 
     /// Loads the entity from the warmed up instance cache.
@@ -660,7 +669,9 @@ pub trait LoadEntity<Addr> {
     ///
     /// # Safety
     ///
-    /// todo
+    /// Same as for [`LoadEntity::load_entity_ptr`]. The `store` borrow rules out store mutations
+    /// for the lifetime of the returned reference but not a second reference to the same entity
+    /// loaded from `self`.
     unsafe fn load_entity_mut(self, _store: &mut PrunedStore, addr: Addr) -> &mut Self::Entity;
 }
 
@@ -727,7 +738,7 @@ pub trait LoadHandle<Addr> {
     ///
     /// # Safety
     ///
-    /// todo
+    /// Same as for [`LoadEntry::load_entry_ptr`].
     unsafe fn load_handle(self, addr: Addr) -> Self::Handle;
 }
 
@@ -743,7 +754,7 @@ macro_rules! impl_load_handle_for_inst {
 
                 #[inline]
                 unsafe fn load_handle(self, addr: ir::$addr) -> Self::Handle {
-                    // SAFETY: todo
+                    // SAFETY: guaranteed by the caller; the reference does not outlive the call.
                     let entry_ref = unsafe { self.load_entry_ptr(addr).as_ref() };
                     entry_ref.handle()
                 }
