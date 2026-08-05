@@ -97,8 +97,8 @@ impl AnyHandleAndEntity {
     ///
     /// # Safety
     ///
-    /// The caller must ensure that `self` stores a `T` handle. Debug builds validate this
-    /// against the stored handle kind tag.
+    /// The caller must ensure that `self` stores a `T` handle.
+    /// Debug builds validate this against the stored handle kind tag.
     #[inline]
     pub unsafe fn typed_ref<T: HasHandleKind>(&self) -> &HandleAndEntity<T> {
         self.handle.assert_kind::<T>();
@@ -111,7 +111,8 @@ impl AnyHandleAndEntity {
     ///
     /// # Safety
     ///
-    /// Same as for [`AnyHandleAndEntity::typed_ref`].
+    /// The caller must ensure that `self` stores a `T` handle.
+    /// Debug builds validate this against the stored handle kind tag.
     #[inline]
     pub unsafe fn typed_mut<T: HasHandleKind>(&mut self) -> &mut HandleAndEntity<T> {
         self.handle.assert_kind::<T>();
