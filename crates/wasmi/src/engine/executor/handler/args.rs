@@ -151,6 +151,7 @@ impl Args {
     }
 
     /// Returns the bytes of the default memory at index 0.
+    // TODO: take `store` parameter for return value lifetime
     #[inline]
     pub fn fetch_default_memory_bytes<'a>(&mut self) -> &'a mut [u8] {
         state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len)
@@ -166,7 +167,8 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = MemoryEntity>,
     {
-        self.instance.load(state.store.inner_mut(), addr)
+        // SAFETY: todo
+        unsafe { self.instance.load_entity_mut(state.store.inner_mut(), addr) }
     }
 
     /// Returns an exclusive reference to the global at `index`.
@@ -179,7 +181,8 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = GlobalEntity>,
     {
-        self.instance.load(state.store.inner_mut(), addr)
+        // SAFETY: todo
+        unsafe { self.instance.load_entity_mut(state.store.inner_mut(), addr) }
     }
 
     /// Returns an exclusive reference to the table at `index`.
@@ -192,7 +195,7 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = TableEntity>,
     {
-        self.instance.load(state.store.inner_mut(), addr)
+        unsafe { self.instance.load_entity_mut(state.store.inner_mut(), addr) }
     }
 
     /// Returns an exclusive reference to the element segment at `index`.
@@ -205,7 +208,7 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = ElementSegmentEntity>,
     {
-        self.instance.load(state.store.inner_mut(), addr)
+        unsafe { self.instance.load_entity_mut(state.store.inner_mut(), addr) }
     }
 
     /// Returns an exclusive reference to the data segment at `index`.
@@ -218,7 +221,7 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = DataSegmentEntity>,
     {
-        self.instance.load(state.store.inner_mut(), addr)
+        unsafe { self.instance.load_entity_mut(state.store.inner_mut(), addr) }
     }
 
     /// Reloads the data pointer and length of the default memory at index 0 from `state`.
