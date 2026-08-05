@@ -121,9 +121,19 @@ Wasmi is suitable for safety critical use cases and has been audited twice.
 
 If you want your project on this list [please inform me](mailto:robin.freyler@gmail.com) about you project and how Wasmi is used.
 
-[Soroban] &middot; [Wasmer] &middot; [Firefly Zero] &middot; [Typst] &middot; [orbitinghail] &middot;
-[smoldot] &middot; [Munal OS] &middot; [icu4x] &middot; [Ayaka] &middot; [Project Oak] &middot;
-[Zellij] &middot; [Ripple] &middot; [Josh]
+[Soroban] &middot;
+[Typst] &middot;
+[Zellij] &middot;
+[Josh] &middot;
+[Ripple] &middot;
+[Firefly Zero] &middot;
+[icu4x] &middot;
+[orbitinghail] &middot;
+[smoldot] &middot;
+[Munal OS] &middot;
+[Ayaka] &middot;
+[Project Oak] &middot;
+[Wasmer]
 
 [Soroban]: https://stellar.org/soroban
 [Firefly Zero]: https://fireflyzero.com
