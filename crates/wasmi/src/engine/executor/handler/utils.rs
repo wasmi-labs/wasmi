@@ -713,7 +713,8 @@ impl LoadEntity<Table0> for Inst {
 
     #[inline]
     unsafe fn load_entity_ptr(self, _addr: Table0) -> NonNull<Self::Entity> {
-        // SAFETY: `addr` addresses an entry of this kind by translation invariant.
+        // SAFETY: guaranteed by the caller; an instance with a `(table 0)` caches its entity
+        //         pointer in its header at instantiation.
         let Some(entity) = (unsafe { self.as_ptr().get_table0() }) else {
             unsafe { unreachable_unchecked!("missing table entity for table 0") }
         };
@@ -777,8 +778,8 @@ impl_load_handle_for_inst! {
 /// and must not be turned into a reference that aliases a concurrent store mutation.
 #[inline]
 pub fn load_func_entry(inst: Inst, func: ir::FuncAddr) -> (Func, NonNull<FuncEntity>) {
-    // SAFETY: `addr` addresses a func entry by translation invariant and its cache was
-    //         warmed at instantiation.
+    // SAFETY: `func` addresses a func entry by translation invariant and its cache was
+    //         warmed at instantiation; the reference does not outlive this function.
     let entry_ref = unsafe { inst.load_entry_ptr(func).as_ref() };
     let handle = entry_ref.handle();
     let entity = entry_ref.entity();
