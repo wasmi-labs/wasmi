@@ -418,7 +418,7 @@ execution_handler! {
             Err(StoreError::External(
                 MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory,
             )) => {
-                let memory = unsafe { instance.load_entity_mut(state.store.inner_mut(), memory) };
+                let memory = unsafe { instance.load_entity_mut(&mut state.store, memory) };
                 let memory_ty = memory.ty();
                 match memory_ty.is_64() {
                     true => u64::MAX,
@@ -686,7 +686,7 @@ execution_handler! {
         let return_value = match state.store.grow_table(&table_ref, delta, value) {
             Ok(return_value) => return_value,
             Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
-                let table = unsafe { instance.load_entity_mut(state.store.inner_mut(), table) };
+                let table = unsafe { instance.load_entity_mut(&mut state.store, table) };
                 match table.ty().is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),

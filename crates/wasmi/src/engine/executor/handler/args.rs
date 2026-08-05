@@ -168,7 +168,7 @@ impl Args {
         Inst: LoadEntity<Addr, Entity = MemoryEntity>,
     {
         // SAFETY: todo
-        unsafe { self.instance.load_entity_mut(state.store.inner_mut(), addr) }
+        unsafe { self.instance.load_entity_mut(&mut state.store, addr) }
     }
 
     /// Returns an exclusive reference to the global at `index`.
@@ -182,7 +182,7 @@ impl Args {
         Inst: LoadEntity<Addr, Entity = GlobalEntity>,
     {
         // SAFETY: todo
-        unsafe { self.instance.load_entity_mut(state.store.inner_mut(), addr) }
+        unsafe { self.instance.load_entity_mut(&mut state.store, addr) }
     }
 
     /// Returns an exclusive reference to the table at `index`.
@@ -195,7 +195,7 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = TableEntity>,
     {
-        unsafe { self.instance.load_entity_mut(state.store.inner_mut(), addr) }
+        unsafe { self.instance.load_entity_mut(&mut state.store, addr) }
     }
 
     /// Returns an exclusive reference to the element segment at `index`.
@@ -208,7 +208,7 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = ElementSegmentEntity>,
     {
-        unsafe { self.instance.load_entity_mut(state.store.inner_mut(), addr) }
+        unsafe { self.instance.load_entity_mut(&mut state.store, addr) }
     }
 
     /// Returns an exclusive reference to the data segment at `index`.
@@ -221,7 +221,7 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = DataSegmentEntity>,
     {
-        unsafe { self.instance.load_entity_mut(state.store.inner_mut(), addr) }
+        unsafe { self.instance.load_entity_mut(&mut state.store, addr) }
     }
 
     /// Reloads the data pointer and length of the default memory at index 0 from `state`.

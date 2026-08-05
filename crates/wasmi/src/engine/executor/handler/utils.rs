@@ -41,7 +41,7 @@ use crate::{
         SlotSpan,
         Table0,
     },
-    store::{CallHooks, PrunedStore, StoreError, StoreInner},
+    store::{CallHooks, PrunedStore, StoreError},
 };
 use core::{num::NonZero, ptr::NonNull};
 
@@ -661,7 +661,7 @@ pub trait LoadEntity<Addr> {
     /// # Safety
     ///
     /// todo
-    unsafe fn load_entity_mut(self, _store: &mut StoreInner, addr: Addr) -> &mut Self::Entity;
+    unsafe fn load_entity_mut(self, _store: &mut PrunedStore, addr: Addr) -> &mut Self::Entity;
 }
 
 macro_rules! impl_load_entity_for_inst {
@@ -681,7 +681,7 @@ macro_rules! impl_load_entity_for_inst {
                 }
 
                 #[inline]
-                unsafe fn load_entity_mut(self, _store: &mut StoreInner, addr: ir::$addr) -> &mut Self::Entity {
+                unsafe fn load_entity_mut(self, _store: &mut PrunedStore, addr: ir::$addr) -> &mut Self::Entity {
                     unsafe { self.load_entity_ptr(addr).as_mut() }
                 }
             }
@@ -710,7 +710,7 @@ impl LoadEntity<Table0> for Inst {
     }
 
     #[inline]
-    unsafe fn load_entity_mut(self, _store: &mut StoreInner, addr: Table0) -> &mut Self::Entity {
+    unsafe fn load_entity_mut(self, _store: &mut PrunedStore, addr: Table0) -> &mut Self::Entity {
         unsafe { self.load_entity_ptr(addr).as_mut() }
     }
 }
