@@ -442,7 +442,7 @@ impl ThinPtr<InstanceEntity> {
     ///
     /// Same as for [`ThinPtr::as_ref`].
     #[inline]
-    unsafe fn entry<'a>(self, addr: u32) -> Option<NonNull<AnyHandleAndEntity>> {
+    unsafe fn entry(self, addr: u32) -> Option<NonNull<AnyHandleAndEntity>> {
         // Safety: guaranteed by the caller.
         if addr >= unsafe { self.header() }.len_handles() {
             return None;
@@ -512,7 +512,7 @@ macro_rules! impl_get_entry {
             /// Wasmi's translation guarantees this for every address encoded into a Wasmi IR
             /// operator.
             #[inline]
-            pub unsafe fn $get<'a>(self, addr: $addr_ty) -> Option<NonNull<HandleAndEntity<$handle>>> {
+            pub unsafe fn $get(self, addr: $addr_ty) -> Option<NonNull<HandleAndEntity<$handle>>> {
                 // Safety: guaranteed by the caller.
                 let entry = unsafe { self.entry(u32::from(addr)) }?;
                 // Safety: guaranteed by the caller.
