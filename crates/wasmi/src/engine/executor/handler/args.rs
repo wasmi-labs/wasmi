@@ -151,7 +151,6 @@ impl Args {
     }
 
     /// Returns the bytes of the default memory at index 0.
-    // TODO: take `store` parameter for return value lifetime
     #[inline]
     pub fn fetch_default_memory_bytes<'a>(&mut self, _state: &'a mut VmState) -> &'a mut [u8] {
         state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len)
