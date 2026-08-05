@@ -540,7 +540,7 @@ macro_rules! handler_store_lane_mem0_offset16_ss {
                     let ptr = args.get(ptr);
                     let offset = args.get(offset);
                     let value = args.get(value);
-                    let bytes = args.fetch_default_memory_bytes();
+                    let bytes = args.fetch_default_memory_bytes(state);
                     $eval(bytes, ptr, u64::from(offset), value, lane).into_control()?;
                     dispatch!(state, args)
                 }

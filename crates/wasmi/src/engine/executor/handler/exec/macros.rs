@@ -200,7 +200,7 @@ macro_rules! handler_load_mem0_offset16 {
                     } = unsafe { args.decode_op() };
                     let ptr = args.get(ptr);
                     let offset = args.get(offset);
-                    let bytes = args.fetch_default_memory_bytes();
+                    let bytes = args.fetch_default_memory_bytes(state);
                     let loaded = $load(bytes, ptr, u64::from(offset)).into_control()?;
                     args.set(result, loaded);
                     dispatch!(state, args)
@@ -268,7 +268,7 @@ macro_rules! handler_store_mem0_offset16 {
                     let ptr = args.get(ptr);
                     let offset = args.get(offset);
                     let value: $hint = args.get(value);
-                    let bytes = args.fetch_default_memory_bytes();
+                    let bytes = args.fetch_default_memory_bytes(state);
                     $store(bytes, ptr, u64::from(offset), value.into()).into_control()?;
                     dispatch!(state, args)
                 }
