@@ -167,7 +167,9 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = MemoryEntity>,
     {
-        // SAFETY: todo
+        // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a memory entry of
+        //         `self.instance` whose cache was warmed at instantiation. The `state` borrow
+        //         scopes the returned reference.
         unsafe { self.instance.load_entity_mut(state.store, addr) }
     }
 
@@ -181,7 +183,9 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = GlobalEntity>,
     {
-        // SAFETY: todo
+        // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a global entry of
+        //         `self.instance` whose cache was warmed at instantiation. The `state` borrow
+        //         scopes the returned reference.
         unsafe { self.instance.load_entity_mut(state.store, addr) }
     }
 
@@ -195,6 +199,9 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = TableEntity>,
     {
+        // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a table entry of
+        //         `self.instance` whose cache was warmed at instantiation. The `state` borrow
+        //         scopes the returned reference.
         unsafe { self.instance.load_entity_mut(state.store, addr) }
     }
 
@@ -208,6 +215,9 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = ElementSegmentEntity>,
     {
+        // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses an element segment
+        //         entry of `self.instance` whose cache was warmed at instantiation. The `state`
+        //         borrow scopes the returned reference.
         unsafe { self.instance.load_entity_mut(state.store, addr) }
     }
 
@@ -221,6 +231,9 @@ impl Args {
     where
         Inst: LoadEntity<Addr, Entity = DataSegmentEntity>,
     {
+        // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a data segment entry
+        //         of `self.instance` whose cache was warmed at instantiation. The `state` borrow
+        //         scopes the returned reference.
         unsafe { self.instance.load_entity_mut(state.store, addr) }
     }
 
