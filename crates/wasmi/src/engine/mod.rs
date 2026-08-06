@@ -25,6 +25,7 @@ pub(crate) use self::{
         LoadByVal,
         LowerToCells,
         Stack,
+        ExecContext,
     },
     func_types::DedupFuncType,
     translator::{

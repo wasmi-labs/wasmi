@@ -25,6 +25,7 @@ use crate::{
         handle_arena_err,
         id::StoreId,
     },
+    engine::ExecContext,
 };
 use alloc::boxed::Box;
 use core::{fmt::Debug, ptr::NonNull};
@@ -103,6 +104,15 @@ where
 /// The inner store that owns all data not associated to the host state.
 #[derive(Debug)]
 pub struct StoreInner {
+    /// The execution context in use by the Wasmi executor.
+    ///
+    /// # Note
+    ///
+    /// This is an opaque black-box owned by the executor. It is stored inline so that
+    /// execution handlers reach both the store and the [`Stack`] with a single load.
+    ///
+    /// [`Stack`]: crate::engine::Stack
+    exec: ExecContext,
     /// The unique store index.
     ///
     /// Used to protect against invalid entity indices.
@@ -154,6 +164,7 @@ impl StoreInner {
         let fuel = Fuel::new(fuel_enabled, fuel_costs);
         let features = config.wasm_features();
         StoreInner {
+            exec: ExecContext::default(),
             engine: engine.clone(),
             id: StoreId::new(),
             funcs: StableArena::new(),
@@ -177,6 +188,12 @@ impl StoreInner {
     /// Returns the [`StoreId`] of `self`.
     pub(crate) fn id(&self) -> StoreId {
         self.id
+    }
+
+    /// Returns an exclusive reference to the [`ExecContext`].
+    #[inline]
+    pub fn exec_mut(&mut self) -> &mut ExecContext {
+        &mut self.exec
     }
 
     /// Returns an exclusive reference to the [`Fuel`] counters.
