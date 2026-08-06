@@ -157,6 +157,7 @@ impl InOutParams {
 /// Since [`InOutParams::encode_results`] consumes its [`InOutParams`], the only way to obtain an
 /// `InOutResults<'cells>` is to have encoded results into the cells that were handed in. The
 /// trampoline signature uses this to require that a host function actually wrote its results.
+#[derive(Debug)]
 pub struct InOutResults {
     _seal: private::Seal,
 }
@@ -165,5 +166,6 @@ mod private {
     /// Seals [`InOutResults`] by making it unconstructible from its parent scopes.
     ///
     /// [`InOutResults`]: super::InOutResults
+    #[derive(Debug)]
     pub struct Seal;
 }
