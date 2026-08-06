@@ -197,11 +197,13 @@ impl StoreInner {
     }
 
     /// Returns an exclusive reference to the [`Fuel`] counters.
+    #[inline]
     pub fn fuel_mut(&mut self) -> &mut Fuel {
         &mut self.fuel
     }
 
     /// Returns the [`Fuel`] counters and the [`WasmFeatures`] required for lazy compilation.
+    #[inline]
     pub fn fuel_and_features(&mut self) -> (&mut Fuel, &WasmFeatures) {
         (&mut self.fuel, &self.features)
     }
