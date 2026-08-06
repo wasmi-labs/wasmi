@@ -78,6 +78,11 @@ macro_rules! impl_into_func {
                     <Self::Params as WasmTyList>::types(),
                     <Self::Results as WasmTyList>::types(),
                 );
+                // Note: `inout` aliases cells of the value stack that is currently executing and
+                //       stays alive across the host function call below. This is sound because a
+                //       re-entrant call from the `Caller` runs on another `Stack` taken from the
+                //       `Engine`'s stack pool, thus the host function cannot grow, reallocate or
+                //       otherwise write to the cells behind `inout`.
                 let trampoline = TrampolineEntity::new(
                     move |caller: Caller<T>, inout: InOutParams| -> Result<InOutResults, Error> {
                         let store_id = caller.as_context().store.inner.id();

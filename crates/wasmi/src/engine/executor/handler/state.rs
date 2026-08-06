@@ -502,6 +502,50 @@ mod ip_tests {
     };
 }
 
+/// The cells window of a host function call frame on the value stack.
+///
+/// # Note
+///
+/// Produced by [`Stack::prepare_host_frame`] and [`Stack::return_prepare_host_frame`] and turned
+/// into the [`InOutParams`] of the call by [`Stack::host_inout`].
+///
+/// Both steps are separate so that the [`InOutParams`] can be derived _after_ the caller wrote the
+/// call parameters into the frame through its [`Sp`]: writing through an [`Sp`] that was obtained
+/// before the [`InOutParams`] invalidates the latter's pointer.
+#[derive(Debug, Copy, Clone)]
+pub struct HostFrame {
+    /// The start offset of the frame's cells.
+    start: SpOffset,
+    /// The end offset of the frame's cells.
+    end: SpOffset,
+    /// The number of cells used for parameters.
+    len_params: usize,
+    /// The number of cells used for results.
+    len_results: usize,
+}
+
+impl HostFrame {
+    /// Creates a new [`HostFrame`] spanning `cells[start..end]`.
+    fn new(start: SpOffset, end: SpOffset, len_params: usize, len_results: usize) -> Self {
+        Self {
+            start,
+            end,
+            len_params,
+            len_results,
+        }
+    }
+
+    /// Creates a [`HostFrame`] that spans no cells.
+    fn empty() -> Self {
+        Self::new(SpOffset::from(0), SpOffset::from(0), 0, 0)
+    }
+
+    /// Returns `true` if `self` spans no cells.
+    fn is_empty(&self) -> bool {
+        self.len_params == 0 && self.len_results == 0
+    }
+}
+
 /// The stack pointer.
 ///
 /// # Note
@@ -868,27 +912,51 @@ impl Stack {
     }
 
     /// Prepares `self` for a host function tail call.
-    pub fn return_prepare_host_frame<'a>(
-        &'a mut self,
+    ///
+    /// Use [`Stack::host_inout`] on the returned [`HostFrame`] to obtain the [`InOutParams`]
+    /// of the call.
+    pub fn return_prepare_host_frame(
+        &mut self,
         callee_params: BoundedSlotSpan,
         results_len: u16,
         caller_instance: Inst,
-    ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
+    ) -> Result<(ReturnCallHost, HostFrame), TrapCode> {
         let (callee_start, caller) = self.frames.return_prepare_host_frame(caller_instance);
         self.values
             .return_prepare_host_frame(caller, callee_start, callee_params, results_len)
     }
 
     /// Prepares `self` for a host function call.
-    pub fn prepare_host_frame<'a>(
-        &'a mut self,
+    ///
+    /// Use [`Stack::host_inout`] on the returned [`HostFrame`] to obtain the [`InOutParams`]
+    /// of the call.
+    pub fn prepare_host_frame(
+        &mut self,
         caller_ip: Option<Ip>,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-    ) -> Result<(Sp, InOutParams<'a>), TrapCode> {
+    ) -> Result<(Sp, HostFrame), TrapCode> {
         let caller_start = self.frames.prepare_host_frame(caller_ip);
         self.values
             .prepare_host_frame(caller_start, callee_params, results_len)
+    }
+
+    /// Returns the [`InOutParams`] of the host function call `frame`.
+    ///
+    /// # Warning
+    ///
+    /// The returned [`InOutParams`] aliases the cells of `self` without borrowing them. Until it
+    /// has been consumed the caller must neither
+    ///
+    /// - mutate `self` in any way, since growing the value stack may reallocate its cells, nor
+    /// - write to the `frame`'s cells through an [`Sp`] that was obtained before this call, since
+    ///   that invalidates the pointer of the returned [`InOutParams`].
+    ///
+    /// The latter is why creating the [`HostFrame`] and turning it into [`InOutParams`] are two
+    /// steps: callers that still have to write the call parameters via their [`Sp`] must do so
+    /// before calling this method.
+    pub fn host_inout(&mut self, frame: HostFrame) -> InOutParams {
+        self.values.host_inout(frame)
     }
 
     /// Returns an [`Sp`] pointing at the base of the value stack.
@@ -1158,13 +1226,13 @@ impl ValueStack {
     /// In the following code, `callee` represents the called host function frame
     /// and `caller` represents the caller of the caller of the host function, a.k.a.
     /// the caller's caller.
-    fn return_prepare_host_frame<'a>(
-        &'a mut self,
+    fn return_prepare_host_frame(
+        &mut self,
         caller: Option<(Ip, SpOffset, Inst)>,
         callee_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-    ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
+    ) -> Result<(ReturnCallHost, HostFrame), TrapCode> {
         let caller_start = caller.map(|(_, start, _)| start).unwrap_or_default();
         let params_offset = usize::from(u16::from(callee_params.span().head()));
         let params_len = usize::from(callee_params.len());
@@ -1175,12 +1243,11 @@ impl ValueStack {
                 Some(_) if caller_start != callee_start => self.sp(caller_start),
                 _ => Sp::dangling(),
             };
-            let inout = InOutParams::new(&mut [], 0, 0).unwrap();
             let control = match caller {
                 Some((ip, _, instance)) => ReturnCallHost::Continue((ip, sp, instance)),
                 None => ReturnCallHost::Break(sp),
             };
-            return Ok((control, inout));
+            return Ok((control, HostFrame::empty()));
         }
         let params_start = callee_start.add(params_offset)?;
         let params_end = params_start.add(params_len)?;
@@ -1188,21 +1255,21 @@ impl ValueStack {
         let callee_end = callee_start.add(callee_size)?;
         self.grow_if_needed(callee_end)?;
         let caller_sp = self.sp(caller_start);
-        let inout = self.host_inout(callee_start, callee_end, params_len, results_len);
+        let frame = HostFrame::new(callee_start, callee_end, params_len, results_len);
         let control = match caller {
             Some((ip, _, instance)) => ReturnCallHost::Continue((ip, caller_sp, instance)),
             None => ReturnCallHost::Break(caller_sp),
         };
-        Ok((control, inout))
+        Ok((control, frame))
     }
 
     /// Prepares `self` for a host function call.
-    fn prepare_host_frame<'a>(
-        &'a mut self,
+    fn prepare_host_frame(
+        &mut self,
         caller_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-    ) -> Result<(Sp, InOutParams<'a>), TrapCode> {
+    ) -> Result<(Sp, HostFrame), TrapCode> {
         let params_offset = usize::from(u16::from(callee_params.span().head()));
         let params_len = usize::from(callee_params.len());
         let results_len = usize::from(results_len);
@@ -1211,23 +1278,27 @@ impl ValueStack {
         let callee_end = callee_start.add(callee_size)?;
         self.grow_if_needed(callee_end)?;
         let sp = self.sp(caller_start);
-        let inout = self.host_inout(callee_start, callee_end, params_len, results_len);
-        Ok((sp, inout))
+        let frame = HostFrame::new(callee_start, callee_end, params_len, results_len);
+        Ok((sp, frame))
     }
 
-    /// Returns the [`InOutParams`] window `cells[start..end]` for a host function call.
+    /// Returns the [`InOutParams`] for the host function call `frame`.
     ///
-    /// # Note
+    /// # Warning
     ///
-    /// Both `end - start` and `max(len_params, len_results)` denote the callee size,
-    /// and [`ValueStack::grow_if_needed`] has already been called for `end`.
-    fn host_inout(
-        &mut self,
-        start: SpOffset,
-        end: SpOffset,
-        len_params: usize,
-        len_results: usize,
-    ) -> InOutParams<'_> {
+    /// See [`Stack::host_inout`] for what the caller has to uphold.
+    fn host_inout(&mut self, frame: HostFrame) -> InOutParams {
+        let HostFrame {
+            start,
+            end,
+            len_params,
+            len_results,
+        } = frame;
+        if frame.is_empty() {
+            // Note: zero-sized host frames may start past the end of the value stack cells
+            //       since `grow_if_needed` was a no-op for them.
+            return InOutParams::empty();
+        }
         debug_assert_eq!(
             end.into_inner() - start.into_inner(),
             len_params.max(len_results)
@@ -1235,7 +1306,12 @@ impl ValueStack {
         let Some(cells) = self.cells_from_to(start, end) else {
             unsafe { unreachable_unchecked!("must fit slice after `grow_if_needed` operation") }
         };
-        let Ok(inout) = InOutParams::new(cells, len_params, len_results) else {
+        // SAFETY: the cells are heap allocated by `self.cells` and thus travel along with `self`
+        //         and its owning `Stack`. `Stack::host_inout` requires its caller to leave both
+        //         the cells and the `Stack` alone until the returned `InOutParams` is consumed,
+        //         which happens before the host function call returns.
+        let inout_or_err = unsafe { InOutParams::new(cells, len_params, len_results) };
+        let Ok(inout) = inout_or_err else {
             unsafe {
                 unreachable_unchecked!("host frame cells are sized as max(len_params, len_results)")
             }

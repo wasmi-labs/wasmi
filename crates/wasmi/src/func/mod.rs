@@ -246,6 +246,11 @@ impl<T> HostFuncTrampolineEntity<T> {
         let results_iter = ty.results().iter().copied().map(Val::default_for_ty);
         let len_params = ty.params().len();
         let params_results: Box<[Val]> = params_iter.chain(results_iter).collect();
+        // Note: `inout` aliases cells of the value stack that is currently executing and stays
+        //       alive across the host function call below. This is sound because a re-entrant call
+        //       from the `Caller` runs on another `Stack` taken from the `Engine`'s stack pool,
+        //       thus the host function cannot grow, reallocate or otherwise write to the cells
+        //       behind `inout`.
         let trampoline = <TrampolineEntity<T>>::new(move |caller, inout| {
             // We are required to clone the buffer because we are operating within a `Fn`.
             // This way the trampoline closure only has to own a single slice buffer.
@@ -285,10 +290,8 @@ impl<T> HostFuncTrampolineEntity<T> {
     }
 }
 
-type TrampolineFn<T> = dyn for<'a> Fn(Caller<T>, InOutParams<'a>) -> Result<InOutResults<'a>, Error>
-    + Send
-    + Sync
-    + 'static;
+type TrampolineFn<T> =
+    dyn Fn(Caller<T>, InOutParams) -> Result<InOutResults, Error> + Send + Sync + 'static;
 
 pub struct TrampolineEntity<T> {
     closure: Arc<TrampolineFn<T>>,
@@ -304,10 +307,7 @@ impl<T> TrampolineEntity<T> {
     /// Creates a new [`TrampolineEntity`] from the given host function.
     pub fn new<F>(trampoline: F) -> Self
     where
-        F: for<'a> Fn(Caller<T>, InOutParams<'a>) -> Result<InOutResults<'a>, Error>
-            + Send
-            + Sync
-            + 'static,
+        F: Fn(Caller<T>, InOutParams) -> Result<InOutResults, Error> + Send + Sync + 'static,
     {
         Self {
             closure: Arc::new(trampoline),
@@ -317,12 +317,12 @@ impl<T> TrampolineEntity<T> {
     /// Calls the host function trampoline with the given inputs.
     ///
     /// The result is written back into the `outputs` buffer.
-    pub fn call<'a>(
+    pub fn call(
         &self,
         mut ctx: impl AsContextMut<Data = T>,
         instance: Option<Inst>,
-        params: InOutParams<'a>,
-    ) -> Result<InOutResults<'a>, Error> {
+        params: InOutParams,
+    ) -> Result<InOutResults, Error> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
         (self.closure)(caller, params)
     }

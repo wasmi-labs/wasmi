@@ -8,7 +8,7 @@ use crate::{
         LowerToCells,
         executor::handler::{
             dispatch::{ExecutionOutcome, execute_until_done},
-            state::{Freg32, Freg64, Inst, Ip, Ireg, Sp, Stack, VmState},
+            state::{Freg32, Freg64, HostFrame, Inst, Ip, Ireg, Sp, Stack, VmState},
             utils,
         },
     },
@@ -47,7 +47,7 @@ impl<'a, T, State> WasmFuncCall<'a, T, State> {
 }
 
 mod state {
-    use super::Sp;
+    use super::{HostFrame, Sp};
     use crate::{engine::InOutParams, func::Trampoline};
     use core::marker::PhantomData;
 
@@ -61,15 +61,15 @@ mod state {
         pub enum Resumed {}
     }
 
-    pub struct UninitHost<'a> {
+    pub struct UninitHost {
         pub sp: Sp,
-        pub inout: InOutParams<'a>,
+        pub frame: HostFrame,
         pub trampoline: Trampoline,
     }
 
-    pub struct InitHost<'a> {
+    pub struct InitHost {
         pub sp: Sp,
-        pub inout: InOutParams<'a>,
+        pub inout: InOutParams,
         pub trampoline: Trampoline,
     }
 
@@ -217,17 +217,18 @@ pub fn init_host_func_call<'a, T>(
     store: &'a mut Store<T>,
     stack: &'a mut Stack,
     func: HostFuncEntity,
-) -> Result<HostFuncCall<'a, T, state::UninitHost<'a>>, Error> {
+) -> Result<HostFuncCall<'a, T, state::UninitHost>, Error> {
     let len_param_cells = func.len_param_cells();
     let len_result_cells = func.len_result_cells();
     let trampoline = *func.trampoline();
     let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), len_param_cells);
-    let (sp, inout) = stack.prepare_host_frame(None, callee_params, len_result_cells)?;
+    let (sp, frame) = stack.prepare_host_frame(None, callee_params, len_result_cells)?;
     Ok(HostFuncCall {
         store,
+        stack,
         state: state::UninitHost {
             sp,
-            inout,
+            frame,
             trampoline,
         },
     })
@@ -236,25 +237,30 @@ pub fn init_host_func_call<'a, T>(
 #[derive(Debug)]
 pub struct HostFuncCall<'a, T, State> {
     store: &'a mut Store<T>,
+    stack: &'a mut Stack,
     state: State,
 }
 
-impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
-    pub fn write_params<Params>(self, params: Params) -> HostFuncCall<'a, T, state::InitHost<'a>>
+impl<'a, T> HostFuncCall<'a, T, state::UninitHost> {
+    pub fn write_params<Params>(self, params: Params) -> HostFuncCall<'a, T, state::InitHost>
     where
         Params: LowerToCells,
     {
         let state::UninitHost {
             sp,
-            inout,
+            frame,
             trampoline,
         } = self.state;
         let mut sp_writer = sp;
         let Ok(_) = params.lower_to_cells(&*self.store, &mut sp_writer) else {
             panic!("failed to store parameter values to cells")
         };
+        // Note: the `InOutParams` must be derived _after_ the parameters have been written above,
+        //       since writing through `sp` invalidates its pointer. See `Stack::host_inout`.
+        let inout = self.stack.host_inout(frame);
         HostFuncCall {
             store: self.store,
+            stack: self.stack,
             state: state::InitHost {
                 sp,
                 inout,
@@ -264,7 +270,7 @@ impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
     }
 }
 
-impl<'a, T> HostFuncCall<'a, T, state::InitHost<'a>> {
+impl<'a, T> HostFuncCall<'a, T, state::InitHost> {
     pub fn execute(self) -> Result<HostFuncCall<'a, T, state::Done>, Error> {
         let state::InitHost {
             sp,
@@ -283,6 +289,7 @@ impl<'a, T> HostFuncCall<'a, T, state::InitHost<'a>> {
         }
         Ok(HostFuncCall {
             store: self.store,
+            stack: self.stack,
             state: state::Done { sp },
         })
     }

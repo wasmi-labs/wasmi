@@ -889,7 +889,8 @@ pub fn return_call_func_entry(
 ///
 /// # Note
 ///
-/// Takes `store` instead of the whole [`VmState`] since `inout` already borrows its [`Stack`].
+/// Takes `store` instead of the whole [`VmState`] so that this cannot touch the [`Stack`] whose
+/// cells `inout` points at: `inout` aliases them without borrowing them.
 ///
 /// [`Stack`]: crate::engine::executor::Stack
 #[inline]
@@ -897,7 +898,7 @@ fn invoke_host(
     store: &mut PrunedStore,
     trampoline: Trampoline,
     instance: Option<Inst>,
-    inout: InOutParams<'_>,
+    inout: InOutParams,
     call_hooks: CallHooks,
 ) -> Result<(), Error> {
     match store.call_host_func(trampoline, instance, inout, call_hooks) {
@@ -923,10 +924,13 @@ pub fn call_host(
 ) -> Control<Sp, Break> {
     debug_assert_eq!(params.len(), host_func.len_param_cells());
     let trampoline = *host_func.trampoline();
-    let (sp, inout) = state
+    let (sp, frame) = state
         .stack
         .prepare_host_frame(caller_ip, params, host_func.len_result_cells())
         .into_control()?;
+    // Note: the parameters have already been written by the caller's frame, so the `InOutParams`
+    //       can be derived right away.
+    let inout = state.stack.host_inout(frame);
     if let Err(error) = invoke_host(state.store, trampoline, instance, inout, call_hooks) {
         done!(state, DoneReason::host_error(error, func, params.span()))
     }
@@ -942,10 +946,13 @@ pub fn return_call_host(
 ) -> Control<(Ip, Sp, Inst), Break> {
     debug_assert_eq!(params.len(), host_func.len_param_cells());
     let trampoline = *host_func.trampoline();
-    let (control, inout) = state
+    let (control, frame) = state
         .stack
         .return_prepare_host_frame(params, host_func.len_result_cells(), instance)
         .into_control()?;
+    // Note: the parameters have already been moved into place by `return_prepare_host_frame`,
+    //       so the `InOutParams` can be derived right away.
+    let inout = state.stack.host_inout(frame);
     if let Err(error) = invoke_host(
         state.store,
         trampoline,
