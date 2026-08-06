@@ -1235,6 +1235,10 @@ impl ValueStack {
         let Some(cells) = self.cells_from_to(start, end) else {
             unsafe { unreachable_unchecked!("must fit slice after `grow_if_needed` operation") }
         };
+        // SAFETY: the cells are heap allocated by `self.cells` and thus travel along with `self`
+        //         and its owning `Stack`. `Stack::host_inout` requires its caller to leave both
+        //         the cells and the `Stack` alone until the returned `InOutParams` is consumed,
+        //         which happens before the host function call returns.
         let inout_or_err = unsafe { InOutParams::new(cells, len_params, len_results) };
         let Ok(inout) = inout_or_err else {
             unsafe {
