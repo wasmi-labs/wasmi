@@ -17,6 +17,7 @@ pub(crate) use self::{
     block_type::BlockType,
     code_map::{FuncEntry, FuncEntryPtr},
     executor::{
+        ExecContext,
         InOutParams,
         InOutResults,
         Inst,
@@ -25,7 +26,6 @@ pub(crate) use self::{
         LoadByVal,
         LowerToCells,
         Stack,
-        ExecContext,
     },
     func_types::DedupFuncType,
     translator::{

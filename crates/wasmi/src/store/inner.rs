@@ -13,7 +13,7 @@ use crate::{
     Table,
     collections::arena::{Arena, ArenaError, ArenaKey, StableArena},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
-    engine::{DedupFuncType, Inst},
+    engine::{DedupFuncType, ExecContext, Inst},
     memory::DataSegment,
     reftype::{ExternRef, ExternRefEntity},
     store::{
@@ -25,7 +25,6 @@ use crate::{
         handle_arena_err,
         id::StoreId,
     },
-    engine::ExecContext,
 };
 use alloc::boxed::Box;
 use core::{fmt::Debug, ptr::NonNull};
