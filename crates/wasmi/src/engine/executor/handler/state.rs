@@ -868,24 +868,24 @@ impl Stack {
     }
 
     /// Prepares `self` for a host function tail call.
-    pub fn return_prepare_host_frame<'a>(
-        &'a mut self,
+    pub fn return_prepare_host_frame(
+        &mut self,
         callee_params: BoundedSlotSpan,
         results_len: u16,
         caller_instance: Inst,
-    ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
+    ) -> Result<(ReturnCallHost, InOutParams), TrapCode> {
         let (callee_start, caller) = self.frames.return_prepare_host_frame(caller_instance);
         self.values
             .return_prepare_host_frame(caller, callee_start, callee_params, results_len)
     }
 
     /// Prepares `self` for a host function call.
-    pub fn prepare_host_frame<'a>(
-        &'a mut self,
+    pub fn prepare_host_frame(
+        &mut self,
         caller_ip: Option<Ip>,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-    ) -> Result<(Sp, InOutParams<'a>), TrapCode> {
+    ) -> Result<(Sp, InOutParams), TrapCode> {
         let caller_start = self.frames.prepare_host_frame(caller_ip);
         self.values
             .prepare_host_frame(caller_start, callee_params, results_len)
@@ -1158,13 +1158,13 @@ impl ValueStack {
     /// In the following code, `callee` represents the called host function frame
     /// and `caller` represents the caller of the caller of the host function, a.k.a.
     /// the caller's caller.
-    fn return_prepare_host_frame<'a>(
-        &'a mut self,
+    fn return_prepare_host_frame(
+        &mut self,
         caller: Option<(Ip, SpOffset, Inst)>,
         callee_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-    ) -> Result<(ReturnCallHost, InOutParams<'a>), TrapCode> {
+    ) -> Result<(ReturnCallHost, InOutParams), TrapCode> {
         let caller_start = caller.map(|(_, start, _)| start).unwrap_or_default();
         let params_offset = usize::from(u16::from(callee_params.span().head()));
         let params_len = usize::from(callee_params.len());
@@ -1175,7 +1175,7 @@ impl ValueStack {
                 Some(_) if caller_start != callee_start => self.sp(caller_start),
                 _ => Sp::dangling(),
             };
-            let inout = InOutParams::new(&mut [], 0, 0).unwrap();
+            let inout = InOutParams::empty();
             let control = match caller {
                 Some((ip, _, instance)) => ReturnCallHost::Continue((ip, sp, instance)),
                 None => ReturnCallHost::Break(sp),
@@ -1197,12 +1197,12 @@ impl ValueStack {
     }
 
     /// Prepares `self` for a host function call.
-    fn prepare_host_frame<'a>(
-        &'a mut self,
+    fn prepare_host_frame(
+        &mut self,
         caller_start: SpOffset,
         callee_params: BoundedSlotSpan,
         results_len: u16,
-    ) -> Result<(Sp, InOutParams<'a>), TrapCode> {
+    ) -> Result<(Sp, InOutParams), TrapCode> {
         let params_offset = usize::from(u16::from(callee_params.span().head()));
         let params_len = usize::from(callee_params.len());
         let results_len = usize::from(results_len);
@@ -1227,7 +1227,7 @@ impl ValueStack {
         end: SpOffset,
         len_params: usize,
         len_results: usize,
-    ) -> InOutParams<'_> {
+    ) -> InOutParams {
         debug_assert_eq!(
             end.into_inner() - start.into_inner(),
             len_params.max(len_results)
@@ -1235,7 +1235,8 @@ impl ValueStack {
         let Some(cells) = self.cells_from_to(start, end) else {
             unsafe { unreachable_unchecked!("must fit slice after `grow_if_needed` operation") }
         };
-        let Ok(inout) = InOutParams::new(cells, len_params, len_results) else {
+        let inout_or_err = unsafe { InOutParams::new(cells, len_params, len_results) };
+        let Ok(inout) = inout_or_err else {
             unsafe {
                 unreachable_unchecked!("host frame cells are sized as max(len_params, len_results)")
             }

@@ -285,10 +285,8 @@ impl<T> HostFuncTrampolineEntity<T> {
     }
 }
 
-type TrampolineFn<T> = dyn for<'a> Fn(Caller<T>, InOutParams<'a>) -> Result<InOutResults<'a>, Error>
-    + Send
-    + Sync
-    + 'static;
+type TrampolineFn<T> =
+    dyn Fn(Caller<T>, InOutParams) -> Result<InOutResults, Error> + Send + Sync + 'static;
 
 pub struct TrampolineEntity<T> {
     closure: Arc<TrampolineFn<T>>,
@@ -304,10 +302,7 @@ impl<T> TrampolineEntity<T> {
     /// Creates a new [`TrampolineEntity`] from the given host function.
     pub fn new<F>(trampoline: F) -> Self
     where
-        F: for<'a> Fn(Caller<T>, InOutParams<'a>) -> Result<InOutResults<'a>, Error>
-            + Send
-            + Sync
-            + 'static,
+        F: Fn(Caller<T>, InOutParams) -> Result<InOutResults, Error> + Send + Sync + 'static,
     {
         Self {
             closure: Arc::new(trampoline),
@@ -317,12 +312,12 @@ impl<T> TrampolineEntity<T> {
     /// Calls the host function trampoline with the given inputs.
     ///
     /// The result is written back into the `outputs` buffer.
-    pub fn call<'a>(
+    pub fn call(
         &self,
         mut ctx: impl AsContextMut<Data = T>,
         instance: Option<Inst>,
-        params: InOutParams<'a>,
-    ) -> Result<InOutResults<'a>, Error> {
+        params: InOutParams,
+    ) -> Result<InOutResults, Error> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
         (self.closure)(caller, params)
     }

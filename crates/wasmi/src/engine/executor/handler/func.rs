@@ -61,15 +61,15 @@ mod state {
         pub enum Resumed {}
     }
 
-    pub struct UninitHost<'a> {
+    pub struct UninitHost {
         pub sp: Sp,
-        pub inout: InOutParams<'a>,
+        pub inout: InOutParams,
         pub trampoline: Trampoline,
     }
 
-    pub struct InitHost<'a> {
+    pub struct InitHost {
         pub sp: Sp,
-        pub inout: InOutParams<'a>,
+        pub inout: InOutParams,
         pub trampoline: Trampoline,
     }
 
@@ -217,7 +217,7 @@ pub fn init_host_func_call<'a, T>(
     store: &'a mut Store<T>,
     stack: &'a mut Stack,
     func: HostFuncEntity,
-) -> Result<HostFuncCall<'a, T, state::UninitHost<'a>>, Error> {
+) -> Result<HostFuncCall<'a, T, state::UninitHost>, Error> {
     let len_param_cells = func.len_param_cells();
     let len_result_cells = func.len_result_cells();
     let trampoline = *func.trampoline();
@@ -239,8 +239,8 @@ pub struct HostFuncCall<'a, T, State> {
     state: State,
 }
 
-impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
-    pub fn write_params<Params>(self, params: Params) -> HostFuncCall<'a, T, state::InitHost<'a>>
+impl<'a, T> HostFuncCall<'a, T, state::UninitHost> {
+    pub fn write_params<Params>(self, params: Params) -> HostFuncCall<'a, T, state::InitHost>
     where
         Params: LowerToCells,
     {
@@ -264,7 +264,7 @@ impl<'a, T> HostFuncCall<'a, T, state::UninitHost<'a>> {
     }
 }
 
-impl<'a, T> HostFuncCall<'a, T, state::InitHost<'a>> {
+impl<'a, T> HostFuncCall<'a, T, state::InitHost> {
     pub fn execute(self) -> Result<HostFuncCall<'a, T, state::Done>, Error> {
         let state::InitHost {
             sp,

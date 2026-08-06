@@ -897,7 +897,7 @@ fn invoke_host(
     store: &mut PrunedStore,
     trampoline: Trampoline,
     instance: Option<Inst>,
-    inout: InOutParams<'_>,
+    inout: InOutParams,
     call_hooks: CallHooks,
 ) -> Result<(), Error> {
     match store.call_host_func(trampoline, instance, inout, call_hooks) {
