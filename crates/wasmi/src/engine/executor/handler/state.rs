@@ -502,6 +502,50 @@ mod ip_tests {
     };
 }
 
+/// The cells window of a host function call frame on the value stack.
+///
+/// # Note
+///
+/// Produced by [`Stack::prepare_host_frame`] and [`Stack::return_prepare_host_frame`] and turned
+/// into the [`InOutParams`] of the call by [`Stack::host_inout`].
+///
+/// Both steps are separate so that the [`InOutParams`] can be derived _after_ the caller wrote the
+/// call parameters into the frame through its [`Sp`]: writing through an [`Sp`] that was obtained
+/// before the [`InOutParams`] invalidates the latter's pointer.
+#[derive(Debug, Copy, Clone)]
+pub struct HostFrame {
+    /// The start offset of the frame's cells.
+    start: SpOffset,
+    /// The end offset of the frame's cells.
+    end: SpOffset,
+    /// The number of cells used for parameters.
+    len_params: usize,
+    /// The number of cells used for results.
+    len_results: usize,
+}
+
+impl HostFrame {
+    /// Creates a new [`HostFrame`] spanning `cells[start..end]`.
+    fn new(start: SpOffset, end: SpOffset, len_params: usize, len_results: usize) -> Self {
+        Self {
+            start,
+            end,
+            len_params,
+            len_results,
+        }
+    }
+
+    /// Creates a [`HostFrame`] that spans no cells.
+    fn empty() -> Self {
+        Self::new(SpOffset::from(0), SpOffset::from(0), 0, 0)
+    }
+
+    /// Returns `true` if `self` spans no cells.
+    fn is_empty(&self) -> bool {
+        self.len_params == 0 && self.len_results == 0
+    }
+}
+
 /// The stack pointer.
 ///
 /// # Note
