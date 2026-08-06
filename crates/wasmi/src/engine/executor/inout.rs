@@ -4,13 +4,16 @@ use crate::{
 };
 use core::{cmp::max, ptr::NonNull, slice};
 
-/// Wrapper around a slice of [`Cell`]s to manage reading parameters and writing results of a function call.
+/// Raw parts of a sequence of [`Cell`]s to manage reading parameters and writing results of a function call.
 ///
 /// # Note
 ///
 /// The [`Cell`]s are referred to by raw parts instead of by a `&mut [Cell]` because they live in the
 /// value stack owned by the [`Store`], while the host function invoked with them requires exclusive
 /// access to that very same [`Store`]. Holding a borrow here would make the two mutually exclusive.
+///
+/// For the same reason `self` is neither [`Send`] nor [`Sync`], in contrast to the `&mut [Cell]`
+/// that it replaces.
 ///
 /// # Invariant
 ///
@@ -26,18 +29,24 @@ pub struct InOutParams {
     ///
     /// # Note
     ///
-    /// Must be less than or equal to `len_cells`.
+    /// Must be less than or equal to the number of [`Cell`]s behind `cells`.
     len_params: usize,
     /// The number of cells used for results.
     ///
     /// # Note
     ///
-    /// Must be less than or equal to `len_cells`.
+    /// Must be less than or equal to the number of [`Cell`]s behind `cells`.
     len_results: usize,
 }
 
 impl InOutParams {
     /// Creates empty [`InOutParams`] that span no cells.
+    ///
+    /// # Note
+    ///
+    /// Used for host function frames that require no cells at all. Both lengths are `0`, thus the
+    /// accessors only ever form empty slices from the aligned and non-null dangling pointer, which
+    /// is sound and keeps the [`InOutParams::new`] invariant vacuously true.
     pub fn empty() -> Self {
         Self {
             cells: <NonNull<[Cell]>>::from(&mut [][..]).cast::<Cell>(),
@@ -52,7 +61,8 @@ impl InOutParams {
     ///
     /// The [`Cell`]s behind `cells` must stay allocated, unmoved and unaliased for as long as the
     /// returned [`InOutParams`] is used. Nothing bounds that value's lifetime, so upholding it is
-    /// the caller's job.
+    /// the caller's job. In particular no write may happen through a pointer to those [`Cell`]s
+    /// that was derived before this call, since that invalidates the pointer returned here.
     ///
     /// # Errors
     ///
@@ -80,8 +90,8 @@ impl InOutParams {
     ///
     /// # Safety
     ///
-    /// The returned lifetime is unbounded: the caller must not let it outlive the invariant
-    /// asserted by [`InOutParams::new`].
+    /// The invariant asserted by [`InOutParams::new`] must still hold: the [`Cell`]s must be live
+    /// and no write may have happened through a pointer that was derived before `self`.
     #[inline]
     unsafe fn params(&self) -> &[Cell] {
         // SAFETY: `self.len_params` is at most the number of cells behind `self.cells` by
@@ -91,11 +101,15 @@ impl InOutParams {
 
     /// Returns the result [`Cell`]s.
     ///
+    /// # Note
+    ///
+    /// The result [`Cell`]s overlap those returned by [`InOutParams::params`]. Both slices can
+    /// never be alive at the same time since this requires exclusive access to `self`.
+    ///
     /// # Safety
     ///
-    /// The returned lifetime is unbounded: the caller must not let it outlive the invariant
-    /// asserted by [`InOutParams::new`], nor overlap it with a slice returned by
-    /// [`InOutParams::params`].
+    /// The invariant asserted by [`InOutParams::new`] must still hold: the [`Cell`]s must be live
+    /// and no write may have happened through a pointer that was derived before `self`.
     #[inline]
     unsafe fn results_mut(&mut self) -> &mut [Cell] {
         // SAFETY: `self.len_results` is at most the number of cells behind `self.cells` by
@@ -155,8 +169,8 @@ impl InOutParams {
 /// # Note
 ///
 /// Since [`InOutParams::encode_results`] consumes its [`InOutParams`], the only way to obtain an
-/// `InOutResults<'cells>` is to have encoded results into the cells that were handed in. The
-/// trampoline signature uses this to require that a host function actually wrote its results.
+/// [`InOutResults`] is to have encoded results into the cells that were handed in. The trampoline
+/// signature uses this to require that a host function actually wrote its results.
 #[derive(Debug)]
 pub struct InOutResults {
     _seal: private::Seal,
