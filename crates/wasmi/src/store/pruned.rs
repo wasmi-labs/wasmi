@@ -6,7 +6,7 @@ use crate::{
     Store,
     Table,
     core::{RawRef, hint},
-    engine::{InOutParams, Inst},
+    engine::{ExecContext, InOutParams, Inst, Stack},
     errors::{MemoryError, TableError},
     func::Trampoline,
     store::error::{InternalStoreError, StoreError},
@@ -183,6 +183,18 @@ impl PrunedStore {
     #[inline]
     pub fn inner_mut(&mut self) -> &mut StoreInner {
         &mut self.pruned.inner
+    }
+
+    /// Returns an exclusive reference to the [`ExecContext`] of the executor.
+    #[inline]
+    pub fn exec_mut(&mut self) -> &mut ExecContext {
+        self.pruned.inner.exec_mut()
+    }
+
+    /// Returns an exclusive reference to the [`Stack`] in use by the executor.
+    #[inline]
+    pub fn stack_mut(&mut self) -> &mut Stack {
+        self.exec_mut().stack_mut()
     }
 
     /// Calls a host `func` at `instance` with `params_results` buffer.
