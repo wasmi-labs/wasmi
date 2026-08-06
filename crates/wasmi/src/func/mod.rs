@@ -246,6 +246,11 @@ impl<T> HostFuncTrampolineEntity<T> {
         let results_iter = ty.results().iter().copied().map(Val::default_for_ty);
         let len_params = ty.params().len();
         let params_results: Box<[Val]> = params_iter.chain(results_iter).collect();
+        // Note: `inout` aliases cells of the value stack that is currently executing and stays
+        //       alive across the host function call below. This is sound because a re-entrant call
+        //       from the `Caller` runs on another `Stack` taken from the `Engine`'s stack pool,
+        //       thus the host function cannot grow, reallocate or otherwise write to the cells
+        //       behind `inout`.
         let trampoline = <TrampolineEntity<T>>::new(move |caller, inout| {
             // We are required to clone the buffer because we are operating within a `Fn`.
             // This way the trampoline closure only has to own a single slice buffer.
