@@ -77,6 +77,117 @@ impl<'vm> VmState<'vm> {
     }
 }
 
+/// The execution context of a [`Store`](crate::Store).
+///
+/// # Note
+///
+/// This is stored inline in the [`StoreInner`](crate::store::StoreInner) so that execution
+/// handlers reach both the store and the [`Stack`] with a single load from their `state`
+/// parameter. Its contents are private to the executor.
+#[derive(Debug)]
+pub struct ExecContext {
+    /// The value and call stack of the currently running execution.
+    stack: Stack,
+    /// The reason why the current execution halted, if any.
+    done_reason: Option<DoneReason>,
+}
+
+impl Default for ExecContext {
+    #[inline]
+    fn default() -> Self {
+        Self::new(Stack::empty())
+    }
+}
+
+// # Safety
+//
+// `ExecContext` is neither automatically `Send` nor `Sync` because of the raw pointers
+// reachable from its fields:
+//
+// - `Stack`'s `CallStack` stores `Frame`s holding an `Ip`, a raw pointer into an `Op`
+//   buffer owned by the [`Engine`]. The `StoreInner` owning this `ExecContext` owns the
+//   [`Engine`] as well, thus those buffers cannot be outlived and are immutable.
+// - `DoneReason` may hold an `Sp`, a raw pointer into the cells of this very `Stack`.
+//   Those cells are heap allocated and thus travel along with the `ExecContext`.
+//
+// Both fields are private and only ever handed out via `&mut self`, so a shared reference
+// to an `ExecContext` provides no access to either of them.
+//
+// This mirrors the reasoning behind the `Send`/`Sync` of `ResumableCallCommon`, which owns
+// a `Stack` for the same reasons.
+//
+// [`Engine`]: crate::Engine
+unsafe impl Send for ExecContext {}
+// # Safety
+//
+// See the `Send` impl above.
+unsafe impl Sync for ExecContext {}
+
+impl ExecContext {
+    /// Creates a new [`ExecContext`] with the `stack`.
+    #[inline]
+    pub fn new(stack: Stack) -> Self {
+        Self {
+            stack,
+            done_reason: None,
+        }
+    }
+
+    /// Returns an exclusive reference to the [`Stack`].
+    #[inline]
+    pub fn stack_mut(&mut self) -> &mut Stack {
+        &mut self.stack
+    }
+
+    /// Consumes `self` and returns its [`Stack`].
+    #[inline]
+    pub fn into_stack(self) -> Stack {
+        self.stack
+    }
+
+    /// Halts the current execution with `reason`.
+    ///
+    /// # Note
+    ///
+    /// Must be inlined: every `done!` site sits on the cold arm of a hot handler, and an
+    /// out-of-line call there forces the handler to spill all of its argument registers on
+    /// entry. Only `err` below is meant to stay out of line.
+    #[inline]
+    pub fn done_with(&mut self, reason: impl FnOnce() -> DoneReason) {
+        #[cold]
+        #[inline(never)]
+        fn err(prev: &DoneReason, reason: impl FnOnce() -> DoneReason) -> ! {
+            panic!(
+                "\
+                tried to done with reason while reason already exists:\n\
+                \t- new reason: {:?},\n\
+                \t- old reason: {:?},\
+                ",
+                reason(),
+                prev,
+            )
+        }
+
+        if let Some(prev) = &self.done_reason {
+            err(prev, reason)
+        }
+        self.done_reason = Some(reason());
+    }
+
+    #[inline]
+    pub fn take_done_reason(&mut self) -> DoneReason {
+        let Some(reason) = self.done_reason.take() else {
+            panic!("missing break reason")
+        };
+        reason
+    }
+
+    #[inline]
+    pub fn execution_outcome(&mut self) -> Result<Sp, ExecutionOutcome> {
+        self.take_done_reason().into_execution_outcome()
+    }
+}
+
 /// The reason why a Wasmi execution has halted.
 ///
 /// # Note

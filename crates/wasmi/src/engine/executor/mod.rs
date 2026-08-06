@@ -4,6 +4,7 @@ pub use self::{
         CellError,
         CellsReader,
         CellsWriter,
+        ExecContext,
         ExecutionOutcome,
         Inst,
         LiftFromCells,
