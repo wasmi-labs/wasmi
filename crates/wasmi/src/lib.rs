@@ -187,6 +187,7 @@ pub use self::{
         EnforcedLimits,
         Engine,
         EngineWeak,
+        OperatorCost,
         ResumableCall,
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,

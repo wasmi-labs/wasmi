@@ -1,6 +1,7 @@
 #[macro_use]
 mod utils;
 mod encoder;
+mod fuel;
 mod labels;
 mod layout;
 mod locals;
@@ -13,6 +14,7 @@ mod visit;
 #[cfg(doc)]
 use self::stack::ImmediateOperand;
 
+pub use self::fuel::FuelMeteringFuncTranslator;
 use self::{
     encoder::{OpEncoder, OpEncoderAllocations, Pos},
     labels::{LabelRef, LabelRegistry},
@@ -61,6 +63,7 @@ use crate::{
         CompiledFuncEntry,
         TranslationError,
         code_map::FuncEntry,
+        costs::{OperatorCostStrategy, WasmOperator},
         translator::{
             WasmTranslator,
             comparator::{
@@ -131,6 +134,8 @@ pub struct FuncTranslator {
     instrs: OpEncoder,
     /// Temporary buffer for immediate values.
     immediates: Vec<TypedRawVal>,
+    /// The costs of Wasm operators when fuel metering is enabled.
+    operator_cost: OperatorCostStrategy,
 }
 
 /// Heap allocated data structured used by the [`FuncTranslator`].
@@ -249,6 +254,7 @@ impl FuncTranslator {
         } = alloc.into_reset();
         let stack = Stack::new(&engine, stack);
         let instrs = OpEncoder::new(&engine, instrs);
+        let operator_cost = engine.config().get_operator_cost().clone();
         let mut translator = Self {
             func,
             engine,
@@ -259,6 +265,7 @@ impl FuncTranslator {
             layout,
             instrs,
             immediates,
+            operator_cost,
         };
         translator.init_func_params()?;
         Ok(translator)
@@ -314,7 +321,7 @@ impl FuncTranslator {
     /// `memory` is an instance address, not the raw Wasm memory index,
     /// so the default memory's address is not guaranteed to be zero.
     #[inline]
-    pub fn is_default_memory(&self, memory: ir::MemoryAddr) -> bool {
+    fn is_default_memory(&self, memory: ir::MemoryAddr) -> bool {
         matches!(
             self.module.instance_layout().memory_addr(0),
             Some(addr) if u32::from(addr) == u32::from(memory)
@@ -359,6 +366,16 @@ impl FuncTranslator {
     fn resolve_dedup_type(&self, type_index: u32) -> ir::FuncType {
         let func_type_idx = FuncTypeIdx::from(type_index);
         ir::FuncType::from(self.module.get_func_type(func_type_idx).repr_entity())
+    }
+
+    /// Bumps the current [`Op::ConsumeFuel`] operator by the fuel costs of `operator`.
+    ///
+    /// This does nothing if fuel metering is disabled.
+    fn bump_fuel_for_operator(&mut self, operator: WasmOperator) -> Result<(), Error> {
+        let fuel_pos = self.stack.fuel_pos();
+        let fuel_used = self.operator_cost.cost(operator);
+        self.instrs.bump_fuel_consumption_by(fuel_pos, fuel_used)?;
+        Ok(())
     }
 
     /// Returns the [`GlobalAddr`] for the global at `index`.

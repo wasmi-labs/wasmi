@@ -8,7 +8,7 @@
 ///   translation process. In particular the `End` operator may end unreachable
 ///   code blocks.
 macro_rules! bail_unreachable {
-    ($this:ident) => {{
+    ($this:expr) => {{
         if !$this.reachable {
             return ::core::result::Result::Ok(());
         }

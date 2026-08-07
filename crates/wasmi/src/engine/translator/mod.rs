@@ -12,7 +12,7 @@ use crate::Engine;
 pub use self::{
     driver::FuncTranslationDriver,
     error::TranslationError,
-    func::{FuncTranslator, FuncTranslatorAllocations},
+    func::{FuelMeteringFuncTranslator, FuncTranslator, FuncTranslatorAllocations},
     utils::required_cells_for_tys,
 };
 use super::{FuncToValidate, code_map::CompiledFuncEntry};

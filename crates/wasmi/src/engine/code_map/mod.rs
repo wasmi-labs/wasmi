@@ -12,7 +12,13 @@ pub use self::span::{EngineFunc, EngineFuncSpan, EngineFuncSpanIter};
 use self::utils::SmallByteSlice;
 #[cfg(feature = "validate")]
 use super::ValidatingFuncTranslator;
-use super::{FuncToValidate, FuncTranslationDriver, FuncTranslator, TranslationError};
+use super::{
+    FuelMeteringFuncTranslator,
+    FuncToValidate,
+    FuncTranslationDriver,
+    FuncTranslator,
+    TranslationError,
+};
 use crate::{
     Error,
     TrapCode,
@@ -909,6 +915,7 @@ impl UncompiledFuncEntry {
             Some((type_index, resources)) => {
                 let allocs = engine.get_allocs();
                 let translator = FuncTranslator::new(func_idx, module, allocs.0)?;
+                let translator = FuelMeteringFuncTranslator::from(translator);
                 let func_to_validate = FuncToValidate {
                     resources,
                     index: func_idx.into_u32(),
@@ -927,6 +934,7 @@ impl UncompiledFuncEntry {
             None => {
                 let allocs = engine.get_translation_allocs();
                 let translator = FuncTranslator::new(func_idx, module, allocs)?;
+                let translator = FuelMeteringFuncTranslator::from(translator);
                 let allocs = FuncTranslationDriver::new(0, wasm_bytes, translator)?.translate(
                     |compiled_func| {
                         result.write(compiled_func);
