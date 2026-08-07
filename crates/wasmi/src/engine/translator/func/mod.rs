@@ -322,7 +322,7 @@ impl FuncTranslator {
     /// `memory` is an instance address, not the raw Wasm memory index,
     /// so the default memory's address is not guaranteed to be zero.
     #[inline]
-    pub fn is_default_memory(&self, memory: ir::MemoryAddr) -> bool {
+    fn is_default_memory(&self, memory: ir::MemoryAddr) -> bool {
         matches!(
             self.module.instance_layout().memory_addr(0),
             Some(addr) if u32::from(addr) == u32::from(memory)
