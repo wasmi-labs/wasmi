@@ -892,11 +892,6 @@ pub fn return_call_func_entry(
 ///
 /// Returns the host provided error if the host function trapped.
 ///
-/// # Note
-///
-/// Takes `store` instead of the whole [`VmState`] so that this cannot touch the [`Stack`] whose
-/// cells `inout` points at: `inout` aliases them without borrowing them.
-///
 /// [`Stack`]: crate::engine::executor::Stack
 #[inline]
 fn invoke_host(

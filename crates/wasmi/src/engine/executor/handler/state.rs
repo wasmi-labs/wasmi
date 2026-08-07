@@ -143,10 +143,12 @@ impl ExecContext {
 ///
 /// # Note
 ///
-/// This type lives in the [`VmState`] type and in case of a halt needs to be
+/// This type lives in the [`PrunedStore`] type and in case of a halt needs to be
 /// updated manually which is a bit costly which is why the most common reason
 /// which is a raised [`TrapCode`] is not included in this `enum` and was put
 /// into the return type of execution handlers directly, instead.
+/// 
+/// [`PrunedStore`]: crate::store::PrunedStore
 #[derive(Debug)]
 pub enum DoneReason {
     /// The execution finished successfully with a result found at the [`Sp`].
