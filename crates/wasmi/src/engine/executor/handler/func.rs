@@ -122,7 +122,7 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
             self.freg32,
             self.freg64,
         );
-        core::mem::replace(self.store.inner.exec_mut().stack_mut(), stack);
+        _ = core::mem::replace(self.store.inner.exec_mut().stack_mut(), stack);
         outcome
     }
 }
