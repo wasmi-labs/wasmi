@@ -151,7 +151,7 @@ impl Executor {
                         match op_code {
                             $(
                                 OpCode::$camel_case => {
-                                    self.$snake_case(state)?;
+                                    self.$snake_case(store)?;
                                     op_code = super::decode_op_code(self.ip);
                                     break 'next op_code
                                 },
