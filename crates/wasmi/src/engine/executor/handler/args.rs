@@ -334,13 +334,16 @@ impl Args {
     /// Pops the top-most frame from the call stack.
     #[inline]
     pub fn pop_frame(&mut self, store: &mut PrunedStore) -> Control<(), Break> {
+        // Note: copied out so that the `done!` closure below captures just this `Sp` instead
+        //       of `self`, which would force the whole `Args` into memory on entry.
+        let caller_sp = self.sp;
         let Some((ip, sp, mem0_ptr, mem0_len, instance)) =
             store
                 .stack_mut()
                 .pop_frame(self.mem0_ptr, self.mem0_len, self.instance)
         else {
             // No more frames on the call stack -> break out of execution!
-            done!(store, DoneReason::Return(self.sp))
+            done!(store, DoneReason::Return(caller_sp))
         };
         self.ip = ip;
         self.sp = sp;
