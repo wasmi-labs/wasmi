@@ -5,7 +5,6 @@ mod labels;
 mod layout;
 mod locals;
 mod op;
-#[macro_use]
 mod visit;
 mod fuel;
 #[cfg(feature = "simd")]
