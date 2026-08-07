@@ -11,22 +11,12 @@ use crate::{
     },
     engine::{
         WasmOperator,
-        translator::func::{
-            Operand,
-            op,
-            simd::op as simd_op,
-            stack::Location,
-            visit::FuelMeteringFuncTranslator,
-        },
+        translator::func::{Operand, op, simd::op as simd_op, stack::Location},
     },
     ir::{Op, Slot},
 };
 use core::array;
 use wasmparser::{MemArg, VisitOperator, VisitSimdOperator};
-
-impl<'a> VisitSimdOperator<'a> for FuelMeteringFuncTranslator {
-    wasmparser::for_each_visit_simd_operator!(impl_visit_operator_for_fuel_metering);
-}
 
 impl FuncTranslator {
     /// Hacky utility method to convert an immediate value into an [`Operand`].

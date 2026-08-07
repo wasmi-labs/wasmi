@@ -7,6 +7,7 @@ mod locals;
 mod op;
 #[macro_use]
 mod visit;
+mod fuel;
 #[cfg(feature = "simd")]
 mod simd;
 mod stack;
@@ -14,6 +15,7 @@ mod stack;
 #[cfg(doc)]
 use self::stack::ImmediateOperand;
 
+pub use self::fuel::FuelMeteringFuncTranslator;
 use self::{
     encoder::{OpEncoder, OpEncoderAllocations, Pos},
     labels::{LabelRef, LabelRegistry},
