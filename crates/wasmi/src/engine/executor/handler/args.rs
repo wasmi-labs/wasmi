@@ -227,8 +227,8 @@ impl Args {
 
     /// Reloads the data pointer and length of the default memory at index 0 from `state`.
     #[inline]
-    pub fn reload_mem0(&mut self, store: &mut PrunedStore) {
-        (self.mem0_ptr, self.mem0_len) = utils::extract_mem0(store, self.instance);
+    pub fn reload_mem0(&mut self) {
+        (self.mem0_ptr, self.mem0_len) = utils::extract_mem0(self.instance);
     }
 
     /// Calls `func` with `params` on `instance` with `state` using `self`.
@@ -337,7 +337,7 @@ impl Args {
         let Some((ip, sp, mem0_ptr, mem0_len, instance)) =
             store
                 .stack_mut()
-                .pop_frame(store, self.mem0_ptr, self.mem0_len, self.instance)
+                .pop_frame(self.mem0_ptr, self.mem0_len, self.instance)
         else {
             // No more frames on the call stack -> break out of execution!
             done!(store, DoneReason::Return(self.sp))

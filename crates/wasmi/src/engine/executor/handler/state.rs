@@ -1124,7 +1124,6 @@ impl Stack {
     #[inline(always)]
     pub fn pop_frame(
         &mut self,
-        store: &mut PrunedStore,
         mem0: Mem0Ptr,
         mem0_len: Mem0Len,
         instance: Inst,
@@ -1133,7 +1132,7 @@ impl Stack {
         let sp = self.values.sp(start);
         let (mem0, mem0_len, instance) = match changed_instance {
             Some(instance) => {
-                let (mem0, mem0_len) = extract_mem0(store, instance);
+                let (mem0, mem0_len) = extract_mem0(instance);
                 (mem0, mem0_len, instance)
             }
             None => (mem0, mem0_len, instance),

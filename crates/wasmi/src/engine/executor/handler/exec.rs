@@ -410,7 +410,7 @@ execution_handler! {
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
                 if utils::is_default_memory(instance, memory) {
-                    args.reload_mem0(store);
+                    args.reload_mem0();
                 }
                 return_value
             }

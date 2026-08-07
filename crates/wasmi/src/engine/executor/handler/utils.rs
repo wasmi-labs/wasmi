@@ -545,7 +545,13 @@ pub fn is_default_memory(_instance: Inst, memory: ir::MemoryAddr) -> bool {
     u32::from(memory) == 0
 }
 
-pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) {
+/// Extracts the data pointer and length of `(memory 0)`.
+///
+/// # Note (Safety)
+///
+/// The caller must ensure that `inst` refers to a live instance
+/// that contains a linear memory and thus `(memory 0)`.
+pub fn extract_mem0(inst: Inst) -> (Mem0Ptr, Mem0Len) {
     // SAFETY: `inst` refers to a live instance for the duration of the call.
     let Some(addr) = (unsafe { inst.as_ptr().layout() }).memory_addr(0) else {
         return (Mem0Ptr::from([].as_mut_ptr()), Mem0Len::from(0));
@@ -559,7 +565,7 @@ pub fn extract_mem0(_store: &mut PrunedStore, inst: Inst) -> (Mem0Ptr, Mem0Len) 
     //         does not outlive this function.
     let mem0 = unsafe { mem0.as_ref() };
     let mem0 = mem0.entity();
-    // SAFETY: warmed at instantiation; the `_store` borrow scopes exclusive memory access.
+    // SAFETY: entity cache is ensured to have warmed at instantiation.
     let mem0 = unsafe { &mut *mem0.as_ptr() }.data_mut();
     let mem0_ptr = mem0.as_mut_ptr();
     let mem0_len = mem0.len();
@@ -822,7 +828,6 @@ where
 }
 
 pub fn update_instance(
-    store: &mut PrunedStore,
     instance: Inst,
     new_instance: Inst,
     mem0: Mem0Ptr,
@@ -831,7 +836,7 @@ pub fn update_instance(
     if new_instance == instance {
         return (instance, mem0, mem0_len);
     }
-    let (mem0, mem0_len) = extract_mem0(store, new_instance);
+    let (mem0, mem0_len) = extract_mem0(new_instance);
     (new_instance, mem0, mem0_len)
 }
 
@@ -999,7 +1004,7 @@ pub fn call_wasm_or_host(
             )?;
             // Note: host functions may grow memories, invalidating the cached `(memory 0)`.
             //       Therefore, it is required to re-extract `(memory 0)` to avoid a stale cache.
-            let (mem0, mem0_len) = extract_mem0(store, instance);
+            let (mem0, mem0_len) = extract_mem0(instance);
             return Control::Continue((caller_ip, sp, mem0, mem0_len, instance));
         }
     };
@@ -1014,8 +1019,7 @@ pub fn call_wasm_or_host(
         wasm_func.func_entry(),
         Some(callee_instance),
     )?;
-    let (instance, mem0, mem0_len) =
-        update_instance(store, instance, callee_instance, mem0, mem0_len);
+    let (instance, mem0, mem0_len) = update_instance(instance, callee_instance, mem0, mem0_len);
     Control::Continue((callee_ip, callee_sp, mem0, mem0_len, instance))
 }
 
@@ -1042,7 +1046,7 @@ pub fn return_call_wasm_or_host(
             // Note: host functions may grow memories, invalidating the cached `(memory 0)`.
             //       Therefore, it is required to re-extract `(memory 0)` to avoid a stale
             //       cache - even if the tail call returned into the very same instance.
-            let (mem0, mem0_len) = extract_mem0(store, new_instance);
+            let (mem0, mem0_len) = extract_mem0(new_instance);
             return Control::Continue((callee_ip, sp, mem0, mem0_len, new_instance));
         }
     };
@@ -1055,7 +1059,6 @@ pub fn return_call_wasm_or_host(
         wasm_func.func_entry(),
         Some(callee_instance),
     )?;
-    let (instance, mem0, mem0_len) =
-        update_instance(store, instance, callee_instance, mem0, mem0_len);
+    let (instance, mem0, mem0_len) = update_instance(instance, callee_instance, mem0, mem0_len);
     Control::Continue((callee_ip, callee_sp, mem0, mem0_len, instance))
 }

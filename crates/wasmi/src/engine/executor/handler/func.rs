@@ -105,9 +105,8 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
     }
 
     fn execute_until_done(&mut self) -> Result<Sp, ExecutionOutcome> {
-        // TODO: get rid of `VmState` entirely
         let pruned = self.store.prune();
-        let (mem0, mem0_len) = utils::extract_mem0(pruned, self.instance);
+        let (mem0, mem0_len) = utils::extract_mem0(self.instance);
         execute_until_done(
             pruned,
             self.callee_ip,
