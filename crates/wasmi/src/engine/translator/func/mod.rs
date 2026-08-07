@@ -1,15 +1,15 @@
 #[macro_use]
 mod utils;
 mod encoder;
+mod fuel;
 mod labels;
 mod layout;
 mod locals;
 mod op;
-mod visit;
-mod fuel;
 #[cfg(feature = "simd")]
 mod simd;
 mod stack;
+mod visit;
 
 #[cfg(doc)]
 use self::stack::ImmediateOperand;
