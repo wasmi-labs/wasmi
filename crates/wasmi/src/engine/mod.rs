@@ -30,6 +30,7 @@ pub(crate) use self::{
     },
     func_types::DedupFuncType,
     translator::{
+        FuelMeteringFuncTranslator,
         FuncTranslationDriver,
         FuncTranslator,
         FuncTranslatorAllocations,
@@ -683,6 +684,7 @@ impl EngineInner {
                 let (translation_allocs, validation_allocs) = self.get_allocs();
                 let validator = func_to_validate.into_validator(validation_allocs);
                 let translator = FuncTranslator::new(func_index, module, translation_allocs)?;
+                let translator = FuelMeteringFuncTranslator::from(translator);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
                 let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
                     .translate(|func_entity| self.init_func(engine_func, func_entity))?;
@@ -691,6 +693,7 @@ impl EngineInner {
             (CompilationMode::Eager, None) => {
                 let allocs = self.get_translation_allocs();
                 let translator = FuncTranslator::new(func_index, module, allocs)?;
+                let translator = FuelMeteringFuncTranslator::from(translator);
                 let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
                     .translate(|func_entity| self.init_func(engine_func, func_entity))?;
                 self.recycle_translation_allocs(allocs);
