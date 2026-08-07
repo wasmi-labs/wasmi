@@ -6,10 +6,9 @@ use crate::{
         FuncEntryPtr,
         LiftFromCells,
         LowerToCells,
-        Stack,
         executor::handler::{
             dispatch::{ExecutionOutcome, execute_until_done},
-            state::{Freg32, Freg64, Inst, Ip, Ireg, Sp, VmState},
+            state::{Freg32, Freg64, Inst, Ip, Ireg, Sp},
             utils,
         },
     },
@@ -107,12 +106,10 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
 
     fn execute_until_done(&mut self) -> Result<Sp, ExecutionOutcome> {
         // TODO: get rid of `VmState` entirely
-        let mut stack = core::mem::replace(self.store.inner.exec_mut().stack_mut(), Stack::empty());
         let pruned = self.store.prune();
         let (mem0, mem0_len) = utils::extract_mem0(pruned, self.instance);
-        let mut state = VmState::new(pruned, &mut stack);
-        let outcome = execute_until_done(
-            &mut state,
+        execute_until_done(
+            pruned,
             self.callee_ip,
             self.callee_sp,
             mem0,
@@ -121,9 +118,7 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
             self.ireg,
             self.freg32,
             self.freg64,
-        );
-        _ = core::mem::replace(self.store.inner.exec_mut().stack_mut(), stack);
-        outcome
+        )
     }
 }
 

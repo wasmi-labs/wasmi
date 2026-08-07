@@ -91,7 +91,7 @@ macro_rules! dispatch {
 
 #[expect(clippy::too_many_arguments)]
 pub fn execute_until_done(
-    state: &mut VmState,
+    store: &mut PrunedStore,
     ip: Ip,
     sp: Sp,
     mem0: Mem0Ptr,
