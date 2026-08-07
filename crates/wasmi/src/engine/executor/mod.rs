@@ -19,6 +19,7 @@ pub use self::{
     },
     inout::{InOutParams, InOutResults},
 };
+use core::mem::{self, ManuallyDrop};
 use crate::{
     Error,
     Func,
@@ -307,4 +308,52 @@ impl<'engine> EngineExecutor<'engine> {
             .write_results(results);
         Ok(value)
     }
+}
+
+/// Runs `f` with `stack` installed as the execution [`Stack`] of `store`.
+///
+/// Returns the outcome of `f` together with the [`Stack`] it used and re-installs the
+/// [`ExecContext`] that was installed before.
+///
+/// # Note
+///
+/// The [`ExecContext`] of an enclosing execution is parked in this very stack frame for the
+/// duration of `f`. This is what hands a host function that re-enters Wasm a [`Stack`] and a
+/// halt reason of its own instead of letting it share the enclosing ones. Only the [`Stack`]
+/// itself is moved, its heap allocated cells stay in place, which keeps the enclosing `Sp`
+/// and [`InOutParams`] valid across the nested execution.
+///
+/// The `Parked` guard restores on the unwinding path, too: a host function may catch a panic
+/// raised by a nested execution - the C API wraps every call in `catch_unwind` - and without
+/// it the enclosing [`ExecContext`] would be dropped here while its cells are still in use.
+fn with_stack<T, R>(
+    store: &mut Store<T>,
+    stack: Stack,
+    f: impl FnOnce(&mut Store<T>) -> R,
+) -> (R, Stack) {
+    /// Re-installs the parked [`ExecContext`] on both the normal and the unwinding path.
+    struct Parked<'a, T> {
+        store: &'a mut Store<T>,
+        context: ExecContext,
+    }
+    impl<T> Drop for Parked<'_, T> {
+        fn drop(&mut self) {
+            self.revert();
+        }
+    }
+    impl<'a, T> Parked<'a, T> {
+        fn revert(&mut self) -> ExecContext {
+            let parked = mem::take(&mut self.context);
+            mem::replace(self.store.inner.exec_mut(), parked)
+        }
+    }
+    let parked = mem::replace(store.inner.exec_mut(), ExecContext::new(stack));
+    let guard = Parked {
+        store,
+        context: parked,
+    };
+    let result = f(guard.store);
+    let mut guard = ManuallyDrop::new(guard);
+    let used = guard.revert().into_stack();
+    (result, used)
 }
