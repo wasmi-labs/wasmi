@@ -19,7 +19,6 @@ pub use self::{
     },
     inout::{InOutParams, InOutResults},
 };
-use core::mem::{self, ManuallyDrop};
 use crate::{
     Error,
     Func,
@@ -32,9 +31,11 @@ use crate::{
         ResumableCallHostTrap,
         ResumableCallOutOfFuel,
         executor::handler::{init_host_func_call, init_wasm_func_call},
+        resumable::ResumableCallCommon,
     },
     ir::SlotSpan,
 };
+use core::mem::{self, ManuallyDrop};
 
 mod handler;
 mod inout;
@@ -58,11 +59,10 @@ impl EngineInner {
         Params: LowerToCells,
         Results: LiftFromCells,
     {
-        let mut stack = self.stacks.lock().reuse_or_new();
-        let value = EngineExecutor::new(&mut stack)
-            .execute_root_func(ctx.store, func, params, results)
-            .map_err(ExecutionOutcome::into_non_resumable)?;
+        let stack = self.stacks.lock().reuse_or_new();
+        let (outcome, stack) = execute_root_func(ctx.store, stack, func, params, results);
         self.stacks.lock().recycle(stack);
+        let value = outcome.map_err(ExecutionOutcome::into_non_resumable)?;
         Ok(value)
     }
 
@@ -85,9 +85,8 @@ impl EngineInner {
         Results: LiftFromCells,
     {
         let store = ctx.store;
-        let mut stack = self.stacks.lock().reuse_or_new();
-        let outcome =
-            EngineExecutor::new(&mut stack).execute_root_func(store, func, params, results);
+        let stack = self.stacks.lock().reuse_or_new();
+        let (outcome, stack) = execute_root_func(store, stack, func, params, results);
         let value = match outcome {
             Ok(value) => value,
             Err(ExecutionOutcome::Host(error)) => {
@@ -140,8 +139,17 @@ impl EngineInner {
         Results: LiftFromCells,
     {
         let caller_results = invocation.caller_results();
-        let mut executor = EngineExecutor::new(invocation.common.stack_mut());
-        let outcome = executor.resume_func_host_trap(ctx.store, params, caller_results, results);
+        let outcome = resume_func(
+            ctx.store,
+            &mut invocation.common,
+            |store: &mut Store<T>| -> Result<<Results as LiftFromCells>::Value, ExecutionOutcome> {
+                let value = resume_wasm_func_call(store)?
+                    .provide_host_results(params, caller_results)
+                    .execute()?
+                    .write_results(results);
+                Ok(value)
+            },
+        );
         let results = match outcome {
             Ok(results) => results,
             Err(ExecutionOutcome::Host(error)) => {
@@ -180,8 +188,12 @@ impl EngineInner {
     where
         Results: LiftFromCells,
     {
-        let mut executor = EngineExecutor::new(invocation.common.stack_mut());
-        let outcome = executor.resume_func_out_of_fuel(ctx.store, results);
+        let outcome = resume_func(ctx.store, &mut invocation.common, |store| {
+            let value = resume_wasm_func_call(store)?
+                .execute()?
+                .write_results(results);
+            Ok(value)
+        });
         let results = match outcome {
             Ok(results) => results,
             Err(ExecutionOutcome::Host(error)) => {
@@ -244,7 +256,7 @@ impl<'engine> EngineExecutor<'engine> {
                 // We reserve space on the stack to write the results of the root function execution.
                 let instance = wasm_func.instance();
                 let func_entry = wasm_func.func_entry_ptr();
-                let call = init_wasm_func_call(store, self.stack, func_entry, instance)?;
+                let call = init_wasm_func_call(store, func_entry, instance)?;
                 call.write_params(params).execute()?.write_results(results)
             }
             FuncEntity::Host(host_func) => {
@@ -253,7 +265,7 @@ impl<'engine> EngineExecutor<'engine> {
                 // In case the host function returns more values than it takes
                 // we are required to extend the value stack.
                 let host_func = *host_func;
-                let call = init_host_func_call(store, self.stack, host_func)?;
+                let call = init_host_func_call(store, host_func)?;
                 call.write_params(params).execute()?.write_results(results)
             }
         };
@@ -280,7 +292,7 @@ impl<'engine> EngineExecutor<'engine> {
         Params: LowerToCells,
         Results: LiftFromCells,
     {
-        let value = resume_wasm_func_call(store, self.stack)?
+        let value = resume_wasm_func_call(store)?
             .provide_host_results(params, params_slots)
             .execute()?
             .write_results(results);
@@ -303,10 +315,71 @@ impl<'engine> EngineExecutor<'engine> {
     where
         Results: LiftFromCells,
     {
-        let value = resume_wasm_func_call(store, self.stack)?
+        let value = resume_wasm_func_call(store)?
             .execute()?
             .write_results(results);
         Ok(value)
+    }
+}
+
+/// Resumes a function from `handle` using `f`.
+///
+/// This properly reuses and recycles the [`Stack`] of `handle` and feeds back the
+/// original [`Stack`] once the resumable execution via `f` has finished.
+fn resume_func<T, R>(
+    store: &mut Store<T>,
+    handle: &mut ResumableCallCommon,
+    f: impl FnOnce(&mut Store<T>) -> R,
+) -> R {
+    let stack = handle.take_stack();
+    let (outcome, stack) = with_stack(store, stack, |store| f(store));
+    *handle.stack_mut() = stack;
+    outcome
+}
+
+/// Executes the given [`Func`] on `stack` using the given `params`.
+///
+/// Stores the execution result into `results` upon a successful execution and returns the
+/// [`Stack`] for recycling.
+///
+/// # Errors
+///
+/// - If the given `params` do not match the expected parameters of `func`.
+/// - If the given `results` do not match the length of the expected results of `func`.
+/// - When encountering a Wasm or host trap during the execution of `func`.
+fn execute_root_func<T, Params, Results>(
+    store: &mut Store<T>,
+    mut stack: Stack,
+    func: &Func,
+    params: Params,
+    results: Results,
+) -> (Result<Results::Value, ExecutionOutcome>, Stack)
+where
+    Params: LowerToCells,
+    Results: LiftFromCells,
+{
+    stack.reset();
+    match store.inner.resolve_func(func) {
+        FuncEntity::Wasm(wasm_func) => {
+            // We reserve space on the stack to write the results of the root function execution.
+            let instance = wasm_func.instance();
+            let func_entry = wasm_func.func_entry_ptr();
+            with_stack(store, stack, move |store| {
+                let call = init_wasm_func_call(store, func_entry, instance)?;
+                Ok(call.write_params(params).execute()?.write_results(results))
+            })
+        }
+        FuncEntity::Host(host_func) => {
+            // The host function signature is required for properly
+            // adjusting, inspecting and manipulating the value stack.
+            // In case the host function returns more values than it takes
+            // we are required to extend the value stack.
+            let host_func = *host_func;
+            with_stack(store, stack, move |store| {
+                let call = init_host_func_call(store, host_func)?;
+                Ok(call.write_params(params).execute()?.write_results(results))
+            })
+        }
     }
 }
 
