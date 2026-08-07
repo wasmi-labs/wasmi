@@ -1,8 +1,8 @@
 use crate::{
     Error,
-    engine::{WasmOperator, translator::FuncTranslator},
+    engine::{CompiledFuncEntry, WasmOperator, WasmTranslator, translator::FuncTranslator},
 };
-use wasmparser::VisitOperator;
+use wasmparser::{VisitOperator, WasmFeatures};
 
 macro_rules! impl_visit_operator_for_fuel_metering {
     ( @mvp $($rest:tt)* ) => {
@@ -80,4 +80,42 @@ impl<'a> VisitOperator<'a> for FuelMeteringFuncTranslator {
 #[cfg(feature = "simd")]
 impl<'a> wasmparser::VisitSimdOperator<'a> for FuelMeteringFuncTranslator {
     wasmparser::for_each_visit_simd_operator!(impl_visit_operator_for_fuel_metering);
+}
+
+impl<'a> WasmTranslator<'a> for FuelMeteringFuncTranslator {
+    type Allocations = <FuncTranslator as WasmTranslator<'a>>::Allocations;
+
+    #[inline]
+    fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error> {
+        self.0.setup(bytes)
+    }
+
+    #[inline]
+    fn features(&self) -> WasmFeatures {
+        self.0.features()
+    }
+
+    #[inline]
+    fn translate_locals(
+        &mut self,
+        amount: u32,
+        value_type: wasmparser::ValType,
+    ) -> Result<(), Error> {
+        self.0.translate_locals(amount, value_type)
+    }
+
+    #[inline]
+    fn finish_translate_locals(&mut self) -> Result<(), Error> {
+        self.0.finish_translate_locals()
+    }
+
+    #[inline]
+    fn update_pos(&mut self, pos: usize) {
+        self.0.update_pos(pos)
+    }
+
+    #[inline]
+    fn finish(self, finalize: impl FnOnce(CompiledFuncEntry)) -> Result<Self::Allocations, Error> {
+        self.0.finish(finalize)
+    }
 }
