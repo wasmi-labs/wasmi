@@ -24,58 +24,9 @@ use crate::{
     },
     instance::{InstanceEntity, ThinPtr},
     ir::{self, BoundedSlotSpan, Slot, SlotSpan},
-    store::PrunedStore,
 };
 use alloc::vec::Vec;
 use core::{cmp, marker::PhantomData, mem, ops, ptr, slice};
-
-pub struct VmState<'vm> {
-    pub store: &'vm mut PrunedStore,
-    pub stack: &'vm mut Stack,
-    done_reason: Option<DoneReason>,
-}
-
-impl<'vm> VmState<'vm> {
-    pub fn new(store: &'vm mut PrunedStore, stack: &'vm mut Stack) -> Self {
-        Self {
-            store,
-            stack,
-            done_reason: None,
-        }
-    }
-
-    pub fn done_with(&mut self, reason: impl FnOnce() -> DoneReason) {
-        #[cold]
-        #[inline(never)]
-        fn err(prev: &DoneReason, reason: impl FnOnce() -> DoneReason) -> ! {
-            panic!(
-                "\
-                tried to done with reason while reason already exists:\n\
-                \t- new reason: {:?},\n\
-                \t- old reason: {:?},\
-                ",
-                reason(),
-                prev,
-            )
-        }
-
-        if let Some(prev) = &self.done_reason {
-            err(prev, reason)
-        }
-        self.done_reason = Some(reason());
-    }
-
-    pub fn take_done_reason(&mut self) -> DoneReason {
-        let Some(reason) = self.done_reason.take() else {
-            panic!("missing break reason")
-        };
-        reason
-    }
-
-    pub fn execution_outcome(&mut self) -> Result<Sp, ExecutionOutcome> {
-        self.take_done_reason().into_execution_outcome()
-    }
-}
 
 /// The execution context of a [`Store`](crate::Store).
 ///
