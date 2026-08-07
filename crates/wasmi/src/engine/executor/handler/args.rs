@@ -12,23 +12,12 @@ use crate::{
         code_map::FuncEntry,
         executor::handler::{
             dispatch::{Break, Control},
-            state::{
-                self,
-                DoneReason,
-                Freg32,
-                Freg64,
-                Inst,
-                Ip,
-                Ireg,
-                Mem0Len,
-                Mem0Ptr,
-                Sp,
-                VmState,
-            },
+            state::{self, DoneReason, Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp},
             utils::{self, GetValue, IntoControl as _, LoadEntity, SetValue, get_value, set_value},
         },
     },
     ir::{self, BoundedSlotSpan, BranchOffset},
+    store::PrunedStore,
 };
 use core::ptr::NonNull;
 
@@ -152,7 +141,7 @@ impl Args {
 
     /// Returns the bytes of the default memory at index 0.
     #[inline]
-    pub fn fetch_default_memory_bytes<'a>(&mut self, _state: &'a mut VmState) -> &'a mut [u8] {
+    pub fn fetch_default_memory_bytes<'a>(&mut self, _store: &'a mut PrunedStore) -> &'a mut [u8] {
         state::mem0_bytes::<'a>(self.mem0_ptr, self.mem0_len)
     }
 
@@ -160,7 +149,7 @@ impl Args {
     #[inline]
     pub fn fetch_memory<'a, Addr>(
         &mut self,
-        state: &'a mut VmState,
+        store: &'a mut PrunedStore,
         addr: Addr,
     ) -> &'a mut MemoryEntity
     where
@@ -169,14 +158,14 @@ impl Args {
         // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a memory entry of
         //         `self.instance` whose cache was warmed at instantiation. The `state` borrow
         //         scopes the returned reference.
-        unsafe { self.instance.load_entity_mut(state.store, addr) }
+        unsafe { self.instance.load_entity_mut(store, addr) }
     }
 
     /// Returns an exclusive reference to the global at `index`.
     #[inline]
     pub fn fetch_global<'a, Addr>(
         &mut self,
-        state: &'a mut VmState,
+        store: &'a mut PrunedStore,
         addr: Addr,
     ) -> &'a mut GlobalEntity
     where
@@ -185,14 +174,14 @@ impl Args {
         // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a global entry of
         //         `self.instance` whose cache was warmed at instantiation. The `state` borrow
         //         scopes the returned reference.
-        unsafe { self.instance.load_entity_mut(state.store, addr) }
+        unsafe { self.instance.load_entity_mut(store, addr) }
     }
 
     /// Returns an exclusive reference to the table at `index`.
     #[inline]
     pub fn fetch_table<'a, Addr>(
         &mut self,
-        state: &'a mut VmState,
+        store: &'a mut PrunedStore,
         addr: Addr,
     ) -> &'a mut TableEntity
     where
@@ -201,14 +190,14 @@ impl Args {
         // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a table entry of
         //         `self.instance` whose cache was warmed at instantiation. The `state` borrow
         //         scopes the returned reference.
-        unsafe { self.instance.load_entity_mut(state.store, addr) }
+        unsafe { self.instance.load_entity_mut(store, addr) }
     }
 
     /// Returns an exclusive reference to the element segment at `index`.
     #[inline]
     pub fn fetch_elem<'a, Addr>(
         &mut self,
-        state: &'a mut VmState,
+        store: &'a mut PrunedStore,
         addr: Addr,
     ) -> &'a mut ElementSegmentEntity
     where
@@ -217,14 +206,14 @@ impl Args {
         // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses an element segment
         //         entry of `self.instance` whose cache was warmed at instantiation. The `state`
         //         borrow scopes the returned reference.
-        unsafe { self.instance.load_entity_mut(state.store, addr) }
+        unsafe { self.instance.load_entity_mut(store, addr) }
     }
 
     /// Returns an exclusive reference to the data segment at `index`.
     #[inline]
     pub fn fetch_data<'a, Addr>(
         &mut self,
-        state: &'a mut VmState,
+        store: &'a mut PrunedStore,
         addr: Addr,
     ) -> &'a mut DataSegmentEntity
     where
@@ -233,26 +222,26 @@ impl Args {
         // SAFETY: `addr` stems from a Wasmi IR operator and thus addresses a data segment entry
         //         of `self.instance` whose cache was warmed at instantiation. The `state` borrow
         //         scopes the returned reference.
-        unsafe { self.instance.load_entity_mut(state.store, addr) }
+        unsafe { self.instance.load_entity_mut(store, addr) }
     }
 
     /// Reloads the data pointer and length of the default memory at index 0 from `state`.
     #[inline]
-    pub fn reload_mem0(&mut self, state: &mut VmState) {
-        (self.mem0_ptr, self.mem0_len) = utils::extract_mem0(state.store, self.instance);
+    pub fn reload_mem0(&mut self) {
+        (self.mem0_ptr, self.mem0_len) = utils::extract_mem0(self.instance);
     }
 
     /// Calls `func` with `params` on `instance` with `state` using `self`.
     #[inline(always)]
     pub fn call_func_entry(
         &mut self,
-        state: &mut VmState,
+        store: &mut PrunedStore,
         func: &FuncEntry,
         params: BoundedSlotSpan,
         instance: Option<Inst>,
     ) -> Control<(), Break> {
         (self.ip, self.sp) =
-            utils::call_func_entry(state, self.ip, self.sp, params, func, instance)?;
+            utils::call_func_entry(store, self.ip, self.sp, params, func, instance)?;
         Control::Continue(())
     }
 
@@ -260,12 +249,12 @@ impl Args {
     #[inline(always)]
     pub fn return_call_func_entry(
         &mut self,
-        state: &mut VmState,
+        store: &mut PrunedStore,
         func: &FuncEntry,
         params: BoundedSlotSpan,
         instance: Option<Inst>,
     ) -> Control<(), Break> {
-        (self.ip, self.sp) = utils::return_call_func_entry(state, self.sp, params, func, instance)?;
+        (self.ip, self.sp) = utils::return_call_func_entry(store, self.sp, params, func, instance)?;
         Control::Continue(())
     }
 
@@ -273,7 +262,7 @@ impl Args {
     #[inline]
     pub fn resolve_indirect_func<Idx, Table>(
         &mut self,
-        state: &mut VmState<'_>,
+        store: &mut PrunedStore,
         index: Idx,
         table: Table,
         func_type: ir::FuncType,
@@ -282,14 +271,14 @@ impl Args {
         Idx: GetValue<u64>,
         Inst: LoadEntity<Table, Entity = TableEntity>,
     {
-        utils::resolve_indirect_func(index, table, func_type, state, self).into_control()
+        utils::resolve_indirect_func(index, table, func_type, store, self).into_control()
     }
 
     /// Calls `func` with `params` with `state` using `self`.
     #[inline]
     pub fn call_wasm_or_host_func(
         &mut self,
-        state: &mut VmState,
+        store: &mut PrunedStore,
         func: Func,
         func_entity: NonNull<FuncEntity>,
         params: BoundedSlotSpan,
@@ -301,7 +290,7 @@ impl Args {
             self.mem0_len,
             self.instance,
         ) = utils::call_wasm_or_host(
-            state,
+            store,
             self.ip,
             self.sp,
             func,
@@ -318,7 +307,7 @@ impl Args {
     #[inline]
     pub fn return_call_wasm_or_host_func(
         &mut self,
-        state: &mut VmState,
+        store: &mut PrunedStore,
         func: Func,
         func_entity: NonNull<FuncEntity>,
         params: BoundedSlotSpan,
@@ -330,7 +319,7 @@ impl Args {
             self.mem0_len,
             self.instance,
         ) = utils::return_call_wasm_or_host(
-            state,
+            store,
             self.sp,
             func,
             func_entity,
@@ -344,14 +333,14 @@ impl Args {
 
     /// Pops the top-most frame from the call stack.
     #[inline]
-    pub fn pop_frame(&mut self, state: &mut VmState) -> Control<(), Break> {
+    pub fn pop_frame(&mut self, store: &mut PrunedStore) -> Control<(), Break> {
         let Some((ip, sp, mem0_ptr, mem0_len, instance)) =
-            state
-                .stack
-                .pop_frame(state.store, self.mem0_ptr, self.mem0_len, self.instance)
+            store
+                .stack_mut()
+                .pop_frame(self.mem0_ptr, self.mem0_len, self.instance)
         else {
             // No more frames on the call stack -> break out of execution!
-            done!(state, DoneReason::Return(self.sp))
+            done!(store, DoneReason::Return(self.sp))
         };
         self.ip = ip;
         self.sp = sp;

@@ -2,10 +2,11 @@ use crate::{
     engine::executor::handler::{
         dispatch::{Break, Control, ExecutionOutcome},
         exec,
-        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
+        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp},
     },
     ir,
     ir::OpCode,
+    store::PrunedStore,
 };
 
 #[derive(Debug, Copy, Clone)]
@@ -47,8 +48,8 @@ pub fn control_continue(
 }
 
 macro_rules! dispatch {
-    ( $state:expr, $args:expr $(,)? ) => {{
-        let _: &mut VmState = $state;
+    ( $store:expr, $args:expr $(,)? ) => {{
+        let _: &mut $crate::store::PrunedStore = $store;
         let (ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64) = $args.into_parts();
         return $crate::engine::executor::handler::dispatch::backend::control_continue(
             ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64,
@@ -56,7 +57,7 @@ macro_rules! dispatch {
     }};
 }
 
-pub type Handler = fn(&mut Executor, state: &mut VmState) -> Control<(), Break>;
+pub type Handler = fn(&mut Executor, store: &mut PrunedStore) -> Control<(), Break>;
 
 macro_rules! expand_op_code_to_handler {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
@@ -78,7 +79,7 @@ ir::for_each_op!(expand_op_code_to_handler);
 
 #[expect(clippy::too_many_arguments)]
 pub fn execute_until_done(
-    state: &mut VmState,
+    store: &mut PrunedStore,
     ip: Ip,
     sp: Sp,
     mem0: Mem0Ptr,
@@ -98,7 +99,7 @@ pub fn execute_until_done(
         freg32,
         freg64,
     };
-    executor.execute_until_done(state)
+    executor.execute_until_done(store)
 }
 
 #[derive(Debug)]
@@ -115,17 +116,17 @@ pub struct Executor {
 
 impl Executor {
     #[inline(always)]
-    fn execute_until_done(&mut self, state: &mut VmState) -> Result<Sp, ExecutionOutcome> {
-        let Control::Break(reason) = self.execute_until_break(state);
-        Self::handle_break(state, reason)
+    fn execute_until_done(&mut self, store: &mut PrunedStore) -> Result<Sp, ExecutionOutcome> {
+        let Control::Break(reason) = self.execute_until_break(store);
+        Self::handle_break(store, reason)
     }
 
     #[inline(never)]
-    fn handle_break(state: &mut VmState, reason: Break) -> Result<Sp, ExecutionOutcome> {
+    fn handle_break(store: &mut PrunedStore, reason: Break) -> Result<Sp, ExecutionOutcome> {
         if let Some(trap_code) = reason.trap_code() {
             return Err(ExecutionOutcome::from(trap_code));
         }
-        state.execution_outcome()
+        store.inner_mut().exec_mut().execution_outcome()
     }
 
     #[cold]
@@ -141,7 +142,7 @@ pub enum Never {}
 #[cfg(feature = "indirect-dispatch")]
 impl Executor {
     #[inline(always)]
-    fn execute_until_break(&mut self, state: &mut VmState) -> Control<Never, Break> {
+    fn execute_until_break(&mut self, store: &mut PrunedStore) -> Control<Never, Break> {
         macro_rules! impl_body {
             ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
                 let mut op_code = super::decode_op_code(self.ip);
@@ -150,7 +151,7 @@ impl Executor {
                         match op_code {
                             $(
                                 OpCode::$camel_case => {
-                                    self.$snake_case(state)?;
+                                    self.$snake_case(store)?;
                                     op_code = super::decode_op_code(self.ip);
                                     break 'next op_code
                                 },
@@ -166,16 +167,16 @@ impl Executor {
 
 #[cfg(not(feature = "indirect-dispatch"))]
 impl Executor {
-    fn execute_until_break(&mut self, state: &mut VmState) -> Control<Never, Break> {
+    fn execute_until_break(&mut self, store: &mut PrunedStore) -> Control<Never, Break> {
         loop {
-            self.dispatch_handler(state)?
+            self.dispatch_handler(store)?
         }
     }
 
     #[inline(always)]
-    fn dispatch_handler(&mut self, state: &mut VmState) -> Control<(), Break> {
+    fn dispatch_handler(&mut self, store: &mut PrunedStore) -> Control<(), Break> {
         let handler = super::decode_handler(self.ip);
-        handler(self, state)
+        handler(self, store)
     }
 }
 
@@ -189,8 +190,8 @@ macro_rules! impl_executor_handlers {
             #[cfg_attr(all(feature = "indirect-dispatch", not(debug_assertions)), inline(always))]
             #[cfg_attr(all(feature = "indirect-dispatch", debug_assertions), inline(never))]
             #[cfg_attr(not(feature = "indirect-dispatch"), inline(never))]
-            fn $snake_case(&mut self, state: &mut VmState) -> Control<(), Break> {
-                match exec::$snake_case(state, self.ip, self.sp, self.mem0, self.mem0_len, self.instance, self.ireg, self.freg32, self.freg64) {
+            fn $snake_case(&mut self, store: &mut PrunedStore) -> Control<(), Break> {
+                match exec::$snake_case(store, self.ip, self.sp, self.mem0, self.mem0_len, self.instance, self.ireg, self.freg32, self.freg64) {
                     Done::Continue(NextState { ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64 }) => {
                         self.ip = ip;
                         self.sp = sp;

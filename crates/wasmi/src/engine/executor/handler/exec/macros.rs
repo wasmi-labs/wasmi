@@ -93,7 +93,7 @@ macro_rules! handler_unary {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -108,7 +108,7 @@ macro_rules! handler_unary {
                     let value = args.get(value);
                     let value = $eval(value).into_control()?;
                     args.set(result, value);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -120,7 +120,7 @@ macro_rules! handler_binary {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -136,7 +136,7 @@ macro_rules! handler_binary {
                     let rhs = args.get(rhs);
                     let value = $eval(lhs, rhs).into_control()?;
                     args.set(result, value);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -148,7 +148,7 @@ macro_rules! handler_load {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -167,10 +167,10 @@ macro_rules! handler_load {
                     } = unsafe { args.decode_op() };
                     let ptr: u64 = args.get(ptr);
                     let offset: u64 = args.get(offset);
-                    let bytes = args.fetch_memory(state, memory).data();
+                    let bytes = args.fetch_memory(store, memory).data();
                     let loaded = $load(bytes, ptr, offset).into_control()?;
                     args.set(result, loaded);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -182,7 +182,7 @@ macro_rules! handler_load_mem0_offset16 {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -200,10 +200,10 @@ macro_rules! handler_load_mem0_offset16 {
                     } = unsafe { args.decode_op() };
                     let ptr = args.get(ptr);
                     let offset = args.get(offset);
-                    let bytes = args.fetch_default_memory_bytes(state);
+                    let bytes = args.fetch_default_memory_bytes(store);
                     let loaded = $load(bytes, ptr, u64::from(offset)).into_control()?;
                     args.set(result, loaded);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -215,7 +215,7 @@ macro_rules! handler_store {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -235,9 +235,9 @@ macro_rules! handler_store {
                     let ptr = args.get(ptr);
                     let offset = args.get(offset);
                     let value: $hint = args.get(value);
-                    let bytes = args.fetch_memory(state, memory).data_mut();
+                    let bytes = args.fetch_memory(store, memory).data_mut();
                     $store(bytes, ptr, offset, value.into()).into_control()?;
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -249,7 +249,7 @@ macro_rules! handler_store_mem0_offset16 {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -268,9 +268,9 @@ macro_rules! handler_store_mem0_offset16 {
                     let ptr = args.get(ptr);
                     let offset = args.get(offset);
                     let value: $hint = args.get(value);
-                    let bytes = args.fetch_default_memory_bytes(state);
+                    let bytes = args.fetch_default_memory_bytes(store);
                     $store(bytes, ptr, u64::from(offset), value.into()).into_control()?;
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*

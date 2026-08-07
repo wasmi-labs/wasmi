@@ -10,7 +10,7 @@ pub use self::simd::*;
 use super::{
     Args,
     dispatch::Done,
-    state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
+    state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp},
 };
 #[cfg(feature = "simd")]
 use crate::V128;
@@ -30,7 +30,7 @@ use crate::{
     },
     errors::{FuelError, MemoryError, TableError},
     ir::{self, BoundedSlotSpan},
-    store::StoreError,
+    store::{PrunedStore, StoreError},
 };
 use core::cmp;
 
@@ -40,7 +40,7 @@ fn identity<T>(value: T) -> T {
 
 execution_handler! {
     fn trap(
-        _state: &mut VmState,
+        _store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -58,7 +58,7 @@ execution_handler! {
 
 execution_handler! {
     fn consume_fuel(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -70,22 +70,21 @@ execution_handler! {
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::ConsumeFuel { fuel } = unsafe { args.decode_op() };
-        let consumption_result = state
-            .store
+        let consumption_result = store
             .inner_mut()
             .fuel_mut()
             .consume_fuel_unchecked(u64::from(fuel));
         if let Err(FuelError::OutOfFuel { required_fuel }) = consumption_result {
             args.set_ip(ip);
-            out_of_fuel!(state, args, required_fuel)
+            out_of_fuel!(store, args, required_fuel)
         }
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn branch(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -99,7 +98,7 @@ execution_handler! {
         let crate::ir::decode::Branch { offset } = unsafe { args.decode_op() };
         args.set_ip(ip);
         args.offset_ip(offset);
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
@@ -114,7 +113,7 @@ macro_rules! global_get_execution_handler {
             $( #[$attr] )*
             execution_handler! {
                 fn $snake_name(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -126,10 +125,10 @@ macro_rules! global_get_execution_handler {
                 ) -> Done = {
                     let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
                     let crate::ir::decode::$camel_name { global, result } = unsafe { args.decode_op() };
-                    let global = args.fetch_global(state, global);
+                    let global = args.fetch_global(store, global);
                     let value: $ty = global.get_raw().read_as();
                     args.set(result, value);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -155,7 +154,7 @@ macro_rules! global_set_execution_handler {
             $( #[$attr] )*
             execution_handler! {
                 fn $snake_name(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -167,12 +166,12 @@ macro_rules! global_set_execution_handler {
                 ) -> Done = {
                     let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
                     let crate::ir::decode::$camel_name { global, value } = unsafe { args.decode_op() };
-                    let global = args.fetch_global(state, global);
+                    let global = args.fetch_global(store, global);
                     let value: $ty = args.get(value);
                     let mut value_ptr = global.get_raw_ptr();
                     let global_ref = unsafe { value_ptr.as_mut() };
                     global_ref.write_as(value);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -192,7 +191,7 @@ global_set_execution_handler! {
 
 execution_handler! {
     fn r#return(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -203,14 +202,14 @@ execution_handler! {
         freg64: Freg64,
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
-        args.pop_frame(state)?;
-        dispatch!(state, args)
+        args.pop_frame(store)?;
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn call_internal(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -225,14 +224,14 @@ execution_handler! {
         // SAFETY: `func` is the exposed address of a `FuncEntry` in the engine's append-only
         //         `CodeMap`, baked into the bytecode; it stays valid while this bytecode runs.
         let func = unsafe { FuncEntryPtr::from(usize::from(func)).get() };
-        args.call_func_entry(state, func, params, None)?;
-        dispatch!(state, args)
+        args.call_func_entry(store, func, params, None)?;
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn call_imported(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -245,8 +244,8 @@ execution_handler! {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::CallImported { params, func } = unsafe { args.decode_op() };
         let (func, func_entity) = utils::load_func_entry(args.instance, func);
-        args.call_wasm_or_host_func(state, func, func_entity, params)?;
-        dispatch!(state, args)
+        args.call_wasm_or_host_func(store, func, func_entity, params)?;
+        dispatch!(store, args)
     }
 }
 
@@ -255,7 +254,7 @@ macro_rules! call_indirect_execution_handler {
         $(
             execution_handler! {
                 fn $snake_name(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -272,9 +271,9 @@ macro_rules! call_indirect_execution_handler {
                         params,
                         index,
                     } = unsafe { args.decode_op() };
-                    let (func, func_entity) = args.resolve_indirect_func(state, index, table, func_type)?;
-                    args.call_wasm_or_host_func(state, func, func_entity, params)?;
-                    dispatch!(state, args)
+                    let (func, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
+                    args.call_wasm_or_host_func(store, func, func_entity, params)?;
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -289,7 +288,7 @@ call_indirect_execution_handler! {
 
 execution_handler! {
     fn return_call_internal(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -303,14 +302,14 @@ execution_handler! {
         let crate::ir::decode::ReturnCallInternal { params, func } = unsafe { args.decode_op() };
         // SAFETY: see `call_internal`.
         let func = unsafe { FuncEntryPtr::from(usize::from(func)).get() };
-        args.return_call_func_entry(state, func, params, None)?;
-        dispatch!(state, args)
+        args.return_call_func_entry(store, func, params, None)?;
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn return_call_imported(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -323,8 +322,8 @@ execution_handler! {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::ReturnCallImported { params, func } = unsafe { args.decode_op() };
         let (func, func_entity) = utils::load_func_entry(instance, func);
-        args.return_call_wasm_or_host_func(state, func, func_entity, params)?;
-        dispatch!(state, args)
+        args.return_call_wasm_or_host_func(store, func, func_entity, params)?;
+        dispatch!(store, args)
     }
 }
 
@@ -333,7 +332,7 @@ macro_rules! return_call_indirect_execution_handler {
         $(
             execution_handler! {
                 fn $snake_name(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -350,9 +349,9 @@ macro_rules! return_call_indirect_execution_handler {
                         func_type,
                         table,
                     } = unsafe { args.decode_op() };
-                    let (func, func_entity) = args.resolve_indirect_func(state, index, table, func_type)?;
-                    args.return_call_wasm_or_host_func(state, func, func_entity, params)?;
-                    dispatch!(state, args)
+                    let (func, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
+                    args.return_call_wasm_or_host_func(store, func, func_entity, params)?;
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -367,7 +366,7 @@ return_call_indirect_execution_handler! {
 
 execution_handler! {
     fn memory_size(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -379,15 +378,15 @@ execution_handler! {
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::MemorySize { memory, result } = unsafe { args.decode_op() };
-        let size = args.fetch_memory(state, memory).size();
+        let size = args.fetch_memory(store, memory).size();
         args.set(result, size);
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn memory_grow(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -405,20 +404,20 @@ execution_handler! {
         } = unsafe { args.decode_op() };
         let delta: u64 = args.get(delta);
         let memref = unsafe { instance.load_handle(memory) };
-        let return_value = match state.store.grow_memory(&memref, delta) {
+        let return_value = match store.grow_memory(&memref, delta) {
             Ok(return_value) => {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
                 if utils::is_default_memory(instance, memory) {
-                    args.reload_mem0(state);
+                    args.reload_mem0();
                 }
                 return_value
             }
             Err(StoreError::External(
                 MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory,
             )) => {
-                let memory = unsafe { instance.load_entity_mut(state.store, memory) };
+                let memory = unsafe { instance.load_entity_mut(store, memory) };
                 let memory_ty = memory.ty();
                 match memory_ty.is_64() {
                     true => u64::MAX,
@@ -427,7 +426,7 @@ execution_handler! {
             }
             Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
                 args.set_ip(ip);
-                out_of_fuel!(state, args, required_fuel)
+                out_of_fuel!(store, args, required_fuel)
             }
             Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
                 trap!(TrapCode::GrowthOperationLimited);
@@ -440,13 +439,13 @@ execution_handler! {
             }
         };
         args.set(result, return_value);
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn memory_copy(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -477,8 +476,8 @@ execution_handler! {
             trap!(TrapCode::MemoryOutOfBounds)
         };
         if dst_memory == src_memory {
-            memory_copy_within(state, &mut args, ip, dst_memory, dst_index, src_index, len)?;
-            dispatch!(state, args)
+            memory_copy_within(store, &mut args, ip, dst_memory, dst_index, src_index, len)?;
+            dispatch!(store, args)
         }
         let src_ptr = unsafe { instance.load_entity_ptr(src_memory) };
         let mut dst_ptr = unsafe { instance.load_entity_ptr(dst_memory) };
@@ -486,32 +485,32 @@ execution_handler! {
             // Distinct memory indices can still resolve to the same store entity (e.g. the same
             // memory imported under two names), so branch on the resolved entity before forming
             // the aliasing references below.
-            memory_copy_within(state, &mut args, ip, dst_memory, dst_index, src_index, len)?;
-            dispatch!(state, args)
+            memory_copy_within(store, &mut args, ip, dst_memory, dst_index, src_index, len)?;
+            dispatch!(store, args)
         }
         // SAFETY: `src_ptr != dst_ptr`, so these are distinct entities whose references do not
         //         alias. These accesses just perform the bounds checks required by the Wasm spec.
         let src_memory = unsafe { src_ptr.as_ref() };
         let dst_memory = unsafe { dst_ptr.as_mut() };
-        let fuel = state.store.inner_mut().fuel_mut();
+        let fuel = store.inner_mut().fuel_mut();
         let src_bytes = utils::memory_slice(src_memory, src_index, len)
             .into_control()?;
         let dst_bytes = utils::memory_slice_mut(dst_memory, dst_index, len)
             .into_control()?;
         consume_fuel!(
-            state,
+            store,
             ip,
             args,
             fuel,
             |costs| costs.fuel_for_copying_values::<u8>(len as u64),
         );
         dst_bytes.copy_from_slice(src_bytes);
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
 fn memory_copy_within(
-    state: &mut VmState<'_>,
+    store: &mut PrunedStore,
     args: &mut Args,
     ip: Ip,
     dst_memory: ir::MemoryAddr,
@@ -521,11 +520,11 @@ fn memory_copy_within(
 ) -> Control<(), Break> {
     // SAFETY: `args.instance` is live and warmed up; `memory` is the only entity accessed here.
     let memory = unsafe { args.instance.load_entity_ptr(dst_memory).as_mut() };
-    let fuel = state.store.inner_mut().fuel_mut();
+    let fuel = store.inner_mut().fuel_mut();
     // These accesses just perform the bounds checks required by the Wasm spec.
     utils::memory_slice(memory, src_index, len).into_control()?;
     utils::memory_slice(memory, dst_index, len).into_control()?;
-    consume_fuel!(state, ip, args, fuel, |costs| costs
+    consume_fuel!(store, ip, args, fuel, |costs| costs
         .fuel_for_copying_values::<u8>(len as u64));
     memory
         .data_mut()
@@ -535,7 +534,7 @@ fn memory_copy_within(
 
 execution_handler! {
     fn memory_fill(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -563,17 +562,17 @@ execution_handler! {
         };
         // SAFETY: `instance` is live and warmed up; `memory` is the only entity accessed here.
         let memory = unsafe { instance.load_entity_ptr(memory).as_mut() };
-        let fuel = state.store.inner_mut().fuel_mut();
+        let fuel = store.inner_mut().fuel_mut();
         let slice = utils::memory_slice_mut(memory, dst, len).into_control()?;
-        consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
+        consume_fuel!(store, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         slice.fill(value);
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn memory_init(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -607,7 +606,7 @@ execution_handler! {
         // arenas, so their references are to distinct entities and cannot alias.
         let memory = unsafe { instance.load_entity_ptr(memory).as_mut() };
         let data = unsafe { instance.load_entity_ptr(data).as_ref() };
-        let fuel = state.store.inner_mut().fuel_mut();
+        let fuel = store.inner_mut().fuel_mut();
         let memory = utils::memory_slice_mut(memory, dst_index, len).into_control()?;
         let Some(data) = data
             .bytes()
@@ -616,15 +615,15 @@ execution_handler! {
         else {
             trap!(TrapCode::MemoryOutOfBounds)
         };
-        consume_fuel!(state, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
+        consume_fuel!(store, ip, args, fuel, |costs| costs.fuel_for_copying_values::<u8>(len as u64));
         memory.copy_from_slice(data);
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn data_drop(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -636,14 +635,14 @@ execution_handler! {
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::DataDrop { data } = unsafe { args.decode_op() };
-        args.fetch_data(state, data).drop_bytes();
-        dispatch!(state, args)
+        args.fetch_data(store, data).drop_bytes();
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn table_size(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -655,15 +654,15 @@ execution_handler! {
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::TableSize { table, result } = unsafe { args.decode_op() };
-        let size = args.fetch_table(state, table).size();
+        let size = args.fetch_table(store, table).size();
         args.set(result, size);
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn table_grow(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -683,17 +682,17 @@ execution_handler! {
         let table_ref = unsafe { instance.load_handle(table) };
         let delta = args.get(delta);
         let value = args.get(value);
-        let return_value = match state.store.grow_table(&table_ref, delta, value) {
+        let return_value = match store.grow_table(&table_ref, delta, value) {
             Ok(return_value) => return_value,
             Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
-                let table = unsafe { instance.load_entity_mut(state.store, table) };
+                let table = unsafe { instance.load_entity_mut(store, table) };
                 match table.ty().is_64() {
                     true => u64::MAX,
                     false => u64::from(u32::MAX),
                 }
             }
             Err(StoreError::External(TableError::OutOfFuel { required_fuel })) => {
-                done!(state, DoneReason::out_of_fuel(required_fuel));
+                done!(store, DoneReason::out_of_fuel(required_fuel));
             }
             Err(StoreError::External(TableError::ResourceLimiterDeniedAllocation)) => {
                 trap!(TrapCode::GrowthOperationLimited);
@@ -706,13 +705,13 @@ execution_handler! {
             }
         };
         args.set(result, return_value);
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn table_copy(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -741,7 +740,7 @@ execution_handler! {
             // Case: copy within the same table.
             // SAFETY: `dst_ptr` is warmed up and is the only entity accessed here.
             let table = unsafe { dst_ptr.as_mut() };
-            let fuel = state.store.inner_mut().fuel_mut();
+            let fuel = store.inner_mut().fuel_mut();
             table.copy_within(dst, src, len, Some(fuel))
         } else {
             // Case: copy between two distinct tables.
@@ -749,7 +748,7 @@ execution_handler! {
             //         not alias.
             let src_table = unsafe { src_ptr.as_ref() };
             let dst_table = unsafe { dst_ptr.as_mut() };
-            let fuel = state.store.inner_mut().fuel_mut();
+            let fuel = store.inner_mut().fuel_mut();
             CoreTable::copy(dst_table, dst, src_table, src, len, Some(fuel))
         };
         if let Err(error) = result {
@@ -758,19 +757,19 @@ execution_handler! {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::OutOfFuel { required_fuel } => {
                     args.set_ip(ip);
-                    out_of_fuel!(state, args, required_fuel)
+                    out_of_fuel!(store, args, required_fuel)
                 }
                 _ => panic!("table.copy: unexpected error: {error}"),
             };
             trap!(trap_code)
         }
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn table_fill(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -792,26 +791,26 @@ execution_handler! {
         let value: RawRef = args.get(value);
         // SAFETY: `instance` is live and warmed up; `table` is the only entity accessed here.
         let table = unsafe { instance.load_entity_ptr(table).as_mut() };
-        let fuel = state.store.inner_mut().fuel_mut();
+        let fuel = store.inner_mut().fuel_mut();
         if let Err(error) = table.fill_raw(dst, value, len, Some(fuel)) {
             let trap_code = match error {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::FillOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfFuel { required_fuel } => {
                     args.set_ip(ip);
-                    out_of_fuel!(state, args, required_fuel)
+                    out_of_fuel!(store, args, required_fuel)
                 }
                 _ => panic!("table.fill: unexpected error: {error}"),
             };
             trap!(trap_code)
         }
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn table_init(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -836,26 +835,26 @@ execution_handler! {
         //         arenas, so their references are to distinct entities and cannot alias.
         let table = unsafe { args.instance.load_entity_ptr(table).as_mut() };
         let element = unsafe { args.instance.load_entity_ptr(elem).as_ref() };
-        let fuel = state.store.inner_mut().fuel_mut();
+        let fuel = store.inner_mut().fuel_mut();
         if let Err(error) = table.init(element.as_ref(), dst, src, len, Some(fuel)) {
             let trap_code = match error {
                 TableError::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
                 TableError::InitOutOfBounds => TrapCode::TableOutOfBounds,
                 TableError::OutOfFuel { required_fuel } => {
                     args.set_ip(ip);
-                    out_of_fuel!(state, args, required_fuel)
+                    out_of_fuel!(store, args, required_fuel)
                 }
                 _ => panic!("table.init: unexpected error: {error}"),
             };
             trap!(trap_code)
         }
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
 execution_handler! {
     fn elem_drop(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -867,8 +866,8 @@ execution_handler! {
     ) -> Done = {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::ElemDrop { elem } = unsafe { args.decode_op() };
-        args.fetch_elem(state, elem).drop_items();
-        dispatch!(state, args)
+        args.fetch_elem(store, elem).drop_items();
+        dispatch!(store, args)
     }
 }
 
@@ -877,7 +876,7 @@ macro_rules! impl_table_get {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -889,13 +888,13 @@ macro_rules! impl_table_get {
                 ) -> Done = {
                     let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
                     let crate::ir::decode::$op { table, result, index } = unsafe { args.decode_op() };
-                    let table = args.fetch_table(state, table);
+                    let table = args.fetch_table(store, table);
                     let index = $ext(args.get(index));
                     let Some(value) = table.get(index) else {
                         trap!(TrapCode::TableOutOfBounds)
                     };
                     args.set(result, value.raw());
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -912,7 +911,7 @@ macro_rules! impl_table_set {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -924,13 +923,13 @@ macro_rules! impl_table_set {
                 ) -> Done = {
                     let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
                     let crate::ir::decode::$op { table, index, value } = unsafe { args.decode_op() };
-                    let table = args.fetch_table(state, table);
+                    let table = args.fetch_table(store, table);
                     let index = $ext(args.get(index));
                     let value: u32 = args.get(value);
                     if let Err(TableError::SetOutOfBounds) = table.set_raw(index, RawRef::from(value)) {
                         trap!(TrapCode::TableOutOfBounds)
                     };
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -949,7 +948,7 @@ impl_table_set! {
 
 execution_handler! {
     fn ref_func(
-        state: &mut VmState,
+        store: &mut PrunedStore,
         ip: Ip,
         sp: Sp,
         mem0: Mem0Ptr,
@@ -962,11 +961,11 @@ execution_handler! {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::RefFunc { func, result } = unsafe { args.decode_op() };
         let func = unsafe { instance.load_handle(func) };
-        let Some(rawref) = func.unwrap_raw(&*state.store) else {
+        let Some(rawref) = func.unwrap_raw(&*store) else {
             unsafe { unreachable_unchecked!("store mismatch with: {func:?}") }
         };
         args.set(result, rawref);
-        dispatch!(state, args)
+        dispatch!(store, args)
     }
 }
 
@@ -977,7 +976,7 @@ macro_rules! impl_i64_binop128 {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -997,7 +996,7 @@ macro_rules! impl_i64_binop128 {
                     let (result_lo, result_hi) = $eval(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
                     args.set(results[0], result_lo);
                     args.set(results[1], result_hi);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -1015,7 +1014,7 @@ macro_rules! impl_i64_mul_wide {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -1033,7 +1032,7 @@ macro_rules! impl_i64_mul_wide {
                     let results = results.to_array();
                     args.set(results[0], result_lo);
                     args.set(results[1], result_hi);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -1103,7 +1102,7 @@ macro_rules! impl_branch_table_exec_handler {
         $(
             execution_handler! {
                 fn $snake_case(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -1116,7 +1115,7 @@ macro_rules! impl_branch_table_exec_handler {
                     let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
                     let crate::ir::decode::$camel_case { len_targets, index, values } = unsafe { args.decode() };
                     $exec(&mut args, index, len_targets, values);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -1808,7 +1807,7 @@ macro_rules! handler_cmp_branch {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -1826,7 +1825,7 @@ macro_rules! handler_cmp_branch {
                         args.set_ip(ip);
                         args.offset_ip(offset);
                     }
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -2045,7 +2044,7 @@ macro_rules! handler_select {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -2068,7 +2067,7 @@ macro_rules! handler_select {
                     let selected = if condition != 0 { true_val } else { false_val };
                     let selected = args.get(selected);
                     args.set(result, selected);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -2181,7 +2180,7 @@ macro_rules! handler_load_ri {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -2198,10 +2197,10 @@ macro_rules! handler_load_ri {
                         memory,
                     } = unsafe { args.decode_op() };
                     let address = args.get(address);
-                    let bytes = args.fetch_memory(state, memory).data();
+                    let bytes = args.fetch_memory(store, memory).data();
                     let loaded = $load(bytes, usize::from(address)).into_control()?;
                     args.set(result, loaded);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -2339,7 +2338,7 @@ macro_rules! handler_store_ix {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -2357,9 +2356,9 @@ macro_rules! handler_store_ix {
                     } = unsafe { args.decode_op() };
                     let address = args.get(address);
                     let value: $hint = args.get(value);
-                    let bytes = args.fetch_memory(state, memory).data_mut();
+                    let bytes = args.fetch_memory(store, memory).data_mut();
                     $store(bytes, usize::from(address), value.into()).into_control()?;
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*

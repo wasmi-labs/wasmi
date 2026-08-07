@@ -13,7 +13,7 @@ use crate::{
     Table,
     collections::arena::{Arena, ArenaError, ArenaKey, StableArena},
     core::{CoreElementSegment, CoreGlobal, CoreMemory, CoreTable, Fuel},
-    engine::{DedupFuncType, Inst},
+    engine::{DedupFuncType, ExecContext, Inst},
     memory::DataSegment,
     reftype::{ExternRef, ExternRefEntity},
     store::{
@@ -103,6 +103,15 @@ where
 /// The inner store that owns all data not associated to the host state.
 #[derive(Debug)]
 pub struct StoreInner {
+    /// The execution context in use by the Wasmi executor.
+    ///
+    /// # Note
+    ///
+    /// This is an opaque black-box owned by the executor. It is stored inline so that
+    /// execution handlers reach both the store and the [`Stack`] with a single load.
+    ///
+    /// [`Stack`]: crate::engine::Stack
+    exec: ExecContext,
     /// The unique store index.
     ///
     /// Used to protect against invalid entity indices.
@@ -154,6 +163,7 @@ impl StoreInner {
         let fuel = Fuel::new(fuel_enabled, fuel_costs);
         let features = config.wasm_features();
         StoreInner {
+            exec: ExecContext::default(),
             engine: engine.clone(),
             id: StoreId::new(),
             funcs: StableArena::new(),
@@ -179,12 +189,20 @@ impl StoreInner {
         self.id
     }
 
+    /// Returns an exclusive reference to the [`ExecContext`].
+    #[inline]
+    pub fn exec_mut(&mut self) -> &mut ExecContext {
+        &mut self.exec
+    }
+
     /// Returns an exclusive reference to the [`Fuel`] counters.
+    #[inline]
     pub fn fuel_mut(&mut self) -> &mut Fuel {
         &mut self.fuel
     }
 
     /// Returns the [`Fuel`] counters and the [`WasmFeatures`] required for lazy compilation.
+    #[inline]
     pub fn fuel_and_features(&mut self) -> (&mut Fuel, &WasmFeatures) {
         (&mut self.fuel, &self.features)
     }

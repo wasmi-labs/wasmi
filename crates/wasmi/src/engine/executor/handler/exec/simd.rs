@@ -8,9 +8,10 @@ use crate::{
     engine::executor::handler::{
         Args,
         dispatch::Done,
-        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp, VmState},
+        state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp},
         utils::IntoControl as _,
     },
+    store::PrunedStore,
 };
 use core::convert::identity;
 
@@ -19,7 +20,7 @@ macro_rules! execution_handler_for_v128_select {
         $(
             execution_handler! {
                 fn $snake_name(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -43,7 +44,7 @@ macro_rules! execution_handler_for_v128_select {
                     };
                     let selected: V128 = args.get(selected);
                     args.set(result, selected);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -322,7 +323,7 @@ macro_rules! handler_extract_lane {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -341,7 +342,7 @@ macro_rules! handler_extract_lane {
                     let value = args.get(value);
                     let extracted = $eval(value, lane);
                     args.set(result, extracted);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -382,7 +383,7 @@ macro_rules! handler_extract_lane {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -403,7 +404,7 @@ macro_rules! handler_extract_lane {
                     let value = args.get(value);
                     let replaced = $eval(v128, lane, value);
                     args.set(result, replaced);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -431,7 +432,7 @@ macro_rules! handler_ternary {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -448,7 +449,7 @@ macro_rules! handler_ternary {
                     let $v2 = args.get($v2);
                     let value = $eval($v0, $v1, $v2).into_control()?;
                     args.set(result, value);
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -490,7 +491,7 @@ macro_rules! handler_store_lane_ss {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -505,9 +506,9 @@ macro_rules! handler_store_lane_ss {
                     let ptr = args.get(ptr);
                     let offset = args.get(offset);
                     let value = args.get(value);
-                    let bytes = args.fetch_memory(state, memory).data_mut();
+                    let bytes = args.fetch_memory(store, memory).data_mut();
                     $eval(bytes, ptr, offset, value, lane).into_control()?;
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*
@@ -525,7 +526,7 @@ macro_rules! handler_store_lane_mem0_offset16_ss {
         $(
             execution_handler! {
                 fn $handler(
-                    state: &mut VmState,
+                    store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
                     mem0: Mem0Ptr,
@@ -540,9 +541,9 @@ macro_rules! handler_store_lane_mem0_offset16_ss {
                     let ptr = args.get(ptr);
                     let offset = args.get(offset);
                     let value = args.get(value);
-                    let bytes = args.fetch_default_memory_bytes(state);
+                    let bytes = args.fetch_default_memory_bytes(store);
                     $eval(bytes, ptr, u64::from(offset), value, lane).into_control()?;
-                    dispatch!(state, args)
+                    dispatch!(store, args)
                 }
             }
         )*

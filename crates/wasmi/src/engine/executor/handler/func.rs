@@ -8,7 +8,7 @@ use crate::{
         LowerToCells,
         executor::handler::{
             dispatch::{ExecutionOutcome, execute_until_done},
-            state::{Freg32, Freg64, HostFrame, Inst, Ip, Ireg, Sp, Stack, VmState},
+            state::{Freg32, Freg64, Inst, Ip, Ireg, Sp},
             utils,
         },
     },
@@ -20,7 +20,6 @@ use core::marker::PhantomData;
 
 pub struct WasmFuncCall<'a, T, State> {
     store: &'a mut Store<T>,
-    stack: &'a mut Stack,
     callee_ip: Ip,
     callee_sp: Sp,
     instance: Inst,
@@ -34,7 +33,6 @@ impl<'a, T, State> WasmFuncCall<'a, T, State> {
     fn new_state<NewState>(self, state: NewState) -> WasmFuncCall<'a, T, NewState> {
         WasmFuncCall {
             store: self.store,
-            stack: self.stack,
             callee_ip: self.callee_ip,
             callee_sp: self.callee_sp,
             instance: self.instance,
@@ -47,8 +45,11 @@ impl<'a, T, State> WasmFuncCall<'a, T, State> {
 }
 
 mod state {
-    use super::{HostFrame, Sp};
-    use crate::{engine::InOutParams, func::Trampoline};
+    use super::Sp;
+    use crate::{
+        engine::{InOutParams, executor::handler::state::HostFrame},
+        func::Trampoline,
+    };
     use core::marker::PhantomData;
 
     pub type Uninit = PhantomData<marker::Uninit>;
@@ -104,11 +105,10 @@ impl<'a, T, State: state::Execute> WasmFuncCall<'a, T, State> {
     }
 
     fn execute_until_done(&mut self) -> Result<Sp, ExecutionOutcome> {
-        let store = self.store.prune();
-        let (mem0, mem0_len) = utils::extract_mem0(store, self.instance);
-        let mut state = VmState::new(store, self.stack);
+        let pruned = self.store.prune();
+        let (mem0, mem0_len) = utils::extract_mem0(self.instance);
         execute_until_done(
-            &mut state,
+            pruned,
             self.callee_ip,
             self.callee_sp,
             mem0,
@@ -151,12 +151,18 @@ impl<'a, T> WasmFuncCall<'a, T, state::Done> {
     }
 }
 
-pub fn init_wasm_func_call<'a, T>(
-    store: &'a mut Store<T>,
-    stack: &'a mut Stack,
+/// Initializes a call to the Wasm function behind `func_entry`.
+///
+/// # Note
+///
+/// Uses the [`Stack`] installed in `store`, see `with_stack`.
+///
+/// [`Stack`]: crate::engine::Stack
+pub fn init_wasm_func_call<T>(
+    store: &mut Store<T>,
     func_entry: FuncEntryPtr,
     instance: Inst,
-) -> Result<WasmFuncCall<'a, T, state::Uninit>, Error> {
+) -> Result<WasmFuncCall<'_, T, state::Uninit>, Error> {
     // SAFETY: `func_entry` stems from a `WasmFuncEntity` owned by `store`, thus the engine
     //         owning the `FuncEntry` outlives this call.
     let func_entry = unsafe { func_entry.get() };
@@ -170,6 +176,7 @@ pub fn init_wasm_func_call<'a, T>(
     //       an easy and efficient way to get the number of parameter cells at this point
     //       so we simply default to 0.
     let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), 0);
+    let stack = store.inner.exec_mut().stack_mut();
     // Note: the call stack is empty here, so the first frame starts at the value stack base.
     let caller_sp = stack.base_sp();
     let callee_sp = stack.push_frame(
@@ -184,7 +191,6 @@ pub fn init_wasm_func_call<'a, T>(
     let (ireg, freg32, freg64) = stack.regs();
     Ok(WasmFuncCall {
         store,
-        stack,
         callee_ip,
         callee_sp,
         instance,
@@ -195,14 +201,13 @@ pub fn init_wasm_func_call<'a, T>(
     })
 }
 
-pub fn resume_wasm_func_call<'a, T>(
-    store: &'a mut Store<T>,
-    stack: &'a mut Stack,
-) -> Result<WasmFuncCall<'a, T, state::Resumed>, Error> {
-    let (callee_ip, callee_sp, instance, ireg, freg32, freg64) = stack.restore_frame();
+pub fn resume_wasm_func_call<T>(
+    store: &mut Store<T>,
+) -> Result<WasmFuncCall<'_, T, state::Resumed>, Error> {
+    let (callee_ip, callee_sp, instance, ireg, freg32, freg64) =
+        store.inner.exec_mut().stack_mut().restore_frame();
     Ok(WasmFuncCall {
         store,
-        stack,
         callee_ip,
         callee_sp,
         instance,
@@ -215,17 +220,19 @@ pub fn resume_wasm_func_call<'a, T>(
 
 pub fn init_host_func_call<'a, T>(
     store: &'a mut Store<T>,
-    stack: &'a mut Stack,
     func: HostFuncEntity,
 ) -> Result<HostFuncCall<'a, T, state::UninitHost>, Error> {
     let len_param_cells = func.len_param_cells();
     let len_result_cells = func.len_result_cells();
     let trampoline = *func.trampoline();
     let callee_params = BoundedSlotSpan::new(SlotSpan::new(Slot::from(0)), len_param_cells);
-    let (sp, frame) = stack.prepare_host_frame(None, callee_params, len_result_cells)?;
+    let (sp, frame) = store.inner.exec_mut().stack_mut().prepare_host_frame(
+        None,
+        callee_params,
+        len_result_cells,
+    )?;
     Ok(HostFuncCall {
         store,
-        stack,
         state: state::UninitHost {
             sp,
             frame,
@@ -237,7 +244,6 @@ pub fn init_host_func_call<'a, T>(
 #[derive(Debug)]
 pub struct HostFuncCall<'a, T, State> {
     store: &'a mut Store<T>,
-    stack: &'a mut Stack,
     state: State,
 }
 
@@ -257,10 +263,9 @@ impl<'a, T> HostFuncCall<'a, T, state::UninitHost> {
         };
         // Note: the `InOutParams` must be derived _after_ the parameters have been written above,
         //       since writing through `sp` invalidates its pointer. See `Stack::host_inout`.
-        let inout = self.stack.host_inout(frame);
+        let inout = self.store.inner.exec_mut().stack_mut().host_inout(frame);
         HostFuncCall {
             store: self.store,
-            stack: self.stack,
             state: state::InitHost {
                 sp,
                 inout,
@@ -289,7 +294,6 @@ impl<'a, T> HostFuncCall<'a, T, state::InitHost> {
         }
         Ok(HostFuncCall {
             store: self.store,
-            stack: self.stack,
             state: state::Done { sp },
         })
     }
