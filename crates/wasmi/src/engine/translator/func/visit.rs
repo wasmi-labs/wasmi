@@ -11,7 +11,6 @@ use crate::{
     core::{FuelCostsProvider, IndexType, RawRef, RawVal, TypedRawRef, TypedRawVal, wasm},
     engine::{
         BlockType,
-        WasmOperator,
         translator::{
             comparator::UpdateBranchOffset,
             func::{
@@ -90,14 +89,6 @@ impl FuncTranslator {
     pub fn translate_unsupported_operator(&self, name: &str) -> Result<(), Error> {
         panic!("tried to translate an unsupported Wasm operator: {name}")
     }
-}
-
-/// Initiates translation of the Wasm operator `wasm_op` and bails out if the operator is unreachable.
-macro_rules! prepare_wasm_operator {
-    ( $this:expr, $wasm_op:expr ) => {{
-        $this.bump_fuel_for_operator($wasm_op)?;
-        bail_unreachable!($this);
-    }};
 }
 
 impl<'a> VisitOperator<'a> for FuncTranslator {
