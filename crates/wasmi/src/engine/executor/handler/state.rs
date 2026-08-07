@@ -147,7 +147,7 @@ impl ExecContext {
 /// updated manually which is a bit costly which is why the most common reason
 /// which is a raised [`TrapCode`] is not included in this `enum` and was put
 /// into the return type of execution handlers directly, instead.
-/// 
+///
 /// [`PrunedStore`]: crate::store::PrunedStore
 #[derive(Debug)]
 pub enum DoneReason {
