@@ -138,17 +138,13 @@ impl EngineInner {
         Results: LiftFromCells,
     {
         let caller_results = invocation.caller_results();
-        let outcome = resume_func(
-            ctx.store,
-            &mut invocation.common,
-            |store: &mut Store<T>| -> Result<<Results as LiftFromCells>::Value, ExecutionOutcome> {
-                let value = resume_wasm_func_call(store)?
-                    .provide_host_results(params, caller_results)
-                    .execute()?
-                    .write_results(results);
-                Ok(value)
-            },
-        );
+        let outcome = resume_func(ctx.store, &mut invocation.common, |store| {
+            let value = resume_wasm_func_call(store)?
+                .provide_host_results(params, caller_results)
+                .execute()?
+                .write_results(results);
+            Ok(value)
+        });
         let results = match outcome {
             Ok(results) => results,
             Err(ExecutionOutcome::Host(error)) => {
