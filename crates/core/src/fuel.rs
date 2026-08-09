@@ -3,21 +3,37 @@ use core::{
     error::Error,
     fmt::{self, Debug},
     mem,
-    num::NonZeroU64,
 };
 
 /// Fuel costs for Wasmi IR instructions.
 pub trait FuelCosts {
     /// Returns the amount of bytes that can be copied for a single unit of fuel.
-    fn bytes_per_fuel(&self) -> NonZeroU64;
+    fn bytes_copied_per_fuel(&self) -> u32;
+
+    /// Returns the amount of fuel required to translate one byte from Wasm bytecode to Wasmi IR.
+    fn fuel_per_bytes_translated(&self) -> u32;
+
+    /// Returns the amount of fuel required to validate one byte of Wasm bytecode.
+    fn fuel_per_bytes_validated(&self) -> u32;
 }
 
 /// Implementation of default [`FuelCostsProvider`].
 struct DefaultFuelCosts;
 
 impl FuelCosts for DefaultFuelCosts {
-    fn bytes_per_fuel(&self) -> NonZeroU64 {
-        NonZeroU64::new(64).unwrap()
+    #[inline]
+    fn bytes_copied_per_fuel(&self) -> u32 {
+        64
+    }
+
+    #[inline]
+    fn fuel_per_bytes_translated(&self) -> u32 {
+        7
+    }
+
+    #[inline]
+    fn fuel_per_bytes_validated(&self) -> u32 {
+        2
     }
 }
 
@@ -30,20 +46,59 @@ pub struct FuelCostsProvider {
 
 impl Debug for FuelCostsProvider {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let bytes_per_fuel = self.bytes_per_fuel();
+        let bytes_per_fuel = self.bytes_copied_per_fuel();
+        let fuel_per_bytes_translated = self.fuel_per_bytes_translated();
+        let fuel_per_bytes_validated = self.fuel_per_bytes_validated();
         f.debug_struct("FuelCostsProvider")
-            .field("bytes_per_fuel", &bytes_per_fuel)
+            .field("bytes_copied_per_fuel", &bytes_per_fuel)
+            .field("fuel_per_bytes_translated", &fuel_per_bytes_translated)
+            .field("fuel_per_bytes_validated", &fuel_per_bytes_validated)
             .finish()
     }
 }
 
 impl FuelCostsProvider {
-    /// Returns the number of bytes that can be copied per unit of fuel.
-    fn bytes_per_fuel(&self) -> NonZeroU64 {
+    /// Returns either the default or the custom fuel costs for `f`.
+    fn get_costs(&self, f: impl FnOnce(&(dyn FuelCosts + 'static)) -> u32) -> u32 {
         match self.custom.as_deref() {
-            Some(costs) => costs.bytes_per_fuel(),
-            None => DefaultFuelCosts.bytes_per_fuel(),
+            Some(costs) => f(costs),
+            None => f(&DefaultFuelCosts),
         }
+    }
+
+    /// Returns the number of bytes that can be copied per unit of fuel.
+    fn bytes_copied_per_fuel(&self) -> u32 {
+        self.get_costs(FuelCosts::bytes_copied_per_fuel)
+    }
+
+    /// Returns the amount of fuel required to translate one byte from Wasm bytecode to Wasmi IR.
+    fn fuel_per_bytes_translated(&self) -> u32 {
+        self.get_costs(FuelCosts::fuel_per_bytes_translated)
+    }
+
+    /// Returns the amount of fuel required to validate one byte of Wasm bytecode.
+    fn fuel_per_bytes_validated(&self) -> u32 {
+        self.get_costs(FuelCosts::fuel_per_bytes_validated)
+    }
+
+    /// Returns the amount of fuel required to translate `len_bytes` of Wasm bytecode.
+    ///
+    /// # Note
+    ///
+    /// - On overflow this returns [`u64::MAX`].
+    pub fn fuel_for_translating_bytes(&self, len_bytes: u64) -> u64 {
+        let fuel_per_bytes = self.fuel_per_bytes_translated();
+        len_bytes.saturating_mul(u64::from(fuel_per_bytes))
+    }
+
+    /// Returns the amount of fuel required to validate `len_bytes` of Wasm bytecode.
+    ///
+    /// # Note
+    ///
+    /// - On overflow this returns [`u64::MAX`].
+    pub fn fuel_for_validating_bytes(&self, len_bytes: u64) -> u64 {
+        let fuel_per_bytes = self.fuel_per_bytes_validated();
+        len_bytes.saturating_mul(u64::from(fuel_per_bytes))
     }
 
     /// Returns the fuel costs for `len_bytes` byte copies in Wasmi IR.
@@ -66,7 +121,11 @@ impl FuelCostsProvider {
     ///     - `table.fill` (+ variants)
     ///     - `table.init` (+ variants)
     fn fuel_for_copying_bytes(&self, len_bytes: u64) -> u64 {
-        len_bytes / self.bytes_per_fuel()
+        let bytes_per_fuel = self.bytes_copied_per_fuel();
+        if bytes_per_fuel == 0 {
+            return u64::MAX;
+        }
+        len_bytes.saturating_div(u64::from(bytes_per_fuel))
     }
 
     /// Returns the fuel costs for copying `len` items of type `T`.
