@@ -1,5 +1,6 @@
 use super::{EnforcedLimits, StackConfig};
 use crate::{
+    CustomFuelCosts,
     core::FuelCostsProvider,
     engine::{OperatorCost, OperatorCostStrategy},
 };
@@ -411,6 +412,22 @@ impl Config {
     /// Returns the [`OperatorCostStrategy`] of `self`.
     pub(crate) fn get_operator_cost(&self) -> &OperatorCostStrategy {
         &self.operator_cost
+    }
+
+    /// Configures the dynamic fuel cost.
+    ///
+    /// This affects the following areas:
+    ///
+    /// - Lazy translation and validation of functions.
+    ///     - For example if [`CompilationMode::Lazy`] or [`CompilationMode::LazyTranslation`] is used.
+    /// - Copying bytes or values in the following Wasm operator executions:
+    ///     - `memory.{grow,copy,fill,init}`
+    ///     - `table.{grow,copy,fill,init}`
+    ///
+    /// This is only relevant when [`Config::consume_fuel`] is enabled.
+    pub fn fuel_cost(&mut self, cost: CustomFuelCosts) -> &mut Self {
+        self.fuel_costs = FuelCostsProvider::custom(cost);
+        self
     }
 
     /// Returns the configured [`FuelCostsProvider`].
