@@ -681,33 +681,6 @@ impl<'a> ir::Encoder for SliceEncoder<'a> {
     }
 }
 
-/// Convenience trait to wrap type usable as fuel costs selectors.
-pub trait FuelCostsSelector {
-    /// Selects the fuel usage from the [`FuelCostsProvider`].
-    fn select(self, costs: &FuelCostsProvider) -> FuelUsed;
-}
-
-impl<T> FuelCostsSelector for T
-where
-    T: FnOnce(&FuelCostsProvider) -> FuelUsed,
-{
-    fn select(self, costs: &FuelCostsProvider) -> FuelUsed {
-        self(costs)
-    }
-}
-
-impl FuelCostsSelector for BlockFuel {
-    fn select(self, _costs: &FuelCostsProvider) -> FuelUsed {
-        FuelUsed::from(self)
-    }
-}
-
-impl FuelCostsSelector for FuelUsed {
-    fn select(self, _costs: &FuelCostsProvider) -> FuelUsed {
-        self
-    }
-}
-
 /// Encodes an [`OpCode`] to a generic [`ir::Encoder`].
 fn encode_op_code<E: ir::Encoder>(encoder: &mut E, code: OpCode) -> Result<E::Pos, E::Error> {
     match cfg!(feature = "indirect-dispatch") {

@@ -8,39 +8,6 @@ use core::{
 
 /// Fuel costs for Wasmi IR instructions.
 pub trait FuelCosts {
-    /// Returns the base fuel costs for all Wasmi IR instructions.
-    fn base(&self) -> u64;
-
-    /// Returns the base fuel costs for all Wasmi IR `load` instructions.
-    fn load(&self) -> u64 {
-        self.base()
-    }
-
-    /// Returns the base fuel costs for all Wasmi IR `instance` instructions.
-    ///
-    /// # Note
-    ///
-    /// Entity-based instructions access or modify instance related data,
-    /// such as globals, memories, tables or functions.
-    fn instance(&self) -> u64 {
-        self.base()
-    }
-
-    /// Returns the base fuel costs for all Wasmi IR `store` instructions.
-    fn store(&self) -> u64 {
-        self.base()
-    }
-
-    /// Returns the base fuel costs for all Wasmi IR `call` instructions.
-    fn call(&self) -> u64 {
-        self.base()
-    }
-
-    /// Returns the base fuel costs for all Wasmi IR `simd` instructions.
-    fn simd(&self) -> u64 {
-        self.base()
-    }
-
     /// Returns the amount of bytes that can be copied for a single unit of fuel.
     fn bytes_per_fuel(&self) -> NonZeroU64;
 }
@@ -49,10 +16,6 @@ pub trait FuelCosts {
 struct DefaultFuelCosts;
 
 impl FuelCosts for DefaultFuelCosts {
-    fn base(&self) -> u64 {
-        1
-    }
-
     fn bytes_per_fuel(&self) -> NonZeroU64 {
         NonZeroU64::new(64).unwrap()
     }
@@ -67,64 +30,14 @@ pub struct FuelCostsProvider {
 
 impl Debug for FuelCostsProvider {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let base = self.base();
-        let instance = self.instance();
-        let load = self.load();
-        let store = self.store();
-        let call = self.call();
-        let simd = self.simd();
         let bytes_per_fuel = self.bytes_per_fuel();
         f.debug_struct("FuelCostsProvider")
-            .field("base", &base)
-            .field("instance", &instance)
-            .field("load", &load)
-            .field("store", &store)
-            .field("call", &call)
-            .field("simd", &simd)
             .field("bytes_per_fuel", &bytes_per_fuel)
             .finish()
     }
 }
 
 impl FuelCostsProvider {
-    /// Applies `f` to either `self.custom` or [`DefaultFuelCosts`] if `self.custom` is `None`.
-    fn apply(&self, f: impl FnOnce(&dyn FuelCosts) -> u64) -> u64 {
-        match self.custom.as_deref() {
-            Some(costs) => f(costs),
-            None => f(&DefaultFuelCosts),
-        }
-    }
-
-    /// Returns the base fuel costs for all Wasmi IR instructions.
-    pub fn base(&self) -> u64 {
-        self.apply(|c| c.base())
-    }
-
-    /// Returns the fuel costs for all Wasmi IR `instance` related instructions.
-    pub fn instance(&self) -> u64 {
-        self.apply(|c: &dyn FuelCosts| c.instance())
-    }
-
-    /// Returns the fuel costs for all Wasmi IR `load` instructions.
-    pub fn load(&self) -> u64 {
-        self.apply(|c: &dyn FuelCosts| c.load())
-    }
-
-    /// Returns the fuel costs for all Wasmi IR `store` instructions.
-    pub fn store(&self) -> u64 {
-        self.apply(|c: &dyn FuelCosts| c.store())
-    }
-
-    /// Returns the fuel costs for all Wasmi IR `call` instructions.
-    pub fn call(&self) -> u64 {
-        self.apply(|c: &dyn FuelCosts| c.call())
-    }
-
-    /// Returns the fuel costs for all Wasmi IR `simd` instructions.
-    pub fn simd(&self) -> u64 {
-        self.apply(|c: &dyn FuelCosts| c.simd())
-    }
-
     /// Returns the number of bytes that can be copied per unit of fuel.
     fn bytes_per_fuel(&self) -> NonZeroU64 {
         match self.custom.as_deref() {
