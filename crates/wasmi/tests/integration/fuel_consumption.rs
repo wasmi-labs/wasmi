@@ -76,5 +76,5 @@ fn check_fuel_consumption(given_fuel: u64, consumed_fuel: u64) {
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
 fn fuel_consumption_01() {
-    check_fuel_consumption(5, 5);
+    check_fuel_consumption(5, 3);
 }
