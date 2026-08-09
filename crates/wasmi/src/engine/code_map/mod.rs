@@ -844,26 +844,6 @@ impl UncompiledFuncEntry {
         fuel: Option<&mut Fuel>,
         features: &WasmFeatures,
     ) -> Result<CompiledFuncEntry, Error> {
-        /// The amount of fuel required to compile a function body per byte.
-        ///
-        /// This does _not_ include validation.
-        ///
-        /// # Note
-        ///
-        /// This fuel amount was chosen after extensive worst-case translation benchmarking.
-        const COMPILE_FUEL_PER_BYTE: u64 = 7;
-        /// The amount of fuel required to validate a function body per byte.
-        ///
-        /// This does _not_ include compilation.
-        ///
-        /// # Note
-        ///
-        /// This fuel amount was chosen after extensive worst-case translation benchmarking.
-        const VALIDATE_FUEL_PER_BYTE: u64 = 2;
-        /// The amount of fuel required to validate and compile a function body per byte.
-        const VALIDATE_AND_COMPILE_FUEL_PER_BYTE: u64 =
-            VALIDATE_FUEL_PER_BYTE + COMPILE_FUEL_PER_BYTE;
-
         let func_idx = self.func_index;
         let wasm_bytes = self.bytes.as_slice();
         let needs_validation = {
@@ -876,13 +856,14 @@ impl UncompiledFuncEntry {
                 false
             }
         };
-        let compilation_fuel = |_costs: &FuelCostsProvider| {
-            let len_bytes = wasm_bytes.len() as u64;
-            let fuel_per_byte = match needs_validation {
-                false => COMPILE_FUEL_PER_BYTE,
-                true => VALIDATE_AND_COMPILE_FUEL_PER_BYTE,
+        let len_bytes = wasm_bytes.len() as u64;
+        let compilation_fuel = |costs: &FuelCostsProvider| {
+            let validation_fuel = match needs_validation {
+                true => costs.fuel_for_validating_bytes(len_bytes),
+                false => 0,
             };
-            len_bytes.saturating_mul(fuel_per_byte)
+            let translation_fuel = costs.fuel_for_translating_bytes(len_bytes);
+            translation_fuel.saturating_add(validation_fuel)
         };
         if let Some(fuel) = fuel {
             match fuel.consume_fuel(compilation_fuel) {
