@@ -414,7 +414,7 @@ impl Config {
     }
 
     /// Returns the configured [`FuelCostsProvider`].
-    pub(crate) fn fuel_costs(&self) -> &FuelCostsProvider {
+    pub(crate) fn get_fuel_costs(&self) -> &FuelCostsProvider {
         &self.fuel_costs
     }
 

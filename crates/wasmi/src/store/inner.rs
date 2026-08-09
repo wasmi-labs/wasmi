@@ -159,7 +159,7 @@ impl StoreInner {
     pub fn new(engine: &Engine) -> Self {
         let config = engine.config();
         let fuel_enabled = config.get_consume_fuel();
-        let fuel_costs = config.fuel_costs().clone();
+        let fuel_costs = config.get_fuel_costs().clone();
         let fuel = Fuel::new(fuel_enabled, fuel_costs);
         let features = config.wasm_features();
         StoreInner {
