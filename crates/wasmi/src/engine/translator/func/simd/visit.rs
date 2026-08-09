@@ -5,7 +5,6 @@ use crate::{
     V128,
     ValType,
     core::{
-        FuelCostsProvider,
         TypedRawVal,
         simd::{self, ImmLaneIdx},
     },
@@ -99,13 +98,10 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             return Ok(());
         }
         let memory_addr = self.memory_addr(memarg.memory)?;
-        self.push_instr(
-            match ptr {
-                Location::Slot(ptr) => Op::v128_store_ss(ptr, offset, value, memory_addr),
-                Location::Reg(_) => Op::v128_store_rs(offset, value, memory_addr),
-            },
-            FuelCostsProvider::store,
-        )?;
+        self.push_instr(match ptr {
+            Location::Slot(ptr) => Op::v128_store_ss(ptr, offset, value, memory_addr),
+            Location::Reg(_) => Op::v128_store_rs(offset, value, memory_addr),
+        })?;
         Ok(())
     }
 
@@ -190,11 +186,9 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         }
         let lhs = self.copy_operand_to_slot(lhs)?;
         let rhs = self.copy_operand_to_slot(rhs)?;
-        self.push_op_with_result_slot(
-            ValType::V128,
-            |result| Op::i8x16_shuffle(result, lhs, rhs, selector),
-            FuelCostsProvider::simd,
-        )?;
+        self.push_op_with_result_slot(ValType::V128, |result| {
+            Op::i8x16_shuffle(result, lhs, rhs, selector)
+        })?;
         Ok(())
     }
 

@@ -8,7 +8,7 @@ use crate::{
     RefType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, RawRef, RawVal, TypedRawRef, TypedRawVal, wasm},
+    core::{IndexType, RawRef, RawVal, TypedRawRef, TypedRawVal, wasm},
     engine::{
         BlockType,
         translator::{
@@ -120,11 +120,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.stack.push_unreachable(ControlFrameKind::Block)?;
             return Ok(());
         }
-        let fuel_pos = self.stack.fuel_pos();
         let block_ty = BlockType::new(block_ty, &self.module);
         let len_params = block_ty.len_params(self.engine());
         self.preserve_all_locals(len_params.into())?;
-        self.preserve_temp_regs(fuel_pos, len_params.into())?;
+        self.preserve_temp_regs(len_params.into())?;
         let end_label = self.instrs.new_label();
         self.stack.push_block(block_ty, end_label)?;
         Ok(())
@@ -136,12 +135,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.stack.push_unreachable(ControlFrameKind::Loop)?;
             return Ok(());
         }
-        let fuel_pos = self.stack.fuel_pos();
         let block_ty = BlockType::new(block_ty, &self.module);
         let branch_params = self.stack.branch_params(block_ty, ControlFrameKind::Loop)?;
         let len_params = block_ty.len_params(self.engine());
-        self.preserve_temp_regs(fuel_pos, len_params.into())?;
-        self.copy_branch_params(branch_params, fuel_pos)?;
+        self.preserve_temp_regs(len_params.into())?;
+        self.copy_branch_params(branch_params)?;
         self.preserve_all_locals(len_params.into())?;
         let continue_label = self.instrs.new_label();
         self.instrs.pin_label(continue_label)?;
@@ -158,7 +156,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         let end_label = self.instrs.new_label();
         let condition = self.stack.pop();
-        let fuel_pos = self.stack.fuel_pos();
         let block_ty = BlockType::new(block_ty, &self.module);
         let len_params = block_ty.len_params(self.engine());
         let fused_op = match self.fused_br_eqz(condition)? {
@@ -169,7 +166,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             None => None,
         };
         self.preserve_all_locals(len_params.into())?;
-        self.preserve_temp_regs(fuel_pos, len_params.into())?;
+        self.preserve_temp_regs(len_params.into())?;
         let (reachability, fuel_pos) = match self.resolve_operand::<TypedRawVal>(condition)? {
             ResolvedOperand::Immediate(operand) => {
                 let condition = i32::from(operand);
@@ -180,6 +177,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     }
                     _ => IfReachability::OnlyThen,
                 };
+                // Note: the `if` inherits the enclosing frame's `Op::ConsumeFuel`
+                //       since the const-condition emits no new one.
                 let fuel_pos = self.stack.fuel_pos();
                 (reachability, fuel_pos)
             }
@@ -190,17 +189,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     ResolvedOperand::Immediate(_) => unreachable!(),
                 };
                 let else_label = self.instrs.new_label();
-                self.encode_branch_op(
-                    else_label,
-                    |offset| match fused_op {
-                        Some(fused_op) => fused_op.with_branch_offset(offset),
-                        None => match condition {
-                            Location::Reg(_) => Op::branch_i32_eq_ri(offset, 0),
-                            Location::Slot(condition) => Op::branch_i32_eq_si(offset, condition, 0),
-                        },
+                self.encode_branch_op(else_label, |offset| match fused_op {
+                    Some(fused_op) => fused_op.with_branch_offset(offset),
+                    None => match condition {
+                        Location::Reg(_) => Op::branch_i32_eq_ri(offset, 0),
+                        Location::Slot(condition) => Op::branch_i32_eq_si(offset, condition, 0),
                     },
-                    fuel_pos,
-                )?;
+                })?;
                 let reachability = IfReachability::Both { else_label };
                 let fuel_pos = self.instrs.encode_consume_fuel_op()?;
                 (reachability, fuel_pos)
@@ -227,9 +222,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         // - Branch from end of `then` to end of `if`.
         let is_end_of_then_reachable = self.reachable;
         if let IfReachability::Both { else_label } = frame.reachability() {
-            let fuel_pos = frame.fuel_pos();
             if is_end_of_then_reachable {
-                self.copy_branch_params(frame.branch_params(), fuel_pos)?;
+                self.copy_branch_params(frame.branch_params())?;
                 frame.branch_to();
                 self.encode_br(frame.label())?;
             }
@@ -260,14 +254,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let Ok(depth) = usize::try_from(depth) else {
             panic!("out of bounds depth: {depth}")
         };
-        let fuel_pos = self.stack.fuel_pos();
         match self.stack.peek_control_mut(depth) {
             AcquiredTarget::Return(_) => self.visit_return(),
             AcquiredTarget::Branch(mut frame) => {
                 frame.branch_to();
                 let label = frame.label();
                 let branch_params = frame.branch_params();
-                self.copy_branch_params(branch_params, fuel_pos)?;
+                self.copy_branch_params(branch_params)?;
                 self.encode_br(label)?;
                 self.reachable = false;
                 Ok(())
@@ -304,10 +297,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             return Ok(());
         }
         // Case: fallback to copy branch parameters conditionally
-        let fuel_pos = self.stack.fuel_pos();
         let skip_label = self.instrs.new_label();
         self.encode_br_eqz(condition, skip_label)?;
-        self.copy_branch_params(branch_params, fuel_pos)?;
+        self.copy_branch_params(branch_params)?;
         self.encode_br(label)?;
         self.instrs.pin_label(skip_label)?;
         Ok(())
@@ -352,7 +344,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let Ok(default_target) = usize::try_from(default_target) else {
             panic!("out of bounds `default_target` does not fit into `usize`: {default_target}");
         };
-        let fuel_pos = self.stack.fuel_pos();
         let default_frame = self.stack.peek_control(default_target);
         let default_height = default_frame.height();
         let equal_heights = targets.iter().all(|target| {
@@ -371,7 +362,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 match default_branch_params.claims_reg(RegKind::Ireg) {
                     true => {
                         let temp_result = index.temp_slots().head();
-                        self.encode_copy_sx_op(temp_result, index, fuel_pos)?;
+                        self.encode_copy_sx_op(temp_result, index)?;
                         Location::Slot(temp_result)
                     }
                     false => index_loc,
@@ -380,8 +371,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         };
         let len_temps = default_branch_params.len_temps();
         let len_regs = default_branch_params.len_regs();
-        let values = self.copy_operands_to_temp(len_temps, len_regs, fuel_pos)?;
-        self.copy_branch_params_regs(default_branch_params, fuel_pos)?;
+        let values = self.copy_operands_to_temp(len_temps, len_regs)?;
+        self.copy_branch_params_regs(default_branch_params)?;
         let required_temp_copies = len_temps != 0;
         let requires_branch_copies = required_temp_copies && !equal_heights;
         match requires_branch_copies {
@@ -395,8 +386,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     #[inline(never)]
     fn visit_return(&mut self) -> Self::Output {
         bail_unreachable!(self);
-        let fuel_pos = self.stack.fuel_pos();
-        self.encode_return(fuel_pos)?;
+        self.encode_return()?;
         let len_results = self.func_type_with(FuncType::len_results);
         for _ in 0..len_results {
             self.stack.pop();
@@ -527,11 +517,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let global_addr = self.global_addr(global_index);
         #[cfg(feature = "simd")]
         if matches!(content, ValType::V128) {
-            self.push_op_with_result_slot(
-                content,
-                |result| Op::global_get_v128_s(global_addr, result),
-                FuelCostsProvider::instance,
-            )?;
+            self.push_op_with_result_slot(content, |result| {
+                Op::global_get_v128_s(global_addr, result)
+            })?;
             return Ok(());
         }
         let operator = match content {
@@ -542,7 +530,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             ValType::F64 => Op::global_get_f64_r(global_addr),
             _ => unreachable!(),
         };
-        self.push_op_with_result_reg(content, operator, FuelCostsProvider::instance)?;
+        self.push_op_with_result_reg(content, operator)?;
         Ok(())
     }
 
@@ -578,16 +566,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 }
                 #[cfg(feature = "simd")]
                 | ValType::V128 => {
-                    let fuel_pos = self.stack.fuel_pos();
                     let temp_result = input.temp_slots().head();
-                    self.encode_copy_sx_op(temp_result, input, fuel_pos)?;
+                    self.encode_copy_sx_op(temp_result, input)?;
                     Op::global_set_v128_s(global_addr, temp_result)
                 }
                 #[cfg(not(feature = "simd"))]
                 _ => unreachable!(),
             },
         };
-        self.push_instr(op, FuelCostsProvider::instance)?;
+        self.push_instr(op)?;
         Ok(())
     }
 
@@ -715,11 +702,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .index_ty()
             .ty();
         let memory_addr = self.memory_addr(mem)?;
-        self.stage_op_with_result_reg(
-            index_ty,
-            Op::memory_size(memory_addr),
-            FuelCostsProvider::instance,
-        )?;
+        self.stage_op_with_result_reg(index_ty, Op::memory_size(memory_addr))?;
         Ok(())
     }
 
@@ -744,21 +727,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // Since `memory.grow` returns the `memory.size` before the
                 // operation a `memory.grow` with `delta` of 0 can be translated
                 // as `memory.size` instruction instead.
-                self.stage_op_with_result_reg(
-                    index_ty.ty(),
-                    Op::memory_size(memory_addr),
-                    FuelCostsProvider::instance,
-                )?;
+                self.stage_op_with_result_reg(index_ty.ty(), Op::memory_size(memory_addr))?;
                 return Ok(());
             }
         }
         // Case: fallback to generic `memory.grow` instruction
         let delta = self.copy_operand_to_slot(delta)?;
-        self.stage_op_with_result_reg(
-            index_ty.ty(),
-            Op::memory_grow(delta, memory_addr),
-            FuelCostsProvider::instance,
-        )?;
+        self.stage_op_with_result_reg(index_ty.ty(), Op::memory_grow(delta, memory_addr))?;
         Ok(())
     }
 
@@ -1501,10 +1476,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst = self.copy_operand_to_slot(dst)?;
         let src = self.copy_operand_to_slot(src)?;
         let len = self.copy_operand_to_slot(len)?;
-        self.push_instr(
-            Op::memory_init(memory_addr, data_addr, dst, src, len),
-            FuelCostsProvider::instance,
-        )?;
+        self.push_instr(Op::memory_init(memory_addr, data_addr, dst, src, len))?;
         Ok(())
     }
 
@@ -1512,7 +1484,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let data_addr = self.data_addr(data_index);
-        self.push_instr(Op::data_drop(data_addr), FuelCostsProvider::instance)?;
+        self.push_instr(Op::data_drop(data_addr))?;
         Ok(())
     }
 
@@ -1525,10 +1497,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst = self.copy_operand_to_slot(dst)?;
         let src = self.copy_operand_to_slot(src)?;
         let len = self.copy_operand_to_slot(len)?;
-        self.push_instr(
-            Op::memory_copy(dst_memory_addr, src_memory_addr, dst, src, len),
-            FuelCostsProvider::instance,
-        )?;
+        self.push_instr(Op::memory_copy(
+            dst_memory_addr,
+            src_memory_addr,
+            dst,
+            src,
+            len,
+        ))?;
         Ok(())
     }
 
@@ -1540,10 +1515,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst = self.copy_operand_to_slot(dst)?;
         let len = self.copy_operand_to_slot(len)?;
         let value = self.copy_operand_to_slot(value)?;
-        self.push_instr(
-            Op::memory_fill(memory_addr, dst, len, value),
-            FuelCostsProvider::instance,
-        )?;
+        self.push_instr(Op::memory_fill(memory_addr, dst, len, value))?;
         Ok(())
     }
 
@@ -1556,10 +1528,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst = self.copy_operand_to_slot(dst)?;
         let src = self.copy_operand_to_slot(src)?;
         let len = self.copy_operand_to_slot(len)?;
-        self.push_instr(
-            Op::table_init(table_addr, elem_addr, dst, src, len),
-            FuelCostsProvider::instance,
-        )?;
+        self.push_instr(Op::table_init(table_addr, elem_addr, dst, src, len))?;
         Ok(())
     }
 
@@ -1567,7 +1536,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let elem_addr = self.elem_addr(elem_index);
-        self.push_instr(Op::elem_drop(elem_addr), FuelCostsProvider::instance)?;
+        self.push_instr(Op::elem_drop(elem_addr))?;
         Ok(())
     }
 
@@ -1580,10 +1549,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst = self.copy_operand_to_slot(dst)?;
         let src = self.copy_operand_to_slot(src)?;
         let len = self.copy_operand_to_slot(len)?;
-        self.push_instr(
-            Op::table_copy(dst_table_addr, src_table_addr, dst, src, len),
-            FuelCostsProvider::instance,
-        )?;
+        self.push_instr(Op::table_copy(
+            dst_table_addr,
+            src_table_addr,
+            dst,
+            src,
+            len,
+        ))?;
         Ok(())
     }
 
@@ -1628,11 +1600,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_ref_func(&mut self, function_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let func_addr = self.func_addr(function_index);
-        self.push_op_with_result_reg(
-            ValType::FuncRef,
-            Op::ref_func(func_addr),
-            FuelCostsProvider::instance,
-        )?;
+        self.push_op_with_result_reg(ValType::FuncRef, Op::ref_func(func_addr))?;
         Ok(())
     }
 
@@ -1644,10 +1612,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst = self.copy_operand_to_slot(dst)?;
         let value = self.copy_operand_to_slot(value)?;
         let len = self.copy_operand_to_slot(len)?;
-        self.push_instr(
-            Op::table_fill(table_addr, dst, len, value),
-            FuelCostsProvider::instance,
-        )?;
+        self.push_instr(Op::table_fill(table_addr, dst, len, value))?;
         Ok(())
     }
 
@@ -1667,7 +1632,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 ResolvedOperand::Slot(index) => Op::table_get_rs(index, table_addr),
                 ResolvedOperand::Immediate(index) => Op::table_get_ri(index, table_addr),
             },
-            FuelCostsProvider::instance,
         )?;
         Ok(())
     }
@@ -1698,7 +1662,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
             _ => unreachable!(),
         };
-        self.push_instr(instr, FuelCostsProvider::instance)?;
+        self.push_instr(instr)?;
         Ok(())
     }
 
@@ -1721,21 +1685,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // Since `table.grow` returns the `table.size` before the
                 // operation a `table.grow` with `delta` of 0 can be translated
                 // as `table.size` instruction instead.
-                self.stage_op_with_result_reg(
-                    index_ty.ty(),
-                    Op::table_size(table_addr),
-                    FuelCostsProvider::instance,
-                )?;
+                self.stage_op_with_result_reg(index_ty.ty(), Op::table_size(table_addr))?;
                 return Ok(());
             }
         }
         let value = self.copy_operand_to_slot(value)?;
         let delta = self.copy_operand_to_slot(delta)?;
-        self.stage_op_with_result_reg(
-            index_ty.ty(),
-            Op::table_grow(delta, value, table_addr),
-            FuelCostsProvider::instance,
-        )?;
+        self.stage_op_with_result_reg(index_ty.ty(), Op::table_grow(delta, value, table_addr))?;
         Ok(())
     }
 
@@ -1745,11 +1701,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let table_addr = self.table_addr(table);
         let index_ty = table_type.index_ty();
-        self.stage_op_with_result_reg(
-            index_ty.ty(),
-            Op::table_size(table_addr),
-            FuelCostsProvider::instance,
-        )?;
+        self.stage_op_with_result_reg(index_ty.ty(), Op::table_size(table_addr))?;
         Ok(())
     }
 

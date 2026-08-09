@@ -2,7 +2,6 @@ use super::{Reset, ReusableAllocations};
 use crate::{
     Engine,
     Error,
-    core::FuelCostsProvider,
     engine::{
         TranslationError,
         executor::op_code_to_handler,
@@ -187,42 +186,35 @@ pub struct OpEncoder {
     ///
     /// If `staged` is `Some`, the staged operator has already been encoded as the last [`Op`] in `ops`.
     staged: Option<StagedOp>,
-    /// The fuel costs of instructions.
-    ///
-    /// This is `Some` if fuel metering is enabled, otherwise `None`.
-    fuel_costs: Option<FuelCostsProvider>,
+    /// This is `true` if fuel metering is enabled.
+    consume_fuel: bool,
     /// The list of constructed instructions and their parameters.
     ops: EncodedOps,
     /// Labels and label users for control flow and encoded branch operators.
     labels: LabelRegistry,
 }
 
-/// The staged [`Op`] and information about its fuel consumption.
+/// The staged [`Op`].
 #[derive(Debug, Copy, Clone)]
 pub struct StagedOp {
     /// The staged [`Op`].
     op: Op,
     /// The position of the encoded staged [`Op`].
     pos: Pos<Op>,
-    /// Fuel information for the staged [`Op`].
-    ///
-    /// - The [`Op::ConsumeFuel`] operator associated to the staged [`Op`] if any.
-    /// - The fuel required by the staged [`Op`].
-    fuel: Option<(Pos<BlockFuel>, FuelUsed)>,
 }
 
 impl StagedOp {
-    /// Creates a new [`StagedOp`] from `op` and `fuel`.
-    pub fn new(op: Op, pos: Pos<Op>, fuel: Option<(Pos<BlockFuel>, FuelUsed)>) -> Self {
-        Self { op, pos, fuel }
+    /// Creates a new [`StagedOp`] from `op`.
+    pub fn new(op: Op, pos: Pos<Op>) -> Self {
+        Self { op, pos }
     }
 
     /// Updates the current [`Op`] of `self` with `op`.
     ///
     /// # Note
     ///
-    /// There is no need to update `pos` or `fuel` since both stay
-    /// the same given that the staged [`Op`] is always last.
+    /// There is no need to update `pos` since it stays the same
+    /// given that the staged [`Op`] is always last.
     pub fn update(&mut self, op: Op) {
         self.op = op;
     }
@@ -258,14 +250,10 @@ impl Reset for OpEncoderAllocations {
 impl OpEncoder {
     /// Creates a new [`OpEncoder`].
     pub fn new(engine: &Engine, alloc: OpEncoderAllocations) -> Self {
-        let config = engine.config();
-        let fuel_costs = config
-            .get_consume_fuel()
-            .then(|| config.fuel_costs())
-            .cloned();
+        let consume_fuel = engine.config().get_consume_fuel();
         Self {
             staged: None,
-            fuel_costs,
+            consume_fuel,
             ops: alloc.ops,
             labels: alloc.labels,
         }
@@ -334,21 +322,11 @@ impl OpEncoder {
     /// Sets the staged [`Op`] to `new_staged` and encodes the previously staged [`Op`] if any.
     ///
     /// Returns the [`Pos<Op>`] of the staged [`Op`] if it was encoded.
-    pub fn stage_op(
-        &mut self,
-        new_staged: Op,
-        fuel_op: Option<Pos<BlockFuel>>,
-        fuel_selector: impl FuelCostsSelector,
-    ) -> Result<(), Error> {
+    pub fn stage_op(&mut self, new_staged: Op) -> Result<(), Error> {
         self.commit_staged_if_any()?;
         self.pad_to_op_alignment()?;
         let pos = self.encode_impl(new_staged)?;
-        let fuel = match (fuel_op, &self.fuel_costs) {
-            (None, None) => None,
-            (Some(fuel_op), Some(fuel_costs)) => Some((fuel_op, fuel_selector.select(fuel_costs))),
-            _ => unreachable!(),
-        };
-        self.staged = Some(StagedOp::new(new_staged, pos, fuel));
+        self.staged = Some(StagedOp::new(new_staged, pos));
         Ok(())
     }
 
@@ -358,47 +336,28 @@ impl OpEncoder {
     ///
     /// - After this operation there will be no more staged [`Op`].
     /// - Does nothing if there is no staged [`Op`].
-    pub fn commit_staged_if_any(&mut self) -> Result<(), Error> {
-        if let Some(staged) = self.staged.take() {
-            self.commit_staged(staged)?;
-        }
-        debug_assert!(self.staged.is_none());
-        Ok(())
-    }
-
-    /// Commits the `staged_op`.
-    ///
-    /// - Bumps fuel consumption of the associated [`Op::ConsumeFuel`] operator.
-    /// - Returns the [`Pos<Op>`] of the encoded [`StagedOp`].
     ///
     /// # Panics (Debug)
     ///
     /// If the staged operator unexpectedly issued [`BranchOffset`] or [`BlockFuel`] fields.
     /// Those operators may never be staged and must be taken care of directly.
-    fn commit_staged(&mut self, staged: StagedOp) -> Result<(), Error> {
-        if let Some((fuel_pos, fuel_used)) = staged.fuel {
-            self.bump_fuel_consumption_by(Some(fuel_pos), fuel_used)?;
-        }
+    pub fn commit_staged_if_any(&mut self) -> Result<(), Error> {
+        self.staged = None;
         debug_assert!(self.ops.temp.is_none());
         Ok(())
     }
 
     /// Drops the staged [`Op`] without encoding it.
     ///
-    /// Returns the staged [`Op`]'s fuel information or `None` if fuel metering is disabled.
-    ///
     /// # Panics
     ///
     /// If there was no staged [`Op`].
-    pub fn drop_staged(&mut self) -> (Option<Pos<BlockFuel>>, FuelUsed) {
+    pub fn drop_staged(&mut self) {
         let Some(staged) = self.staged.take() else {
             panic!("could not drop staged `Op` since there was none")
         };
         debug_assert!(self.staged.is_none());
         self.ops.truncate(staged.pos);
-        let fuel_pos = staged.fuel.map(|(pos, _)| pos);
-        let fuel_used = staged.fuel.map(|(_, used)| used).unwrap_or(0);
-        (fuel_pos, fuel_used)
     }
 
     /// Replaces the staged [`Op`] with `new_staged`.
@@ -420,18 +379,8 @@ impl OpEncoder {
     }
 
     /// Encodes an item of type `T` to the [`OpEncoder`] and returns its [`Pos`].
-    ///
-    /// # Note
-    ///
-    /// Bumps the `fuel` of the [`Op::ConsumeFuel`] accordingly.
-    pub fn encode_op(
-        &mut self,
-        op: Op,
-        fuel_pos: Option<Pos<BlockFuel>>,
-        fuel_selector: impl FuelCostsSelector,
-    ) -> Result<Pos<Op>, Error> {
+    pub fn encode_op(&mut self, op: Op) -> Result<Pos<Op>, Error> {
         self.commit_staged_if_any()?;
-        self.bump_fuel_consumption(fuel_pos, fuel_selector)?;
         self.pad_to_op_alignment()?;
         let pos = self.encode_impl(op)?;
         debug_assert!(self.ops.take_reporting_pos().is_none());
@@ -443,12 +392,12 @@ impl OpEncoder {
     ///
     /// # Note
     ///
-    /// The pushed [`Op::ConsumeFuel`] is initialized with base fuel costs.
+    /// Every [`Op::ConsumeFuel`] charges at least 1 unit of fuel out of caution.
     pub fn encode_consume_fuel_op(&mut self) -> Result<Option<Pos<BlockFuel>>, Error> {
-        let Some(fuel_costs) = &self.fuel_costs else {
+        if !self.consume_fuel {
             return Ok(None);
-        };
-        let consumed_fuel = BlockFuel::from(fuel_costs.base());
+        }
+        let consumed_fuel = BlockFuel::from(1);
         self.commit_staged_if_any()?;
         self.pad_to_op_alignment()?;
         Op::consume_fuel(consumed_fuel).encode(&mut self.ops)?;
@@ -460,22 +409,15 @@ impl OpEncoder {
     }
 
     /// Encodes a type with [`BranchOffset`] to the [`OpEncoder`] and returns its [`Pos<Op>`] and [`Pos<BranchOffset>`].
-    ///
-    /// # Note
-    ///
-    /// Bumps the `fuel` of the [`Op::ConsumeFuel`] accordingly.
     pub fn encode_branch<T>(
         &mut self,
         dst: LabelRef,
         make_branch: impl FnOnce(BranchOffset) -> T,
-        fuel_pos: Option<Pos<BlockFuel>>,
-        fuel_selector: impl FuelCostsSelector,
     ) -> Result<(Pos<T>, Pos<BranchOffset>), Error>
     where
         T: ir::Encode + UpdateBranchOffset,
     {
         self.commit_staged_if_any()?;
-        self.bump_fuel_consumption(fuel_pos, fuel_selector)?;
         let offset = self.try_resolve_label(dst)?;
         let item = make_branch(offset);
         let pos_item = self.encode_impl(item)?;
@@ -524,30 +466,6 @@ impl OpEncoder {
         Ok(())
     }
 
-    /// Bumps consumed fuel for [`Op::ConsumeFuel`] at `fuel_pos` by `fuel_selector(fuel_costs)`.
-    ///
-    /// Does nothing if fuel metering is disabled.
-    ///
-    /// # Errors
-    ///
-    /// If consumed fuel is out of bounds after this operation.
-    fn bump_fuel_consumption(
-        &mut self,
-        fuel_pos: Option<Pos<BlockFuel>>,
-        fuel_selector: impl FuelCostsSelector,
-    ) -> Result<(), Error> {
-        debug_assert_eq!(fuel_pos.is_some(), self.fuel_costs.is_some());
-        let fuel_used = self
-            .fuel_costs
-            .as_ref()
-            .map(|costs| fuel_selector.select(costs))
-            .unwrap_or(0);
-        if fuel_used == 0 {
-            return Ok(());
-        }
-        self.bump_fuel_consumption_by(fuel_pos, fuel_used)
-    }
-
     /// Bumps consumed fuel for [`Op::ConsumeFuel`] at `fuel_pos` by `delta`.
     ///
     /// Does nothing if fuel metering is disabled.
@@ -560,7 +478,7 @@ impl OpEncoder {
         fuel_pos: Option<Pos<BlockFuel>>,
         delta: FuelUsed,
     ) -> Result<(), Error> {
-        debug_assert_eq!(fuel_pos.is_some(), self.fuel_costs.is_some());
+        debug_assert_eq!(fuel_pos.is_some(), self.consume_fuel);
         let fuel_pos = match fuel_pos {
             None => return Ok(()),
             Some(fuel_pos) => fuel_pos,

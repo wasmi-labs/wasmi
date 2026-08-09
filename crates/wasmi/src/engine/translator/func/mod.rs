@@ -57,7 +57,7 @@ use crate::{
     FuncType,
     TrapCode,
     ValType,
-    core::{FuelCostsProvider, IndexType, RawVal, Typed, TypedRawVal},
+    core::{IndexType, RawVal, Typed, TypedRawVal},
     engine::{
         BlockType,
         CompiledFuncEntry,
@@ -450,47 +450,34 @@ impl FuncTranslator {
     ///
     /// # Note
     ///
-    /// - This does _not_ change or mutate the operand stack.
-    /// - Uses `fuel_pos` to bump fuel consumption if enabled.
-    fn copy_branch_params(
-        &mut self,
-        params: BranchParams,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
-        self.copy_branch_params_temps(params, fuel_pos)?;
-        self.copy_branch_params_regs(params, fuel_pos)?;
+    /// This does _not_ change or mutate the operand stack.
+    fn copy_branch_params(&mut self, params: BranchParams) -> Result<(), Error> {
+        self.copy_branch_params_temps(params)?;
+        self.copy_branch_params_regs(params)?;
         Ok(())
     }
 
     /// Copies the branch params that are expected in temporary stack slots.
     ///
     /// Part of [`Self::copy_branch_params`].
-    fn copy_branch_params_temps(
-        &mut self,
-        params: BranchParams,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
+    fn copy_branch_params_temps(&mut self, params: BranchParams) -> Result<(), Error> {
         let len_temps = params.len_temps();
         if len_temps == 0 {
             return Ok(());
         }
         let dst = params.temp_slots();
-        self.copy_operands_to_dst(dst.span(), params.len_temps(), params.len_regs(), fuel_pos)?;
+        self.copy_operands_to_dst(dst.span(), params.len_temps(), params.len_regs())?;
         Ok(())
     }
 
     /// Copies the branch params that are expected in their respective registers.
     ///
     /// Part of [`Self::copy_branch_params`].
-    fn copy_branch_params_regs(
-        &mut self,
-        params: BranchParams,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
+    fn copy_branch_params_regs(&mut self, params: BranchParams) -> Result<(), Error> {
         for (depth, kind) in params.regs().iter().enumerate() {
             let value = self.stack.peek(depth);
             debug_assert!(kind.matches_ty(value.ty()));
-            self.encode_copy_rx_op(value, fuel_pos)?;
+            self.encode_copy_rx_op(value)?;
         }
         Ok(())
     }
@@ -500,16 +487,11 @@ impl FuncTranslator {
     /// # Note
     ///
     /// This won't encode a copy if `value` is already in its register.
-    fn encode_copy_rx_op(
-        &mut self,
-        value: Operand,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
+    fn encode_copy_rx_op(&mut self, value: Operand) -> Result<(), Error> {
         let Some(op) = Self::select_copy_rx_op(value, &self.layout)? else {
             return Ok(());
         };
-        self.instrs
-            .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+        self.instrs.encode_op(op)?;
         Ok(())
     }
 
@@ -596,9 +578,8 @@ impl FuncTranslator {
         &mut self,
         result: Slot,
         value: Operand,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Option<Pos<Op>>, Error> {
-        Self::encode_copy_sx_op_impl(result, value, fuel_pos, &self.layout, &mut self.instrs)
+        Self::encode_copy_sx_op_impl(result, value, &self.layout, &mut self.instrs)
     }
 
     /// Encodes a single `copy_sx` operator.
@@ -609,7 +590,6 @@ impl FuncTranslator {
     fn encode_copy_sx_op_impl(
         result: Slot,
         value: Operand,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
         layout: &StackLayout,
         encoder: &mut OpEncoder,
     ) -> Result<Option<Pos<Op>>, Error> {
@@ -617,7 +597,7 @@ impl FuncTranslator {
             // Case: no-op copy instruction
             return Ok(None);
         };
-        let pos = encoder.encode_op(copy_instr, fuel_pos, FuelCostsProvider::base)?;
+        let pos = encoder.encode_op(copy_instr)?;
         Ok(Some(pos))
     }
 
@@ -825,19 +805,14 @@ impl FuncTranslator {
             self.push_result_reg(ty)?;
             return Ok(());
         };
-        self.push_op_with_result_reg(ty, op, FuelCostsProvider::base)?;
+        self.push_op_with_result_reg(ty, op)?;
         Ok(())
     }
 
     /// Copies the top `len` operands on the stack to their respective stack slots.
     ///
     /// Returns a [`BoundedSlotSpan`] of the stack slots holding the copy results.
-    fn copy_operands_to_temp(
-        &mut self,
-        len: u16,
-        skip: u16,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<BoundedSlotSpan, Error> {
+    fn copy_operands_to_temp(&mut self, len: u16, skip: u16) -> Result<BoundedSlotSpan, Error> {
         if len == 0 {
             return Ok(BoundedSlotSpan::new(self.stack.next_temp_slots(), 0));
         }
@@ -846,7 +821,7 @@ impl FuncTranslator {
             .peek(usize::from(len + skip) - 1)
             .temp_slots()
             .span();
-        self.copy_operands_to_dst(dst, len, skip, fuel_pos)
+        self.copy_operands_to_dst(dst, len, skip)
     }
 
     /// Skips the top `skip` operands and copies the remaining top `len` operands to `dst`.
@@ -857,15 +832,13 @@ impl FuncTranslator {
         dst: SlotSpan,
         len: u16,
         skip: u16,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<BoundedSlotSpan, Error> {
         let mut len_cells: u16 = 0;
         for depth in (skip..len + skip).rev() {
             let value = self.stack.peek(depth.into());
             let result = dst.head().next_n(len_cells);
             if let Some(copy_op) = Self::select_copy_sx_op(result, value, &self.layout)? {
-                self.instrs
-                    .encode_op(copy_op, fuel_pos, FuelCostsProvider::base)?;
+                self.instrs.encode_op(copy_op)?;
             };
             let copied_cells = required_cells_for_ty(value.ty());
             len_cells = len_cells
@@ -890,9 +863,7 @@ impl FuncTranslator {
             ResolvedOperand::Immediate(value) => {
                 let result = operand.temp_slots().head();
                 let copy_instr = Self::select_copy_si_op(result, value);
-                let consume_fuel = self.stack.fuel_pos();
-                self.instrs
-                    .encode_op(copy_instr, consume_fuel, FuelCostsProvider::base)?;
+                self.instrs.encode_op(copy_instr)?;
                 Location::Slot(result)
             }
         };
@@ -913,9 +884,7 @@ impl FuncTranslator {
                 Self::select_copy_si_op(result, TypedRawVal::new(ty, value))
             }
         };
-        let fuel_op = self.stack.fuel_pos();
-        self.instrs
-            .encode_op(copy_op, fuel_op, FuelCostsProvider::base)?;
+        self.instrs.encode_op(copy_op)?;
         Ok(result)
     }
 
@@ -925,28 +894,21 @@ impl FuncTranslator {
     ///
     /// This works by encoding copy instructions to `temp` register space.
     fn preserve_all_locals(&mut self, skip: usize) -> Result<(), Error> {
-        let fuel_pos = self.stack.fuel_pos();
         for local in self.stack.preserve_all_locals(skip) {
             let result = local.temp_slots().head();
             let Some(copy_instr) = Self::select_copy_sx_op(result, local.into(), &self.layout)?
             else {
                 unreachable!("`result` and `local` refer to different stack spaces");
             };
-            self.instrs
-                .encode_op(copy_instr, fuel_pos, FuelCostsProvider::base)?;
+            self.instrs.encode_op(copy_instr)?;
         }
         Ok(())
     }
 
-    /// Pushes the `instr` to the function with the associated `fuel_costs`.
-    fn push_instr(
-        &mut self,
-        instr: Op,
-        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
-    ) -> Result<Pos<Op>, Error> {
+    /// Pushes the `instr` to the function.
+    fn push_instr(&mut self, instr: Op) -> Result<Pos<Op>, Error> {
         debug_assert!(instr.result_ref().is_none());
-        let consume_fuel = self.stack.fuel_pos();
-        let instr = self.instrs.encode_op(instr, consume_fuel, fuel_costs)?;
+        let instr = self.instrs.encode_op(instr)?;
         Ok(instr)
     }
 
@@ -1058,50 +1020,34 @@ impl FuncTranslator {
                 }
                 None => Self::select_copy_sr_op(result, operand.ty()),
             };
-            let fuel_pos = self.stack.fuel_pos();
-            self.instrs
-                .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+            self.instrs.encode_op(op)?;
         }
         Ok(())
     }
 
-    /// Pushes the `instr` to the function with the associated `fuel_costs`.
-    fn stage_op_with_result_reg(
-        &mut self,
-        result_ty: ValType,
-        op: Op,
-        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
-    ) -> Result<(), Error> {
+    /// Stages the `op` with a register result.
+    fn stage_op_with_result_reg(&mut self, result_ty: ValType, op: Op) -> Result<(), Error> {
         debug_assert_eq!(op.result_loc().map(|loc| loc.is_reg()), Some(true));
         self.push_result_reg(result_ty)?;
-        let fuel_pos = self.stack.fuel_pos();
-        self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
+        self.instrs.stage_op(op)?;
         Ok(())
     }
 
-    /// Pushes the `instr` to the function with the associated `fuel_costs`.
-    fn push_op_with_result_reg(
-        &mut self,
-        result_ty: ValType,
-        op: Op,
-        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
-    ) -> Result<(), Error> {
+    /// Pushes the `op` with a register result to the function.
+    fn push_op_with_result_reg(&mut self, result_ty: ValType, op: Op) -> Result<(), Error> {
         debug_assert_eq!(op.result_loc().map(|loc| loc.is_reg()), Some(true));
         self.push_result_reg(result_ty)?;
-        let fuel_pos = self.stack.fuel_pos();
-        self.instrs.encode_op(op, fuel_pos, fuel_costs)?;
+        self.instrs.encode_op(op)?;
         Ok(())
     }
 
-    /// Pushes the `instr` to the function with the associated `fuel_costs`.
+    /// Stages the operator returned by `make_instr` with a stack slot result.
     #[cfg(feature = "simd")]
     fn push_op_with_result_slot(
         &mut self,
         result_ty: ValType,
         make_instr: impl FnOnce(Slot) -> Op,
-        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
-        let fuel_pos = self.stack.fuel_pos();
         let result = self
             .stack
             .push_temp(result_ty, Allocation::None)?
@@ -1109,11 +1055,11 @@ impl FuncTranslator {
             .head();
         let op = make_instr(result);
         debug_assert!(op.result_ref().is_some());
-        self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
+        self.instrs.stage_op(op)?;
         Ok(())
     }
 
-    /// Pushes an operator to the function with the associated `fuel_costs` if `make_op` yields `Some`.
+    /// Stages the operator returned by `make_op` with a stack slot result if `make_op` yields `Some`.
     ///
     /// Only pushes the operand to the stack without encoding an operator if `make_op` yields `None`.
     #[cfg(feature = "simd")]
@@ -1121,16 +1067,14 @@ impl FuncTranslator {
         &mut self,
         result_ty: ValType,
         make_op: impl FnOnce(Slot) -> Option<Op>,
-        fuel_costs: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), Error> {
-        let fuel_pos = self.stack.fuel_pos();
         let result = self
             .stack
             .push_temp(result_ty, Allocation::None)?
             .temp_slots()
             .head();
         if let Some(op) = make_op(result) {
-            self.instrs.stage_op(op, fuel_pos, fuel_costs)?;
+            self.instrs.stage_op(op)?;
         }
         Ok(())
     }
@@ -1172,17 +1116,15 @@ impl FuncTranslator {
             Location::Reg(_) => Op::branch_table_r(len_targets),
             Location::Slot(index) => Op::branch_table_s(len_targets, index),
         };
-        self.push_instr(op, FuelCostsProvider::base)?;
+        self.push_instr(op)?;
         // Encode the `br_table` targets:
-        let fuel_pos = self.stack.fuel_pos();
         let targets = &self.immediates[..];
         for target in targets {
             let Ok(depth) = usize::try_from(u32::from(*target)) else {
                 panic!("out of bounds `br_table` target does not fit `usize`: {target:?}");
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
-            self.instrs
-                .encode_branch(frame.label(), identity, fuel_pos, 0)?;
+            self.instrs.encode_branch(frame.label(), identity)?;
             frame.branch_to();
         }
         Ok(())
@@ -1205,9 +1147,8 @@ impl FuncTranslator {
             Location::Reg(_) => Op::branch_table_span_r(len_targets, values),
             Location::Slot(index) => Op::branch_table_span_s(len_targets, index, values),
         };
-        self.push_instr(op, FuelCostsProvider::base)?;
+        self.push_instr(op)?;
         // Encode the `br_table` targets:
-        let fuel_pos = self.stack.fuel_pos();
         let targets = &self.immediates[..];
         for target in targets {
             let Ok(depth) = usize::try_from(u32::from(*target)) else {
@@ -1215,12 +1156,9 @@ impl FuncTranslator {
             };
             let mut frame = self.stack.peek_control_mut(depth).control_frame();
             let results = frame.branch_params().temp_slots();
-            self.instrs.encode_branch(
-                frame.label(),
-                |offset| ir::BranchTableTarget::new(results.span(), offset),
-                fuel_pos,
-                0,
-            )?;
+            self.instrs.encode_branch(frame.label(), |offset| {
+                ir::BranchTableTarget::new(results.span(), offset)
+            })?;
             frame.branch_to();
         }
         Ok(())
@@ -1231,32 +1169,29 @@ impl FuncTranslator {
         &mut self,
         dst: LabelRef,
         op: impl FnOnce(BranchOffset) -> Op,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
     ) -> Result<Pos<Op>, Error> {
         self.instrs.pad_to_op_alignment()?;
-        let (pos, _) = self.instrs.encode_branch(dst, op, fuel_pos, 0)?;
+        let (pos, _) = self.instrs.encode_branch(dst, op)?;
         Ok(pos)
     }
 
     /// Encodes a generic return operator.
-    fn encode_return(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<Pos<Op>, Error> {
+    fn encode_return(&mut self) -> Result<Pos<Op>, Error> {
         let len_results = self.func_type_with(FuncType::len_results);
         match len_results {
             0 => {}
-            1 => self.prepare_return_1_op(fuel_pos)?,
-            n => self.prepare_return_n_op(n, fuel_pos)?,
+            1 => self.prepare_return_1_op()?,
+            n => self.prepare_return_n_op(n)?,
         };
-        let pos = self
-            .instrs
-            .encode_op(Op::r#return(), fuel_pos, FuelCostsProvider::base)?;
+        let pos = self.instrs.encode_op(Op::r#return())?;
         Ok(pos)
     }
 
     /// Prepares to encode a return operator returning a single value.
-    fn prepare_return_1_op(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<(), Error> {
+    fn prepare_return_1_op(&mut self) -> Result<(), Error> {
         let value = self.stack.peek(0);
         let result = Slot::from(0);
-        self.encode_copy_sx_op(result, value, fuel_pos)?;
+        self.encode_copy_sx_op(result, value)?;
         Ok(())
     }
 
@@ -1264,15 +1199,11 @@ impl FuncTranslator {
     ///
     /// This will attempt to copy the `n` values on top of the stack to the
     /// stack slots required for returning to the caller.
-    fn prepare_return_n_op(
-        &mut self,
-        len: u16,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
+    fn prepare_return_n_op(&mut self, len: u16) -> Result<(), Error> {
         debug_assert!(len > 1);
-        self.preserve_pure_locals(len, fuel_pos)?;
+        self.preserve_pure_locals(len)?;
         let dst = SlotSpan::new(Slot::from(0));
-        self.copy_operands_to_dst(dst, len, 0, fuel_pos)?;
+        self.copy_operands_to_dst(dst, len, 0)?;
         Ok(())
     }
 
@@ -1282,11 +1213,7 @@ impl FuncTranslator {
     ///
     /// - A local operand is pure if it isn't hold in an accumulator register.
     /// - Preserved operands are copied to their temporary stack slots.
-    fn preserve_pure_locals(
-        &mut self,
-        n: u16,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
+    fn preserve_pure_locals(&mut self, n: u16) -> Result<(), Error> {
         let mut return_result = Slot::from(0);
         for depth in (0..n).rev() {
             let depth = usize::from(depth);
@@ -1314,25 +1241,23 @@ impl FuncTranslator {
             let result = local.temp_slots().head();
             let op = Self::select_copy_ss_op(result, value, ty)
                 .expect("must yield `Some` since `value` is a `local`");
-            self.instrs
-                .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+            self.instrs.encode_op(op)?;
         }
         Ok(())
     }
 
     /// Translates the end of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
-        let fuel_pos = frame.fuel_pos();
         if frame.is_branched_to() {
             if self.reachable {
-                self.copy_branch_params(frame.branch_params(), fuel_pos)?;
+                self.copy_branch_params(frame.branch_params())?;
             }
             self.stack.push_branch_params(&frame)?;
         }
         self.instrs.pin_label(frame.label())?;
         self.reachable |= frame.is_branched_to();
         if self.reachable && self.stack.is_control_empty() {
-            self.encode_return(fuel_pos)?;
+            self.encode_return()?;
         }
         Ok(())
     }
@@ -1360,10 +1285,9 @@ impl FuncTranslator {
         };
         let len_results = frame.ty().len_results(self.engine());
         let has_results = len_results >= 1;
-        let fuel_pos = frame.fuel_pos();
         if is_end_of_then_reachable && has_results {
-            self.copy_branch_params(frame.branch_params(), fuel_pos)?;
-            self.encode_branch_op(frame.label(), Op::branch, fuel_pos)?;
+            self.copy_branch_params(frame.branch_params())?;
+            self.encode_branch_op(frame.label(), Op::branch)?;
         }
         self.instrs.pin_label_if_unpinned(else_label)?;
         self.stack.push_else_operands(&frame)?;
@@ -1373,8 +1297,8 @@ impl FuncTranslator {
             // be popped. We use them to restore the stack to the state
             // when entering the `if` block so that we can properly copy
             // the `else` results to were they are expected.
-            let fuel_pos = self.instrs.encode_consume_fuel_op()?;
-            self.copy_branch_params(frame.branch_params(), fuel_pos)?;
+            self.instrs.encode_consume_fuel_op()?;
+            self.copy_branch_params(frame.branch_params())?;
         }
         self.stack.push_branch_params(&frame)?;
         self.instrs.pin_label(frame.label())?;
@@ -1402,9 +1326,8 @@ impl FuncTranslator {
             (false, false) => frame.is_branched_to(),
             _ => true,
         };
-        let fuel_pos = frame.fuel_pos();
         if end_of_else_reachable {
-            self.copy_branch_params(frame.branch_params(), fuel_pos)?;
+            self.copy_branch_params(frame.branch_params())?;
         }
         self.stack.push_branch_params(&frame)?;
         self.instrs.pin_label(frame.label())?;
@@ -1418,10 +1341,9 @@ impl FuncTranslator {
         frame: impl ControlFrameBase,
         end_is_reachable: bool,
     ) -> Result<(), Error> {
-        let fuel_pos = frame.fuel_pos();
         if frame.is_branched_to() {
             if end_is_reachable {
-                self.copy_branch_params(frame.branch_params(), fuel_pos)?;
+                self.copy_branch_params(frame.branch_params())?;
             }
             self.stack.push_branch_params(&frame)?;
         }
@@ -1474,21 +1396,15 @@ impl FuncTranslator {
         let unfused_op = Self::select_copy_sx_op(result, input, &self.layout)?
             .expect("already filtered out no-op copies above");
         let fused_op = self.fused_local_set(result, input)?;
-        let staged_fuel = match fused_op {
-            Some(_) => {
-                let (_, fuel_used) = self.instrs.drop_staged();
-                Some(fuel_used)
-            }
-            None => None,
-        };
+        if fused_op.is_some() {
+            self.instrs.drop_staged();
+        }
         let ty = input.ty();
-        let fuel_pos = self.stack.fuel_pos();
         for preserved in self.stack.preserve_locals(local_idx) {
             let result = preserved.temp_slots().head();
             let op = Self::select_copy_sx_op(result, preserved.into(), &self.layout)?
                 .expect("local preservation must not yield no-op copies");
-            self.instrs
-                .encode_op(op, fuel_pos, FuelCostsProvider::base)?;
+            self.instrs.encode_op(op)?;
         }
         if input.in_reg() {
             self.stack.register_local_for_reg(ty, local_idx)?;
@@ -1499,13 +1415,7 @@ impl FuncTranslator {
             Some(fused_op) => (LocalSetCodegen::Fused, fused_op),
             None => (LocalSetCodegen::Copy, unfused_op),
         };
-        let fuel_costs = |selector: &FuelCostsProvider| -> u64 {
-            match staged_fuel {
-                None => selector.base(),
-                Some(fuel) => fuel,
-            }
-        };
-        self.instrs.encode_op(op, fuel_pos, fuel_costs)?;
+        self.instrs.encode_op(op)?;
         Ok(outcome)
     }
 
@@ -1550,8 +1460,7 @@ impl FuncTranslator {
 
     /// Encodes an unconditional Wasm `branch` instruction.
     fn encode_br(&mut self, label: LabelRef) -> Result<(), Error> {
-        let fuel_pos = self.stack.fuel_pos();
-        self.encode_branch_op(label, Op::branch, fuel_pos)?;
+        self.encode_branch_op(label, Op::branch)?;
         Ok(())
     }
 
@@ -1615,12 +1524,8 @@ impl FuncTranslator {
         branch_eqz: bool,
     ) -> Result<(), Error> {
         if let Some(fused_op) = self.fused_cmp_branch(condition, branch_eqz)? {
-            let (fuel_pos, _) = self.instrs.drop_staged();
-            self.encode_branch_op(
-                label,
-                |offset| fused_op.with_branch_offset(offset),
-                fuel_pos,
-            )?;
+            self.instrs.drop_staged();
+            self.encode_branch_op(label, |offset| fused_op.with_branch_offset(offset))?;
             return Ok(());
         }
         let condition = match self.resolve_operand::<i32>(condition)? {
@@ -1641,21 +1546,16 @@ impl FuncTranslator {
                 }
             }
         };
-        let fuel_pos = self.stack.fuel_pos();
-        self.encode_branch_op(
-            label,
-            |offset| match branch_eqz {
-                true => match condition {
-                    Location::Slot(condition) => Op::branch_i32_eq_si(offset, condition, 0),
-                    Location::Reg(_) => Op::branch_i32_eq_ri(offset, 0),
-                },
-                false => match condition {
-                    Location::Slot(condition) => Op::branch_i32_not_eq_si(offset, condition, 0),
-                    Location::Reg(_) => Op::branch_i32_not_eq_ri(offset, 0),
-                },
+        self.encode_branch_op(label, |offset| match branch_eqz {
+            true => match condition {
+                Location::Slot(condition) => Op::branch_i32_eq_si(offset, condition, 0),
+                Location::Reg(_) => Op::branch_i32_eq_ri(offset, 0),
             },
-            fuel_pos,
-        )?;
+            false => match condition {
+                Location::Slot(condition) => Op::branch_i32_not_eq_si(offset, condition, 0),
+                Location::Reg(_) => Op::branch_i32_not_eq_ri(offset, 0),
+            },
+        })?;
         Ok(())
     }
 
@@ -1688,7 +1588,7 @@ impl FuncTranslator {
                 call_imported(params, self.func_addr(function_index))
             }
         };
-        self.push_instr(instr, FuelCostsProvider::call)?;
+        self.push_instr(instr)?;
         Ok(())
     }
 
@@ -1721,7 +1621,7 @@ impl FuncTranslator {
             (false, Location::Slot(index)) => op_s(table_addr, func_type, params, index),
             (false, Location::Reg(_)) => op_r(table_addr, func_type, params),
         };
-        self.push_instr(op, FuelCostsProvider::call)?;
+        self.push_instr(op)?;
         Ok(())
     }
 
@@ -1730,9 +1630,8 @@ impl FuncTranslator {
     /// Returns a bounded [`SlotSpan`] to the start of the call parameters and results
     /// with the length equal to the number of cells storing the call parameters.
     fn adjust_stack_for_call(&mut self, ty: &FuncType) -> Result<BoundedSlotSpan, Error> {
-        let fuel_pos = self.stack.fuel_pos();
-        self.preserve_regs(fuel_pos)?;
-        let params = self.copy_operands_to_temp(ty.len_params(), 0, fuel_pos)?;
+        self.preserve_regs()?;
+        let params = self.copy_operands_to_temp(ty.len_params(), 0)?;
         for _ in 0..ty.len_params() {
             self.stack.pop();
         }
@@ -1742,16 +1641,11 @@ impl FuncTranslator {
         Ok(params)
     }
 
-    fn copy_preserved_regs_to_slots(
-        &mut self,
-        regs: PreservedRegs,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-    ) -> Result<(), Error> {
+    fn copy_preserved_regs_to_slots(&mut self, regs: PreservedRegs) -> Result<(), Error> {
         if !self.reachable {
             // No need to encode copies if unreachable.
             return Ok(());
         }
-        let fuel_costs = FuelCostsProvider::base;
         let results_and_tys = [
             regs.ireg.map(|s| (s, ValType::I64)),
             regs.freg32.map(|s| (s, ValType::F32)),
@@ -1760,25 +1654,21 @@ impl FuncTranslator {
         for reg in results_and_tys {
             let Some((result, ty)) = reg else { continue };
             let op = Self::select_copy_sr_op(result, ty);
-            self.instrs.encode_op(op, fuel_pos, fuel_costs)?;
+            self.instrs.encode_op(op)?;
         }
         Ok(())
     }
 
     /// Preserve all register operands on the [`Stack`].
-    fn preserve_regs(&mut self, fuel_pos: Option<Pos<ir::BlockFuel>>) -> Result<(), Error> {
+    fn preserve_regs(&mut self) -> Result<(), Error> {
         let regs = self.stack.preserve_all_regs();
-        self.copy_preserved_regs_to_slots(regs, fuel_pos)
+        self.copy_preserved_regs_to_slots(regs)
     }
 
     /// Preserve all temporary register operands on the [`Stack`] but keep `local` register links.
-    fn preserve_temp_regs(
-        &mut self,
-        fuel_pos: Option<Pos<ir::BlockFuel>>,
-        skip: usize,
-    ) -> Result<(), Error> {
+    fn preserve_temp_regs(&mut self, skip: usize) -> Result<(), Error> {
         let regs = self.stack.preserve_all_temp_regs(skip);
-        self.copy_preserved_regs_to_slots(regs, fuel_pos)
+        self.copy_preserved_regs_to_slots(regs)
     }
 
     /// Translates a unary Wasm instruction to Wasmi bytecode with a custom optimizer.
@@ -1824,7 +1714,7 @@ impl FuncTranslator {
                 return Ok(());
             }
         };
-        self.stage_op_with_result_reg(vt.result_ty, op, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(vt.result_ty, op)?;
         Ok(())
     }
 
@@ -1853,7 +1743,7 @@ impl FuncTranslator {
         let result_ty = <R as Typed>::TY;
         match input {
             input if input.in_reg() => {
-                self.push_op_with_result_reg(result_ty, op_rr(), FuelCostsProvider::base)?;
+                self.push_op_with_result_reg(result_ty, op_rr())?;
             }
             Operand::Local(input) => {
                 self.stack.push_local(input.local_index(), result_ty)?;
@@ -2010,7 +1900,7 @@ impl FuncTranslator {
             (ResolvedOperand::Slot(lhs), ResolvedOperand::Immediate(rhs)) => (vt.op_rsi)(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
         };
-        self.stage_op_with_result_reg(vt.result_ty, operator, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(vt.result_ty, operator)?;
         Ok(())
     }
 
@@ -2081,7 +1971,7 @@ impl FuncTranslator {
             (ResolvedOperand::Immediate(lhs), ResolvedOperand::Slot(rhs)) => (vt.op_ris)(lhs, rhs),
             _ => Self::unsupported_operand_pair(lhs, rhs),
         };
-        self.stage_op_with_result_reg(vt.result_ty, operator, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(vt.result_ty, operator)?;
         Ok(())
     }
 
@@ -2105,7 +1995,7 @@ impl FuncTranslator {
 
     /// Translates a generic trap instruction.
     fn translate_trap(&mut self, trap: TrapCode) -> Result<(), Error> {
-        self.push_instr(Op::trap(trap), FuelCostsProvider::base)?;
+        self.push_instr(Op::trap(trap))?;
         self.reachable = false;
         Ok(())
     }
@@ -2148,19 +2038,15 @@ impl FuncTranslator {
                         //       value that spans across 2 slots into the result slots of
                         //       the `select` operator.
                         let selected = self.resolve_operand::<V128>(selected)?;
-                        self.try_push_op_with_result_slot(
-                            ty,
-                            |result| match selected {
-                                ResolvedOperand::Reg(_) => unreachable!(),
-                                ResolvedOperand::Slot(value) => {
-                                    Self::select_copy_ss_op(result, value, ty)
-                                }
-                                ResolvedOperand::Immediate(value) => {
-                                    Some(Self::select_copy_si_op(result, value.into()))
-                                }
-                            },
-                            FuelCostsProvider::base,
-                        )?;
+                        self.try_push_op_with_result_slot(ty, |result| match selected {
+                            ResolvedOperand::Reg(_) => unreachable!(),
+                            ResolvedOperand::Slot(value) => {
+                                Self::select_copy_ss_op(result, value, ty)
+                            }
+                            ResolvedOperand::Immediate(value) => {
+                                Some(Self::select_copy_si_op(result, value.into()))
+                            }
+                        })?;
                         return Ok(());
                     }
                     _ => self.copy_operand_to_reg(selected)?,
@@ -2187,7 +2073,7 @@ impl FuncTranslator {
             #[cfg(not(feature = "simd"))]
             ValType::V128 => unreachable!("v128 simd is not enabled"),
         };
-        self.stage_op_with_result_reg(ty, operator, FuelCostsProvider::base)?;
+        self.stage_op_with_result_reg(ty, operator)?;
         Ok(())
     }
 
@@ -2336,16 +2222,12 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         let true_val = self.copy_operand_to_slot(true_val)?;
         let false_val = self.copy_operand_to_slot(false_val)?;
-        self.push_op_with_result_slot(
-            ValType::V128,
-            |result| match condition {
-                Location::Reg(_) => Op::v128_select_srss(result, true_val, false_val),
-                Location::Slot(condition) => {
-                    Op::v128_select_ssss(result, condition, true_val, false_val)
-                }
-            },
-            FuelCostsProvider::base,
-        )?;
+        self.push_op_with_result_slot(ValType::V128, |result| match condition {
+            Location::Reg(_) => Op::v128_select_srss(result, true_val, false_val),
+            Location::Slot(condition) => {
+                Op::v128_select_ssss(result, condition, true_val, false_val)
+            }
+        })?;
         Ok(())
     }
 }
@@ -2552,7 +2434,7 @@ impl FuncTranslator {
         let ptr = self.stack.pop();
         match self.select_load_op_vt(vt, ptr, memarg)? {
             Op::Trap { trap_code } => self.translate_trap(trap_code),
-            op => self.stage_op_with_result_reg(vt.result_ty, op, FuelCostsProvider::load),
+            op => self.stage_op_with_result_reg(vt.result_ty, op),
         }
     }
 
@@ -2666,7 +2548,7 @@ impl FuncTranslator {
         if let Op::Trap { trap_code } = op {
             return self.translate_trap(trap_code);
         }
-        self.push_instr(op, FuelCostsProvider::store)?;
+        self.push_instr(op)?;
         Ok(())
     }
 
@@ -2856,10 +2738,7 @@ impl FuncTranslator {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
         debug_assert_eq!(results.to_array(), [result_lo, result_hi]);
-        self.push_instr(
-            make_instr(results, lhs_lo, lhs_hi, rhs_lo, rhs_hi),
-            FuelCostsProvider::base,
-        )?;
+        self.push_instr(make_instr(results, lhs_lo, lhs_hi, rhs_lo, rhs_hi))?;
         Ok(())
     }
 
@@ -2912,7 +2791,7 @@ impl FuncTranslator {
         let Ok(results) = <FixedSlotSpan<2>>::new(SlotSpan::new(result0)) else {
             return Err(Error::from(TranslationError::AllocatedTooManySlots));
         };
-        self.push_instr(make_instr(results, lhs, rhs), FuelCostsProvider::base)?;
+        self.push_instr(make_instr(results, lhs, rhs))?;
         Ok(())
     }
 
@@ -2939,9 +2818,8 @@ impl FuncTranslator {
             let result = self.stack.push_operand(lhs)?; // lo-bits
             if matches!(lhs, Operand::Temp(_)) {
                 // Case: `lhs` is temporary and thus might need a copy to its new result.
-                let fuel_pos = self.stack.fuel_pos();
                 let result = result.temp_slots().head();
-                self.encode_copy_sx_op(result, lhs, fuel_pos)?;
+                self.encode_copy_sx_op(result, lhs)?;
             }
             self.stack.push_immediate(0_i64)?; // hi-bits
             return Ok(true);

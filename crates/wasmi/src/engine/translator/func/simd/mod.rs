@@ -8,15 +8,7 @@ use crate::{
     TrapCode,
     V128,
     ValType,
-    core::{
-        FuelCostsProvider,
-        IntoShiftAmount,
-        RawVal,
-        ShiftAmount,
-        Typed,
-        TypedRawVal,
-        simd::IntoLaneIdx,
-    },
+    core::{IntoShiftAmount, RawVal, ShiftAmount, Typed, TypedRawVal, simd::IntoLaneIdx},
     engine::translator::{
         func::{
             Operand,
@@ -73,18 +65,14 @@ impl FuncTranslator {
         bail_unreachable!(self);
         let value = self.stack.pop();
         let value = self.resolve_operand::<RawVal>(value)?;
-        self.push_op_with_result_slot(
-            ValType::V128,
-            |result| match value {
-                ResolvedOperand::Reg(_) => op_sr(result),
-                ResolvedOperand::Slot(value) => op_ss(result, value),
-                ResolvedOperand::Immediate(value) => {
-                    let value = T::from(value).wrap().to_bits();
-                    op_si(result, value)
-                }
-            },
-            FuelCostsProvider::simd,
-        )?;
+        self.push_op_with_result_slot(ValType::V128, |result| match value {
+            ResolvedOperand::Reg(_) => op_sr(result),
+            ResolvedOperand::Slot(value) => op_ss(result, value),
+            ResolvedOperand::Immediate(value) => {
+                let value = T::from(value).wrap().to_bits();
+                op_si(result, value)
+            }
+        })?;
         Ok(())
     }
 
@@ -110,11 +98,7 @@ impl FuncTranslator {
             return Ok(());
         };
         let input = self.operand_to_slot(input)?;
-        self.push_op_with_result_reg(
-            <R as Typed>::TY,
-            make_instr(input, lane),
-            FuelCostsProvider::simd,
-        )?;
+        self.push_op_with_result_reg(<R as Typed>::TY, make_instr(input, lane))?;
         Ok(())
     }
 
@@ -139,15 +123,11 @@ impl FuncTranslator {
         let value = self
             .resolve_operand::<RawVal>(value)?
             .map(|value| T::into_immediate(T::Item::from(value)));
-        self.push_op_with_result_slot(
-            ValType::V128,
-            |result| match value {
-                ResolvedOperand::Reg(_) => T::op_ssr(result, input, lane),
-                ResolvedOperand::Slot(value) => T::op_sss(result, input, lane, value),
-                ResolvedOperand::Immediate(value) => T::op_ssi(result, input, lane, value),
-            },
-            FuelCostsProvider::simd,
-        )?;
+        self.push_op_with_result_slot(ValType::V128, |result| match value {
+            ResolvedOperand::Reg(_) => T::op_ssr(result, input, lane),
+            ResolvedOperand::Slot(value) => T::op_sss(result, input, lane, value),
+            ResolvedOperand::Immediate(value) => T::op_ssi(result, input, lane, value),
+        })?;
         Ok(())
     }
 
@@ -170,11 +150,7 @@ impl FuncTranslator {
             return Ok(());
         };
         let input = self.operand_to_slot(input)?;
-        self.push_op_with_result_slot(
-            <T as Typed>::TY,
-            |result| make_instr(result, input),
-            FuelCostsProvider::simd,
-        )?;
+        self.push_op_with_result_slot(<T as Typed>::TY, |result| make_instr(result, input))?;
         Ok(())
     }
 
@@ -197,7 +173,7 @@ impl FuncTranslator {
             return Ok(());
         };
         let input = self.operand_to_slot(input)?;
-        self.push_op_with_result_reg(<T as Typed>::TY, make_instr(input), FuelCostsProvider::simd)?;
+        self.push_op_with_result_reg(<T as Typed>::TY, make_instr(input))?;
         Ok(())
     }
 
@@ -218,11 +194,7 @@ impl FuncTranslator {
         }
         let lhs = self.copy_operand_to_slot(lhs)?;
         let rhs = self.copy_operand_to_slot(rhs)?;
-        self.push_op_with_result_slot(
-            ValType::V128,
-            |result| make_instr(result, lhs, rhs),
-            FuelCostsProvider::simd,
-        )?;
+        self.push_op_with_result_slot(ValType::V128, |result| make_instr(result, lhs, rhs))?;
         Ok(())
     }
 
@@ -245,11 +217,9 @@ impl FuncTranslator {
         let lhs = self.copy_operand_to_slot(a)?;
         let rhs = self.copy_operand_to_slot(b)?;
         let selector = self.copy_operand_to_slot(c)?;
-        self.push_op_with_result_slot(
-            ValType::V128,
-            |result| make_instr(result, lhs, rhs, selector),
-            FuelCostsProvider::simd,
-        )?;
+        self.push_op_with_result_slot(ValType::V128, |result| {
+            make_instr(result, lhs, rhs, selector)
+        })?;
         Ok(())
     }
 
@@ -283,15 +253,11 @@ impl FuncTranslator {
             return Ok(());
         };
         let lhs = self.copy_operand_to_slot(lhs)?;
-        self.push_op_with_result_slot(
-            ValType::V128,
-            |result| match rhs {
-                ResolvedOperand::Reg(_) => op_ssr(result, lhs),
-                ResolvedOperand::Slot(rhs) => op_sss(result, lhs, rhs),
-                ResolvedOperand::Immediate(rhs) => op_ssi(result, lhs, rhs),
-            },
-            FuelCostsProvider::simd,
-        )?;
+        self.push_op_with_result_slot(ValType::V128, |result| match rhs {
+            ResolvedOperand::Reg(_) => op_ssr(result, lhs),
+            ResolvedOperand::Slot(rhs) => op_sss(result, lhs, rhs),
+            ResolvedOperand::Immediate(rhs) => op_ssi(result, lhs, rhs),
+        })?;
         Ok(())
     }
 
@@ -325,26 +291,18 @@ impl FuncTranslator {
                 Some(offset) => offset,
                 None => break 'opt,
             };
-            self.push_op_with_result_slot(
-                ValType::V128,
-                |result| match ptr_loc {
-                    Location::Reg(_) => Op::v128_load_mem0_offset16_sr(result, offset),
-                    Location::Slot(ptr) => Op::v128_load_mem0_offset16_ss(result, ptr, offset),
-                },
-                FuelCostsProvider::load,
-            )?;
+            self.push_op_with_result_slot(ValType::V128, |result| match ptr_loc {
+                Location::Reg(_) => Op::v128_load_mem0_offset16_sr(result, offset),
+                Location::Slot(ptr) => Op::v128_load_mem0_offset16_ss(result, ptr, offset),
+            })?;
             return Ok(());
         }
         // Case: non-optimized fallback load operator.
         let memory_addr = self.memory_addr(memarg.memory)?;
-        self.push_op_with_result_slot(
-            ValType::V128,
-            |result| match ptr_loc {
-                Location::Reg(_) => Op::v128_load_sr(result, offset, memory_addr),
-                Location::Slot(ptr) => Op::v128_load_ss(result, ptr, offset, memory_addr),
-            },
-            FuelCostsProvider::load,
-        )?;
+        self.push_op_with_result_slot(ValType::V128, |result| match ptr_loc {
+            Location::Reg(_) => Op::v128_load_sr(result, offset, memory_addr),
+            Location::Slot(ptr) => Op::v128_load_ss(result, ptr, offset, memory_addr),
+        })?;
         Ok(())
     }
 
@@ -362,13 +320,11 @@ impl FuncTranslator {
                 return Ok(());
             }
             op => {
-                let fuel_pos = self.stack.fuel_pos();
                 self.preserve_reg_of_type(<<L as LoadOp>::Result as Typed>::TY)?;
-                self.instrs
-                    .encode_op(op, fuel_pos, FuelCostsProvider::load)?;
+                self.instrs.encode_op(op)?;
             }
         }
-        self.push_op_with_result_slot(ValType::V128, op_sr, FuelCostsProvider::simd)?;
+        self.push_op_with_result_slot(ValType::V128, op_sr)?;
         Ok(())
     }
 
@@ -389,18 +345,12 @@ impl FuncTranslator {
                 return Ok(());
             }
             op => {
-                let fuel_pos = self.stack.fuel_pos();
                 self.preserve_reg_of_type(<<L as LoadOp>::Result as Typed>::TY)?;
-                self.instrs
-                    .encode_op(op, fuel_pos, FuelCostsProvider::load)?;
+                self.instrs.encode_op(op)?;
             }
         }
         let v128 = self.copy_operand_to_slot(v128)?;
-        self.push_op_with_result_slot(
-            ValType::V128,
-            |result| T::op_ssr(result, v128, lane),
-            FuelCostsProvider::simd,
-        )?;
+        self.push_op_with_result_slot(ValType::V128, |result| T::op_ssr(result, v128, lane))?;
         Ok(())
     }
 
@@ -451,24 +401,18 @@ impl FuncTranslator {
         let ptr = self.copy_immediate_to_slot(ptr)?;
         if self.is_default_memory(memory) {
             if let Some(offset16) = Offset16::new(offset) {
-                self.push_instr(
-                    match ptr {
-                        Location::Reg(_) => op_rs_mem0_offset16(offset16, v128, lane),
-                        Location::Slot(ptr) => op_ss_mem0_offset16(ptr, offset16, v128, lane),
-                    },
-                    FuelCostsProvider::store,
-                )?;
+                self.push_instr(match ptr {
+                    Location::Reg(_) => op_rs_mem0_offset16(offset16, v128, lane),
+                    Location::Slot(ptr) => op_ss_mem0_offset16(ptr, offset16, v128, lane),
+                })?;
                 return Ok(());
             }
         }
         let memory_addr = self.memory_addr(memarg.memory)?;
-        self.push_instr(
-            match ptr {
-                Location::Reg(_) => op_rs(offset, v128, memory_addr, lane),
-                Location::Slot(ptr) => op_ss(ptr, offset, v128, memory_addr, lane),
-            },
-            FuelCostsProvider::store,
-        )?;
+        self.push_instr(match ptr {
+            Location::Reg(_) => op_rs(offset, v128, memory_addr, lane),
+            Location::Slot(ptr) => op_ss(ptr, offset, v128, memory_addr, lane),
+        })?;
         Ok(())
     }
 
@@ -492,13 +436,10 @@ impl FuncTranslator {
         let Some(offset16) = Offset16::new(offset) else {
             return Ok(false);
         };
-        self.push_instr(
-            match ptr {
-                Location::Slot(ptr) => Op::v128_store_mem0_offset16_ss(ptr, offset16, value),
-                Location::Reg(_) => Op::v128_store_mem0_offset16_rs(offset16, value),
-            },
-            FuelCostsProvider::store,
-        )?;
+        self.push_instr(match ptr {
+            Location::Slot(ptr) => Op::v128_store_mem0_offset16_ss(ptr, offset16, value),
+            Location::Reg(_) => Op::v128_store_mem0_offset16_rs(offset16, value),
+        })?;
         Ok(true)
     }
 }
