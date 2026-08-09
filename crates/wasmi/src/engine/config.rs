@@ -33,7 +33,7 @@ pub struct Config {
 }
 
 /// The chosen mode of Wasm to Wasmi bytecode compilation.
-/// 
+///
 /// Can be configured using [`Config::compilation_mode`].
 #[derive(Debug, Default, Copy, Clone)]
 pub enum CompilationMode {
