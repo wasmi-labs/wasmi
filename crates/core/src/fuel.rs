@@ -37,6 +37,34 @@ impl FuelCosts for DefaultFuelCosts {
     }
 }
 
+/// Custom fuel costs for dynamic fuel metering.
+#[derive(Debug, Copy, Clone)]
+pub struct CustomFuelCosts {
+    /// The amount of bytes that can be copied for a single unit of fuel.
+    pub bytes_copied_per_fuel: u32,
+    /// The amount of fuel required to translate one byte from Wasm bytecode to Wasmi IR.
+    pub fuel_per_bytes_translated: u32,
+    /// The amount of fuel required to validate one byte of Wasm bytecode.
+    pub fuel_per_bytes_validated: u32,
+}
+
+impl FuelCosts for CustomFuelCosts {
+    #[inline]
+    fn bytes_copied_per_fuel(&self) -> u32 {
+        self.bytes_copied_per_fuel
+    }
+
+    #[inline]
+    fn fuel_per_bytes_translated(&self) -> u32 {
+        self.fuel_per_bytes_translated
+    }
+
+    #[inline]
+    fn fuel_per_bytes_validated(&self) -> u32 {
+        self.fuel_per_bytes_validated
+    }
+}
+
 /// Type storing all kinds of fuel costs of instructions.
 #[derive(Default, Clone)]
 pub struct FuelCostsProvider {
@@ -58,6 +86,13 @@ impl Debug for FuelCostsProvider {
 }
 
 impl FuelCostsProvider {
+    /// Creates a new [`FuelCostsProvider`] from the given [`CustomFuelCosts`].
+    pub fn custom(custom: CustomFuelCosts) -> Self {
+        Self {
+            custom: Some(Arc::new(custom)),
+        }
+    }
+
     /// Returns either the default or the custom fuel costs for `f`.
     fn get_costs(&self, f: impl FnOnce(&(dyn FuelCosts + 'static)) -> u32) -> u32 {
         match self.custom.as_deref() {

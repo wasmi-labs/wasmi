@@ -236,6 +236,7 @@ use self::{
     table::ElementSegment,
 };
 pub use wasmi_core::{
+    CustomFuelCosts,
     F32,
     F64,
     GlobalType,
