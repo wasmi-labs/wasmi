@@ -8,6 +8,46 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `2.0.0-beta.10` - 2026-08-10
+
+### Added
+
+- Added way to customize dynamic fuel metering. [#2025]
+- Added stable fuel metering. [#2013]
+  - This replaces Wasmi's old fuel metering that was tied to its internal bytecode.
+  - The new stable fuel metering is tied to the input Wasm bytecode instead.
+  - While less precise, it has the big advantages that it stays relatively stable
+    and that it is the same technique that is also used in Wasmtime. 
+- Added more optimizations to make Wasmi execute even faster:
+  - Massively improve performance across the board with fix that improves branch prediction. [#2027]
+  - Re-use `sp` in Wasm calls. [#2014]
+    - This improves performance of host calls primarily.
+  - Add `InstanceEntity` pointer to `WasmFuncEntity`. [#2018]
+    - This improves performance of `call_indirect` and `call_imported`.
+  - Add special `call_indirect` operator variants for `(table 0)`. [#2019]
+    - This is very beneficial since more `call_indirect` operators work on `(table 0)`.
+  - Reduce tons of unnecessary indirections in Wasmi's executor:
+    - PRs: [#2023], [#2015], [#2020], [#2022], [#2024]
+
+### Internal
+
+- Add new `sort-dyn` benchmark test case to test `call_indirect` performance. [#2017]
+- Simplify Wasmi users README listing. [#2021]
+
+[#2013]: https://github.com/wasmi-labs/wasmi/pull/2013
+[#2014]: https://github.com/wasmi-labs/wasmi/pull/2014
+[#2015]: https://github.com/wasmi-labs/wasmi/pull/2015
+[#2017]: https://github.com/wasmi-labs/wasmi/pull/2017
+[#2018]: https://github.com/wasmi-labs/wasmi/pull/2018
+[#2019]: https://github.com/wasmi-labs/wasmi/pull/2019
+[#2020]: https://github.com/wasmi-labs/wasmi/pull/2020
+[#2021]: https://github.com/wasmi-labs/wasmi/pull/2021
+[#2022]: https://github.com/wasmi-labs/wasmi/pull/2022
+[#2023]: https://github.com/wasmi-labs/wasmi/pull/2023
+[#2024]: https://github.com/wasmi-labs/wasmi/pull/2024
+[#2025]: https://github.com/wasmi-labs/wasmi/pull/2025
+[#2027]: https://github.com/wasmi-labs/wasmi/pull/2027
+
 ## `2.0.0-beta.9` - 2026-07-29
 
 ### Internal
