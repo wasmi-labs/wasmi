@@ -1824,8 +1824,10 @@ macro_rules! handler_cmp_branch {
                     if $eval(lhs, rhs) {
                         args.set_ip(ip);
                         args.offset_ip(offset);
+                        dispatch!(store, args);
+                    } else {
+                        dispatch!(store, args)
                     }
-                    dispatch!(store, args)
                 }
             }
         )*
