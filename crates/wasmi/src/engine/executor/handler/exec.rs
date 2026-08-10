@@ -1821,6 +1821,8 @@ macro_rules! handler_cmp_branch {
                     let $crate::ir::decode::$decode { offset, lhs, rhs } = unsafe { args.decode_op() };
                     let lhs = args.get(lhs);
                     let rhs = args.get(rhs);
+                    // Note: we push `dispatch!` to both arms to have multiple branch sites
+                    //       which dramatically helps branch prediction.
                     if $eval(lhs, rhs) {
                         args.set_ip(ip);
                         args.offset_ip(offset);
