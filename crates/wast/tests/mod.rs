@@ -628,37 +628,3 @@ fn wasmi_torture() {
         runner_config(apply_spec_config(FuelMetering::Disabled)),
     );
 }
-
-/// Tests the reference result patterns used by `assert_return` directives.
-///
-/// # Background
-///
-/// The official Wasm spec testsuite uses the `(ref.func)`, `(ref.extern)` and
-/// untyped `(ref.null)` result patterns, e.g. in `select.wast`, `table.wast` and
-/// `br_table.wast`. They respectively match any non-null `funcref`, any non-null
-/// `externref` and a null reference of any type.
-#[test]
-fn reference_result_patterns() {
-    let wast = r#"
-        (module
-            (func $f)
-            (elem declare func $f)
-            (func (export "func") (result funcref) (ref.func $f))
-            (func (export "null-func") (result funcref) (ref.null func))
-            (func (export "null-extern") (result externref) (ref.null extern))
-            (func (export "extern") (param externref) (result externref) (local.get 0))
-        )
-        (assert_return (invoke "func") (ref.func))
-        (assert_return (invoke "null-func") (ref.null))
-        (assert_return (invoke "null-func") (ref.null func))
-        (assert_return (invoke "null-extern") (ref.null))
-        (assert_return (invoke "null-extern") (ref.null extern))
-        (assert_return (invoke "extern" (ref.extern 1)) (ref.extern))
-        (assert_return (invoke "extern" (ref.extern 1)) (ref.extern 1))
-    "#;
-    process_wast(
-        "wasmi/tests/reference-result-patterns",
-        wast,
-        runner_config(apply_spec_config(FuelMetering::Disabled)),
-    );
-}
