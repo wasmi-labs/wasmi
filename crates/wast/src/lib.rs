@@ -441,7 +441,8 @@ impl WastRunner {
                     ..
                 })),
             ) => externref.is_null(),
-            // A `(ref.func)` result pattern expects a non-null function reference.
+            // A `(ref.func)` result pattern expects a non-null function reference,
+            // as per `RefTypePat FuncHT` in the spec interpreter's `assert_ref_pat`.
             // Wasmi's API does not expose the underlying function index, so any
             // non-null `funcref` is accepted for `(ref.func $f)` as well.
             (Val::FuncRef(funcref), WastRetCore::RefFunc(_)) => !funcref.is_null(),
@@ -455,7 +456,8 @@ impl WastRunner {
                 value == expected
             }
             // A `(ref.extern)` result pattern expects a non-null external reference
-            // with an unspecified value.
+            // with an unspecified value. This is deliberately stricter than the spec
+            // interpreter and Wasmtime, which both also accept a null `externref`.
             (Val::ExternRef(externref), WastRetCore::RefExtern(None)) => !externref.is_null(),
             _ => false,
         };
