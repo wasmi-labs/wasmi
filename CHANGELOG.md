@@ -8,7 +8,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## `2.0.0` - 2026-08-11
+## `2.0.0` - 2026-09-01
 
 Upgrading from Wasmi `1.x`? Please refer to the
 [Wasmi v1 to v2 migration guide](./docs/migration-v1-to-v2.md)
