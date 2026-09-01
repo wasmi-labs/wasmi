@@ -166,6 +166,7 @@ impl Ty {
 
 #[derive(Copy, Clone)]
 pub enum FieldTy {
+    Zero,
     Slot,
     SlotSpan,
     SlotAndRegInt,
@@ -229,7 +230,7 @@ impl FieldTy {
     pub fn is_unit(&self) -> bool {
         matches!(
             self,
-            Self::Local(_) | Self::Table0 | Self::RegInt | Self::RegF32 | Self::RegF64
+            Self::Local(_) | Self::Table0 | Self::RegInt | Self::RegF32 | Self::RegF64 | Self::Zero
         )
     }
 }
@@ -277,6 +278,7 @@ impl From<Ty> for FieldTy {
 impl Display for FieldTy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
+            Self::Zero => "Zero",
             Self::Slot => "Slot",
             Self::SlotSpan => "SlotSpan",
             Self::SlotAndRegInt => "SlotAndReg<i64>",

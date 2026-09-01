@@ -88,6 +88,8 @@ pub enum OperandKind {
     Local(u16),
     /// The operand is both a slot and a register value.
     SlotAndReg,
+    /// An immediate zero value.
+    Zero,
 }
 
 impl OperandKind {
@@ -108,6 +110,7 @@ impl OperandKind {
                 Ty::F64 | Ty::SignF64 => FieldTy::RegF64,
                 _ => FieldTy::RegInt,
             },
+            OperandKind::Zero => FieldTy::Zero,
             OperandKind::Local(index) => FieldTy::Local(index),
             OperandKind::SlotAndReg => match hint {
                 Ty::F32 | Ty::SignF32 => FieldTy::SlotAndRegF32,
@@ -522,6 +525,7 @@ impl LoadOp {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Immediate => FieldTy::Address,
             OperandKind::Reg => FieldTy::RegInt,
+            OperandKind::Zero => FieldTy::Zero,
             OperandKind::Local(index) => FieldTy::Local(index),
             OperandKind::SlotAndReg => FieldTy::SlotAndRegInt,
         };
@@ -625,6 +629,7 @@ impl StoreOp {
             OperandKind::Slot => FieldTy::Slot,
             OperandKind::Reg => FieldTy::RegInt,
             OperandKind::Immediate => FieldTy::Address,
+            OperandKind::Zero => FieldTy::Zero,
             OperandKind::Local(index) => FieldTy::Local(index),
             OperandKind::SlotAndReg => FieldTy::SlotAndRegInt,
         };
@@ -653,6 +658,7 @@ impl StoreOp {
                 StoreKind::Wrap { wrapped } => FieldTy::from(wrapped),
                 StoreKind::Lane { width } => FieldTy::from(width),
             },
+            OperandKind::Zero => FieldTy::Zero,
             OperandKind::Local(index) => FieldTy::Local(index),
         };
         Field::new(Ident::Value, field_ty)
@@ -989,6 +995,7 @@ impl ReplaceLaneOp {
             },
             OperandKind::Immediate => self.ty.item_ty(),
             OperandKind::Local(index) => FieldTy::Local(index),
+            OperandKind::Zero => FieldTy::Zero,
         };
         Field::new(Ident::Value, value_ty)
     }

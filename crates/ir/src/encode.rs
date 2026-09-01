@@ -25,6 +25,7 @@ use crate::{
     SlotSpan,
     Table0,
     TableAddr,
+    Zero,
     core::{ShiftAmount, TrapCode},
     index::RawSlot,
     primitive::OffsetRepr,
@@ -259,6 +260,16 @@ impl<const N: usize, T: Encode> Encode for [T; N] {
 }
 
 impl<const N: u16> Encode for Local<N> {
+    #[inline]
+    fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
+    where
+        E: Encoder,
+    {
+        encoder.write_bytes(&[])
+    }
+}
+
+impl Encode for Zero {
     #[inline]
     fn encode<E>(&self, encoder: &mut E) -> Result<E::Pos, E::Error>
     where

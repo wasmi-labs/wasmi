@@ -163,8 +163,9 @@ impl Display for DisplayDecode<&'_ LoadOp> {
             OperandKind::SlotAndReg => {
                 DisplayMaybe::Some(DisplayConcat((',', FieldTy::SlotAndRegInt)))
             }
-            OperandKind::Immediate => DisplayMaybe::None,
-            OperandKind::Local(_index) => DisplayMaybe::None,
+            OperandKind::Immediate | OperandKind::Zero | OperandKind::Local(_) => {
+                DisplayMaybe::None
+            }
         };
         let generics = DisplayConcat(('<', result_ty, ptr_ty, '>'));
         writeln!(
@@ -198,8 +199,7 @@ impl Display for DisplayDecode<&'_ StoreOp> {
             OperandKind::Reg | OperandKind::Slot | OperandKind::SlotAndReg => {
                 Some(DisplayConcat((op.ptr_field().ty, ',')))
             }
-            OperandKind::Immediate => None,
-            OperandKind::Local(_index) => None,
+            OperandKind::Immediate | OperandKind::Zero | OperandKind::Local(_) => None,
         }
         .display_maybe();
         let value_ty = op.value_field().ty;

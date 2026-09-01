@@ -5,6 +5,10 @@ use core::{
     marker::PhantomData,
 };
 
+/// An immediate zero value.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Zero {}
+
 /// Always refers to `(table 0)`.
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Table0 {}

@@ -170,7 +170,7 @@ impl OperandKind {
             OperandKind::Slot => Some(Location::Slot),
             OperandKind::SlotAndReg => Some(Location::SlotAndReg),
             OperandKind::Local(_) => None,
-            OperandKind::Immediate => unreachable!(),
+            OperandKind::Immediate | OperandKind::Zero => unreachable!(),
         }
     }
 }

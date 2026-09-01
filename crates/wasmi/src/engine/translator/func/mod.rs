@@ -1548,12 +1548,12 @@ impl FuncTranslator {
         };
         self.encode_branch_op(label, |offset| match branch_eqz {
             true => match condition {
-                Location::Slot(condition) => Op::branch_i32_eq_si(offset, condition, 0),
-                Location::Reg(_) => Op::branch_i32_eq_ri(offset, 0),
+                Location::Slot(condition) => Op::branch_i32_eq_sz(offset, condition),
+                Location::Reg(_) => Op::branch_i32_eq_rz(offset),
             },
             false => match condition {
-                Location::Slot(condition) => Op::branch_i32_not_eq_si(offset, condition, 0),
-                Location::Reg(_) => Op::branch_i32_not_eq_ri(offset, 0),
+                Location::Slot(condition) => Op::branch_i32_not_eq_sz(offset, condition),
+                Location::Reg(_) => Op::branch_i32_not_eq_rz(offset),
             },
         })?;
         Ok(())
