@@ -245,6 +245,7 @@ pub struct Inst {
     target_arch = "riscv64",
     target_arch = "wasm32",
     target_arch = "wasm64",
+    wasmi_use_unstable_features
 ))]
 type InstRepr = usize;
 
@@ -261,6 +262,7 @@ type InstRepr = usize;
     target_arch = "riscv64",
     target_arch = "wasm32",
     target_arch = "wasm64",
+    wasmi_use_unstable_features
 )))]
 type InstRepr = InstReprFloat;
 
