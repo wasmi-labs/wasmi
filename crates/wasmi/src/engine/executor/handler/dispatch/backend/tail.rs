@@ -23,32 +23,24 @@ pub fn fetch_handler(ip: Ip) -> Handler {
 pub enum Never {}
 pub type Done = Control<Never, Break>;
 
-#[cfg(not(target_arch = "x86_64"))]
-pub type Handler = fn(
-    &mut PrunedStore,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
-) -> Done;
+macro_rules! define_handler_type {
+    (extern $abi:tt) => {
+        #[allow(improper_ctypes_definitions)] // not used in FFI
+        pub type Handler = extern $abi fn(
+            &mut PrunedStore,
+            ip: Ip,
+            sp: Sp,
+            mem0: Mem0Ptr,
+            mem0_len: Mem0Len,
+            instance: Inst,
+            ireg: Ireg,
+            freg32: Freg32,
+            freg64: Freg64,
+        ) -> Done;
+    }
+}
 
-#[cfg(target_arch = "x86_64")]
-#[allow(improper_ctypes_definitions)] // not used in FFI
-pub type Handler = extern "sysv64" fn(
-    &mut PrunedStore,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
-) -> Done;
+invoke_with_handler_abi!(define_handler_type! { extern _ });
 
 macro_rules! expand_op_code_to_handler {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
@@ -68,7 +60,7 @@ macro_rules! expand_op_code_to_handler {
 }
 ir::for_each_op!(expand_op_code_to_handler);
 
-#[cfg(not(all(feature = "unstable", not(feature = "stable"))))]
+#[cfg(not(wasmi_use_unstable_features))]
 macro_rules! dispatch {
     ( $store:expr, $args:expr $(,)? ) => {{
         let (ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64) = $args.into_parts();
@@ -79,7 +71,7 @@ macro_rules! dispatch {
     }};
 }
 
-#[cfg(all(feature = "unstable", not(feature = "stable")))]
+#[cfg(wasmi_use_unstable_features)]
 macro_rules! dispatch {
     ( $store:expr, $args:expr $(,)? ) => {{
         let (ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64) = $args.into_parts();

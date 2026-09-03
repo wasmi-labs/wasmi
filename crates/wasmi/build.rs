@@ -52,11 +52,14 @@ fn main() {
     println!("cargo::rerun-if-env-changed=CARGO_CFG_TARGET_ARCH");
     println!("cargo::rerun-if-env-changed=CARGO_CFG_TARGET_FEATURE");
     println!("cargo::rerun-if-env-changed=CARGO_CFG_DEBUG_ASSERTIONS");
+    println!("cargo::rerun-if-env-changed=CARGO_FEATURE_UNSTABLE");
+    println!("cargo::rerun-if-env-changed=CARGO_FEATURE_STABLE");
     // Define Wasmi specific `cfg` values.
     println!("cargo::rustc-check-cfg=cfg(wasmi_opt_size)");
     println!("cargo::rustc-check-cfg=cfg(wasmi_opt_speed)");
     println!("cargo::rustc-check-cfg=cfg(wasmi_has_tail_calls)");
     println!("cargo::rustc-check-cfg=cfg(wasmi_use_tail_calls)");
+    println!("cargo::rustc-check-cfg=cfg(wasmi_use_unstable_features)");
     let opt_level = env::var("OPT_LEVEL").unwrap_or_default();
     match opt_level.as_str() {
         "s" | "z" => println!("cargo::rustc-cfg=wasmi_opt_size"),
@@ -76,6 +79,11 @@ fn main() {
     let has_debug_assertions = env::var_os("CARGO_CFG_DEBUG_ASSERTIONS").is_some();
     if has_tail_calls && is_optimizing && !has_debug_assertions {
         println!("cargo::rustc-cfg=wasmi_use_tail_calls");
+    }
+    if dbg!(env::var_os("CARGO_FEATURE_UNSTABLE")).is_some()
+        && dbg!(env::var_os("CARGO_FEATURE_STABLE")).is_none()
+    {
+        println!("cargo::rustc-cfg=wasmi_use_unstable_features");
     }
 }
 

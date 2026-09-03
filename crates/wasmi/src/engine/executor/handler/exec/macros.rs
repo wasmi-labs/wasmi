@@ -1,7 +1,6 @@
-#[cfg(target_arch = "x86_64")]
-macro_rules! execution_handler {
+macro_rules! execution_handler_inner {
     (
-        fn $name:ident(
+        extern $abi:tt fn $name:ident(
             $state:ident   : $state_ty:ty,
             $ip:ident      : $ip_ty:ty,
             $sp:ident      : $sp_ty:ty,
@@ -29,7 +28,7 @@ macro_rules! execution_handler {
         )]
         #[allow(improper_ctypes_definitions)] // not used in FFI
         #[allow(clippy::too_many_arguments)] // extern fns are ignored
-        pub extern "sysv64" fn $name(
+        pub extern $abi fn $name(
             $state: $state_ty,
             $ip: $ip_ty,
             $sp: $sp_ty,
@@ -43,48 +42,9 @@ macro_rules! execution_handler {
     };
 }
 
-#[cfg(not(target_arch = "x86_64"))]
 macro_rules! execution_handler {
-    (
-        fn $name:ident(
-            $state:ident   : $state_ty:ty,
-            $ip:ident      : $ip_ty:ty,
-            $sp:ident      : $sp_ty:ty,
-            $mem0_ptr:ident: $mem0_ptr_ty:ty,
-            $mem0_len:ident: $mem0_len_ty:ty,
-            $instance:ident: $instance_ty:ty,
-            $ireg:ident    : $ireg_ty:ty,
-            $freg32:ident  : $freg32_ty:ty,
-            $freg64:ident  : $freg64_ty:ty,
-        ) -> $done:ty = $body:tt
-    ) => {
-        #[cfg_attr(
-            any(
-                feature = "portable-dispatch",
-                all(feature = "auto-dispatch", not(wasmi_use_tail_calls))
-            ),
-            inline(always)
-        )]
-        #[cfg_attr(
-            all(
-                not(feature = "portable-dispatch"),
-                any(not(feature = "auto-dispatch"), wasmi_use_tail_calls)
-            ),
-            inline(never)
-        )]
-        #[allow(improper_ctypes_definitions)] // not used in FFI
-        #[expect(clippy::too_many_arguments)]
-        pub fn $name(
-            $state: $state_ty,
-            $ip: $ip_ty,
-            $sp: $sp_ty,
-            $mem0_ptr: $mem0_ptr_ty,
-            $mem0_len: $mem0_len_ty,
-            $instance: $instance_ty,
-            $ireg: $ireg_ty,
-            $freg32: $freg32_ty,
-            $freg64: $freg64_ty,
-        ) -> $done $body
+    ($($args:tt)*) => {
+        invoke_with_handler_abi! { execution_handler_inner! { extern _ $($args)* } }
     };
 }
 

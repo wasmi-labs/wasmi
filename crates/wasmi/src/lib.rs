@@ -93,8 +93,9 @@
     clippy::items_after_statements
 )]
 #![cfg_attr(
-    all(feature = "unstable", not(feature = "stable")),
+    wasmi_use_unstable_features,
     feature(explicit_tail_calls),
+    feature(rust_preserve_none_cc),
     expect(incomplete_features)
 )]
 #![recursion_limit = "1000"]
