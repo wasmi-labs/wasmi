@@ -189,6 +189,7 @@ impl WasmTranslator<'_> for FuncTranslator {
         //       function parameters and locals so that the function `block`
         //       has proper knowledge of its position within the operands stack.
         self.init_func_body_block()?;
+        self.bump_fuel_for_locals()?;
         Ok(())
     }
 
@@ -375,6 +376,27 @@ impl FuncTranslator {
         let fuel_pos = self.stack.fuel_pos();
         let fuel_used = self.operator_cost.cost(operator);
         self.instrs.bump_fuel_consumption_by(fuel_pos, fuel_used)?;
+        Ok(())
+    }
+
+    /// Bumps the function's fuel cost by the costs of initializing its locals.
+    ///
+    /// This does nothing if fuel metering is disabled.
+    fn bump_fuel_for_locals(&mut self) -> Result<(), Error> {
+        let fuel_pos = self.stack.fuel_pos();
+        if fuel_pos.is_none() {
+            // Fuel metering is disabled: skip the bookkeeping below.
+            return Ok(());
+        }
+        let len_params = self.func_type_with(|func_ty| func_ty.params().len());
+        let len_locals = self.locals.len();
+        debug_assert!(
+            len_params <= len_locals,
+            "function parameters are registered as locals: #params = {len_params}, #locals = {len_locals}",
+        );
+        let len_zeroed_locals = len_locals.saturating_sub(len_params);
+        self.instrs
+            .bump_fuel_consumption_by(fuel_pos, len_zeroed_locals as u64)?;
         Ok(())
     }
 
