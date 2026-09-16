@@ -293,6 +293,32 @@ impl FuncType {
     pub fn params_results(&self) -> (&[ValType], &[ValType]) {
         self.inner.params_results()
     }
+
+    /// Returns `true` when the [`FuncType`] is a subtype of the `other` [`FuncType`].
+    ///
+    /// # Note
+    ///
+    /// Currently, `.matches` and `==` give the same result because [`ValType`] has no subtyping yet.
+    /// That may change with `function-references`.
+    ///
+    /// The parameter types are checked in the opposite direction
+    /// (contravariantly), while the result types are checked in the same
+    /// direction (covariantly), following the
+    /// WebAssembly [subtyping rules](https://webassembly.github.io/spec/core/valid/types.html#import-subtyping).
+    pub fn matches(&self, other: &Self) -> bool {
+        self.params().len() == other.params().len()
+            && self.results().len() == other.results().len()
+            && self
+                .params()
+                .iter()
+                .zip(other.params())
+                .all(|(self_vt, other_vt)| other_vt.matches(self_vt))
+            && self
+                .results()
+                .iter()
+                .zip(other.results())
+                .all(|(self_vt, other_vt)| self_vt.matches(other_vt))
+    }
 }
 
 #[cfg(test)]
@@ -354,5 +380,44 @@ mod tests {
         assert_eq!(ft.results(), results);
         assert_eq!(ft.params(), ft.params_results().0);
         assert_eq!(ft.results(), ft.params_results().1);
+    }
+
+    #[test]
+    fn matches_works() {
+        // Two void FuncType instances should match
+        let self_ft = FuncType::new([], []).unwrap();
+        let other_ft = FuncType::new([], []).unwrap();
+        assert!(self_ft.matches(&other_ft));
+        assert!(other_ft.matches(&self_ft));
+
+        // Two identical FuncType instances should match
+        let self_ft = FuncType::new([ValType::I32, ValType::F32], [ValType::I32]).unwrap();
+        let other_ft = FuncType::new([ValType::I32, ValType::F32], [ValType::I32]).unwrap();
+        assert!(self_ft.matches(&other_ft));
+        assert!(other_ft.matches(&self_ft));
+
+        // Two FuncType instances differing only in the number of parameters should not match
+        let self_ft = FuncType::new([ValType::I32], [ValType::F32]).unwrap();
+        let other_ft = FuncType::new([ValType::I32, ValType::I32], [ValType::F32]).unwrap();
+        assert!(!self_ft.matches(&other_ft));
+        assert!(!other_ft.matches(&self_ft));
+
+        // Two FuncType instances differing only in the number of results should not match
+        let self_ft = FuncType::new([ValType::I32], [ValType::F32]).unwrap();
+        let other_ft = FuncType::new([ValType::I32], [ValType::F32, ValType::F32]).unwrap();
+        assert!(!self_ft.matches(&other_ft));
+        assert!(!other_ft.matches(&self_ft));
+
+        // Two FuncType instances differing only in parameter types should not match
+        let self_ft = FuncType::new([ValType::I32, ValType::F32], [ValType::I32]).unwrap();
+        let other_ft = FuncType::new([ValType::F32, ValType::I32], [ValType::I32]).unwrap();
+        assert!(!self_ft.matches(&other_ft));
+        assert!(!other_ft.matches(&self_ft));
+
+        // Two FuncType instances differing only in result types should not match
+        let self_ft = FuncType::new([ValType::F32, ValType::I32], [ValType::I32]).unwrap();
+        let other_ft = FuncType::new([ValType::F32, ValType::I32], [ValType::F32]).unwrap();
+        assert!(!self_ft.matches(&other_ft));
+        assert!(!other_ft.matches(&self_ft));
     }
 }
