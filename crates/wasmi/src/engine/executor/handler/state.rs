@@ -512,22 +512,22 @@ impl Ip {
     }
 
     /// Aligns `self` relative to `base`.
-    #[cfg(feature = "indirect-dispatch")]
     #[inline(always)]
-    pub fn align_relative_to(self, _base: Ip) -> Self {
-        self
-    }
-
-    /// Aligns `self` relative to `base`.
-    #[cfg(not(feature = "indirect-dispatch"))]
-    #[inline(always)]
+    #[cfg_attr(feature = "indirect-dispatch", allow(unused_variables))]
     pub fn align_relative_to(self, base: Ip) -> Self {
-        const ALIGN: usize = core::mem::align_of::<usize>();
-        let base_addr = base.value as usize;
-        let offset = (self.value as usize) - base_addr;
-        let aligned_offset = offset.next_multiple_of(ALIGN);
-        Self {
-            value: (base_addr + aligned_offset) as *mut u8,
+        #[cfg(feature = "indirect-dispatch")]
+        {
+            self
+        }
+        #[cfg(not(feature = "indirect-dispatch"))]
+        {
+            const ALIGN: usize = core::mem::align_of::<usize>();
+            let base_addr = base.value as usize;
+            let offset = (self.value as usize) - base_addr;
+            let aligned_offset = offset.next_multiple_of(ALIGN);
+            Self {
+                value: (base_addr + aligned_offset) as *mut u8,
+            }
         }
     }
 }

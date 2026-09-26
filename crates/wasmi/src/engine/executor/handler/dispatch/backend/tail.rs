@@ -9,17 +9,17 @@ use crate::{
     store::PrunedStore,
 };
 
-#[cfg(feature = "indirect-dispatch")]
 #[inline(always)]
 pub fn fetch_handler(ip: Ip) -> Handler {
-    let op_code = super::decode_op_code(ip);
-    op_code_to_handler(op_code)
-}
-
-#[cfg(not(feature = "indirect-dispatch"))]
-#[inline(always)]
-pub fn fetch_handler(ip: Ip) -> Handler {
-    super::decode_handler(ip)
+    #[cfg(feature = "indirect-dispatch")]
+    {
+        let op_code = super::decode_op_code(ip);
+        op_code_to_handler(op_code)
+    }
+    #[cfg(not(feature = "indirect-dispatch"))]
+    {
+        super::decode_handler(ip)
+    }
 }
 
 pub enum Never {}
