@@ -1,6 +1,6 @@
 use crate::{
     engine::executor::handler::{
-        dispatch::{Break, Control, ExecutionOutcome, decode_handler, decode_op_code},
+        dispatch::{Break, Control, ExecutionOutcome},
         exec,
         state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp},
     },
@@ -9,15 +9,17 @@ use crate::{
     store::PrunedStore,
 };
 
+#[cfg(feature = "indirect-dispatch")]
 #[inline(always)]
 pub fn fetch_handler(ip: Ip) -> Handler {
-    match cfg!(feature = "indirect-dispatch") {
-        true => {
-            let op_code = decode_op_code(ip);
-            op_code_to_handler(op_code)
-        }
-        false => decode_handler(ip),
-    }
+    let op_code = super::decode_op_code(ip);
+    op_code_to_handler(op_code)
+}
+
+#[cfg(not(feature = "indirect-dispatch"))]
+#[inline(always)]
+pub fn fetch_handler(ip: Ip) -> Handler {
+    super::decode_handler(ip)
 }
 
 pub enum Never {}
