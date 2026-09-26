@@ -2054,7 +2054,7 @@ impl FuncTranslator {
                 return Ok(());
             }
         };
-        let fusion = self.try_fuse_select(condition)?;
+        let (fusion, condition) = self.try_fuse_select(condition)?;
         if fusion.is_fused() {
             self.instrs.drop_staged();
             if matches!(fusion, SelectFusion::FusedSwap) {
@@ -2297,34 +2297,36 @@ impl FuncTranslator {
     /// - Returns [`SelectFusion::Fused`] or [`SelectFusion::FusedSwap`] if fusion was successful.
     ///     - If [`SelectFusion::FusedSwap`] was returned, true and false operands need to be swapped.
     /// - Returns [`SelectFusion::None`] if fusion could not be applied.
-    fn try_fuse_select(&self, condition: Location) -> Result<SelectFusion, Error> {
+    fn try_fuse_select(&self, condition: Location) -> Result<(SelectFusion, Location), Error> {
         let Some(staged) = self.instrs.peek_staged() else {
             // If there is no last instruction there is no comparison instruction to negate.
-            return Ok(SelectFusion::None);
+            return Ok((SelectFusion::None, condition));
         };
         let Some(staged_result) = staged.result_loc() else {
             // All negatable instructions have a single result register.
-            return Ok(SelectFusion::None);
+            return Ok((SelectFusion::None, condition));
         };
         if let ir::Location::Slot(result_slot) = staged_result {
             if matches!(self.layout.stack_space(result_slot), StackSpace::Local) {
                 // The staged operator stores its result into a local variable which
                 // is an observable side effect that must not be fused.
-                return Ok(SelectFusion::None);
+                return Ok((SelectFusion::None, condition));
             }
         }
         match (staged_result, condition) {
             (ir::Location::Reg(ValType::I64), Location::Reg(_)) => {}
             (ir::Location::Slot(staged), Location::Slot(condition)) if staged == condition => {}
-            _ => return Ok(SelectFusion::None),
+            _ => return Ok((SelectFusion::None, condition)),
         }
+        // The fused `select` tests the input of the dropped comparison: the register
+        // for the `_Rri` variants, the `lhs` slot for the `_Rsi` variants.
         #[rustfmt::skip]
         let fusion = match staged {
-            | Op::I32Eq_Rri { rhs: 0, .. }
-            | Op::I32Eq_Rsi { rhs: 0, .. } => SelectFusion::FusedSwap,
-            | Op::I32NotEq_Rri { rhs: 0, .. }
-            | Op::I32NotEq_Rsi { rhs: 0, .. } => SelectFusion::Fused,
-            | _ => SelectFusion::None,
+            | Op::I32Eq_Rri { rhs: 0, .. } => (SelectFusion::FusedSwap, condition),
+            | Op::I32Eq_Rsi { lhs, rhs: 0, .. } => (SelectFusion::FusedSwap, Location::Slot(lhs)),
+            | Op::I32NotEq_Rri { rhs: 0, .. } => (SelectFusion::Fused, condition),
+            | Op::I32NotEq_Rsi { lhs, rhs: 0, .. } => (SelectFusion::Fused, Location::Slot(lhs)),
+            | _ => (SelectFusion::None, condition),
         };
         Ok(fusion)
     }
