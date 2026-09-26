@@ -99,10 +99,10 @@ impl Args {
     /// Decodes and returns a value of type `T` using `self`.
     #[inline]
     pub unsafe fn decode<T: ir::Decode>(&mut self) -> T {
-        let ip = match cfg!(feature = "indirect-dispatch") {
-            true => unsafe { self.ip.skip::<ir::OpCode>() },
-            false => unsafe { self.ip.skip::<::core::primitive::usize>() },
-        };
+        #[cfg(feature = "indirect-dispatch")]
+        let ip = unsafe { self.ip.skip::<ir::OpCode>() };
+        #[cfg(not(feature = "indirect-dispatch"))]
+        let ip = unsafe { self.ip.skip::<usize>() };
         let (new_ip, op) = unsafe { ip.decode() };
         self.ip = new_ip;
         op

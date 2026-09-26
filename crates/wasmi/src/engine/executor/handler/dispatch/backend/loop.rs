@@ -59,6 +59,7 @@ macro_rules! dispatch {
 
 pub type Handler = fn(&mut Executor, store: &mut PrunedStore) -> Control<(), Break>;
 
+#[cfg(not(feature = "indirect-dispatch"))]
 macro_rules! expand_op_code_to_handler {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {
         #[inline(always)]
@@ -75,6 +76,7 @@ macro_rules! expand_op_code_to_handler {
         }
     };
 }
+#[cfg(not(feature = "indirect-dispatch"))]
 ir::for_each_op!(expand_op_code_to_handler);
 
 #[expect(clippy::too_many_arguments)]

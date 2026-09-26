@@ -1,10 +1,11 @@
 use super::{Reset, ReusableAllocations};
+#[cfg(not(feature = "indirect-dispatch"))]
+use crate::engine::executor::op_code_to_handler;
 use crate::{
     Engine,
     Error,
     engine::{
         TranslationError,
-        executor::op_code_to_handler,
         translator::{
             comparator::UpdateBranchOffset,
             func::{
@@ -17,7 +18,9 @@ use crate::{
     ir::{self, BlockFuel, BranchOffset, Encode as _, Op, OpCode},
 };
 use alloc::vec::Vec;
-use core::{cmp, fmt, iter, marker::PhantomData};
+#[cfg(not(feature = "indirect-dispatch"))]
+use core::iter;
+use core::{cmp, fmt, marker::PhantomData};
 
 /// Fuel amount required by certain operators.
 type FuelUsed = u64;
@@ -454,16 +457,20 @@ impl OpEncoder {
     ///
     /// Does nothing if the buffer is already aligned.
     pub fn pad_to_op_alignment(&mut self) -> Result<(), Error> {
-        const ALIGN: usize = core::mem::align_of::<fn()>();
-        if cfg!(feature = "indirect-dispatch") {
+        #[cfg(feature = "indirect-dispatch")]
+        {
             // Only pad to alignment when `indirect-dispatch` is disabled.
-            return Ok(());
+            Ok(())
         }
-        let len = self.ops.buffer.len();
-        let aligned_len = len.next_multiple_of(ALIGN);
-        let padding_len = aligned_len - len;
-        self.ops.buffer.extend(iter::repeat_n(0_u8, padding_len));
-        Ok(())
+        #[cfg(not(feature = "indirect-dispatch"))]
+        {
+            const ALIGN: usize = core::mem::align_of::<fn()>();
+            let len = self.ops.buffer.len();
+            let aligned_len = len.next_multiple_of(ALIGN);
+            let padding_len = aligned_len - len;
+            self.ops.buffer.extend(iter::repeat_n(0_u8, padding_len));
+            Ok(())
+        }
     }
 
     /// Bumps consumed fuel for [`Op::ConsumeFuel`] at `fuel_pos` by `delta`.
@@ -683,23 +690,23 @@ impl<'a> ir::Encoder for SliceEncoder<'a> {
 
 /// Encodes an [`OpCode`] to a generic [`ir::Encoder`].
 fn encode_op_code<E: ir::Encoder>(encoder: &mut E, code: OpCode) -> Result<E::Pos, E::Error> {
-    match cfg!(feature = "indirect-dispatch") {
-        true => {
-            // Note: encoding for indirect-threading
-            //
-            // The op-codes are not resolved during translation time and must
-            // be resolved during execution time. This decreases memory footprint
-            // of the encoded IR at the cost of execution performance.
-            u16::from(code).encode(encoder)
-        }
-        false => {
-            // Note: encoding for direct-threading
-            //
-            // The op-codes are resolved during translation time (now) to their
-            // underlying function pointers. This increases memory footprint
-            // of the encoded IR but improves execution performance.
-            (op_code_to_handler(code) as usize).encode(encoder)
-        }
+    #[cfg(feature = "indirect-dispatch")]
+    {
+        // Note: encoding for indirect-threading
+        //
+        // The op-codes are not resolved during translation time and must
+        // be resolved during execution time. This decreases memory footprint
+        // of the encoded IR at the cost of execution performance.
+        u16::from(code).encode(encoder)
+    }
+    #[cfg(not(feature = "indirect-dispatch"))]
+    {
+        // Note: encoding for direct-threading
+        //
+        // The op-codes are resolved during translation time (now) to their
+        // underlying function pointers. This increases memory footprint
+        // of the encoded IR but improves execution performance.
+        (op_code_to_handler(code) as usize).encode(encoder)
     }
 }
 

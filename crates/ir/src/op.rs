@@ -96,10 +96,10 @@ impl Reg<f64> {
 
 #[test]
 fn op_size_of_and_alignment() {
-    let expected_size = match cfg!(feature = "simd") && !cfg!(feature = "slot16") {
-        true => 32,
-        false => 24,
-    };
+    #[cfg(all(feature = "simd", not(feature = "slot16")))]
+    let expected_size = 32;
+    #[cfg(not(all(feature = "simd", not(feature = "slot16"))))]
+    let expected_size = 24;
     assert_eq!(core::mem::size_of::<Op>(), expected_size);
     assert_eq!(core::mem::align_of::<Op>(), 8);
 }

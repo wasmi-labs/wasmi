@@ -8,6 +8,8 @@ mod exec;
 mod func;
 mod state;
 
+#[cfg(not(feature = "indirect-dispatch"))]
+pub use self::dispatch::op_code_to_handler;
 use self::{
     args::Args,
     dispatch::{Break, Control},
@@ -26,7 +28,7 @@ pub use self::{
         LowerToCells,
         StoreToCells,
     },
-    dispatch::{ExecutionOutcome, op_code_to_handler},
+    dispatch::ExecutionOutcome,
     func::{init_host_func_call, init_wasm_func_call, resume_wasm_func_call},
     state::{ExecContext, Inst, Stack},
 };
