@@ -1,3 +1,5 @@
+#[cfg(not(feature = "indirect-dispatch"))]
+pub use self::handler::op_code_to_handler;
 pub use self::{
     handler::{
         Cell,
@@ -14,7 +16,6 @@ pub use self::{
         LowerToCells,
         Stack,
         StoreToCells,
-        op_code_to_handler,
         resume_wasm_func_call,
     },
     inout::{InOutParams, InOutResults},

@@ -1,10 +1,11 @@
 use super::{Reset, ReusableAllocations};
+#[cfg(not(feature = "indirect-dispatch"))]
+use crate::engine::executor::op_code_to_handler;
 use crate::{
     Engine,
     Error,
     engine::{
         TranslationError,
-        executor::op_code_to_handler,
         translator::{
             comparator::UpdateBranchOffset,
             func::{
@@ -17,7 +18,9 @@ use crate::{
     ir::{self, BlockFuel, BranchOffset, Encode as _, Op, OpCode},
 };
 use alloc::vec::Vec;
-use core::{cmp, fmt, iter, marker::PhantomData};
+#[cfg(not(feature = "indirect-dispatch"))]
+use core::iter;
+use core::{cmp, fmt, marker::PhantomData};
 
 /// Fuel amount required by certain operators.
 type FuelUsed = u64;
@@ -453,12 +456,21 @@ impl OpEncoder {
     /// The alignment is equal to the alignment of function pointers, e.g. `fn()`.
     ///
     /// Does nothing if the buffer is already aligned.
+    #[cfg(feature = "indirect-dispatch")]
+    pub fn pad_to_op_alignment(&mut self) -> Result<(), Error> {
+        // Only pad to alignment when `indirect-dispatch` is disabled.
+        Ok(())
+    }
+
+    /// Pads the encoded operator buffer with zero bytes until its length is [`Op`] aligned.
+    ///
+    /// This is used to encode new [`Op`] at properly aligned offsets within the buffer.
+    /// The alignment is equal to the alignment of function pointers, e.g. `fn()`.
+    ///
+    /// Does nothing if the buffer is already aligned.
+    #[cfg(not(feature = "indirect-dispatch"))]
     pub fn pad_to_op_alignment(&mut self) -> Result<(), Error> {
         const ALIGN: usize = core::mem::align_of::<fn()>();
-        if cfg!(feature = "indirect-dispatch") {
-            // Only pad to alignment when `indirect-dispatch` is disabled.
-            return Ok(());
-        }
         let len = self.ops.buffer.len();
         let aligned_len = len.next_multiple_of(ALIGN);
         let padding_len = aligned_len - len;
@@ -682,25 +694,25 @@ impl<'a> ir::Encoder for SliceEncoder<'a> {
 }
 
 /// Encodes an [`OpCode`] to a generic [`ir::Encoder`].
+#[cfg(feature = "indirect-dispatch")]
 fn encode_op_code<E: ir::Encoder>(encoder: &mut E, code: OpCode) -> Result<E::Pos, E::Error> {
-    match cfg!(feature = "indirect-dispatch") {
-        true => {
-            // Note: encoding for indirect-threading
-            //
-            // The op-codes are not resolved during translation time and must
-            // be resolved during execution time. This decreases memory footprint
-            // of the encoded IR at the cost of execution performance.
-            u16::from(code).encode(encoder)
-        }
-        false => {
-            // Note: encoding for direct-threading
-            //
-            // The op-codes are resolved during translation time (now) to their
-            // underlying function pointers. This increases memory footprint
-            // of the encoded IR but improves execution performance.
-            (op_code_to_handler(code) as usize).encode(encoder)
-        }
-    }
+    // Note: encoding for indirect-threading
+    //
+    // The op-codes are not resolved during translation time and must
+    // be resolved during execution time. This decreases memory footprint
+    // of the encoded IR at the cost of execution performance.
+    u16::from(code).encode(encoder)
+}
+
+/// Encodes an [`OpCode`] to a generic [`ir::Encoder`].
+#[cfg(not(feature = "indirect-dispatch"))]
+fn encode_op_code<E: ir::Encoder>(encoder: &mut E, code: OpCode) -> Result<E::Pos, E::Error> {
+    // Note: encoding for direct-threading
+    //
+    // The op-codes are resolved during translation time (now) to their
+    // underlying function pointers. This increases memory footprint
+    // of the encoded IR but improves execution performance.
+    (op_code_to_handler(code) as usize).encode(encoder)
 }
 
 /// Creates an initialized [`BranchOffset`] from `src` to `dst`.

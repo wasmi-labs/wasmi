@@ -1078,11 +1078,11 @@ fn exec_branch_table_with_copies<Idx>(
     Idx: GetValue<u32>,
 {
     let chosen_target = fetch_branch_table_target(args, index, len_targets);
-    let len_encoded_target = match cfg!(feature = "indirect-dispatch") {
-        // TODO: add and use `Encode` trait assoc constants
-        true => 6,
-        false => 8,
-    };
+    // TODO: add and use `Encode` trait assoc constants
+    #[cfg(feature = "indirect-dispatch")]
+    let len_encoded_target = 6;
+    #[cfg(not(feature = "indirect-dispatch"))]
+    let len_encoded_target = 8;
     let target_offset = len_encoded_target * chosen_target;
     args.set_ip(unsafe { args.ip.add(target_offset) });
     let (_, ir::BranchTableTarget { results, offset }) =

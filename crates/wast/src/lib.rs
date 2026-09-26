@@ -696,10 +696,10 @@ fn i64_matches_or_err(actual: &i64, expected: &i64) -> Result<()> {
 fn f32_matches_or_err(actual: &F32, expected: &NanPattern<wast::token::F32>) -> Result<()> {
     match expected {
         NanPattern::CanonicalNan => f32_expect_canonical_nan(actual),
-        NanPattern::ArithmeticNan => match cfg!(feature = "deterministic") {
-            true => f32_expect_canonical_nan(actual),
-            false => f32_expect_arithmetic_nan(actual),
-        },
+        #[cfg(feature = "deterministic")]
+        NanPattern::ArithmeticNan => f32_expect_canonical_nan(actual),
+        #[cfg(not(feature = "deterministic"))]
+        NanPattern::ArithmeticNan => f32_expect_arithmetic_nan(actual),
         NanPattern::Value(expected) => {
             let actual_bits = actual.to_bits();
             let actual_value = f32::from_bits(actual_bits);
@@ -734,6 +734,7 @@ fn f32_expect_canonical_nan(actual: &F32) -> Result<()> {
     Ok(())
 }
 
+#[cfg(not(feature = "deterministic"))]
 fn f32_expect_arithmetic_nan(actual: &F32) -> Result<()> {
     // Properties of arithmetic NaNs:
     //
@@ -757,10 +758,10 @@ fn f32_expect_arithmetic_nan(actual: &F32) -> Result<()> {
 fn f64_matches_or_err(actual: &F64, expected: &NanPattern<wast::token::F64>) -> Result<()> {
     match expected {
         NanPattern::CanonicalNan => f64_expect_canonical_nan(actual),
-        NanPattern::ArithmeticNan => match cfg!(feature = "deterministic") {
-            true => f64_expect_canonical_nan(actual),
-            false => f64_expect_arithmetic_nan(actual),
-        },
+        #[cfg(feature = "deterministic")]
+        NanPattern::ArithmeticNan => f64_expect_canonical_nan(actual),
+        #[cfg(not(feature = "deterministic"))]
+        NanPattern::ArithmeticNan => f64_expect_arithmetic_nan(actual),
         NanPattern::Value(expected) => {
             let actual_bits = actual.to_bits();
             let actual_value = f64::from_bits(actual_bits);
@@ -795,6 +796,7 @@ fn f64_expect_canonical_nan(actual: &F64) -> Result<()> {
     Ok(())
 }
 
+#[cfg(not(feature = "deterministic"))]
 fn f64_expect_arithmetic_nan(actual: &F64) -> Result<()> {
     // Properties of arithmetic NaNs:
     //

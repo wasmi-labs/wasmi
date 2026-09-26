@@ -15,7 +15,9 @@
 #[macro_use]
 pub mod backend;
 
-pub use self::backend::{Done, Handler, execute_until_done, op_code_to_handler};
+#[cfg(not(feature = "indirect-dispatch"))]
+pub use self::backend::op_code_to_handler;
+pub use self::backend::{Done, Handler, execute_until_done};
 use super::state::Ip;
 use crate::{
     Error,
