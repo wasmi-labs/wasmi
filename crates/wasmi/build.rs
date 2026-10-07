@@ -35,9 +35,10 @@ use std::env;
 /// The `wasmi_use_tail_calls` annotation is the derived decision actually consumed
 /// by Wasmi's dispatch backend selection: it is set when the target supports tail
 /// calls (`wasmi_has_tail_calls`) *and* the build is optimizing (`opt-level` in
-/// "s", "z", 2 or 3), since LLVM does not perform the required sibling-call
-/// optimization at `opt-level` 0 or 1. Together with the `auto-dispatch` crate
-/// feature this drives the automatic fallback to the portable dispatch backend.
+/// "s", "z", 2 or 3) with `debug-assertions` disabled, since LLVM does not reliably
+/// perform the required sibling-call optimization otherwise. Together with the
+/// `auto-dispatch` crate feature this drives the automatic fallback to the portable
+/// dispatch backend.
 fn main() {
     // The emitted `cfg`s depend on the following build configs:
     //
@@ -50,6 +51,7 @@ fn main() {
     println!("cargo::rerun-if-env-changed=OPT_LEVEL");
     println!("cargo::rerun-if-env-changed=CARGO_CFG_TARGET_ARCH");
     println!("cargo::rerun-if-env-changed=CARGO_CFG_TARGET_FEATURE");
+    println!("cargo::rerun-if-env-changed=CARGO_CFG_DEBUG_ASSERTIONS");
     // Define Wasmi specific `cfg` values.
     println!("cargo::rustc-check-cfg=cfg(wasmi_opt_size)");
     println!("cargo::rustc-check-cfg=cfg(wasmi_opt_speed)");
@@ -67,7 +69,9 @@ fn main() {
     }
     // Whether the build is optimizing enough for LLVM to perform sibling-call optimization.
     let is_optimizing = matches!(opt_level.as_str(), "s" | "z" | "2" | "3");
-    if has_tail_calls && is_optimizing {
+    // With `debug-assertions` LLVM does not reliably turn the dispatch into tail calls.
+    let has_debug_assertions = env::var_os("CARGO_CFG_DEBUG_ASSERTIONS").is_some();
+    if has_tail_calls && is_optimizing && !has_debug_assertions {
         println!("cargo::rustc-cfg=wasmi_use_tail_calls");
     }
 }
