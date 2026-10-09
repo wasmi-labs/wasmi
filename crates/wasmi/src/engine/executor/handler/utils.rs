@@ -535,14 +535,29 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     }
 }
 
-/// Returns `true` if `memory` addresses the default linear memory (Wasm index 0).
+/// Returns `true` if `memory` resolves to the default linear memory (Wasm index 0).
+///
+/// # Note (Safety)
+///
+/// The caller must ensure that `instance` refers to a live instance whose entity
+/// cache is warmed up.
 #[inline]
-pub fn is_default_memory(_instance: Inst, memory: ir::MemoryAddr) -> bool {
+pub fn is_default_memory(instance: Inst, memory: ir::MemoryAddr) -> bool {
     // Note: this returns `true` even if the instance does not contain a memory.
     //       It is guaranteed that linear memories are placed first in an instance's
     //       handle buffer, therefore `MemoryAddr(0)` always refers to the default
     //       memory if one exists.
-    u32::from(memory) == 0
+    if u32::from(memory) == 0 {
+        return true;
+    }
+    // Distinct memory indices can still resolve to the same store entity (e.g. the same
+    // memory imported under two names), so compare the resolved entities. A non-zero
+    // index implies that the instance contains a `(memory 0)`.
+    // SAFETY: guaranteed by the caller; the pointers are only compared, never read.
+    unsafe {
+        let mem0 = ir::MemoryAddr::from(0);
+        instance.load_entity_ptr(memory) == instance.load_entity_ptr(mem0)
+    }
 }
 
 /// Extracts the data pointer and length of `(memory 0)`.
