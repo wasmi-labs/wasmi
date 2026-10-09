@@ -87,3 +87,32 @@ fn grow_memory(mut caller: Caller<()>) -> Result<(), Error> {
     memory.grow(&mut caller, 1)?;
     Ok(())
 }
+
+/// Growing a linear memory through an index that aliases `(memory 0)` must also refresh
+/// the cached `(memory 0)`.
+///
+/// The same memory is supplied for both imports, so `$mem0` and `$mem1` are one and the
+/// same store entity. The load uses a slot operand and a 16-bit offset so that it goes
+/// through the cached `(memory 0)` instead of resolving the memory entity.
+#[test]
+fn grow_memory_via_aliased_import() -> Result<(), Error> {
+    let mut store = test_setup();
+    let mem = Memory::new(&mut store, MemoryType::new(1, Some(2)))?;
+    let wasm = r#"
+        (module
+            (import "env" "mem0" (memory $mem0 1 2))
+            (import "env" "mem1" (memory $mem1 1 2))
+            (func (export "test") (param $ptr i32) (result i32)
+                (drop (memory.grow $mem1 (i32.const 1)))
+                ;; access first byte of the new page
+                ;; should work if growing was successful, otherwise will trap
+                (i32.load8_u $mem0 (local.get $ptr))
+            )
+        )
+        "#;
+    let module = Module::new(store.engine(), wasm)?;
+    let instance = Instance::new(&mut store, &module, &[mem.into(), mem.into()])?;
+    let test = instance.get_typed_func::<u32, i32>(&mut store, "test")?;
+    assert_eq!(test.call(&mut store, 65536)?, 0);
+    Ok(())
+}
