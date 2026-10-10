@@ -15,6 +15,7 @@ use super::{
 #[cfg(feature = "simd")]
 use crate::V128;
 use crate::{
+    FuncEntity,
     TrapCode,
     core::{CoreTable, RawRef, ReadAs, WriteAs, wasm},
     engine::{
@@ -250,10 +251,38 @@ execution_handler! {
 }
 
 macro_rules! call_indirect_execution_handler {
-    ( $( fn $snake_name:ident($camel_name:ident) );* $(;)? ) => {
+    ( $( fn $snake_name:ident($camel_name:ident, $host_name:ident) );* $(;)? ) => {
         $(
             execution_handler! {
                 fn $snake_name(
+                    store: &mut PrunedStore,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
+                ) -> Done = {
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name {
+                        table,
+                        func_type,
+                        params,
+                        index,
+                    } = unsafe { args.decode_op() };
+                    let (_, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
+                    let FuncEntity::Wasm(wasm_func) = (unsafe { func_entity.as_ref() }) else {
+                        tail_call!($host_name(store, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64))
+                    };
+                    args.call_wasm_func(store, wasm_func, params)?;
+                    dispatch!(store, args)
+                }
+            }
+
+            execution_handler! {
+                fn $host_name(
                     store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
@@ -280,10 +309,10 @@ macro_rules! call_indirect_execution_handler {
     };
 }
 call_indirect_execution_handler! {
-    fn call_indirect_r(CallIndirect_R);
-    fn call_indirect_s(CallIndirect_S);
-    fn call_indirect_table0_r(CallIndirectTable0_R);
-    fn call_indirect_table0_s(CallIndirectTable0_S);
+    fn call_indirect_r(CallIndirect_R, call_indirect_r_host);
+    fn call_indirect_s(CallIndirect_S, call_indirect_s_host);
+    fn call_indirect_table0_r(CallIndirectTable0_R, call_indirect_table0_r_host);
+    fn call_indirect_table0_s(CallIndirectTable0_S, call_indirect_table0_s_host);
 }
 
 execution_handler! {
@@ -328,10 +357,38 @@ execution_handler! {
 }
 
 macro_rules! return_call_indirect_execution_handler {
-    ( $( fn $snake_name:ident($camel_name:ident) );* $(;)? ) => {
+    ( $( fn $snake_name:ident($camel_name:ident, $host_name:ident) );* $(;)? ) => {
         $(
             execution_handler! {
                 fn $snake_name(
+                    store: &mut PrunedStore,
+                    ip: Ip,
+                    sp: Sp,
+                    mem0: Mem0Ptr,
+                    mem0_len: Mem0Len,
+                    instance: Inst,
+                    ireg: Ireg,
+                    freg32: Freg32,
+                    freg64: Freg64,
+                ) -> Done = {
+                    let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
+                    let crate::ir::decode::$camel_name {
+                        params,
+                        index,
+                        func_type,
+                        table,
+                    } = unsafe { args.decode_op() };
+                    let (_, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
+                    let FuncEntity::Wasm(wasm_func) = (unsafe { func_entity.as_ref() }) else {
+                        tail_call!($host_name(store, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64))
+                    };
+                    args.return_call_wasm_func(store, wasm_func, params)?;
+                    dispatch!(store, args)
+                }
+            }
+
+            execution_handler! {
+                fn $host_name(
                     store: &mut PrunedStore,
                     ip: Ip,
                     sp: Sp,
@@ -358,10 +415,10 @@ macro_rules! return_call_indirect_execution_handler {
     };
 }
 return_call_indirect_execution_handler! {
-    fn return_call_indirect_r(ReturnCallIndirect_R);
-    fn return_call_indirect_s(ReturnCallIndirect_S);
-    fn return_call_indirect_table0_r(ReturnCallIndirectTable0_R);
-    fn return_call_indirect_table0_s(ReturnCallIndirectTable0_S);
+    fn return_call_indirect_r(ReturnCallIndirect_R, return_call_indirect_r_host);
+    fn return_call_indirect_s(ReturnCallIndirect_S, return_call_indirect_s_host);
+    fn return_call_indirect_table0_r(ReturnCallIndirectTable0_R, return_call_indirect_table0_r_host);
+    fn return_call_indirect_table0_s(ReturnCallIndirectTable0_S, return_call_indirect_table0_s_host);
 }
 
 execution_handler! {
