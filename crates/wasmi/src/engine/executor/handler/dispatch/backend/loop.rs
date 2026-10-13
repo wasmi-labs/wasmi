@@ -57,6 +57,12 @@ macro_rules! dispatch {
     }};
 }
 
+macro_rules! tail_call {
+    ( $handler:ident($($arg:expr),* $(,)?) ) => {{
+        return $handler($($arg),*);
+    }};
+}
+
 pub type Handler = fn(&mut Executor, store: &mut PrunedStore) -> Control<(), Break>;
 
 macro_rules! expand_op_code_to_handler {

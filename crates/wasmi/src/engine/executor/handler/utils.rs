@@ -27,7 +27,7 @@ use crate::{
         },
         utils::unreachable_unchecked,
     },
-    func::{FuncEntity, HostFuncEntity, Trampoline},
+    func::{FuncEntity, HostFuncEntity, Trampoline, WasmFuncEntity},
     instance::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, HandleAndEntity, MemoryAddr, TableAddr},
     ir::{
         self,
@@ -1003,6 +1003,23 @@ pub fn call_wasm_or_host(
             return Control::Continue((caller_ip, sp, mem0, mem0_len, instance));
         }
     };
+    call_wasm(
+        store, caller_ip, caller_sp, wasm_func, params, mem0, mem0_len, instance,
+    )
+}
+
+#[inline(always)]
+#[expect(clippy::too_many_arguments)]
+pub fn call_wasm(
+    store: &mut PrunedStore,
+    caller_ip: Ip,
+    caller_sp: Sp,
+    wasm_func: &WasmFuncEntity,
+    params: BoundedSlotSpan,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
     // Hot path: calling a Wasm function. Uses the cached `FuncEntry` and the same inlined
     // machinery as `call_internal`, differing only in the possible instance switch.
     let callee_instance: Inst = wasm_func.instance();
@@ -1045,6 +1062,21 @@ pub fn return_call_wasm_or_host(
             return Control::Continue((callee_ip, sp, mem0, mem0_len, new_instance));
         }
     };
+    return_call_wasm(
+        store, caller_sp, wasm_func, params, mem0, mem0_len, instance,
+    )
+}
+
+#[inline(always)]
+pub fn return_call_wasm(
+    store: &mut PrunedStore,
+    caller_sp: Sp,
+    wasm_func: &WasmFuncEntity,
+    params: BoundedSlotSpan,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
     // Hot path: tail-calling a Wasm function. See `call_wasm_or_host` for the shape.
     let callee_instance: Inst = wasm_func.instance();
     let (callee_ip, callee_sp) = return_call_func_entry(
