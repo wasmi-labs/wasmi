@@ -160,15 +160,15 @@ impl Memory {
 
     /// Returns the maximum size of this Wasm linear memory in bytes if any.
     fn max_size_in_bytes(&self) -> Option<u64> {
-        let max_pages = self.memory_type.maximum()?;
-        let bytes_per_page = u64::from(self.memory_type.page_size());
-        let Some(max_bytes) = max_pages.checked_mul(bytes_per_page) else {
-            panic!(
-                "unexpected out of bounds linear memory maximum size: \
-                (max_pages = {max_pages}, bytes_per_page = {bytes_per_page})"
-            )
-        };
-        Some(max_bytes)
+        let max_pages = u128::from(self.memory_type.maximum()?);
+        let bytes_per_page = u128::from(self.memory_type.page_size());
+        // Computed in `u128` because the product exceeds `u64` for a 64-bit memory whose
+        // maximum is the largest the spec allows (`2^48` pages at the 64 KiB page size),
+        // matching how the rest of this module sizes its memories. The value is only an
+        // advisory upper bound for the resource limiter, so clipping it at `u64::MAX` is
+        // sound just like `new_impl` clips its `max_size` at `usize::MAX`.
+        let max_bytes = max_pages * bytes_per_page;
+        Some(u64::try_from(max_bytes).unwrap_or(u64::MAX))
     }
 
     /// Grows the linear memory by the given amount of new pages.
