@@ -82,10 +82,14 @@ pub fn compile_or_get_func_entry(
 }
 
 macro_rules! compile_or_get_func_entry {
-    ($state:expr, $func:expr) => {{
+    ($state:expr, $op_ip:expr, $func:expr) => {{
         match $crate::engine::executor::handler::utils::compile_or_get_func_entry($state, $func) {
             Ok((ip, len_local_slots, len_stack_slots)) => (ip, len_local_slots, len_stack_slots),
-            Err(error) => done!($state, DoneReason::error(error)),
+            Err(error) => {
+                return $crate::engine::executor::handler::utils::compile_func_entry_failed(
+                    $state, $op_ip, error,
+                );
+            }
         }
     }};
 }
@@ -107,6 +111,23 @@ macro_rules! done {
         });
         return $crate::engine::executor::handler::dispatch::control_break();
     }};
+}
+
+#[cold]
+#[inline(never)]
+pub fn compile_func_entry_failed<T>(
+    store: &mut PrunedStore,
+    op_ip: Ip,
+    error: Error,
+) -> Control<T, Break> {
+    let reason = match error.kind() {
+        crate::errors::ErrorKind::ResumableOutOfFuel(error) => {
+            store.stack_mut().sync_ip(op_ip);
+            DoneReason::out_of_fuel(error.required_fuel())
+        }
+        _ => DoneReason::error(error),
+    };
+    done!(store, reason)
 }
 
 pub trait IntoControl {
@@ -843,13 +864,15 @@ pub fn update_instance(
 #[inline(always)]
 pub fn call_func_entry(
     store: &mut PrunedStore,
+    op_ip: Ip,
     caller_ip: Ip,
     caller_sp: Sp,
     params: BoundedSlotSpan,
     func: &FuncEntry,
     instance: Option<Inst>,
 ) -> Control<(Ip, Sp), Break> {
-    let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func_entry!(store, func);
+    let (callee_ip, len_local_slots, len_stack_slots) =
+        compile_or_get_func_entry!(store, op_ip, func);
     let callee_sp = store
         .stack_mut()
         .push_frame(
@@ -868,12 +891,14 @@ pub fn call_func_entry(
 #[inline(always)]
 pub fn return_call_func_entry(
     store: &mut PrunedStore,
+    op_ip: Ip,
     caller_sp: Sp,
     params: BoundedSlotSpan,
     func: &FuncEntry,
     instance: Option<Inst>,
 ) -> Control<(Ip, Sp), Break> {
-    let (callee_ip, len_local_slots, len_stack_slots) = compile_or_get_func_entry!(store, func);
+    let (callee_ip, len_local_slots, len_stack_slots) =
+        compile_or_get_func_entry!(store, op_ip, func);
     let callee_sp = store
         .stack_mut()
         .replace_frame(
@@ -972,6 +997,7 @@ pub fn return_call_host(
 #[expect(clippy::too_many_arguments)]
 pub fn call_wasm_or_host(
     store: &mut PrunedStore,
+    op_ip: Ip,
     caller_ip: Ip,
     caller_sp: Sp,
     func: Func,
@@ -1008,6 +1034,7 @@ pub fn call_wasm_or_host(
     let callee_instance: Inst = wasm_func.instance();
     let (callee_ip, callee_sp) = call_func_entry(
         store,
+        op_ip,
         caller_ip,
         caller_sp,
         params,
@@ -1023,6 +1050,7 @@ pub fn call_wasm_or_host(
 #[expect(clippy::too_many_arguments)]
 pub fn return_call_wasm_or_host(
     store: &mut PrunedStore,
+    op_ip: Ip,
     caller_sp: Sp,
     func: Func,
     func_entity: NonNull<FuncEntity>,
@@ -1049,6 +1077,7 @@ pub fn return_call_wasm_or_host(
     let callee_instance: Inst = wasm_func.instance();
     let (callee_ip, callee_sp) = return_call_func_entry(
         store,
+        op_ip,
         caller_sp,
         params,
         wasm_func.func_entry(),

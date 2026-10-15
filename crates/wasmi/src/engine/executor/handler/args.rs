@@ -236,12 +236,13 @@ impl Args {
     pub fn call_func_entry(
         &mut self,
         store: &mut PrunedStore,
+        op_ip: Ip,
         func: &FuncEntry,
         params: BoundedSlotSpan,
         instance: Option<Inst>,
     ) -> Control<(), Break> {
         (self.ip, self.sp) =
-            utils::call_func_entry(store, self.ip, self.sp, params, func, instance)?;
+            utils::call_func_entry(store, op_ip, self.ip, self.sp, params, func, instance)?;
         Control::Continue(())
     }
 
@@ -250,11 +251,13 @@ impl Args {
     pub fn return_call_func_entry(
         &mut self,
         store: &mut PrunedStore,
+        op_ip: Ip,
         func: &FuncEntry,
         params: BoundedSlotSpan,
         instance: Option<Inst>,
     ) -> Control<(), Break> {
-        (self.ip, self.sp) = utils::return_call_func_entry(store, self.sp, params, func, instance)?;
+        (self.ip, self.sp) =
+            utils::return_call_func_entry(store, op_ip, self.sp, params, func, instance)?;
         Control::Continue(())
     }
 
@@ -279,6 +282,7 @@ impl Args {
     pub fn call_wasm_or_host_func(
         &mut self,
         store: &mut PrunedStore,
+        op_ip: Ip,
         func: Func,
         func_entity: NonNull<FuncEntity>,
         params: BoundedSlotSpan,
@@ -291,6 +295,7 @@ impl Args {
             self.instance,
         ) = utils::call_wasm_or_host(
             store,
+            op_ip,
             self.ip,
             self.sp,
             func,
@@ -308,6 +313,7 @@ impl Args {
     pub fn return_call_wasm_or_host_func(
         &mut self,
         store: &mut PrunedStore,
+        op_ip: Ip,
         func: Func,
         func_entity: NonNull<FuncEntity>,
         params: BoundedSlotSpan,
@@ -320,6 +326,7 @@ impl Args {
             self.instance,
         ) = utils::return_call_wasm_or_host(
             store,
+            op_ip,
             self.sp,
             func,
             func_entity,
