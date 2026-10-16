@@ -1,7 +1,12 @@
 use super::{
     ElementSegment,
+    ExternKind,
     FuncIdx,
+    ImportKind,
     ModuleBuilder,
+    ModuleInspector,
+    SectionKind,
+    SegmentMode,
     export::ExternIdx,
     global::Global,
     import::{FuncTypeIdx, Import},
@@ -11,6 +16,7 @@ use crate::{
     Engine,
     Error,
     FuncType,
+    GlobalType,
     MemoryType,
     TableType,
     engine::{EnforcedLimitsError, EngineFunc, TranslationError},
@@ -22,10 +28,14 @@ use core::ops::Range;
 use wasmparser::Validator;
 use wasmparser::{
     CustomSectionReader,
+    DataKind,
     DataSectionReader,
+    ElementItems,
+    ElementKind,
     ElementSectionReader,
     Encoding,
     ExportSectionReader,
+    ExternalKind,
     FunctionBody,
     FunctionSectionReader,
     GlobalSectionReader,
@@ -34,6 +44,7 @@ use wasmparser::{
     Parser as WasmParser,
     Payload,
     TableSectionReader,
+    TypeRef,
     TypeSectionReader,
 };
 
@@ -43,7 +54,7 @@ use crate::Module;
 mod buffered;
 
 /// Context used to construct a WebAssembly module from a stream of bytes.
-pub struct ModuleParser {
+pub struct ModuleParser<'a> {
     /// The engine used for translation.
     engine: Engine,
     /// The Wasm validator used throughout stream parsing.
@@ -53,10 +64,12 @@ pub struct ModuleParser {
     parser: WasmParser,
     /// The number of compiled or processed functions.
     engine_funcs: u32,
+    /// The embedder's custom checks, if any.
+    inspector: Option<&'a mut dyn ModuleInspector>,
 }
 
 #[cfg_attr(not(feature = "validate"), allow(unused_mut, unused_variables))]
-impl ModuleParser {
+impl<'a> ModuleParser<'a> {
     /// Creates a new [`ModuleParser`] for the given [`Engine`].
     pub fn new(engine: &Engine) -> Self {
         let mut parser = WasmParser::new(0);
@@ -68,6 +81,24 @@ impl ModuleParser {
             validator: None,
             parser,
             engine_funcs: 0,
+            inspector: None,
+        }
+    }
+
+    /// Runs `inspector`'s checks while parsing.
+    #[cfg(feature = "validate")]
+    pub fn with_inspector(mut self, inspector: &'a mut dyn ModuleInspector) -> Self {
+        self.inspector = Some(inspector);
+        self
+    }
+
+    /// Reports a section with `count` entries to the inspector, if any.
+    ///
+    /// Called before the section is validated.
+    fn inspect_section(&mut self, kind: SectionKind, count: u32) -> Result<(), Error> {
+        match self.inspector.as_deref_mut() {
+            Some(inspector) => inspector.section(kind, count),
+            None => Ok(()),
         }
     }
 
@@ -111,11 +142,13 @@ impl ModuleParser {
         section: TypeSectionReader,
         module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
+        self.inspect_section(SectionKind::Type, section.count())?;
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.type_section(&section)?;
         }
         let limits = self.engine.config().get_enforced_limits();
+        let inspector = &mut self.inspector;
         let func_types = section.into_iter().map(|result| {
             let ty = result?.into_types().next().unwrap();
             let func_ty = ty.unwrap_func();
@@ -131,7 +164,11 @@ impl ModuleParser {
                     return Err(Error::from(EnforcedLimitsError::TooManyResults { limit }));
                 }
             }
-            Ok(FuncType::from_wasmparser(func_ty))
+            let func_ty = FuncType::from_wasmparser(func_ty);
+            if let Some(inspector) = inspector.as_deref_mut() {
+                inspector.func_type(&func_ty)?;
+            }
+            Ok(func_ty)
         });
         module.push_func_types(func_types)?;
         Ok(())
@@ -152,13 +189,21 @@ impl ModuleParser {
         section: ImportSectionReader,
         module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
+        self.inspect_section(SectionKind::Import, section.count())?;
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.import_section(&section)?;
         }
-        let imports = section
-            .into_iter()
-            .map(|import| import.map(Import::from).map_err(Error::from));
+        let inspector = &mut self.inspector;
+        let imports = section.into_iter().map(|import| {
+            let import = import?;
+            if let Some(inspector) = inspector.as_deref_mut() {
+                if let Some(kind) = import_kind(import.ty) {
+                    inspector.import(import.module, import.name, &kind)?;
+                }
+            }
+            Ok(Import::from(import))
+        });
         module.push_imports(imports)?;
         Ok(())
     }
@@ -182,13 +227,19 @@ impl ModuleParser {
                 return Err(Error::from(EnforcedLimitsError::TooManyFunctions { limit }));
             }
         }
+        self.inspect_section(SectionKind::Function, section.count())?;
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.function_section(&section)?;
         }
-        let funcs = section
-            .into_iter()
-            .map(|func| func.map(FuncTypeIdx::from).map_err(Error::from));
+        let inspector = &mut self.inspector;
+        let funcs = section.into_iter().map(|func| {
+            let type_index = func?;
+            if let Some(inspector) = inspector.as_deref_mut() {
+                inspector.function(type_index)?;
+            }
+            Ok(FuncTypeIdx::from(type_index))
+        });
         module.push_funcs(funcs)?;
         Ok(())
     }
@@ -212,14 +263,20 @@ impl ModuleParser {
                 return Err(Error::from(EnforcedLimitsError::TooManyTables { limit }));
             }
         }
+        self.inspect_section(SectionKind::Table, section.count())?;
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.table_section(&section)?;
         }
+        let inspector = &mut self.inspector;
         let tables = section.into_iter().map(|table| match table {
             Ok(table) => {
                 assert!(matches!(table.init, wasmparser::TableInit::RefNull));
-                Ok(TableType::from_wasmparser(table.ty))
+                let ty = TableType::from_wasmparser(table.ty);
+                if let Some(inspector) = inspector.as_deref_mut() {
+                    inspector.table(&ty)?;
+                }
+                Ok(ty)
             }
             Err(err) => Err(err.into()),
         });
@@ -246,13 +303,19 @@ impl ModuleParser {
                 return Err(Error::from(EnforcedLimitsError::TooManyMemories { limit }));
             }
         }
+        self.inspect_section(SectionKind::Memory, section.count())?;
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.memory_section(&section)?;
         }
-        let memories = section
-            .into_iter()
-            .map(|memory| memory.map(MemoryType::from_wasmparser).map_err(Error::from));
+        let inspector = &mut self.inspector;
+        let memories = section.into_iter().map(|memory| {
+            let ty = MemoryType::from_wasmparser(memory?);
+            if let Some(inspector) = inspector.as_deref_mut() {
+                inspector.memory(&ty)?;
+            }
+            Ok(ty)
+        });
         module.push_memories(memories)?;
         Ok(())
     }
@@ -276,13 +339,19 @@ impl ModuleParser {
                 return Err(Error::from(EnforcedLimitsError::TooManyGlobals { limit }));
             }
         }
+        self.inspect_section(SectionKind::Global, section.count())?;
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.global_section(&section)?;
         }
-        let globals = section
-            .into_iter()
-            .map(|global| global.map(Global::from).map_err(Error::from));
+        let inspector = &mut self.inspector;
+        let globals = section.into_iter().map(|global| {
+            let global = global?;
+            if let Some(inspector) = inspector.as_deref_mut() {
+                inspector.global(&GlobalType::from_wasmparser(global.ty))?;
+            }
+            Ok(Global::from(global))
+        });
         module.push_globals(globals)?;
         Ok(())
     }
@@ -301,12 +370,19 @@ impl ModuleParser {
         section: ExportSectionReader,
         module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
+        self.inspect_section(SectionKind::Export, section.count())?;
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.export_section(&section)?;
         }
+        let inspector = &mut self.inspector;
         let exports = section.into_iter().map(|export| {
             let export = export?;
+            if let Some(inspector) = inspector.as_deref_mut() {
+                if let Some(kind) = extern_kind(export.kind) {
+                    inspector.export(export.name, kind, export.index)?;
+                }
+            }
             let field: Box<str> = export.name.into();
             let idx = ExternIdx::new(export.kind, export.index)?;
             Ok((field, idx))
@@ -333,6 +409,9 @@ impl ModuleParser {
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.start_section(func, &range)?;
+        }
+        if let Some(inspector) = self.inspector.as_deref_mut() {
+            inspector.start(func)?;
         }
         if !self.engine.config().get_allow_start_fn() {
             return Err(Error::from(TranslationError::DisallowedStartFn));
@@ -367,13 +446,30 @@ impl ModuleParser {
                 }));
             }
         }
+        self.inspect_section(SectionKind::Element, section.count())?;
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.element_section(&section)?;
         }
-        let segments = section
-            .into_iter()
-            .map(|segment| segment.map(ElementSegment::from).map_err(Error::from));
+        let inspector = &mut self.inspector;
+        let segments = section.into_iter().map(|segment| {
+            let segment = segment?;
+            if let Some(inspector) = inspector.as_deref_mut() {
+                let mode = match &segment.kind {
+                    ElementKind::Passive => SegmentMode::Passive,
+                    ElementKind::Active { table_index, .. } => SegmentMode::Active {
+                        index: table_index.unwrap_or(0),
+                    },
+                    ElementKind::Declared => SegmentMode::Declared,
+                };
+                let items = match &segment.items {
+                    ElementItems::Functions(items) => items.count(),
+                    ElementItems::Expressions(_, items) => items.count(),
+                };
+                inspector.element_segment(mode, items)?;
+            }
+            Ok(ElementSegment::from(segment))
+        });
         module.push_element_segments(segments)?;
         Ok(())
     }
@@ -397,6 +493,7 @@ impl ModuleParser {
                 }));
             }
         }
+        self.inspect_section(SectionKind::DataCount, count)?;
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.data_count_section(count, &range)?;
@@ -426,6 +523,7 @@ impl ModuleParser {
                 }));
             }
         }
+        self.inspect_section(SectionKind::Data, section.count())?;
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             // Note: data section does not belong to the Wasm module header.
@@ -435,7 +533,17 @@ impl ModuleParser {
         }
         builder.reserve_data_segments(section.count() as usize);
         for segment in section {
-            builder.push_data_segment(segment?)?;
+            let segment = segment?;
+            if let Some(inspector) = self.inspector.as_deref_mut() {
+                let mode = match &segment.kind {
+                    DataKind::Passive => SegmentMode::Passive,
+                    DataKind::Active { memory_index, .. } => SegmentMode::Active {
+                        index: *memory_index,
+                    },
+                };
+                inspector.data_segment(mode, segment.data.len())?;
+            }
+            builder.push_data_segment(segment)?;
         }
         Ok(())
     }
@@ -480,6 +588,7 @@ impl ModuleParser {
                 }
             }
         }
+        self.inspect_section(SectionKind::Code, count)?;
         #[cfg(feature = "validate")]
         if let Some(validator) = &mut self.validator {
             validator.code_section_start(count, &range)?;
@@ -532,6 +641,9 @@ impl ModuleParser {
                 None
             }
         };
+        if let Some(inspector) = self.inspector.as_deref_mut() {
+            inspector.function_body(func.into_u32(), bytes.len())?;
+        }
         let header = module.header()?;
         self.engine
             .translate_func(func, engine_func, offset, bytes, header, func_to_validate)?;
@@ -544,6 +656,9 @@ impl ModuleParser {
         reader: CustomSectionReader,
         module: &mut ModuleBuilder,
     ) -> Result<(), Error> {
+        if let Some(inspector) = self.inspector.as_deref_mut() {
+            inspector.custom_section(reader.name(), reader.data().len())?;
+        }
         if self.engine.config().get_ignore_custom_sections() {
             return Ok(());
         }
@@ -564,4 +679,34 @@ impl ModuleParser {
             MaybeDebug(&payload)
         )
     }
+}
+
+/// What an import brings in, for [`ModuleInspector::import`].
+///
+/// `None` for a tag, which needs the `exception-handling` proposal. Wasmi does not
+/// support it, so validation has refused the import already; without validation it
+/// is refused just after, and the inspector is not told of it.
+fn import_kind(ty: TypeRef) -> Option<ImportKind> {
+    let kind = match ty {
+        TypeRef::Func(type_index) => ImportKind::Func { type_index },
+        TypeRef::Table(ty) => ImportKind::Table(TableType::from_wasmparser(ty)),
+        TypeRef::Memory(ty) => ImportKind::Memory(MemoryType::from_wasmparser(ty)),
+        TypeRef::Global(ty) => ImportKind::Global(GlobalType::from_wasmparser(ty)),
+        TypeRef::Tag(_) => return None,
+    };
+    Some(kind)
+}
+
+/// What an export names, for [`ModuleInspector::export`].
+///
+/// `None` for a tag, as in [`import_kind`].
+fn extern_kind(kind: ExternalKind) -> Option<ExternKind> {
+    let kind = match kind {
+        ExternalKind::Func => ExternKind::Func,
+        ExternalKind::Table => ExternKind::Table,
+        ExternalKind::Memory => ExternKind::Memory,
+        ExternalKind::Global => ExternKind::Global,
+        ExternalKind::Tag => return None,
+    };
+    Some(kind)
 }

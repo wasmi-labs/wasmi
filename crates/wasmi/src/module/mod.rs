@@ -5,6 +5,7 @@ mod element;
 mod export;
 mod global;
 mod import;
+mod inspector;
 pub(crate) mod init_expr;
 mod instantiate;
 mod parser;
@@ -22,6 +23,7 @@ use self::{
 };
 pub use self::{
     custom_section::{CustomSection, CustomSectionsIter},
+    inspector::{ExternKind, ImportKind, ModuleInspector, SectionKind, SegmentMode},
     export::{ExportType, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
     global::GlobalIdx,
     import::{FuncTypeIdx, ImportName},
@@ -236,6 +238,34 @@ impl Module {
         #[cfg(feature = "wat")]
         let wasm = &wat::parse_bytes(wasm)?[..];
         ModuleParser::new(engine).parse_buffered(wasm)
+    }
+
+    /// Creates a new Wasm [`Module`] from the given Wasm bytecode buffer, running
+    /// `inspector`'s custom checks during the parse.
+    ///
+    /// # Note
+    ///
+    /// This is [`Module::new`] with the embedder's own checks added: the module is
+    /// parsed, validated and translated exactly once, and `inspector` sees each
+    /// section and entry as the parser reaches it. See [`ModuleInspector`] for when
+    /// each callback runs.
+    ///
+    /// # Errors
+    ///
+    /// - If any callback of `inspector` returns an error, which is returned unchanged.
+    /// - Otherwise, the same as [`Module::new`].
+    #[cfg(feature = "validate")]
+    pub fn new_with_inspector(
+        engine: &Engine,
+        wasm: impl AsRef<[u8]>,
+        inspector: &mut dyn ModuleInspector,
+    ) -> Result<Self, Error> {
+        let wasm = wasm.as_ref();
+        #[cfg(feature = "wat")]
+        let wasm = &wat::parse_bytes(wasm)?[..];
+        ModuleParser::new(engine)
+            .with_inspector(inspector)
+            .parse_buffered(wasm)
     }
 
     /// Creates a new Wasm [`Module`] from the given Wasm bytecode buffer.
