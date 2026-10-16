@@ -707,6 +707,11 @@ execution_handler! {
         let delta = args.get(delta);
         let value = args.get(value);
         let Some(return_value) = table_grow_outline(store, instance, table, delta, value) else {
+            args.set_ip(ip);
+            store.stack_mut().sync_ip(args.ip);
+            store
+                .stack_mut()
+                .sync_regs(args.ireg, args.freg32, args.freg64);
             return control_break();
         };
         args.set(result, return_value);
