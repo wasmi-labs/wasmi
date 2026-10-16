@@ -395,3 +395,66 @@ fn run_test_typed(wasm_fn: Func, store: &mut Store<TestData>, wasm_trap: bool) {
         assert_eq!(call.unwrap_finished(), 4);
     }
 }
+
+/// Runs `test` of `wasm` out of fuel at its `grow` operator and resumes it.
+///
+/// Asserts that `test` resumed at the `grow` operator by checking that the
+/// increment of `$counter` that precedes it was executed exactly once.
+fn resumable_call_out_of_fuel_at_grow(wasm: &str, delta: i32) {
+    let mut config = Config::default();
+    config.consume_fuel(true);
+    let engine = Engine::new(&config);
+    let mut store = <Store<()>>::new(&engine, ());
+    let module = Module::new(&engine, wasm).unwrap();
+    let instance = Linker::new(&engine)
+        .instantiate_and_start(&mut store, &module)
+        .unwrap();
+    let test = instance.get_typed_func::<i32, i32>(&store, "test").unwrap();
+    let counter = instance.get_global(&store, "counter").unwrap();
+    store.set_fuel(1_000).unwrap();
+    let TypedResumableCall::OutOfFuel(invocation) = test.call_resumable(&mut store, delta).unwrap()
+    else {
+        panic!("expected `TypedResumableCall::OutOfFuel`")
+    };
+    assert_eq!(counter.get(&store).i32(), Some(1));
+    store.set_fuel(1_000_000).unwrap();
+    let TypedResumableCall::Finished(result) = invocation.resume(&mut store).unwrap() else {
+        panic!("expected `TypedResumableCall::Finished`")
+    };
+    assert_eq!(result, 0);
+    assert_eq!(counter.get(&store).i32(), Some(1));
+}
+
+#[test]
+fn resumable_call_out_of_fuel_memory_grow() {
+    resumable_call_out_of_fuel_at_grow(
+        r#"
+        (module
+            (memory 0)
+            (global $counter (export "counter") (mut i32) (i32.const 0))
+            (func (export "test") (param $delta i32) (result i32)
+                (global.set $counter (i32.add (global.get $counter) (i32.const 1)))
+                (memory.grow (local.get $delta))
+            )
+        )
+    "#,
+        2,
+    );
+}
+
+#[test]
+fn resumable_call_out_of_fuel_table_grow() {
+    resumable_call_out_of_fuel_at_grow(
+        r#"
+        (module
+            (table $t 0 funcref)
+            (global $counter (export "counter") (mut i32) (i32.const 0))
+            (func (export "test") (param $delta i32) (result i32)
+                (global.set $counter (i32.add (global.get $counter) (i32.const 1)))
+                (table.grow $t (ref.null func) (local.get $delta))
+            )
+        )
+    "#,
+        100_000,
+    );
+}
