@@ -23,7 +23,6 @@ use crate::{
         executor::handler::{
             Control,
             dispatch::Break,
-            state::DoneReason,
             utils::{self, GetValue, IntoControl as _, LoadEntity, LoadHandle as _},
         },
         utils::unreachable_unchecked,
@@ -692,7 +691,8 @@ execution_handler! {
                 }
             }
             Err(StoreError::External(TableError::OutOfFuel { required_fuel })) => {
-                done!(store, DoneReason::out_of_fuel(required_fuel));
+                args.set_ip(ip);
+                out_of_fuel!(store, args, required_fuel)
             }
             Err(StoreError::External(TableError::ResourceLimiterDeniedAllocation)) => {
                 trap!(TrapCode::GrowthOperationLimited);
