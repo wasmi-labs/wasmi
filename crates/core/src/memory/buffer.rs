@@ -1,6 +1,6 @@
 use crate::memory::MemoryError;
-use alloc::{slice, vec::Vec};
-use core::{iter, mem::ManuallyDrop};
+use alloc::{alloc::Layout, slice, vec::Vec};
+use core::mem::ManuallyDrop;
 
 /// A byte buffer implementation.
 ///
@@ -74,11 +74,7 @@ impl ByteBuffer {
     ///
     /// If the requested amount of heap bytes could not be allocated.
     pub fn new(size: usize) -> Result<Self, MemoryError> {
-        let mut vec = Vec::new();
-        if vec.try_reserve(size).is_err() {
-            return Err(MemoryError::OutOfSystemMemory);
-        };
-        vec.extend(iter::repeat_n(0x00_u8, size));
+        let vec = Self::alloc_zeroed_vec(size)?;
         let (ptr, len, capacity) = vec_into_raw_parts(vec);
         Ok(Self {
             ptr,
@@ -86,6 +82,27 @@ impl ByteBuffer {
             capacity,
             is_static: false,
         })
+    }
+
+    /// Allocates a zeroed `Vec<u8>` of `size` bytes without touching its pages.
+    ///
+    /// Unlike writing zeros, `alloc_zeroed` lets the system allocator hand out
+    /// fresh OS pages lazily, so untouched pages cost no physical memory.
+    fn alloc_zeroed_vec(size: usize) -> Result<Vec<u8>, MemoryError> {
+        if size == 0 {
+            return Ok(Vec::new());
+        }
+        let Ok(layout) = Layout::array::<u8>(size) else {
+            return Err(MemoryError::OutOfSystemMemory);
+        };
+        // Safety: `layout` has a non-zero size.
+        let ptr = unsafe { alloc::alloc::alloc_zeroed(layout) };
+        if ptr.is_null() {
+            return Err(MemoryError::OutOfSystemMemory);
+        }
+        // Safety: `ptr` was allocated by the global allocator with the layout of
+        //         `[u8; size]` and all `size` bytes are initialized to zero.
+        Ok(unsafe { Vec::from_raw_parts(ptr, size, size) })
     }
 
     /// Creates a new static byte buffer with the given `size` in bytes.
@@ -279,6 +296,10 @@ mod test {
 
     #[test]
     fn out_of_memory_works() {
+        assert!(matches!(
+            ByteBuffer::new(usize::MAX).unwrap_err(),
+            MemoryError::OutOfSystemMemory
+        ));
         let mut buffer = ByteBuffer::new(0).unwrap();
         assert!(matches!(
             buffer.grow(usize::MAX).unwrap_err(),
