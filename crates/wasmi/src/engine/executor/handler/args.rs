@@ -16,6 +16,7 @@ use crate::{
             utils::{self, GetValue, IntoControl as _, LoadEntity, SetValue, get_value, set_value},
         },
     },
+    func::WasmFuncEntity,
     ir::{self, BoundedSlotSpan, BranchOffset},
     store::PrunedStore,
 };
@@ -303,6 +304,32 @@ impl Args {
         Control::Continue(())
     }
 
+    #[inline(always)]
+    pub fn call_wasm_func(
+        &mut self,
+        store: &mut PrunedStore,
+        wasm_func: &WasmFuncEntity,
+        params: BoundedSlotSpan,
+    ) -> Control<(), Break> {
+        (
+            self.ip,
+            self.sp,
+            self.mem0_ptr,
+            self.mem0_len,
+            self.instance,
+        ) = utils::call_wasm(
+            store,
+            self.ip,
+            self.sp,
+            wasm_func,
+            params,
+            self.mem0_ptr,
+            self.mem0_len,
+            self.instance,
+        )?;
+        Control::Continue(())
+    }
+
     /// Tail-calls `func` with `params` with `state` using `self`.
     #[inline]
     pub fn return_call_wasm_or_host_func(
@@ -323,6 +350,31 @@ impl Args {
             self.sp,
             func,
             func_entity,
+            params,
+            self.mem0_ptr,
+            self.mem0_len,
+            self.instance,
+        )?;
+        Control::Continue(())
+    }
+
+    #[inline(always)]
+    pub fn return_call_wasm_func(
+        &mut self,
+        store: &mut PrunedStore,
+        wasm_func: &WasmFuncEntity,
+        params: BoundedSlotSpan,
+    ) -> Control<(), Break> {
+        (
+            self.ip,
+            self.sp,
+            self.mem0_ptr,
+            self.mem0_len,
+            self.instance,
+        ) = utils::return_call_wasm(
+            store,
+            self.sp,
+            wasm_func,
             params,
             self.mem0_ptr,
             self.mem0_len,
