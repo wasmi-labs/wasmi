@@ -8,6 +8,16 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## `2.0.1` - 2026-11-02
+
+### Fixes
+
+- Removes stack frames for `{memory,table}.grow` execution handlers. [#2066]
+  - This fixes a bug that could lead to a stackoverflow with certain Wasm inputs.
+  - Thanks to [Jack Dishman](https://github.com/jackdishman) for reporting the bug!
+
+[#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
+
 ## `2.0.0` - 2026-09-01
 
 Upgrading from Wasmi `1.x`? Please refer to the

@@ -9,7 +9,7 @@ pub use self::simd::*;
 
 use super::{
     Args,
-    dispatch::Done,
+    dispatch::{Done, control_break},
     state::{Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp},
 };
 #[cfg(feature = "simd")]
@@ -403,44 +403,67 @@ execution_handler! {
             delta,
         } = unsafe { args.decode_op() };
         let delta: u64 = args.get(delta);
-        let memref = unsafe { instance.load_handle(memory) };
-        let return_value = match store.grow_memory(&memref, delta) {
-            Ok(return_value) => {
-                // The `memory.grow` operation might have invalidated the cached
-                // linear memory so we need to reset it in order for the cache to
-                // reload in case it is used again.
-                if utils::is_default_memory(instance, memory) {
-                    args.reload_mem0();
-                }
-                return_value
-            }
-            Err(StoreError::External(
-                MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory,
-            )) => {
-                let memory = unsafe { instance.load_entity_mut(store, memory) };
-                let memory_ty = memory.ty();
-                match memory_ty.is_64() {
-                    true => u64::MAX,
-                    false => u64::from(u32::MAX),
-                }
-            }
-            Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
-                args.set_ip(ip);
-                out_of_fuel!(store, args, required_fuel)
-            }
-            Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
-                trap!(TrapCode::GrowthOperationLimited);
-            }
-            Err(StoreError::Internal(error)) => unsafe {
-                unreachable_unchecked!("internal interpreter error: {error}")
-            },
-            Err(error) => {
-                panic!("`memory.grow`: internal interpreter error: {error}")
-            }
+        let Some(return_value) = memory_grow_outline(store, instance, memory, delta) else {
+            args.set_ip(ip);
+            store.stack_mut().sync_ip(args.ip);
+            store
+                .stack_mut()
+                .sync_regs(args.ireg, args.freg32, args.freg64);
+            return control_break();
         };
+        // The `memory.grow` operation might have invalidated the cached
+        // linear memory so we need to reset it in order for the cache to
+        // reload in case it is used again.
+        if utils::is_default_memory(instance, memory) {
+            args.reload_mem0();
+        }
         args.set(result, return_value);
         dispatch!(store, args)
     }
+}
+
+/// Grows `memory` by `delta` pages and returns its previous size in pages.
+///
+/// Returns `None` if execution must halt with the reason stored in `store`.
+///
+/// # Note
+///
+/// This out-of-line helper exists so that the `memory.grow` execution handler is
+/// compiled into a proper tail-calling.
+#[inline(never)]
+fn memory_grow_outline(
+    store: &mut PrunedStore,
+    instance: Inst,
+    memory: ir::MemoryAddr,
+    delta: u64,
+) -> Option<u64> {
+    let memref = unsafe { instance.load_handle(memory) };
+    let reason = match store.grow_memory(&memref, delta) {
+        Ok(return_value) => return Some(return_value),
+        Err(StoreError::External(
+            MemoryError::OutOfBoundsGrowth | MemoryError::OutOfSystemMemory,
+        )) => {
+            let memory = unsafe { instance.load_entity_mut(store, memory) };
+            return match memory.ty().is_64() {
+                true => Some(u64::MAX),
+                false => Some(u64::from(u32::MAX)),
+            };
+        }
+        Err(StoreError::External(MemoryError::OutOfFuel { required_fuel })) => {
+            DoneReason::out_of_fuel(required_fuel)
+        }
+        Err(StoreError::External(MemoryError::ResourceLimiterDeniedAllocation)) => {
+            DoneReason::error(TrapCode::GrowthOperationLimited.into())
+        }
+        Err(StoreError::Internal(error)) => unsafe {
+            unreachable_unchecked!("internal interpreter error: {error}")
+        },
+        Err(error) => {
+            panic!("`memory.grow`: internal interpreter error: {error}")
+        }
+    };
+    store.exec_mut().done_with(move || reason);
+    None
 }
 
 execution_handler! {
@@ -679,34 +702,57 @@ execution_handler! {
             delta,
             value,
         } = unsafe { args.decode_op() };
-        let table_ref = unsafe { instance.load_handle(table) };
         let delta = args.get(delta);
         let value = args.get(value);
-        let return_value = match store.grow_table(&table_ref, delta, value) {
-            Ok(return_value) => return_value,
-            Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
-                let table = unsafe { instance.load_entity_mut(store, table) };
-                match table.ty().is_64() {
-                    true => u64::MAX,
-                    false => u64::from(u32::MAX),
-                }
-            }
-            Err(StoreError::External(TableError::OutOfFuel { required_fuel })) => {
-                done!(store, DoneReason::out_of_fuel(required_fuel));
-            }
-            Err(StoreError::External(TableError::ResourceLimiterDeniedAllocation)) => {
-                trap!(TrapCode::GrowthOperationLimited);
-            }
-            Err(StoreError::Internal(error)) => unsafe {
-                unreachable_unchecked!("internal interpreter error: {error}")
-            },
-            Err(error) => {
-                panic!("`table.grow`: internal interpreter error: {error}")
-            }
+        let Some(return_value) = table_grow_outline(store, instance, table, delta, value) else {
+            return control_break();
         };
         args.set(result, return_value);
         dispatch!(store, args)
     }
+}
+
+/// Grows `table` by `delta` elements initialized to `value` and returns its previous size.
+///
+/// Returns `None` if execution must halt with the reason stored in `store`.
+///
+/// # Note
+///
+/// This out-of-line helper exists so that the `table.grow` execution handler is
+/// compiled into a proper tail-calling.
+#[inline(never)]
+fn table_grow_outline(
+    store: &mut PrunedStore,
+    instance: Inst,
+    table: ir::TableAddr,
+    delta: u64,
+    value: RawRef,
+) -> Option<u64> {
+    let table_ref = unsafe { instance.load_handle(table) };
+    let reason = match store.grow_table(&table_ref, delta, value) {
+        Ok(return_value) => return Some(return_value),
+        Err(StoreError::External(TableError::GrowOutOfBounds | TableError::OutOfSystemMemory)) => {
+            let table = unsafe { instance.load_entity_mut(store, table) };
+            return match table.ty().is_64() {
+                true => Some(u64::MAX),
+                false => Some(u64::from(u32::MAX)),
+            };
+        }
+        Err(StoreError::External(TableError::OutOfFuel { required_fuel })) => {
+            DoneReason::out_of_fuel(required_fuel)
+        }
+        Err(StoreError::External(TableError::ResourceLimiterDeniedAllocation)) => {
+            DoneReason::error(TrapCode::GrowthOperationLimited.into())
+        }
+        Err(StoreError::Internal(error)) => unsafe {
+            unreachable_unchecked!("internal interpreter error: {error}")
+        },
+        Err(error) => {
+            panic!("`table.grow`: internal interpreter error: {error}")
+        }
+    };
+    store.exec_mut().done_with(move || reason);
+    None
 }
 
 execution_handler! {
