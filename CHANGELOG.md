@@ -8,7 +8,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## `2.0.1` - 2026-11-02
+## `2.0.1` - UNRELEASED
 
 ### Fixes
 
@@ -17,9 +17,12 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Thanks to [Jack Dishman](https://github.com/jackdishman) for reporting the bug!
 - Improves performance and memory consumption of instantiating linear memories in some cases. [#2064]
   - Thanks to [Bruno Bowden](https://github.com/brunobowden) for reporting this performance issue!
+- Fix a divide-by-zero issue in `enforce_limits` for some malformed Wasm inputs. [#2068]
+  - Thanks to [Jack Dishman](https://github.com/jackdishman) for reporting the bug!
 
 [#2064]: https://github.com/wasmi-labs/wasmi/pull/2064
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
+[#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
 
 ## `2.0.0` - 2026-09-01
 
