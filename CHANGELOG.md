@@ -15,7 +15,10 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Removes stack frames for `{memory,table}.grow` execution handlers. [#2066]
   - This fixes a bug that could lead to a stackoverflow with certain Wasm inputs.
   - Thanks to [Jack Dishman](https://github.com/jackdishman) for reporting the bug!
+- Improves performance and memory consumption of instantiating linear memories in some cases. [#2064]
+  - Thanks to [Bruno Bowden](https://github.com/brunobowden) for reporting this performance issue!
 
+[#2064]: https://github.com/wasmi-labs/wasmi/pull/2064
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 
 ## `2.0.0` - 2026-09-01
