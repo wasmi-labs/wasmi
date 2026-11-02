@@ -12,9 +12,11 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Fixes
 
-- Removes stack frames for `{memory,table}.grow` execution handlers.
+- Removes stack frames for `{memory,table}.grow` execution handlers. [#2066]
   - This fixes a bug that could lead to a stackoverflow with certain Wasm inputs.
   - Thanks to [Jack Dishman](https://github.com/jackdishman) for reporting the bug!
+
+[#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 
 ## `2.0.0` - 2026-09-01
 
