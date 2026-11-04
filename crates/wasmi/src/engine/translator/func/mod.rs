@@ -379,7 +379,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Bumps the function's fuel cost by the costs of initializing its locals.
+    /// Bumps the function's fuel cost by the costs of zero-initializing its non-parameter locals upon calling it.
     ///
     /// This does nothing if fuel metering is disabled.
     fn bump_fuel_for_locals(&mut self) -> Result<(), Error> {
@@ -394,9 +394,13 @@ impl FuncTranslator {
             len_params <= len_locals,
             "function parameters are registered as locals: #params = {len_params}, #locals = {len_locals}",
         );
-        let len_zeroed_locals = len_locals.saturating_sub(len_params);
-        self.instrs
-            .bump_fuel_consumption_by(fuel_pos, len_zeroed_locals as u64)?;
+        let len_zeroed_locals = (len_locals - len_params) as u32;
+        let fuel_used = self
+            .engine
+            .config()
+            .get_fuel_costs()
+            .fuel_for_zeroed_locals(len_zeroed_locals);
+        self.instrs.bump_fuel_consumption_by(fuel_pos, fuel_used)?;
         Ok(())
     }
 
