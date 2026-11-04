@@ -390,7 +390,7 @@ impl FuncTranslator {
         }
         let len_params = self.func_type_with(|func_ty| func_ty.params().len());
         let len_locals = self.locals.len();
-        debug_assert!(
+        assert!(
             len_params <= len_locals,
             "function parameters are registered as locals: #params = {len_params}, #locals = {len_locals}",
         );
