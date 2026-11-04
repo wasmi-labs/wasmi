@@ -15,6 +15,11 @@ pub trait FuelCosts {
 
     /// Returns the amount of fuel required to validate one byte of Wasm bytecode.
     fn fuel_per_bytes_validated(&self) -> u32;
+
+    /// Returns the amount of fuel required to zero-initialize `len_locals` non-parameter Wasm locals when calling a function.
+    fn fuel_for_zeroed_locals(&self, len_locals: u32) -> u32 {
+        len_locals.div_ceil(8)
+    }
 }
 
 /// Implementation of default [`FuelCostsProvider`].
@@ -134,6 +139,11 @@ impl FuelCostsProvider {
     pub fn fuel_for_validating_bytes(&self, len_bytes: u64) -> u64 {
         let fuel_per_bytes = self.fuel_per_bytes_validated();
         len_bytes.saturating_mul(u64::from(fuel_per_bytes))
+    }
+
+    /// Returns the amount of fuel required to zero-initialize `len_locals` non-parameter Wasm locals.
+    pub fn fuel_for_zeroed_locals(&self, len_locals: u32) -> u64 {
+        u64::from(self.get_costs(|costs| costs.fuel_for_zeroed_locals(len_locals)))
     }
 
     /// Returns the fuel costs for `len_bytes` byte copies in Wasmi IR.
