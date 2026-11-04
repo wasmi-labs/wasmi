@@ -12,6 +12,11 @@
     clippy::items_after_statements
 )]
 
+// Note: `libm` is only used without `std`, but Cargo cannot
+//       make a dependency conditional on a disabled feature.
+#[cfg(all(feature = "std", not(feature = "libm")))]
+use libm as _;
+
 mod float;
 mod fuel;
 mod func_type;
