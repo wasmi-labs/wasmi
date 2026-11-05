@@ -90,6 +90,20 @@ macro_rules! dispatch {
     }};
 }
 
+#[cfg(not(all(feature = "unstable", not(feature = "stable"))))]
+macro_rules! tail_call {
+    ( $handler:ident($($arg:expr),* $(,)?) ) => {{
+        return $handler($($arg),*);
+    }};
+}
+
+#[cfg(all(feature = "unstable", not(feature = "stable")))]
+macro_rules! tail_call {
+    ( $handler:ident($($arg:expr),* $(,)?) ) => {{
+        become $handler($($arg),*);
+    }};
+}
+
 #[expect(clippy::too_many_arguments)]
 pub fn execute_until_done(
     store: &mut PrunedStore,
