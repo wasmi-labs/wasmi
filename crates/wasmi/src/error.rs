@@ -129,6 +129,14 @@ impl Error {
             .map(|boxed| *boxed)
     }
 
+    /// Returns the fuel required to make progress if `self` is a resumable out-of-fuel error.
+    pub(crate) fn resumable_required_fuel(&self) -> Option<u64> {
+        match self.kind() {
+            ErrorKind::ResumableOutOfFuel(error) => Some(error.required_fuel()),
+            _ => None,
+        }
+    }
+
     /// Returns `true` if the [`Error`] represents an out-of-fuel error.
     #[expect(unused)] // TODO: resolve unused API - used in resumable function calling
     pub(crate) fn is_out_of_fuel(&self) -> bool {

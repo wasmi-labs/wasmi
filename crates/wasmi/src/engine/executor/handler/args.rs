@@ -236,13 +236,12 @@ impl Args {
     pub fn call_func_entry(
         &mut self,
         store: &mut PrunedStore,
+        op_ip: Ip,
         func: &FuncEntry,
         params: BoundedSlotSpan,
         instance: Option<Inst>,
     ) -> Control<(), Break> {
-        (self.ip, self.sp) =
-            utils::call_func_entry(store, self.ip, self.sp, params, func, instance)?;
-        Control::Continue(())
+        utils::call_func_entry(store, self, op_ip, params, func, instance)
     }
 
     /// Tail-calls `func` with `params` on `instance` with `state` using `self`.
@@ -250,12 +249,12 @@ impl Args {
     pub fn return_call_func_entry(
         &mut self,
         store: &mut PrunedStore,
+        op_ip: Ip,
         func: &FuncEntry,
         params: BoundedSlotSpan,
         instance: Option<Inst>,
     ) -> Control<(), Break> {
-        (self.ip, self.sp) = utils::return_call_func_entry(store, self.sp, params, func, instance)?;
-        Control::Continue(())
+        utils::return_call_func_entry(store, self, op_ip, params, func, instance)
     }
 
     /// Resolves the [`Func`] at `table[index]` of type `func_type` using `state`.
@@ -279,28 +278,12 @@ impl Args {
     pub fn call_wasm_or_host_func(
         &mut self,
         store: &mut PrunedStore,
+        op_ip: Ip,
         func: Func,
         func_entity: NonNull<FuncEntity>,
         params: BoundedSlotSpan,
     ) -> Control<(), Break> {
-        (
-            self.ip,
-            self.sp,
-            self.mem0_ptr,
-            self.mem0_len,
-            self.instance,
-        ) = utils::call_wasm_or_host(
-            store,
-            self.ip,
-            self.sp,
-            func,
-            func_entity,
-            params,
-            self.mem0_ptr,
-            self.mem0_len,
-            self.instance,
-        )?;
-        Control::Continue(())
+        utils::call_wasm_or_host(store, self, op_ip, func, func_entity, params)
     }
 
     /// Tail-calls `func` with `params` with `state` using `self`.
@@ -308,27 +291,12 @@ impl Args {
     pub fn return_call_wasm_or_host_func(
         &mut self,
         store: &mut PrunedStore,
+        op_ip: Ip,
         func: Func,
         func_entity: NonNull<FuncEntity>,
         params: BoundedSlotSpan,
     ) -> Control<(), Break> {
-        (
-            self.ip,
-            self.sp,
-            self.mem0_ptr,
-            self.mem0_len,
-            self.instance,
-        ) = utils::return_call_wasm_or_host(
-            store,
-            self.sp,
-            func,
-            func_entity,
-            params,
-            self.mem0_ptr,
-            self.mem0_len,
-            self.instance,
-        )?;
-        Control::Continue(())
+        utils::return_call_wasm_or_host(store, self, op_ip, func, func_entity, params)
     }
 
     /// Pops the top-most frame from the call stack.
