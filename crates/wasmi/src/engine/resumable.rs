@@ -103,7 +103,7 @@ impl ResumableOutOfFuelError {
     }
 
     /// Consumes `self` to return the underlying [`Error`].
-    pub(crate) fn required_fuel(self) -> u64 {
+    pub(crate) fn required_fuel(&self) -> u64 {
         self.required_fuel
     }
 }

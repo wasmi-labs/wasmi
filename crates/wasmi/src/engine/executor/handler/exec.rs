@@ -224,7 +224,7 @@ execution_handler! {
         // SAFETY: `func` is the exposed address of a `FuncEntry` in the engine's append-only
         //         `CodeMap`, baked into the bytecode; it stays valid while this bytecode runs.
         let func = unsafe { FuncEntryPtr::from(usize::from(func)).get() };
-        args.call_func_entry(store, func, params, None)?;
+        args.call_func_entry(store, ip, func, params, None)?;
         dispatch!(store, args)
     }
 }
@@ -244,7 +244,7 @@ execution_handler! {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::CallImported { params, func } = unsafe { args.decode_op() };
         let (func, func_entity) = utils::load_func_entry(args.instance, func);
-        args.call_wasm_or_host_func(store, func, func_entity, params)?;
+        args.call_wasm_or_host_func(store, ip, func, func_entity, params)?;
         dispatch!(store, args)
     }
 }
@@ -272,7 +272,7 @@ macro_rules! call_indirect_execution_handler {
                         index,
                     } = unsafe { args.decode_op() };
                     let (func, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
-                    args.call_wasm_or_host_func(store, func, func_entity, params)?;
+                    args.call_wasm_or_host_func(store, ip, func, func_entity, params)?;
                     dispatch!(store, args)
                 }
             }
@@ -302,7 +302,7 @@ execution_handler! {
         let crate::ir::decode::ReturnCallInternal { params, func } = unsafe { args.decode_op() };
         // SAFETY: see `call_internal`.
         let func = unsafe { FuncEntryPtr::from(usize::from(func)).get() };
-        args.return_call_func_entry(store, func, params, None)?;
+        args.return_call_func_entry(store, ip, func, params, None)?;
         dispatch!(store, args)
     }
 }
@@ -322,7 +322,7 @@ execution_handler! {
         let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
         let crate::ir::decode::ReturnCallImported { params, func } = unsafe { args.decode_op() };
         let (func, func_entity) = utils::load_func_entry(instance, func);
-        args.return_call_wasm_or_host_func(store, func, func_entity, params)?;
+        args.return_call_wasm_or_host_func(store, ip, func, func_entity, params)?;
         dispatch!(store, args)
     }
 }
@@ -350,7 +350,7 @@ macro_rules! return_call_indirect_execution_handler {
                         table,
                     } = unsafe { args.decode_op() };
                     let (func, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
-                    args.return_call_wasm_or_host_func(store, func, func_entity, params)?;
+                    args.return_call_wasm_or_host_func(store, ip, func, func_entity, params)?;
                     dispatch!(store, args)
                 }
             }
