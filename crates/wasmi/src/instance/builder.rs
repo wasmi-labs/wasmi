@@ -140,16 +140,9 @@ impl InstanceEntityBuilder {
             .unwrap_or_else(|| panic!("missing `Func` at index: {index}"))
     }
 
-    /// Returns the [`ElementSegment`] at the `index`.
-    ///
-    /// # Panics
-    ///
-    /// If there is no [`ElementSegment`] at the given `index.
-    pub fn get_element_segment(&self, index: u32) -> ElementSegment {
-        self.elem_segments
-            .get(index as usize)
-            .copied()
-            .unwrap_or_else(|| panic!("missing `ElementSegment` at index: {index}"))
+    /// Returns the pushed [`ElementSegment`]s.
+    pub fn element_segments(&self) -> &[ElementSegment] {
+        &self.elem_segments
     }
 
     /// Pushes a new [`Memory`] to the [`InstanceEntity`] under construction.
