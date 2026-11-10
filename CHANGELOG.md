@@ -24,8 +24,12 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Thanks to [Peng Wang](https://github.com/pwang200) for reporting and fixing the issue!
 - Fix a bug where functions escaping a failed instantiation could access a partially initialized instance. [#2076]
   - Thanks to [Jeremy Spence](https://github.com/JeremySpence272) for reporting the bug!
+- Fix `select` fused with a zero test (e.g. `x != 0`) of a slot operand. [#2048]
+  - Thanks to [Szymon Teżewski](https://github.com/jasisz) for reporting the bug.
+  - Thanks to [Sébastien Celles](https://github.com/s-celles) for fixing the bug.
 
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
+[#2048]: https://github.com/wasmi-labs/wasmi/pull/2048
 [#2064]: https://github.com/wasmi-labs/wasmi/pull/2064
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 [#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
