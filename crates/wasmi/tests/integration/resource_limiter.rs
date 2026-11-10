@@ -298,3 +298,78 @@ fn test_imported_table_count_limit() -> Result<(), Error> {
     ));
     Ok(())
 }
+
+/// A custom [`ResourceLimiter`](wasmi::ResourceLimiter) can be written with `wasmi` alone:
+/// its methods return `wasmi::errors::LimiterError`.
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn test_custom_limiter_with_wasmi_alone() -> Result<(), Error> {
+    use wasmi::{ResourceLimiter, errors::LimiterError};
+
+    /// Allows at most `max_bytes` of linear memory and counts denied growths.
+    struct CountingLimiter {
+        max_bytes: usize,
+        denied: u32,
+    }
+
+    impl ResourceLimiter for CountingLimiter {
+        fn memory_growing(
+            &mut self,
+            _current: usize,
+            desired: usize,
+            _maximum: Option<usize>,
+        ) -> Result<bool, LimiterError> {
+            let allowed = desired <= self.max_bytes;
+            if !allowed {
+                self.denied += 1;
+            }
+            Ok(allowed)
+        }
+
+        fn table_growing(
+            &mut self,
+            _current: usize,
+            _desired: usize,
+            _maximum: Option<usize>,
+        ) -> Result<bool, LimiterError> {
+            Ok(true)
+        }
+
+        fn instances(&self) -> usize {
+            1
+        }
+
+        fn tables(&self) -> usize {
+            1
+        }
+
+        fn memories(&self) -> usize {
+            1
+        }
+    }
+
+    let engine = Engine::default();
+    let mut store = Store::new(
+        &engine,
+        CountingLimiter {
+            max_bytes: 2 * (1 << 16),
+            denied: 0,
+        },
+    );
+    store.limiter(|limiter| limiter);
+    let module = Module::new(
+        &engine,
+        r#"
+        (module
+            (memory 1)
+            (func (export "memory_grow") (param $pages i32) (result i32) (memory.grow (local.get $pages)))
+        )
+        "#,
+    )?;
+    let instance = Linker::new(&engine).instantiate_and_start(&mut store, &module)?;
+    let memory_grow = instance.get_typed_func::<i32, i32>(&store, "memory_grow")?;
+    assert_eq!(memory_grow.call(&mut store, 1)?, 1);
+    assert_eq!(memory_grow.call(&mut store, 1)?, -1);
+    assert_eq!(store.data().denied, 1);
+    Ok(())
+}

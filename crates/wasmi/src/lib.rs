@@ -179,7 +179,14 @@ pub mod errors {
         linker::LinkerError,
         module::{InstantiationError, ReadError},
     };
-    pub use wasmi_core::{FuelError, GlobalError, HostError, MemoryError, TableError};
+    pub use wasmi_core::{
+        FuelError,
+        GlobalError,
+        HostError,
+        LimiterError,
+        MemoryError,
+        TableError,
+    };
 }
 
 pub use self::{
