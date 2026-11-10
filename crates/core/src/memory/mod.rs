@@ -81,17 +81,17 @@ impl Memory {
         };
         let max_size = match memory_type.maximum() {
             Some(max) => {
-                let max = u128::from(max);
-                if max > memory_type.absolute_max() {
+                let max_pages = u128::from(max);
+                if max_pages > memory_type.absolute_max() {
                     return Err(MemoryError::MaximumSizeOverflow);
                 }
+                let max_bytes = max_pages << memory_type.page_size_log2();
                 // Note: We have to clip `max_size` at `usize::MAX` since we do not want to
                 //       error if the system limits are overflown here. This is because Wasm
                 //       memories grow lazily and thus creation of memories which have a max
                 //       size that overflows system limits are valid as long as they do not
                 //       grow beyond those limits.
-                let max_size =
-                    usize::try_from(max << memory_type.page_size_log2()).unwrap_or(usize::MAX);
+                let max_size = usize::try_from(max_bytes).unwrap_or(usize::MAX);
                 Some(max_size)
             }
             None => None,
@@ -159,16 +159,19 @@ impl Memory {
     }
 
     /// Returns the maximum size of this Wasm linear memory in bytes if any.
-    fn max_size_in_bytes(&self) -> Option<u64> {
-        let max_pages = u128::from(self.memory_type.maximum()?);
-        let bytes_per_page = u128::from(self.memory_type.page_size());
-        // Computed in `u128` because the product exceeds `u64` for a 64-bit memory whose
-        // maximum is the largest the spec allows (`2^48` pages at the 64 KiB page size),
-        // matching how the rest of this module sizes its memories. The value is only an
-        // advisory upper bound for the resource limiter, so clipping it at `u64::MAX` is
-        // sound just like `new_impl` clips its `max_size` at `usize::MAX`.
-        let max_bytes = max_pages * bytes_per_page;
-        Some(u64::try_from(max_bytes).unwrap_or(u64::MAX))
+    ///
+    /// # Note
+    ///
+    /// We have to clip `max_size` at [`usize::MAX`] since we do not want to
+    /// error if the system limits are overflown here. This is because Wasm
+    /// memories grow lazily and thus creation of memories which have a max
+    /// size that overflows system limits are valid as long as they do not
+    /// grow beyond those limits.
+    fn max_size_in_bytes(&self) -> Option<usize> {
+        let max_pages = self.memory_type.maximum()?;
+        let max_bytes = u128::from(max_pages) << self.memory_type.page_size_log2();
+        let clipped_max = usize::try_from(max_bytes).unwrap_or(usize::MAX);
+        Some(clipped_max)
     }
 
     /// Grows the linear memory by the given amount of new pages.
@@ -199,7 +202,7 @@ impl Memory {
             return Ok(self.size());
         }
         let current_byte_size = self.size_in_bytes() as usize;
-        let maximum_byte_size = self.max_size_in_bytes().map(|max| max as usize);
+        let maximum_byte_size = self.max_size_in_bytes();
         let current_size = self.size();
         let Some(desired_size) = current_size.checked_add(additional) else {
             return Err(MemoryError::OutOfBoundsGrowth);
