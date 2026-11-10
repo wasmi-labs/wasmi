@@ -9,7 +9,7 @@ use std::env;
 /// - `wasmi_opt_size` (if `opt-level` is "s" or "z")
 /// - `wasmi_opt_speed` (if `opt-level` is 2 or 3)
 /// - `wasmi_has_tail_calls` (if the target is known to support LLVM tail calls)
-/// - `wasmi_use_tail_calls` (if `wasmi_has_tail_calls` and the build is optimizing)
+/// - `wasmi_use_tail_calls` (if `wasmi_has_tail_calls`, the build is optimizing and has no `debug-assertions`)
 ///
 /// Any other optimization level (e.g. `0` or `1`) does not set
 /// either of the `wasmi_opt_*` Wasmi specific `cfg` annotations.
@@ -70,6 +70,9 @@ fn main() {
     // Whether the build is optimizing enough for LLVM to perform sibling-call optimization.
     let is_optimizing = matches!(opt_level.as_str(), "s" | "z" | "2" | "3");
     // With `debug-assertions` LLVM does not reliably turn the dispatch into tail calls.
+    //
+    // Note: Cargo only sets this from the profile's `debug-assertions` and only since Cargo 1.93.
+    // Older Cargo never sets it and `RUSTFLAGS="-C debug-assertions"` is never detected.
     let has_debug_assertions = env::var_os("CARGO_CFG_DEBUG_ASSERTIONS").is_some();
     if has_tail_calls && is_optimizing && !has_debug_assertions {
         println!("cargo::rustc-cfg=wasmi_use_tail_calls");
