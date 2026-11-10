@@ -27,9 +27,15 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fix `select` fused with a zero test (e.g. `x != 0`) of a slot operand. [#2048]
   - Thanks to [Szymon Teżewski](https://github.com/jasisz) for reporting the bug.
   - Thanks to [Sébastien Celles](https://github.com/s-celles) for fixing the bug.
+- `auto-dispatch` now falls back to portable dispatch if `debug-assertions` are enabled. [#2050]
+  - This fixes a stackoverflow in optimized debug builds using `[profile.dev.package.wasmi] opt-level = 3`.
+  - Requires Cargo 1.93 or newer and only detects `debug-assertions` set via Cargo profiles, not via `RUSTFLAGS`.
+  - Thanks to [soraxa-dev](https://github.com/soraxa-dev) for reporting the bug!
+  - Thanks to [Kansuke Habano](https://github.com/habakan) for fixing the bug!
 
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
 [#2048]: https://github.com/wasmi-labs/wasmi/pull/2048
+[#2050]: https://github.com/wasmi-labs/wasmi/pull/2050
 [#2064]: https://github.com/wasmi-labs/wasmi/pull/2064
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 [#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
