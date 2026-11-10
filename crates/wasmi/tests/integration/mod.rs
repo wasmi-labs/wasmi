@@ -14,4 +14,3 @@ mod multi_memory;
 mod reextract_memory;
 mod resource_limiter;
 mod resumable_call;
-mod select_fusion;
