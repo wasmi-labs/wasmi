@@ -333,8 +333,8 @@ impl StoreInner {
     /// # Note
     ///
     /// - This will create an uninitialized dummy [`InstanceEntity`] as a place holder
-    ///   for the returned [`Instance`]. Using this uninitialized [`Instance`] will result
-    ///   in a runtime panic.
+    ///   for the returned [`Instance`]. Using this uninitialized [`Instance`] is undefined
+    ///   behavior, e.g. by executing one of its functions.
     /// - The returned [`Instance`] must later be initialized via the [`StoreInner::initialize_instance`]
     ///   method. Afterwards the [`Instance`] may be used.
     pub fn alloc_instance(&mut self) -> Instance {

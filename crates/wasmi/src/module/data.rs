@@ -204,9 +204,7 @@ impl<'a> Iterator for InitDataSegmentIter<'a> {
                     bytes,
                 })
             }
-            DataSegmentInner::Passive { bytes } => Some(InitDataSegment::Passive {
-                bytes: bytes.clone(),
-            }),
+            DataSegmentInner::Passive { bytes } => Some(InitDataSegment::Passive { bytes }),
         }
     }
 }
@@ -224,6 +222,6 @@ pub enum InitDataSegment<'a> {
         bytes: &'a [u8],
     },
     Passive {
-        bytes: PassiveDataSegmentBytes,
+        bytes: &'a PassiveDataSegmentBytes,
     },
 }
