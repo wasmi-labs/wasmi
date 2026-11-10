@@ -465,18 +465,15 @@ impl ModuleParser {
         }
         if let Some(limit) = enforced_limits.min_avg_bytes_per_function {
             if size >= limit.req_funcs_bytes {
-                debug_assert!(
-                    count != 0,
-                    "size and count are inter-dependent: if size > 0 then count != 0",
-                    // note: `limit.req_funcs_bytes` cannot be 0 by construction
-                );
-                let limit = limit.min_avg_bytes_per_function;
-                let avg = size / count;
-                if avg < limit {
-                    return Err(Error::from(EnforcedLimitsError::MinAvgBytesPerFunction {
-                        limit,
-                        avg,
-                    }));
+                // Note: `count` is 0 for malformed code sections; validation rejects those later.
+                if let Some(avg) = size.checked_div(count) {
+                    let limit = limit.min_avg_bytes_per_function;
+                    if avg < limit {
+                        return Err(Error::from(EnforcedLimitsError::MinAvgBytesPerFunction {
+                            limit,
+                            avg,
+                        }));
+                    }
                 }
             }
         }

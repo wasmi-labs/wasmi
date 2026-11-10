@@ -189,6 +189,7 @@ impl WasmTranslator<'_> for FuncTranslator {
         //       function parameters and locals so that the function `block`
         //       has proper knowledge of its position within the operands stack.
         self.init_func_body_block()?;
+        self.bump_fuel_for_locals()?;
         Ok(())
     }
 
@@ -374,6 +375,31 @@ impl FuncTranslator {
     fn bump_fuel_for_operator(&mut self, operator: WasmOperator) -> Result<(), Error> {
         let fuel_pos = self.stack.fuel_pos();
         let fuel_used = self.operator_cost.cost(operator);
+        self.instrs.bump_fuel_consumption_by(fuel_pos, fuel_used)?;
+        Ok(())
+    }
+
+    /// Bumps the function's fuel cost by the costs of zero-initializing its non-parameter locals upon calling it.
+    ///
+    /// This does nothing if fuel metering is disabled.
+    fn bump_fuel_for_locals(&mut self) -> Result<(), Error> {
+        let fuel_pos = self.stack.fuel_pos();
+        if fuel_pos.is_none() {
+            // Fuel metering is disabled: skip the bookkeeping below.
+            return Ok(());
+        }
+        let len_params = self.func_type_with(|func_ty| func_ty.params().len());
+        let len_locals = self.locals.len();
+        assert!(
+            len_params <= len_locals,
+            "function parameters are registered as locals: #params = {len_params}, #locals = {len_locals}",
+        );
+        let len_zeroed_locals = (len_locals - len_params) as u32;
+        let fuel_used = self
+            .engine
+            .config()
+            .get_fuel_costs()
+            .fuel_for_zeroed_locals(len_zeroed_locals);
         self.instrs.bump_fuel_consumption_by(fuel_pos, fuel_used)?;
         Ok(())
     }
@@ -2054,13 +2080,16 @@ impl FuncTranslator {
                 return Ok(());
             }
         };
-        let fusion = self.try_fuse_select(condition)?;
-        if fusion.is_fused() {
-            self.instrs.drop_staged();
-            if matches!(fusion, SelectFusion::FusedSwap) {
-                mem::swap(&mut true_val, &mut false_val);
+        let condition = match self.try_fuse_select(condition)? {
+            Some(fusion) => {
+                self.instrs.drop_staged();
+                if fusion.swap_vals {
+                    mem::swap(&mut true_val, &mut false_val);
+                }
+                fusion.condition
             }
-        }
+            None => condition,
+        };
         let operator = match ty {
             ValType::I32 | ValType::FuncRef | ValType::ExternRef => {
                 self.i32_select_operator(condition, true_val, false_val)?
@@ -2232,17 +2261,13 @@ impl FuncTranslator {
     }
 }
 
+/// The result of fusing a compare instruction with a Wasm `select` instruction.
 #[derive(Copy, Clone)]
-enum SelectFusion {
-    None,
-    Fused,
-    FusedSwap,
-}
-
-impl SelectFusion {
-    pub fn is_fused(self) -> bool {
-        matches!(self, Self::Fused | Self::FusedSwap)
-    }
+struct SelectFusion {
+    /// The condition tested by the fused `select`.
+    condition: Location,
+    /// If `true`, the true and false values of the `select` need to be swapped.
+    swap_vals: bool,
 }
 
 impl FuncTranslator {
@@ -2294,39 +2319,43 @@ impl FuncTranslator {
     ///
     /// # Returns
     ///
-    /// - Returns [`SelectFusion::Fused`] or [`SelectFusion::FusedSwap`] if fusion was successful.
-    ///     - If [`SelectFusion::FusedSwap`] was returned, true and false operands need to be swapped.
-    /// - Returns [`SelectFusion::None`] if fusion could not be applied.
-    fn try_fuse_select(&self, condition: Location) -> Result<SelectFusion, Error> {
+    /// - Returns `Some` [`SelectFusion`] if fusion was successful.
+    /// - Returns `None` if fusion could not be applied.
+    fn try_fuse_select(&self, condition: Location) -> Result<Option<SelectFusion>, Error> {
         let Some(staged) = self.instrs.peek_staged() else {
             // If there is no last instruction there is no comparison instruction to negate.
-            return Ok(SelectFusion::None);
+            return Ok(None);
         };
         let Some(staged_result) = staged.result_loc() else {
             // All negatable instructions have a single result register.
-            return Ok(SelectFusion::None);
+            return Ok(None);
         };
         if let ir::Location::Slot(result_slot) = staged_result {
             if matches!(self.layout.stack_space(result_slot), StackSpace::Local) {
                 // The staged operator stores its result into a local variable which
                 // is an observable side effect that must not be fused.
-                return Ok(SelectFusion::None);
+                return Ok(None);
             }
         }
         match (staged_result, condition) {
             (ir::Location::Reg(ValType::I64), Location::Reg(_)) => {}
             (ir::Location::Slot(staged), Location::Slot(condition)) if staged == condition => {}
-            _ => return Ok(SelectFusion::None),
+            _ => return Ok(None),
         }
+        // The fused `select` tests the input of the dropped comparison: the register
+        // for the `_Rri` variants, the `lhs` slot for the `_Rsi` variants.
         #[rustfmt::skip]
-        let fusion = match staged {
-            | Op::I32Eq_Rri { rhs: 0, .. }
-            | Op::I32Eq_Rsi { rhs: 0, .. } => SelectFusion::FusedSwap,
-            | Op::I32NotEq_Rri { rhs: 0, .. }
-            | Op::I32NotEq_Rsi { rhs: 0, .. } => SelectFusion::Fused,
-            | _ => SelectFusion::None,
+        let (condition, swap_vals) = match staged {
+            | Op::I32Eq_Rri { rhs: 0, .. } => (condition, true),
+            | Op::I32Eq_Rsi { lhs, rhs: 0, .. } => (Location::Slot(lhs), true),
+            | Op::I32NotEq_Rri { rhs: 0, .. } => (condition, false),
+            | Op::I32NotEq_Rsi { lhs, rhs: 0, .. } => (Location::Slot(lhs), false),
+            | _ => return Ok(None),
         };
-        Ok(fusion)
+        Ok(Some(SelectFusion {
+            condition,
+            swap_vals,
+        }))
     }
 
     /// Tries to fuse a Wasm `i32.eqz` (or `i32.eq` with 0 `rhs` value) instruction.
