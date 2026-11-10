@@ -22,11 +22,15 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fuel metering now charges for zero-initializing non-parameter function locals. [#2041]
   - Costs 1 fuel per 8 Wasm locals, rounded up.
   - Thanks to [Peng Wang](https://github.com/pwang200) for reporting and fixing the issue!
+- `memory.grow` past the declared maximum of a linear memory now informs the `ResourceLimiter`, as `table.grow` already does. [#2079]
+  - `ResourceLimiter::memory_growing` sees the request first, then `memory_grow_failed` is called.
+  - With `StoreLimitsBuilder::trap_on_grow_failure(true)` this growth now traps instead of returning `-1`.
 
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
 [#2064]: https://github.com/wasmi-labs/wasmi/pull/2064
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 [#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
+[#2079]: https://github.com/wasmi-labs/wasmi/issues/2079
 
 ## `2.0.0` - 2026-09-01
 

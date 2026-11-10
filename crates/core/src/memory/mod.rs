@@ -207,11 +207,6 @@ impl Memory {
         if u128::from(desired_size) > self.memory_type.absolute_max() {
             return Err(MemoryError::OutOfBoundsGrowth);
         }
-        if let Some(maximum_size) = self.memory_type.maximum() {
-            if desired_size > maximum_size {
-                return Err(MemoryError::OutOfBoundsGrowth);
-            }
-        }
         let bytes_per_page = u64::from(self.memory_type.page_size());
         let Some(desired_byte_size) = desired_size.checked_mul(bytes_per_page) else {
             return Err(MemoryError::OutOfBoundsGrowth);
@@ -227,6 +222,13 @@ impl Memory {
                 Ok(false) => Err(MemoryError::OutOfBoundsGrowth),
                 Err(error) => Err(error.into()),
             }?;
+        }
+        // Growing past the declared maximum always fails, but the `ResourceLimiter` is told,
+        // as it is for tables.
+        if let Some(maximum_size) = self.memory_type.maximum() {
+            if desired_size > maximum_size {
+                return notify_limiter(limiter, MemoryError::OutOfBoundsGrowth);
+            }
         }
 
         // Optionally check if there is enough fuel for the operation.
