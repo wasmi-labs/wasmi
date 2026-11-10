@@ -22,11 +22,14 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fuel metering now charges for zero-initializing non-parameter function locals. [#2041]
   - Costs 1 fuel per 8 Wasm locals, rounded up.
   - Thanks to [Peng Wang](https://github.com/pwang200) for reporting and fixing the issue!
+- Fix a bug where functions escaping a failed instantiation could access a partially initialized instance. [#2076]
+  - Thanks to [Jeremy Spence](https://github.com/JeremySpence272) for reporting the bug!
 
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
 [#2064]: https://github.com/wasmi-labs/wasmi/pull/2064
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 [#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
+[#2076]: https://github.com/wasmi-labs/wasmi/pull/2076
 
 ## `2.0.0` - 2026-09-01
 
