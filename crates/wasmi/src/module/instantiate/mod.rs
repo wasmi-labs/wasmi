@@ -257,7 +257,8 @@ impl Module {
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), InstantiationError> {
         let ctx = context.as_context_mut().store;
-        if !ctx.can_create_more_tables(self.len_tables()) {
+        // Imported tables already exist in the store and were counted when they were created.
+        if !ctx.can_create_more_tables(self.internal_tables().len()) {
             return Err(InstantiationError::TooManyTables);
         }
         for table_type in self.internal_tables().copied() {
@@ -286,7 +287,8 @@ impl Module {
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), InstantiationError> {
         let ctx = context.as_context_mut().store;
-        if !ctx.can_create_more_memories(self.len_memories()) {
+        // Imported memories already exist in the store and were counted when they were created.
+        if !ctx.can_create_more_memories(self.internal_memories().len()) {
             return Err(InstantiationError::TooManyMemories);
         }
         for memory_type in self.internal_memories().copied() {
