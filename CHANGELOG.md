@@ -32,10 +32,14 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Requires Cargo 1.93 or newer and only detects `debug-assertions` set via Cargo profiles, not via `RUSTFLAGS`.
   - Thanks to [soraxa-dev](https://github.com/soraxa-dev) for reporting the bug!
   - Thanks to [Kansuke Habano](https://github.com/habakan) for fixing the bug!
+- Fix a panic when growing a `memory64` declared with the largest allowed maximum size. [#2053]
+  - This also fixes the maximum size reported to `ResourceLimiter::memory_growing` on 32-bit hosts.
+  - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
 
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
 [#2048]: https://github.com/wasmi-labs/wasmi/pull/2048
 [#2050]: https://github.com/wasmi-labs/wasmi/pull/2050
+[#2053]: https://github.com/wasmi-labs/wasmi/pull/2053
 [#2064]: https://github.com/wasmi-labs/wasmi/pull/2064
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 [#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
