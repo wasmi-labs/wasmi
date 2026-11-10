@@ -350,11 +350,11 @@ jobs:
           #       if cargo-wasmi-cfg-policy was already installed on the CI runner.
           cargo install cargo-wasmi-cfg-policy || true
       - name: Check Cfg Policy (default features)
-        run: cargo wasmi-cfg-policy -p wasmi
+        run: cargo wasmi-cfg-policy -p wasmi --toolchain ${{ env.RUST_NIGHTLY_VERSION }}
       - name: Check Cfg Policy (no default features)
-        run: cargo wasmi-cfg-policy -p wasmi --no-default-features
+        run: cargo wasmi-cfg-policy -p wasmi --no-default-features --toolchain ${{ env.RUST_NIGHTLY_VERSION }}
       - name: Check Cfg Policy (all features)
-        run: cargo wasmi-cfg-policy -p wasmi --all-features
+        run: cargo wasmi-cfg-policy -p wasmi --all-features --toolchain ${{ env.RUST_NIGHTLY_VERSION }}
 
   fuzz:
     name: Fuzz
