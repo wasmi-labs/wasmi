@@ -35,6 +35,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fix a panic when growing a `memory64` declared with the largest allowed maximum size. [#2053]
   - This also fixes `memory.grow` being wrongly denied by `StoreLimits` on 32-bit hosts due to a truncated maximum size.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
+- Fix a panic when `memory.grow` exceeds the capacity of a `Memory::new_static` buffer. [#2086]
 
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
 [#2048]: https://github.com/wasmi-labs/wasmi/pull/2048
@@ -44,6 +45,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 [#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
 [#2076]: https://github.com/wasmi-labs/wasmi/pull/2076
+[#2086]: https://github.com/wasmi-labs/wasmi/pull/2086
 
 ## `2.0.0` - 2026-09-01
 
