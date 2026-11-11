@@ -33,7 +33,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Thanks to [soraxa-dev](https://github.com/soraxa-dev) for reporting the bug!
   - Thanks to [Kansuke Habano](https://github.com/habakan) for fixing the bug!
 - Fix a panic when growing a `memory64` declared with the largest allowed maximum size. [#2053]
-  - This also fixes the maximum size reported to `ResourceLimiter::memory_growing` on 32-bit hosts.
+  - This also fixes `memory.grow` being wrongly denied by `StoreLimits` on 32-bit hosts due to a truncated maximum size.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
 
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
