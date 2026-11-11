@@ -36,6 +36,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - This also fixes `memory.grow` being wrongly denied by `StoreLimits` on 32-bit hosts due to a truncated maximum size.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
 - Fix a panic when `memory.grow` exceeds the capacity of a `Memory::new_static` buffer. [#2086]
+- Fix an off-by-one allowing 32-bit memories with 1-byte pages to have `2^32` pages. [#2087]
 
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
 [#2048]: https://github.com/wasmi-labs/wasmi/pull/2048
@@ -46,6 +47,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
 [#2076]: https://github.com/wasmi-labs/wasmi/pull/2076
 [#2086]: https://github.com/wasmi-labs/wasmi/pull/2086
+[#2087]: https://github.com/wasmi-labs/wasmi/pull/2087
 
 ## `2.0.0` - 2026-09-01
 
