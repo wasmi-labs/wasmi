@@ -165,7 +165,7 @@ impl ByteBuffer {
     /// Grow the byte buffer to the given `new_size` when backed by a `&'static [u8]`.
     fn grow_static(&mut self, new_size: usize) -> Result<(), MemoryError> {
         if self.capacity < new_size {
-            return Err(MemoryError::InvalidStaticBufferSize);
+            return Err(MemoryError::OutOfSystemMemory);
         }
         let len = self.len();
         self.len = new_size;
