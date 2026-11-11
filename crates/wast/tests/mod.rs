@@ -456,6 +456,9 @@ macro_rules! foreach_test_cps {
             fn spec_custom_page_sizes_invalid("spec/proposals/custom-page-sizes/custom-page-sizes-invalid");
             fn spec_custom_page_sizes_memory_max("spec/proposals/custom-page-sizes/memory_max");
             fn spec_custom_page_sizes_memory_max64("spec/proposals/custom-page-sizes/memory_max_i64");
+
+            // Wasmi specific `custom-page-sizes` tests:
+            fn wasmi_custom_page_sizes("wasmi/tests/custom-page-sizes");
         }
     };
 }
