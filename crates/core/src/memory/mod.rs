@@ -186,7 +186,10 @@ impl Memory {
             return Ok(self.size());
         }
         let current_byte_size = self.size_in_bytes() as usize;
-        let maximum_byte_size = self.memory_type.max_size_in_bytes();
+        let maximum_byte_size = self
+            .memory_type
+            .maximum_size_in_bytes()
+            .map(|max| usize::try_from(max).unwrap_or(usize::MAX));
         let current_size = self.size();
         let Some(desired_size) = current_size.checked_add(additional) else {
             return Err(MemoryError::OutOfBoundsGrowth);

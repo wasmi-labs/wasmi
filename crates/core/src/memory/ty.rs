@@ -277,11 +277,10 @@ impl MemoryType {
     /// memories grow lazily and thus creation of memories which have a max
     /// size that overflows system limits are valid as long as they do not
     /// grow beyond those limits.
-    pub(crate) fn max_size_in_bytes(self) -> Option<usize> {
+    pub(crate) fn maximum_size_in_bytes(self) -> Option<u128> {
         let max_pages = self.maximum()?;
         let max_bytes = u128::from(max_pages) << self.page_size_log2();
-        let clipped_max = usize::try_from(max_bytes).unwrap_or(usize::MAX);
-        Some(clipped_max)
+        Some(max_bytes)
     }
 
     /// Returns `true` if the [`MemoryType`] is a subtype of the `other` [`MemoryType`].
