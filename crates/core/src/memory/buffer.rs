@@ -291,7 +291,10 @@ mod test {
         static mut BUF: [u8; 5] = [7; 5];
         let buf = unsafe { &mut *core::ptr::addr_of_mut!(BUF) };
         let mut buffer = ByteBuffer::new_static(buf, 5).unwrap();
-        assert!(buffer.grow(10).is_err());
+        assert!(matches!(
+            buffer.grow(10).unwrap_err(),
+            MemoryError::OutOfSystemMemory
+        ));
     }
 
     #[test]
