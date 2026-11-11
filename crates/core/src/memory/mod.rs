@@ -79,14 +79,7 @@ impl Memory {
         let Ok(min_size) = usize::try_from(min_size) else {
             return Err(MemoryError::MinimumSizeOverflow);
         };
-        // Note: We have to clip `max_size` at `usize::MAX` since we do not want to
-        //       error if the system limits are overflown here. This is because Wasm
-        //       memories grow lazily and thus creation of memories which have a max
-        //       size that overflows system limits are valid as long as they do not
-        //       grow beyond those limits.
-        let max_size = memory_type
-            .maximum_size_in_bytes()
-            .map(|max| usize::try_from(max).unwrap_or(usize::MAX));
+        let max_size = Self::clipped_maximum_size_in_bytes(memory_type);
 
         if let Some(limiter) = limiter.as_resource_limiter() {
             if !limiter.memory_growing(0, min_size, max_size)? {
@@ -149,6 +142,21 @@ impl Memory {
         bytes
     }
 
+    /// Returns the maximum size in bytes of a linear memory of type `memory_type` if any.
+    ///
+    /// # Note
+    ///
+    /// We have to clip `max_size` at [`usize::MAX`] since we do not want to
+    /// error if the system limits are overflown here. This is because Wasm
+    /// memories grow lazily and thus creation of memories which have a max
+    /// size that overflows system limits are valid as long as they do not
+    /// grow beyond those limits.
+    fn clipped_maximum_size_in_bytes(memory_type: MemoryType) -> Option<usize> {
+        memory_type
+            .maximum_size_in_bytes()
+            .map(|max| usize::try_from(max).unwrap_or(usize::MAX))
+    }
+
     /// Grows the linear memory by the given amount of new pages.
     ///
     /// Returns the amount of pages before the operation upon success.
@@ -177,10 +185,7 @@ impl Memory {
             return Ok(self.size());
         }
         let current_byte_size = self.size_in_bytes() as usize;
-        let maximum_byte_size = self
-            .memory_type
-            .maximum_size_in_bytes()
-            .map(|max| usize::try_from(max).unwrap_or(usize::MAX));
+        let maximum_byte_size = Self::clipped_maximum_size_in_bytes(self.memory_type);
         let current_size = self.size();
         let Some(desired_size) = current_size.checked_add(additional) else {
             return Err(MemoryError::OutOfBoundsGrowth);
