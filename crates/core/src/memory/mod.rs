@@ -79,23 +79,14 @@ impl Memory {
         let Ok(min_size) = usize::try_from(min_size) else {
             return Err(MemoryError::MinimumSizeOverflow);
         };
-        let max_size = match memory_type.maximum() {
-            Some(max) => {
-                let max_pages = u128::from(max);
-                if max_pages > memory_type.absolute_max() {
-                    return Err(MemoryError::MaximumSizeOverflow);
-                }
-                let max_bytes = max_pages << memory_type.page_size_log2();
-                // Note: We have to clip `max_size` at `usize::MAX` since we do not want to
-                //       error if the system limits are overflown here. This is because Wasm
-                //       memories grow lazily and thus creation of memories which have a max
-                //       size that overflows system limits are valid as long as they do not
-                //       grow beyond those limits.
-                let max_size = usize::try_from(max_bytes).unwrap_or(usize::MAX);
-                Some(max_size)
-            }
-            None => None,
-        };
+        // Note: We have to clip `max_size` at `usize::MAX` since we do not want to
+        //       error if the system limits are overflown here. This is because Wasm
+        //       memories grow lazily and thus creation of memories which have a max
+        //       size that overflows system limits are valid as long as they do not
+        //       grow beyond those limits.
+        let max_size = memory_type
+            .maximum_size_in_bytes()
+            .map(|max| usize::try_from(max).unwrap_or(usize::MAX));
 
         if let Some(limiter) = limiter.as_resource_limiter() {
             if !limiter.memory_growing(0, min_size, max_size)? {
