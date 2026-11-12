@@ -4,7 +4,7 @@ use crate::{Error, Module};
 use wasmparser::Validator;
 use wasmparser::{Chunk, Payload};
 
-impl ModuleParser {
+impl ModuleParser<'_> {
     /// Starts parsing and validating the Wasm bytecode stream.
     ///
     /// Returns the compiled and validated Wasm [`Module`] upon success.
