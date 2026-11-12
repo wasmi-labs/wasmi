@@ -22,15 +22,36 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fuel metering now charges for zero-initializing non-parameter function locals. [#2041]
   - Costs 1 fuel per 8 Wasm locals, rounded up.
   - Thanks to [Peng Wang](https://github.com/pwang200) for reporting and fixing the issue!
+- Fix a bug where functions escaping a failed instantiation could access a partially initialized instance. [#2076]
+  - Thanks to [Jeremy Spence](https://github.com/JeremySpence272) for reporting the bug!
+- Fix `select` fused with a zero test (e.g. `x != 0`) of a slot operand. [#2048]
+  - Thanks to [Szymon Teżewski](https://github.com/jasisz) for reporting the bug.
+  - Thanks to [Sébastien Celles](https://github.com/s-celles) for fixing the bug.
+- `auto-dispatch` now falls back to portable dispatch if `debug-assertions` are enabled. [#2050]
+  - This fixes a stackoverflow in optimized debug builds using `[profile.dev.package.wasmi] opt-level = 3`.
+  - Requires Cargo 1.93 or newer and only detects `debug-assertions` set via Cargo profiles, not via `RUSTFLAGS`.
+  - Thanks to [soraxa-dev](https://github.com/soraxa-dev) for reporting the bug!
+  - Thanks to [Kansuke Habano](https://github.com/habakan) for fixing the bug!
+- Fix a panic when growing a `memory64` declared with the largest allowed maximum size. [#2053]
+  - This also fixes `memory.grow` being wrongly denied by `StoreLimits` on 32-bit hosts due to a truncated maximum size.
+  - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
+- Fix a panic when `memory.grow` exceeds the capacity of a `Memory::new_static` buffer. [#2086]
+- Fix an off-by-one allowing 32-bit memories with 1-byte pages to have `2^32` pages. [#2087]
 - `memory.grow` past the declared maximum of a linear memory now informs the `ResourceLimiter`, as `table.grow` already does. [#2079]
   - `ResourceLimiter::memory_growing` sees the request first, then `memory_grow_failed` is called.
   - With `StoreLimitsBuilder::trap_on_grow_failure(true)` this growth now traps instead of returning `-1`.
 
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
+[#2048]: https://github.com/wasmi-labs/wasmi/pull/2048
+[#2050]: https://github.com/wasmi-labs/wasmi/pull/2050
+[#2053]: https://github.com/wasmi-labs/wasmi/pull/2053
 [#2064]: https://github.com/wasmi-labs/wasmi/pull/2064
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 [#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
+[#2076]: https://github.com/wasmi-labs/wasmi/pull/2076
 [#2079]: https://github.com/wasmi-labs/wasmi/issues/2079
+[#2086]: https://github.com/wasmi-labs/wasmi/pull/2086
+[#2087]: https://github.com/wasmi-labs/wasmi/pull/2087
 
 ## `2.0.0` - 2026-09-01
 

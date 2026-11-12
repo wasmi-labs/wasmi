@@ -73,30 +73,42 @@ impl Module {
         self.extract_globals(&mut context, &mut builder);
         self.extract_exports(&mut builder);
         self.extract_start_fn(&mut builder);
-        self.initialize_table_elements(&mut context, &mut builder)?;
-        self.initialize_memory_data(&mut context, &mut builder)?;
-        Self::start(
-            &mut context,
-            builder,
-            handle,
-            self.get_imports().len_funcs(),
-        )?;
+        self.extract_element_segments(&mut context, &mut builder);
+        self.extract_data_segments(&mut context, &mut builder);
+        self.initialize_instance(&mut context, handle, &mut builder)?;
+        self.initialize_table_elements(&mut context, &builder)?;
+        self.initialize_memory_data(&mut context, &builder)?;
+        Self::start(&mut context, builder, handle)?;
         Ok(handle)
     }
 
-    /// Executes the [`Instance`]'s `start` function if any and finalizes instantiation.
+    /// Initializes the built-up Wasm module instance.
+    ///
+    /// # Note
+    ///
+    /// The instance must be initialized before applying active segments since those
+    /// may store its functions into imported tables before failing.
+    fn initialize_instance(
+        &self,
+        mut context: impl AsContextMut,
+        handle: Instance,
+        builder: &mut InstanceEntityBuilder,
+    ) -> Result<(), Error> {
+        context.as_context_mut().store.inner.initialize_instance(
+            handle,
+            builder.finish()?,
+            self.get_imports().len_funcs(),
+        );
+        Ok(())
+    }
+
+    /// Executes the [`Instance`]'s `start` function if any.
     fn start(
         mut store: impl AsContextMut,
         builder: InstanceEntityBuilder,
         instance: Instance,
-        len_imported_funcs: usize,
     ) -> Result<(), Error> {
         let opt_start_index = builder.get_start().map(FuncIdx::into_u32);
-        store.as_context_mut().store.inner.initialize_instance(
-            instance,
-            builder.finish()?,
-            len_imported_funcs,
-        );
         if let Some(start_index) = opt_start_index {
             let entity = store.as_context().store.inner.resolve_instance(&instance);
             let addr = entity.layout().func_addr(start_index).expect(
@@ -378,12 +390,12 @@ impl Module {
         }
     }
 
-    /// Initializes the [`Instance`] tables with the Wasm element segments of the [`Module`].
-    fn initialize_table_elements(
+    /// Extracts the Wasm element segments of the [`Module`] for the [`Instance`].
+    fn extract_element_segments(
         &self,
         mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
-    ) -> Result<(), Error> {
+    ) {
         for segment in &self.module_header().element_segments[..] {
             let ctx = InstanceBuilderContext::new(&context.as_context().store.inner, builder);
             let items: Box<[RawRef]> = match segment.kind() {
@@ -404,6 +416,24 @@ impl Module {
                 ElementSegmentKind::Declared => Box::from([]),
             };
             let element = ElementSegment::new(context.as_context_mut(), segment.ty(), items);
+            builder.push_element_segment(element);
+        }
+    }
+
+    /// Initializes the [`Instance`] tables with the Wasm element segments of the [`Module`].
+    fn initialize_table_elements(
+        &self,
+        mut context: impl AsContextMut,
+        builder: &InstanceEntityBuilder,
+    ) -> Result<(), Error> {
+        let segments = &self.module_header().element_segments[..];
+        let elements = builder.element_segments();
+        assert_eq!(
+            segments.len(),
+            elements.len(),
+            "mismatched element segments"
+        );
+        for (segment, &element) in segments.iter().zip(elements) {
             if let ElementSegmentKind::Active(active) = segment.kind() {
                 let dst_index =
                     match Self::eval_init_expr(context.as_context(), builder, active.offset()) {
@@ -434,19 +464,35 @@ impl Module {
                 // Now drop the active element segment as commanded by the Wasm spec.
                 elem.drop_items();
             }
-            builder.push_element_segment(element);
         }
         Ok(())
+    }
+
+    /// Extracts the Wasm data segments of the [`Module`] for the [`Instance`].
+    fn extract_data_segments(
+        &self,
+        mut context: impl AsContextMut,
+        builder: &mut InstanceEntityBuilder,
+    ) {
+        for segment in &self.inner.data_segments {
+            let segment = match segment {
+                InitDataSegment::Active { .. } => DataSegment::new_active(context.as_context_mut()),
+                InitDataSegment::Passive { bytes } => {
+                    DataSegment::new_passive(context.as_context_mut(), bytes.clone())
+                }
+            };
+            builder.push_data_segment(segment);
+        }
     }
 
     /// Initializes the [`Instance`] linear memories with the Wasm data segments of the [`Module`].
     fn initialize_memory_data(
         &self,
         mut context: impl AsContextMut,
-        builder: &mut InstanceEntityBuilder,
+        builder: &InstanceEntityBuilder,
     ) -> Result<(), Error> {
         for segment in &self.inner.data_segments {
-            let segment = match segment {
+            match segment {
                 InitDataSegment::Active {
                     memory_index,
                     offset,
@@ -462,13 +508,9 @@ impl Module {
                         return Err(Error::from(MemoryError::OutOfBoundsAccess));
                     };
                     memory.write(context.as_context_mut(), offset, bytes)?;
-                    DataSegment::new_active(context.as_context_mut())
                 }
-                InitDataSegment::Passive { bytes } => {
-                    DataSegment::new_passive(context.as_context_mut(), bytes)
-                }
-            };
-            builder.push_data_segment(segment);
+                InitDataSegment::Passive { .. } => {}
+            }
         }
         Ok(())
     }

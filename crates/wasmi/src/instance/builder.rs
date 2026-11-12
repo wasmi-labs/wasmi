@@ -15,7 +15,7 @@ use crate::{
     module::FuncIdx,
 };
 use alloc::{boxed::Box, vec::Vec};
-use core::iter::FusedIterator;
+use core::{iter::FusedIterator, mem};
 
 /// A module instance entity builder.
 #[derive(Debug)]
@@ -140,6 +140,11 @@ impl InstanceEntityBuilder {
             .unwrap_or_else(|| panic!("missing `Func` at index: {index}"))
     }
 
+    /// Returns the pushed [`ElementSegment`]s.
+    pub fn element_segments(&self) -> &[ElementSegment] {
+        &self.elem_segments
+    }
+
     /// Pushes a new [`Memory`] to the [`InstanceEntity`] under construction.
     pub fn push_memory(&mut self, memory: Memory) {
         self.memories.push(memory);
@@ -186,9 +191,14 @@ impl InstanceEntityBuilder {
     }
 
     /// Finishes constructing the [`InstanceEntity`].
-    pub fn finish(self) -> Result<Box<InstanceEntity>, Error> {
+    ///
+    /// # Note
+    ///
+    /// This moves the exports out of `self` but keeps its handles accessible.
+    pub fn finish(&mut self) -> Result<Box<InstanceEntity>, Error> {
         let handles = self.finish_handles();
-        Ok(InstanceEntity::new_init(self.exports, self.layout, handles))
+        let exports = mem::take(&mut self.exports);
+        Ok(InstanceEntity::new_init(exports, self.layout, handles))
     }
 
     /// Finishes construction of the [`AnyHandle`] buffer.

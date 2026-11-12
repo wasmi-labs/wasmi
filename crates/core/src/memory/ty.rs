@@ -79,8 +79,14 @@ impl MemoryTypeInner {
     }
 
     /// Returns the absolute maximum size in pages that a linear memory is allowed to have.
+    ///
+    /// # Note
+    ///
+    /// The amount of pages must be representable by the index type, e.g. at most `2^32 - 1`
+    /// pages for a 32-bit memory with 1-byte pages.
     fn absolute_max(&self) -> u128 {
-        self.max_size_based_on_index_type() >> self.page_size_log2
+        let max_size = self.max_size_based_on_index_type();
+        (max_size >> self.page_size_log2).min(max_size - 1)
     }
 }
 
@@ -266,6 +272,21 @@ impl MemoryType {
     /// Returns the absolute maximum size in pages that a linear memory is allowed to have.
     pub(crate) fn absolute_max(&self) -> u128 {
         self.inner.absolute_max()
+    }
+
+    /// Returns the maximum size of a linear memory of this type in bytes if any.
+    ///
+    /// # Note
+    ///
+    /// We have to clip `max_size` at [`usize::MAX`] since we do not want to
+    /// error if the system limits are overflown here. This is because Wasm
+    /// memories grow lazily and thus creation of memories which have a max
+    /// size that overflows system limits are valid as long as they do not
+    /// grow beyond those limits.
+    pub(crate) fn maximum_size_in_bytes(self) -> Option<u128> {
+        let max_pages = self.maximum()?;
+        let max_bytes = u128::from(max_pages) << self.page_size_log2();
+        Some(max_bytes)
     }
 
     /// Returns `true` if the [`MemoryType`] is a subtype of the `other` [`MemoryType`].

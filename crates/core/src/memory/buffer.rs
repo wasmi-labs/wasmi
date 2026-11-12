@@ -165,7 +165,7 @@ impl ByteBuffer {
     /// Grow the byte buffer to the given `new_size` when backed by a `&'static [u8]`.
     fn grow_static(&mut self, new_size: usize) -> Result<(), MemoryError> {
         if self.capacity < new_size {
-            return Err(MemoryError::InvalidStaticBufferSize);
+            return Err(MemoryError::OutOfSystemMemory);
         }
         let len = self.len();
         self.len = new_size;
@@ -291,7 +291,10 @@ mod test {
         static mut BUF: [u8; 5] = [7; 5];
         let buf = unsafe { &mut *core::ptr::addr_of_mut!(BUF) };
         let mut buffer = ByteBuffer::new_static(buf, 5).unwrap();
-        assert!(buffer.grow(10).is_err());
+        assert!(matches!(
+            buffer.grow(10).unwrap_err(),
+            MemoryError::OutOfSystemMemory
+        ));
     }
 
     #[test]
