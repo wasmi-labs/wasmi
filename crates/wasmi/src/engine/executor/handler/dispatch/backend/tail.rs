@@ -60,7 +60,7 @@ macro_rules! expand_op_code_to_handler {
 }
 ir::for_each_op!(expand_op_code_to_handler);
 
-#[cfg(not(wasmi_use_unstable_features))]
+#[cfg(not(all(feature = "unstable", not(feature = "stable"))))]
 macro_rules! dispatch {
     ( $store:expr, $args:expr $(,)? ) => {{
         let (ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64) = $args.into_parts();
@@ -71,7 +71,7 @@ macro_rules! dispatch {
     }};
 }
 
-#[cfg(wasmi_use_unstable_features)]
+#[cfg(all(feature = "unstable", not(feature = "stable")))]
 macro_rules! dispatch {
     ( $store:expr, $args:expr $(,)? ) => {{
         let (ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64) = $args.into_parts();

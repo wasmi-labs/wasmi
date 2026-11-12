@@ -1,18 +1,24 @@
-#[cfg(wasmi_use_unstable_features)]
+#[cfg(all(feature = "unstable", not(feature = "stable")))]
 macro_rules! invoke_with_handler_abi {
     ($mac:ident! { extern _ $($args:tt)* }) => {
         $mac! { extern "rust-preserve-none" $($args)* }
     };
 }
 
-#[cfg(all(not(wasmi_use_unstable_features), target_arch = "x86_64"))]
+#[cfg(all(
+    not(all(feature = "unstable", not(feature = "stable"))),
+    target_arch = "x86_64"
+))]
 macro_rules! invoke_with_handler_abi {
     ($mac:ident! { extern _ $($args:tt)* }) => {
         $mac! { extern "sysv64" $($args)* }
     };
 }
 
-#[cfg(all(not(wasmi_use_unstable_features), not(target_arch = "x86_64")))]
+#[cfg(all(
+    not(all(feature = "unstable", not(feature = "stable"))),
+    not(target_arch = "x86_64")
+))]
 macro_rules! invoke_with_handler_abi {
     ($mac:ident! { extern _ $($args:tt)* }) => {
         $mac! { extern "Rust" $($args)* }

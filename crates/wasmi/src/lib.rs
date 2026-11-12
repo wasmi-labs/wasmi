@@ -93,7 +93,7 @@
     clippy::items_after_statements
 )]
 #![cfg_attr(
-    wasmi_use_unstable_features,
+    all(feature = "unstable", not(feature = "stable")),
     feature(explicit_tail_calls),
     feature(rust_preserve_none_cc),
     expect(incomplete_features)
