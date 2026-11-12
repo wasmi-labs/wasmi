@@ -245,7 +245,7 @@ pub struct Inst {
     target_arch = "riscv64",
     target_arch = "wasm32",
     target_arch = "wasm64",
-    all(feature = "unstable", not(feature = "stable"))
+    all(target_arch = "x86_64", feature = "unstable", not(feature = "stable"))
 ))]
 type InstRepr = usize;
 
@@ -262,7 +262,7 @@ type InstRepr = usize;
     target_arch = "riscv64",
     target_arch = "wasm32",
     target_arch = "wasm64",
-    all(feature = "unstable", not(feature = "stable"))
+    all(target_arch = "x86_64", feature = "unstable", not(feature = "stable"))
 )))]
 type InstRepr = InstReprFloat;
 
