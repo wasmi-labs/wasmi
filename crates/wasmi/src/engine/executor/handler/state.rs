@@ -238,6 +238,9 @@ pub struct Inst {
 /// A handler takes 6 integer arguments besides `instance`, so targets with 8 integer argument
 /// registers (`x0`-`x7`, `a0`-`a7`) can pass `Inst` in a general purpose register and skip the
 /// integer-float roundtrip on every access.
+///
+/// With the `unstable` crate feature this also applies to `x86_64`, whose `rust-preserve-none`
+/// ABI has enough integer argument registers. Other targets fall back to the Rust ABI.
 #[cfg(any(
     target_arch = "aarch64",
     target_arch = "loongarch64",
@@ -245,6 +248,7 @@ pub struct Inst {
     target_arch = "riscv64",
     target_arch = "wasm32",
     target_arch = "wasm64",
+    all(target_arch = "x86_64", feature = "unstable", not(feature = "stable"))
 ))]
 type InstRepr = usize;
 
@@ -261,6 +265,7 @@ type InstRepr = usize;
     target_arch = "riscv64",
     target_arch = "wasm32",
     target_arch = "wasm64",
+    all(target_arch = "x86_64", feature = "unstable", not(feature = "stable"))
 )))]
 type InstRepr = InstReprFloat;
 

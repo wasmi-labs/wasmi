@@ -10,6 +10,12 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ## `2.0.1` - UNRELEASED
 
+### Added
+
+- The `unstable` crate feature now uses Rust's unstable `rust-preserve-none` ABI for execution handlers. [#2036]
+  - Takes effect on `x86_64` and `aarch64` targets; other targets fall back to the Rust ABI.
+  - Thanks to [Noa](https://github.com/coolreader18) for implementing it!
+
 ### Fixes
 
 - Removes stack frames for `{memory,table}.grow` execution handlers. [#2066]
@@ -45,6 +51,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fix a Stacked/Tree Borrows violation of the cached `(memory 0)` pointer. [#2090]
   - Thanks to [Xiaotian Zhou](https://github.com/zhouxt1) for reporting the bug!
 
+[#2036]: https://github.com/wasmi-labs/wasmi/pull/2036
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
 [#2048]: https://github.com/wasmi-labs/wasmi/pull/2048
 [#2050]: https://github.com/wasmi-labs/wasmi/pull/2050

@@ -1,3 +1,32 @@
+// Invokes `$mac` with the execution handler's `extern "<abi>"` prepended.
+// A callback macro since `macro_rules!` cannot expand to an ABI string.
+#[cfg(all(feature = "unstable", not(feature = "stable")))]
+macro_rules! invoke_with_handler_abi {
+    ($mac:ident! { $($args:tt)* }) => {
+        $mac! { extern "rust-preserve-none" $($args)* }
+    };
+}
+
+#[cfg(all(
+    not(all(feature = "unstable", not(feature = "stable"))),
+    target_arch = "x86_64"
+))]
+macro_rules! invoke_with_handler_abi {
+    ($mac:ident! { $($args:tt)* }) => {
+        $mac! { extern "sysv64" $($args)* }
+    };
+}
+
+#[cfg(all(
+    not(all(feature = "unstable", not(feature = "stable"))),
+    not(target_arch = "x86_64")
+))]
+macro_rules! invoke_with_handler_abi {
+    ($mac:ident! { $($args:tt)* }) => {
+        $mac! { extern "Rust" $($args)* }
+    };
+}
+
 #[macro_use]
 mod dispatch;
 #[macro_use]

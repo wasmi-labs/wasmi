@@ -165,7 +165,7 @@ are new in v2 and most relevant when upgrading:
 | `memory64` | ✅ | Support for the Wasm `memory64` proposal. |
 | `auto-dispatch` | ✅ | Use tail-call based operator dispatch only on targets known to support it, otherwise fall back to portable dispatch. |
 | `stable` | ✅ | Restrict Wasmi to stable Rust. Suppresses `unstable`. |
-| `unstable` | ❌ | Enables nightly-only `rustc` features, concretely Rust's `become` keyword to enforce tail calls in operator dispatch. |
+| `unstable` | ❌ | Enables nightly-only `rustc` features, concretely Rust's `become` keyword to enforce tail calls in operator dispatch and the `rust-preserve-none` ABI for execution handlers. |
 | `portable-dispatch` | ❌ | Force the portable (loop-based) operator dispatch. Takes precedence over `auto-dispatch`. |
 | `indirect-dispatch` | ❌ | Use less encoding space for Wasmi's internal IR at the cost of execution performance. |
 | `deterministic` | ❌ | Wasm deterministic profile support. |

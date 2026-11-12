@@ -146,6 +146,22 @@ jobs:
           --exclude wasmi_fuzz
           --exclude fuzz
 
+  check-unstable:
+    name: Check (unstable)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
+      - uses: Swatinem/rust-cache@v2
+      - run: >-
+          cargo check
+          --package wasmi
+          --locked
+          --no-default-features
+          --features unstable
+
   test:
     name: Test
     strategy:

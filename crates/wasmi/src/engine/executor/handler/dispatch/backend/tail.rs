@@ -23,32 +23,24 @@ pub fn fetch_handler(ip: Ip) -> Handler {
 pub enum Never {}
 pub type Done = Control<Never, Break>;
 
-#[cfg(not(target_arch = "x86_64"))]
-pub type Handler = fn(
-    &mut PrunedStore,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
-) -> Done;
+macro_rules! define_handler_type {
+    (extern $abi:tt) => {
+        #[allow(improper_ctypes_definitions)] // not used in FFI
+        pub type Handler = extern $abi fn(
+            &mut PrunedStore,
+            ip: Ip,
+            sp: Sp,
+            mem0: Mem0Ptr,
+            mem0_len: Mem0Len,
+            instance: Inst,
+            ireg: Ireg,
+            freg32: Freg32,
+            freg64: Freg64,
+        ) -> Done;
+    }
+}
 
-#[cfg(target_arch = "x86_64")]
-#[allow(improper_ctypes_definitions)] // not used in FFI
-pub type Handler = extern "sysv64" fn(
-    &mut PrunedStore,
-    ip: Ip,
-    sp: Sp,
-    mem0: Mem0Ptr,
-    mem0_len: Mem0Len,
-    instance: Inst,
-    ireg: Ireg,
-    freg32: Freg32,
-    freg64: Freg64,
-) -> Done;
+invoke_with_handler_abi!(define_handler_type! {});
 
 macro_rules! expand_op_code_to_handler {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {

@@ -95,6 +95,7 @@
 #![cfg_attr(
     all(feature = "unstable", not(feature = "stable")),
     feature(explicit_tail_calls),
+    feature(rust_preserve_none_cc),
     expect(incomplete_features)
 )]
 #![recursion_limit = "1000"]
