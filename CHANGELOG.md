@@ -42,6 +42,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fix a use-after-free when `memory.grow` grows `(memory 0)` through another memory index aliasing it. [#2051]
   - This could happen if the same linear memory is imported more than once.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
+- Fix a Stacked/Tree Borrows violation of the cached `(memory 0)` pointer. [#2090]
+  - Thanks to [Xiaotian Zhou](https://github.com/zhouxt1) for reporting the bug!
 
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
 [#2048]: https://github.com/wasmi-labs/wasmi/pull/2048
@@ -55,6 +57,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2086]: https://github.com/wasmi-labs/wasmi/pull/2086
 [#2087]: https://github.com/wasmi-labs/wasmi/pull/2087
 [#2088]: https://github.com/wasmi-labs/wasmi/pull/2088
+[#2090]: https://github.com/wasmi-labs/wasmi/pull/2090
 
 ## `2.0.0` - 2026-09-01
 
