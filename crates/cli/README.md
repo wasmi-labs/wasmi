@@ -140,7 +140,7 @@ conformance validation and regression testing of the Wasmi interpreter.
 | `auto-dispatch` | ✅ | Automatically uses tail-call dispatch if possible for this build configuration and falls back to the portable loop-dispatch otherwise. Overwritten if `portable-dispatch` is enabled. |
 | `portable-dispatch` | ❌ | Allows to compile Wasmi universally at the cost of execution performance. Use `--profile bench` to counteract performance regressions to some extend. |
 | `indirect-dispatch` | ❌ | Uses a slightly more compact IR encoding at the cost of execution performance. |
-| `unstable` | ❌ | Enables unstable Rust compiler features in Wasmi. (e.g. `become`) Only usable when disabling default features via `--no-default-features` and requires a nightly Rust compiler. |
+| `unstable` | ❌ | Enables unstable Rust compiler features in Wasmi. (e.g. `become` and the `rust-preserve-none` ABI) Only usable when disabling default features via `--no-default-features` and requires a nightly Rust compiler. |
 
 ## License
 
