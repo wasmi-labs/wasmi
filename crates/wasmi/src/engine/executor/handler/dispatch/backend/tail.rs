@@ -40,7 +40,7 @@ macro_rules! define_handler_type {
     }
 }
 
-invoke_with_handler_abi!(define_handler_type! { extern _ });
+invoke_with_handler_abi!(define_handler_type! {});
 
 macro_rules! expand_op_code_to_handler {
     ( $( $snake_case:ident => $camel_case:ident ),* $(,)? ) => {

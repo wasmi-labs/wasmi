@@ -44,7 +44,7 @@ macro_rules! execution_handler_inner {
 
 macro_rules! execution_handler {
     ($($args:tt)*) => {
-        invoke_with_handler_abi! { execution_handler_inner! { extern _ $($args)* } }
+        invoke_with_handler_abi! { execution_handler_inner! { $($args)* } }
     };
 }
 
