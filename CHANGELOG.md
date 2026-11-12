@@ -39,10 +39,14 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fix an off-by-one allowing 32-bit memories with 1-byte pages to have `2^32` pages. [#2087]
 - Fix a miscompilation where a `local.set` in a branch of a `block`, `loop` or `if` with parameters could clobber an earlier `local.get` of the same local. [#2088]
   - Thanks to [Doron Somech](https://github.com/somdoron) for reporting the bug!
+- Fix a use-after-free when `memory.grow` grows `(memory 0)` through another memory index aliasing it. [#2051]
+  - This could happen if the same linear memory is imported more than once.
+  - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
 
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
 [#2048]: https://github.com/wasmi-labs/wasmi/pull/2048
 [#2050]: https://github.com/wasmi-labs/wasmi/pull/2050
+[#2051]: https://github.com/wasmi-labs/wasmi/pull/2051
 [#2053]: https://github.com/wasmi-labs/wasmi/pull/2053
 [#2064]: https://github.com/wasmi-labs/wasmi/pull/2064
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
