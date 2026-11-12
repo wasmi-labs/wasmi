@@ -53,6 +53,16 @@ impl ValType {
         };
         Some(ty)
     }
+
+    /// Returns `true` when the [`ValType`] is a subtype of the `other` [`ValType`].
+    ///
+    /// # Note
+    ///
+    /// Currently, `.matches` and `==` give the same result because [`ValType`] has no subtyping yet.
+    /// That may change with `function-references`.
+    pub fn matches(&self, other: &Self) -> bool {
+        self == other
+    }
 }
 
 impl From<RefType> for ValType {
@@ -742,5 +752,26 @@ mod tests {
             Float::copysign(f32::from_bits(0xFFC00000), f32::from_bits(0x0000_0000)).to_bits(),
             0x7FC00000,
         )
+    }
+
+    #[test]
+    fn matches_works() {
+        // The slice containing all ValType variants
+        let val_types: &[ValType] = &[
+            ValType::I32,
+            ValType::I64,
+            ValType::F32,
+            ValType::F64,
+            ValType::V128,
+            ValType::FuncRef,
+            ValType::ExternRef,
+        ];
+
+        // Checking all possible combinations
+        for vt_one in val_types {
+            for vt_two in val_types {
+                assert_eq!(vt_one.matches(vt_two), vt_one == vt_two);
+            }
+        }
     }
 }
