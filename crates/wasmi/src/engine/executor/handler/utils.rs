@@ -556,10 +556,13 @@ pub fn extract_mem0(inst: Inst) -> (Mem0Ptr, Mem0Len) {
     let mem0 = unsafe { mem0.as_ref() };
     let mem0 = mem0.entity();
     // SAFETY: entity cache is ensured to have warmed at instantiation.
-    let mem0 = unsafe { &mut *mem0.as_ptr() }.data_mut();
-    let mem0_ptr = mem0.as_mut_ptr();
-    let mem0_len = mem0.len();
-    (Mem0Ptr::from(mem0_ptr), Mem0Len::from(mem0_len))
+    let mem0 = unsafe { mem0.as_ref() };
+    // Note: `data_ptr` keeps the buffer's root provenance whereas a pointer derived via
+    //       `data_mut` would be invalidated by any later `data_mut` on the same memory.
+    (
+        Mem0Ptr::from(mem0.data_ptr()),
+        Mem0Len::from(mem0.data_size()),
+    )
 }
 
 pub fn memory_slice(memory: &MemoryEntity, pos: usize, len: usize) -> Result<&[u8], TrapCode> {
