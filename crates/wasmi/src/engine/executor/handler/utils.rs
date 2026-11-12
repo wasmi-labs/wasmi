@@ -535,16 +535,6 @@ pub fn exec_copy_span_des(sp: Sp, dst: SlotSpan, src: SlotSpan, len: u16) {
     }
 }
 
-/// Returns `true` if `memory` addresses the default linear memory (Wasm index 0).
-#[inline]
-pub fn is_default_memory(_instance: Inst, memory: ir::MemoryAddr) -> bool {
-    // Note: this returns `true` even if the instance does not contain a memory.
-    //       It is guaranteed that linear memories are placed first in an instance's
-    //       handle buffer, therefore `MemoryAddr(0)` always refers to the default
-    //       memory if one exists.
-    u32::from(memory) == 0
-}
-
 /// Extracts the data pointer and length of `(memory 0)`.
 ///
 /// # Note (Safety)

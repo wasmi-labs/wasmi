@@ -922,15 +922,17 @@ impl<'stack> PreservedAllLocalsIter<'stack> {
             }
             stack_pos -= 1;
             let opd = self.stack.operands.get(stack_pos)?;
-            let StackOperand::Local { .. } = opd else {
-                continue;
-            };
-            self.remaining_locals -= 1;
+            let is_local = matches!(opd, StackOperand::Local { .. });
+            if is_local {
+                self.remaining_locals -= 1;
+            }
             if self.skip > 0 {
                 self.skip -= 1;
                 continue;
             }
-            return Some(stack_pos);
+            if is_local {
+                return Some(stack_pos);
+            }
         }
     }
 }

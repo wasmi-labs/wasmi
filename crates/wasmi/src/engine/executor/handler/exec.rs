@@ -414,9 +414,11 @@ execution_handler! {
         // The `memory.grow` operation might have invalidated the cached
         // linear memory so we need to reset it in order for the cache to
         // reload in case it is used again.
-        if utils::is_default_memory(instance, memory) {
-            args.reload_mem0();
-        }
+        //
+        // Note: this is done unconditionally since `memory` might alias
+        //       `(memory 0)` even if its index is not 0, e.g. if the same
+        //       memory is imported twice.
+        args.reload_mem0();
         args.set(result, return_value);
         dispatch!(store, args)
     }
