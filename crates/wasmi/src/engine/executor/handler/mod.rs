@@ -1,3 +1,5 @@
+// Invokes `$mac` with `extern _` replaced by the execution handler ABI.
+// A callback macro since `macro_rules!` cannot expand to an ABI string.
 #[cfg(all(feature = "unstable", not(feature = "stable")))]
 macro_rules! invoke_with_handler_abi {
     ($mac:ident! { extern _ $($args:tt)* }) => {
