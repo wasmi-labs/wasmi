@@ -443,6 +443,9 @@ macro_rules! foreach_test_multi_memory {
             fn spec_multi_memory_store0("spec/proposals/multi-memory/store0");
             fn spec_multi_memory_store1("spec/proposals/multi-memory/store1");
             fn spec_multi_memory_traps0("spec/proposals/multi-memory/traps0");
+
+            // Wasmi specific `multi-memory` tests:
+            fn wasmi_multi_memory("wasmi/tests/multi-memory");
         }
     };
 }
