@@ -11,7 +11,7 @@ use crate::{
     Error,
     StoreContext,
     StoreContextMut,
-    core::CoreMemory,
+    core::{CoreMemory, ResourceLimiterRef},
     errors::MemoryError,
     store::Stored,
 };
@@ -26,33 +26,42 @@ impl Memory {
     ///
     /// # Errors
     ///
-    /// If more than [`u32::MAX`] much linear memory is allocated.
-    pub fn new(mut ctx: impl AsContextMut, ty: MemoryType) -> Result<Self, Error> {
-        let (inner, mut resource_limiter) = ctx
-            .as_context_mut()
-            .store
-            .store_inner_and_resource_limiter_ref();
-        let entity = CoreMemory::new(ty.core, &mut resource_limiter)?;
-        let memory = inner.alloc_memory(entity);
-        Ok(memory)
+    /// - If more than [`u32::MAX`] much linear memory is allocated.
+    /// - If the store would hold more than [`ResourceLimiter::memories`](crate::ResourceLimiter::memories) linear memories.
+    pub fn new(ctx: impl AsContextMut, ty: MemoryType) -> Result<Self, Error> {
+        Self::new_inner(ctx, |limiter| CoreMemory::new(ty.core, limiter))
     }
 
     /// Creates a new linear memory to the store.
     ///
     /// # Errors
     ///
-    /// If more than [`u32::MAX`] much linear memory is allocated.
+    /// - If more than [`u32::MAX`] much linear memory is allocated.
     /// - If static buffer is invalid
+    /// - If the store would hold more than [`ResourceLimiter::memories`](crate::ResourceLimiter::memories) linear memories.
     pub fn new_static(
-        mut ctx: impl AsContextMut,
+        ctx: impl AsContextMut,
         ty: MemoryType,
         buf: &'static mut [u8],
     ) -> Result<Self, Error> {
+        Self::new_inner(ctx, |limiter| CoreMemory::new_static(ty.core, limiter, buf))
+    }
+
+    /// Creates a new linear memory to the store via `new_entity`.
+    ///
+    /// `new_entity` is only called if the store may hold another linear memory.
+    fn new_inner(
+        mut ctx: impl AsContextMut,
+        new_entity: impl FnOnce(&mut ResourceLimiterRef<'_>) -> Result<CoreMemory, MemoryError>,
+    ) -> Result<Self, Error> {
+        if !ctx.as_context_mut().store.can_create_more_memories(1) {
+            return Err(Error::from(MemoryError::ResourceLimiterDeniedAllocation));
+        }
         let (inner, mut resource_limiter) = ctx
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
-        let entity = CoreMemory::new_static(ty.core, &mut resource_limiter, buf)?;
+        let entity = new_entity(&mut resource_limiter)?;
         let memory = inner.alloc_memory(entity);
         Ok(memory)
     }

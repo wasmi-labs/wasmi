@@ -4,10 +4,16 @@ use wasmi::{
     Engine,
     Error,
     Linker,
+    Memory,
+    MemoryType,
     Module,
+    Ref,
+    RefType,
     Store,
     StoreLimits,
     StoreLimitsBuilder,
+    Table,
+    TableType,
     TrapCode,
     TypedFunc,
 };
@@ -208,5 +214,36 @@ fn test_table_traps_on_limited_growth() -> Result<(), Error> {
     ));
     // Check table size is what we expect.
     assert_eq!(test.table_size.call(&mut test.store, ())?, 100);
+    Ok(())
+}
+
+#[test]
+fn test_host_memory_count_limit() -> Result<(), Error> {
+    let limits = StoreLimitsBuilder::new().memories(1).build();
+    let (mut store, _linker) = test_setup(limits);
+    let ty = MemoryType::new(1, None);
+    Memory::new(&mut store, ty)?;
+    assert!(Memory::new(&mut store, ty).is_err());
+    Ok(())
+}
+
+#[test]
+fn test_host_static_memory_count_limit() -> Result<(), Error> {
+    let limits = StoreLimitsBuilder::new().memories(1).build();
+    let (mut store, _linker) = test_setup(limits);
+    // Zero-sized static memories need no buffer.
+    let ty = MemoryType::new(0, None);
+    Memory::new_static(&mut store, ty, &mut [])?;
+    assert!(Memory::new_static(&mut store, ty, &mut []).is_err());
+    Ok(())
+}
+
+#[test]
+fn test_host_table_count_limit() -> Result<(), Error> {
+    let limits = StoreLimitsBuilder::new().tables(1).build();
+    let (mut store, _linker) = test_setup(limits);
+    let ty = TableType::new(RefType::Func, 1, None);
+    Table::new(&mut store, ty, Ref::null(RefType::Func))?;
+    assert!(Table::new(&mut store, ty, Ref::null(RefType::Func)).is_err());
     Ok(())
 }

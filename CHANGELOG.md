@@ -50,6 +50,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
 - Fix a Stacked/Tree Borrows violation of the cached `(memory 0)` pointer. [#2090]
   - Thanks to [Xiaotian Zhou](https://github.com/zhouxt1) for reporting the bug!
+- `Memory::new`, `Memory::new_static` and `Table::new` now respect `ResourceLimiter::{memories,tables}`. [#2091]
+  - Previously, host-created memories and tables could exceed these limits, failing later instantiations instead.
 
 [#2036]: https://github.com/wasmi-labs/wasmi/pull/2036
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
@@ -65,6 +67,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2087]: https://github.com/wasmi-labs/wasmi/pull/2087
 [#2088]: https://github.com/wasmi-labs/wasmi/pull/2088
 [#2090]: https://github.com/wasmi-labs/wasmi/pull/2090
+[#2091]: https://github.com/wasmi-labs/wasmi/pull/2091
 
 ## `2.0.0` - 2026-09-01
 

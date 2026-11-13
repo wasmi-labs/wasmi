@@ -62,7 +62,7 @@ impl StoreLimitsBuilder {
 
     /// The maximum number of tables that can be created for a [`Store`](crate::Store).
     ///
-    /// Module instantiation will fail if this limit is exceeded.
+    /// Creation of tables will fail if this limit is exceeded.
     ///
     /// This value defaults to 10,000.
     pub fn tables(mut self, tables: usize) -> Self {
@@ -72,7 +72,7 @@ impl StoreLimitsBuilder {
 
     /// The maximum number of linear memories that can be created for a [`Store`](crate::Store).
     ///
-    /// Instantiation will fail with an error if this limit is exceeded.
+    /// Creation of memories will fail with an error if this limit is exceeded.
     ///
     /// This value defaults to 10,000.
     pub fn memories(mut self, memories: usize) -> Self {
