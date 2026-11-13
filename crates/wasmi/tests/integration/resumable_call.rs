@@ -395,3 +395,86 @@ fn run_test_typed(wasm_fn: Func, store: &mut Store<TestData>, wasm_trap: bool) {
         assert_eq!(call.unwrap_finished(), 4);
     }
 }
+
+/// A module whose `main` is small enough to translate but whose callee is not,
+/// so that fuel runs out while the callee is lazily translated.
+fn lazy_callee_wasm(call_op: &str) -> String {
+    let body = "(drop (i32.add (i32.const 1) (i32.const 1)))\n".repeat(2_000);
+    let call = match call_op {
+        "call" | "return_call" => format!("({call_op} $helper)"),
+        "call_indirect" | "return_call_indirect" => {
+            format!("(i32.const 0) ({call_op} (type $t))")
+        }
+        unknown => panic!("unknown call operator: {unknown}"),
+    };
+    format!(
+        r#"
+        (module
+            (type $t (func (result i32)))
+            (table 1 1 funcref)
+            (elem (i32.const 0) $helper)
+            (func $helper (type $t) {body} (i32.const 2))
+            (func (export "main") (result i32) {call})
+        )
+        "#
+    )
+}
+
+/// Runs `main` with too little fuel to translate the callee, then resumes it
+/// until it finishes, granting the fuel the engine asks for each time.
+fn assert_lazy_callee_resumes(call_op: &str) {
+    let mut config = Config::default();
+    config.wasm_tail_call(true);
+    config.consume_fuel(true);
+    config.compilation_mode(wasmi::CompilationMode::LazyTranslation);
+    let engine = Engine::new(&config);
+    let mut store = <Store<()>>::new(&engine, ());
+    store.set_fuel(10_000).unwrap();
+    let module = Module::new(&engine, lazy_callee_wasm(call_op)).unwrap();
+    let instance = <Linker<()>>::new(&engine)
+        .instantiate_and_start(&mut store, &module)
+        .unwrap();
+    let main = instance.get_typed_func::<(), i32>(&store, "main").unwrap();
+
+    let mut call = main.call_resumable(&mut store, ()).unwrap();
+    let mut resumptions = 0;
+    loop {
+        match call {
+            TypedResumableCall::Finished(result) => {
+                assert_eq!(result, 2);
+                assert!(resumptions > 0, "expected at least one out of fuel pause");
+                return;
+            }
+            TypedResumableCall::OutOfFuel(invocation) => {
+                let required = invocation.required_fuel();
+                store
+                    .set_fuel(store.get_fuel().unwrap() + required)
+                    .unwrap();
+                call = invocation.resume(&mut store).unwrap();
+                resumptions += 1;
+                assert!(resumptions < 100, "too many resumptions");
+            }
+            TypedResumableCall::HostTrap(_) => panic!("unexpected host trap"),
+        }
+    }
+}
+
+#[test]
+fn resumable_out_of_fuel_translating_callee_of_call() {
+    assert_lazy_callee_resumes("call");
+}
+
+#[test]
+fn resumable_out_of_fuel_translating_callee_of_return_call() {
+    assert_lazy_callee_resumes("return_call");
+}
+
+#[test]
+fn resumable_out_of_fuel_translating_callee_of_call_indirect() {
+    assert_lazy_callee_resumes("call_indirect");
+}
+
+#[test]
+fn resumable_out_of_fuel_translating_callee_of_return_call_indirect() {
+    assert_lazy_callee_resumes("return_call_indirect");
+}
