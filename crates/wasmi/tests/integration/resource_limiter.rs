@@ -210,3 +210,58 @@ fn test_table_traps_on_limited_growth() -> Result<(), Error> {
     assert_eq!(test.table_size.call(&mut test.store, ())?, 100);
     Ok(())
 }
+
+/// Growing a memory past its declared maximum fails, and the limiter is told: with
+/// `trap_on_grow_failure` it traps, as it does for tables.
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn test_memory_traps_on_growth_past_declared_maximum() -> Result<(), Error> {
+    let limits = StoreLimitsBuilder::new()
+        .memory_size(1 << 30)
+        .trap_on_grow_failure(true)
+        .build();
+    let (mut store, linker) = test_setup(limits);
+    let module = create_module(
+        &store,
+        br#"
+        (module
+            (memory 1 2)
+            (func (export "memory_grow") (param $pages i32) (result i32) (memory.grow (local.get $pages)))
+            (func (export "memory_size") (result i32) (memory.size))
+        )
+        "#,
+    )?;
+    let instance = linker.instantiate_and_start(&mut store, &module)?;
+    let memory_grow = instance.get_typed_func::<i32, i32>(&store, "memory_grow")?;
+    let memory_size = instance.get_typed_func::<(), i32>(&store, "memory_size")?;
+    // Within the declared maximum.
+    assert_eq!(memory_grow.call(&mut store, 1)?, 1);
+    // Past the declared maximum of 2 pages.
+    assert!(matches!(
+        memory_grow.call(&mut store, 1).unwrap_err().as_trap_code(),
+        Some(TrapCode::GrowthOperationLimited)
+    ));
+    assert_eq!(memory_size.call(&mut store, ())?, 2);
+    Ok(())
+}
+
+/// Without `trap_on_grow_failure`, growing past the declared maximum still returns `-1`.
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn test_memory_does_not_grow_past_declared_maximum() -> Result<(), Error> {
+    let limits = StoreLimitsBuilder::new().memory_size(1 << 30).build();
+    let (mut store, linker) = test_setup(limits);
+    let module = create_module(
+        &store,
+        br#"
+        (module
+            (memory 1 2)
+            (func (export "memory_grow") (param $pages i32) (result i32) (memory.grow (local.get $pages)))
+        )
+        "#,
+    )?;
+    let instance = linker.instantiate_and_start(&mut store, &module)?;
+    let memory_grow = instance.get_typed_func::<i32, i32>(&store, "memory_grow")?;
+    assert_eq!(memory_grow.call(&mut store, 5)?, -1);
+    Ok(())
+}
