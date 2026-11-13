@@ -55,6 +55,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fix resumable calls running out of fuel in `table.grow` resuming at the wrong instruction. [#2056]
   - This re-executed already executed code, e.g. global or memory stores and host calls.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
+- Add the missing `wasmi_error_message` definition to the Wasmi C-API. [#2092]
+  - Thanks to [Kevin Jones](https://github.com/KevinJones) for reporting the bug!
 
 [#2036]: https://github.com/wasmi-labs/wasmi/pull/2036
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
@@ -72,6 +74,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2088]: https://github.com/wasmi-labs/wasmi/pull/2088
 [#2090]: https://github.com/wasmi-labs/wasmi/pull/2090
 [#2091]: https://github.com/wasmi-labs/wasmi/pull/2091
+[#2092]: https://github.com/wasmi-labs/wasmi/pull/2092
 
 ## `2.0.0` - 2026-09-01
 

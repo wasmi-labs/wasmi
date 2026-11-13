@@ -1,4 +1,8 @@
-use alloc::{boxed::Box, string::String};
+use crate::wasm_name_t;
+use alloc::{
+    boxed::Box,
+    string::{String, ToString},
+};
 use core::ffi;
 use wasmi::Error;
 
@@ -40,6 +44,14 @@ pub extern "C" fn wasmi_error_new(msg: *const ffi::c_char) -> Option<Box<wasmi_e
     let msg_bytes = unsafe { ffi::CStr::from_ptr(msg) };
     let msg_string = String::from_utf8_lossy(msg_bytes.to_bytes()).into_owned();
     Some(Box::new(wasmi_error_t::from(Error::new(msg_string))))
+}
+
+/// Returns the error message of the [`wasmi_error_t`].
+///
+/// Stores the returned error message in `message`.
+#[unsafe(no_mangle)]
+pub extern "C" fn wasmi_error_message(error: &wasmi_error_t, message: &mut wasm_name_t) {
+    message.set_buffer(error.inner.to_string().into_bytes().into());
 }
 
 /// Convenience method, applies `ok_then(T)` if `result` is `Ok` and otherwise returns a [`wasmi_error_t`].
