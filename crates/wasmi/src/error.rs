@@ -272,7 +272,7 @@ impl Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::TrapCode(error) => Display::fmt(error, f),
-            Self::I32ExitStatus(status) => writeln!(f, "Exited with i32 exit status {status}"),
+            Self::I32ExitStatus(status) => write!(f, "Exited with i32 exit status {status}"),
             Self::Message(message) => Display::fmt(message, f),
             Self::Host(error) => Display::fmt(error, f),
             Self::Global(error) => Display::fmt(error, f),
