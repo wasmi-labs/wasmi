@@ -26,7 +26,8 @@ impl Memory {
     ///
     /// # Errors
     ///
-    /// If more than [`u32::MAX`] much linear memory is allocated.
+    /// - If more than [`u32::MAX`] much linear memory is allocated.
+    /// - If the store would hold more than [`ResourceLimiter::memories`](crate::ResourceLimiter::memories) linear memories.
     pub fn new(mut ctx: impl AsContextMut, ty: MemoryType) -> Result<Self, Error> {
         if !ctx.as_context_mut().store.can_create_more_memories(1) {
             return Err(Error::from(MemoryError::ResourceLimiterDeniedAllocation));
@@ -44,8 +45,9 @@ impl Memory {
     ///
     /// # Errors
     ///
-    /// If more than [`u32::MAX`] much linear memory is allocated.
+    /// - If more than [`u32::MAX`] much linear memory is allocated.
     /// - If static buffer is invalid
+    /// - If the store would hold more than [`ResourceLimiter::memories`](crate::ResourceLimiter::memories) linear memories.
     pub fn new_static(
         mut ctx: impl AsContextMut,
         ty: MemoryType,

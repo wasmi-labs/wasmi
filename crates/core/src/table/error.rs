@@ -14,7 +14,7 @@ pub enum TableError {
     MinimumSizeOverflow,
     /// The maximum size of the table type overflows the system index type.
     MaximumSizeOverflow,
-    /// If a resource limiter denied allocation or growth of a linear memory.
+    /// If a resource limiter denied allocation or growth of a table.
     ResourceLimiterDeniedAllocation,
     /// Occurs when growing a table out of its set bounds.
     GrowOutOfBounds,

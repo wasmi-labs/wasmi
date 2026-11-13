@@ -23,7 +23,8 @@ impl Table {
     ///
     /// # Errors
     ///
-    /// If `init` does not match the [`TableType`] element type.
+    /// - If `init` does not match the [`TableType`] element type.
+    /// - If the store would hold more than [`ResourceLimiter::tables`](crate::ResourceLimiter::tables) tables.
     pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Ref) -> Result<Self, Error> {
         if !ctx.as_context_mut().store.can_create_more_tables(1) {
             return Err(Error::from(TableError::ResourceLimiterDeniedAllocation));
