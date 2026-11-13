@@ -35,7 +35,7 @@ impl From<wasmi_error_t> for Error {
 /// Returns `None` if `msg` is `null`.
 ///
 /// Wraps [`wasmi::Error::new`].
-#[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
+#[unsafe(no_mangle)]
 #[allow(clippy::not_unsafe_ptr_arg_deref)] // clippy 0.1.79 (129f3b99 2024-06-10): incorrectly reports a bug here
 pub extern "C" fn wasmi_error_new(msg: *const ffi::c_char) -> Option<Box<wasmi_error_t>> {
     if msg.is_null() {
