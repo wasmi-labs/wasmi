@@ -25,6 +25,9 @@ impl Table {
     ///
     /// If `init` does not match the [`TableType`] element type.
     pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Ref) -> Result<Self, Error> {
+        if !ctx.as_context_mut().store.can_create_more_tables(1) {
+            return Err(Error::from(TableError::ResourceLimiterDeniedAllocation));
+        }
         let (store, mut resource_limiter) = ctx
             .as_context_mut()
             .store

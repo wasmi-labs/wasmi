@@ -28,6 +28,9 @@ impl Memory {
     ///
     /// If more than [`u32::MAX`] much linear memory is allocated.
     pub fn new(mut ctx: impl AsContextMut, ty: MemoryType) -> Result<Self, Error> {
+        if !ctx.as_context_mut().store.can_create_more_memories(1) {
+            return Err(Error::from(MemoryError::ResourceLimiterDeniedAllocation));
+        }
         let (inner, mut resource_limiter) = ctx
             .as_context_mut()
             .store
@@ -48,6 +51,9 @@ impl Memory {
         ty: MemoryType,
         buf: &'static mut [u8],
     ) -> Result<Self, Error> {
+        if !ctx.as_context_mut().store.can_create_more_memories(1) {
+            return Err(Error::from(MemoryError::ResourceLimiterDeniedAllocation));
+        }
         let (inner, mut resource_limiter) = ctx
             .as_context_mut()
             .store
