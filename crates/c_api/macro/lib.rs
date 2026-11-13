@@ -212,8 +212,7 @@ fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<Tok
     };
     let fn_name = fn_ident.to_string();
     if !fn_name.starts_with("wasm_") {
-        // No prefix needed since the function is not a part of the Wasm spec.
-        return Ok(input);
+        bail!("can only apply on `wasm_*` functions")
     }
     let prefixed_fn_name = format!("wasmi_{fn_name}");
     Ok(quote! {
