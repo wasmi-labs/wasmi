@@ -52,6 +52,9 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Thanks to [Xiaotian Zhou](https://github.com/zhouxt1) for reporting the bug!
 - `Memory::new`, `Memory::new_static` and `Table::new` now respect `ResourceLimiter::{memories,tables}`. [#2091]
   - Previously, host-created memories and tables could exceed these limits, failing later instantiations instead.
+- Fix resumable calls running out of fuel in `table.grow` resuming at the wrong instruction. [#2056]
+  - This re-executed already executed code, e.g. global or memory stores and host calls.
+  - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
 
 [#2036]: https://github.com/wasmi-labs/wasmi/pull/2036
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
@@ -59,6 +62,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2050]: https://github.com/wasmi-labs/wasmi/pull/2050
 [#2051]: https://github.com/wasmi-labs/wasmi/pull/2051
 [#2053]: https://github.com/wasmi-labs/wasmi/pull/2053
+[#2056]: https://github.com/wasmi-labs/wasmi/pull/2056
 [#2064]: https://github.com/wasmi-labs/wasmi/pull/2064
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 [#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
