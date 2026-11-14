@@ -13,7 +13,16 @@ use crate::{
         executor::handler::{
             dispatch::{Break, Control},
             state::{self, DoneReason, Freg32, Freg64, Inst, Ip, Ireg, Mem0Len, Mem0Ptr, Sp},
-            utils::{self, GetValue, IntoControl as _, LoadEntity, SetValue, get_value, set_value},
+            utils::{
+                self,
+                CallSite,
+                GetValue,
+                IntoControl as _,
+                LoadEntity,
+                SetValue,
+                get_value,
+                set_value,
+            },
         },
     },
     ir::{self, BoundedSlotSpan, BranchOffset},
@@ -231,6 +240,17 @@ impl Args {
         (self.mem0_ptr, self.mem0_len) = utils::extract_mem0(self.instance);
     }
 
+    /// Returns the [`CallSite`] of the call operator at `op_ip` using `self`.
+    #[inline(always)]
+    fn call_site(&self, op_ip: Ip) -> CallSite {
+        CallSite {
+            ip: op_ip,
+            ireg: self.ireg,
+            freg32: self.freg32,
+            freg64: self.freg64,
+        }
+    }
+
     /// Calls `func` with `params` on `instance` with `state` using `self`.
     #[inline(always)]
     pub fn call_func_entry(
@@ -241,8 +261,15 @@ impl Args {
         params: BoundedSlotSpan,
         instance: Option<Inst>,
     ) -> Control<(), Break> {
-        (self.ip, self.sp) =
-            utils::call_func_entry(store, op_ip, self.ip, self.sp, params, func, instance)?;
+        (self.ip, self.sp) = utils::call_func_entry(
+            store,
+            self.call_site(op_ip),
+            self.ip,
+            self.sp,
+            params,
+            func,
+            instance,
+        )?;
         Control::Continue(())
     }
 
@@ -256,8 +283,14 @@ impl Args {
         params: BoundedSlotSpan,
         instance: Option<Inst>,
     ) -> Control<(), Break> {
-        (self.ip, self.sp) =
-            utils::return_call_func_entry(store, op_ip, self.sp, params, func, instance)?;
+        (self.ip, self.sp) = utils::return_call_func_entry(
+            store,
+            self.call_site(op_ip),
+            self.sp,
+            params,
+            func,
+            instance,
+        )?;
         Control::Continue(())
     }
 
@@ -295,7 +328,7 @@ impl Args {
             self.instance,
         ) = utils::call_wasm_or_host(
             store,
-            op_ip,
+            self.call_site(op_ip),
             self.ip,
             self.sp,
             func,
@@ -326,7 +359,7 @@ impl Args {
             self.instance,
         ) = utils::return_call_wasm_or_host(
             store,
-            op_ip,
+            self.call_site(op_ip),
             self.sp,
             func,
             func_entity,

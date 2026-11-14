@@ -82,12 +82,18 @@ pub fn compile_or_get_func_entry(
 }
 
 macro_rules! compile_or_get_func_entry {
-    ($state:expr, $op_ip:expr, $func:expr) => {{
+    ($state:expr, $call_site:expr, $func:expr) => {{
         match $crate::engine::executor::handler::utils::compile_or_get_func_entry($state, $func) {
             Ok((ip, len_local_slots, len_stack_slots)) => (ip, len_local_slots, len_stack_slots),
             Err(error) => {
+                let call_site: $crate::engine::executor::handler::utils::CallSite = $call_site;
                 return $crate::engine::executor::handler::utils::compile_func_entry_failed(
-                    $state, $op_ip, error,
+                    $state,
+                    call_site.ip,
+                    call_site.ireg,
+                    call_site.freg32,
+                    call_site.freg64,
+                    error,
                 );
             }
         }
@@ -113,16 +119,45 @@ macro_rules! done {
     }};
 }
 
+/// The execution state at a call operator required to resume execution at it.
+///
+/// This is used to rewind to the call operator when lazily translating its
+/// callee runs out of fuel, so that resumption re-executes the call operator.
+#[derive(Debug, Copy, Clone)]
+pub struct CallSite {
+    /// The [`Ip`] of the call operator.
+    pub ip: Ip,
+    /// The integer register at the call operator.
+    pub ireg: Ireg,
+    /// The 32-bit float register at the call operator.
+    pub freg32: Freg32,
+    /// The 64-bit float register at the call operator.
+    pub freg64: Freg64,
+}
+
+/// Finishes execution after lazily translating the callee of a call operator failed.
+///
+/// If the error is a resumable out of fuel error the execution state is rewound
+/// to the call operator so that resumption re-executes it.
+///
+/// # Note
+///
+/// The [`CallSite`] is passed as scalars so that it is passed in registers.
 #[cold]
 #[inline(never)]
 pub fn compile_func_entry_failed<T>(
     store: &mut PrunedStore,
-    op_ip: Ip,
+    ip: Ip,
+    ireg: Ireg,
+    freg32: Freg32,
+    freg64: Freg64,
     error: Error,
 ) -> Control<T, Break> {
     let reason = match error.kind() {
         crate::errors::ErrorKind::ResumableOutOfFuel(error) => {
-            store.stack_mut().sync_ip(op_ip);
+            let stack = store.stack_mut();
+            stack.sync_ip(ip);
+            stack.sync_regs(ireg, freg32, freg64);
             DoneReason::out_of_fuel(error.required_fuel())
         }
         _ => DoneReason::error(error),
@@ -864,7 +899,7 @@ pub fn update_instance(
 #[inline(always)]
 pub fn call_func_entry(
     store: &mut PrunedStore,
-    op_ip: Ip,
+    call_site: CallSite,
     caller_ip: Ip,
     caller_sp: Sp,
     params: BoundedSlotSpan,
@@ -872,7 +907,7 @@ pub fn call_func_entry(
     instance: Option<Inst>,
 ) -> Control<(Ip, Sp), Break> {
     let (callee_ip, len_local_slots, len_stack_slots) =
-        compile_or_get_func_entry!(store, op_ip, func);
+        compile_or_get_func_entry!(store, call_site, func);
     let callee_sp = store
         .stack_mut()
         .push_frame(
@@ -891,14 +926,14 @@ pub fn call_func_entry(
 #[inline(always)]
 pub fn return_call_func_entry(
     store: &mut PrunedStore,
-    op_ip: Ip,
+    call_site: CallSite,
     caller_sp: Sp,
     params: BoundedSlotSpan,
     func: &FuncEntry,
     instance: Option<Inst>,
 ) -> Control<(Ip, Sp), Break> {
     let (callee_ip, len_local_slots, len_stack_slots) =
-        compile_or_get_func_entry!(store, op_ip, func);
+        compile_or_get_func_entry!(store, call_site, func);
     let callee_sp = store
         .stack_mut()
         .replace_frame(
@@ -997,7 +1032,7 @@ pub fn return_call_host(
 #[expect(clippy::too_many_arguments)]
 pub fn call_wasm_or_host(
     store: &mut PrunedStore,
-    op_ip: Ip,
+    call_site: CallSite,
     caller_ip: Ip,
     caller_sp: Sp,
     func: Func,
@@ -1034,7 +1069,7 @@ pub fn call_wasm_or_host(
     let callee_instance: Inst = wasm_func.instance();
     let (callee_ip, callee_sp) = call_func_entry(
         store,
-        op_ip,
+        call_site,
         caller_ip,
         caller_sp,
         params,
@@ -1050,7 +1085,7 @@ pub fn call_wasm_or_host(
 #[expect(clippy::too_many_arguments)]
 pub fn return_call_wasm_or_host(
     store: &mut PrunedStore,
-    op_ip: Ip,
+    call_site: CallSite,
     caller_sp: Sp,
     func: Func,
     func_entity: NonNull<FuncEntity>,
@@ -1077,7 +1112,7 @@ pub fn return_call_wasm_or_host(
     let callee_instance: Inst = wasm_func.instance();
     let (callee_ip, callee_sp) = return_call_func_entry(
         store,
-        op_ip,
+        call_site,
         caller_sp,
         params,
         wasm_func.func_entry(),

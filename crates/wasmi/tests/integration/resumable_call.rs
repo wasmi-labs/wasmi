@@ -396,14 +396,33 @@ fn run_test_typed(wasm_fn: Func, store: &mut Store<TestData>, wasm_trap: bool) {
     }
 }
 
+/// How the table index of an indirect call is provided.
+#[derive(Copy, Clone)]
+enum CallIndex {
+    /// The index is a constant and therefore lives in a stack slot.
+    Const,
+    /// The index is computed and therefore lives in a register.
+    Computed,
+}
+
 /// A module whose `main` is small enough to translate but whose callee is not,
 /// so that fuel runs out while the callee is lazily translated.
-fn lazy_callee_wasm(call_op: &str) -> String {
+///
+/// Before the call `main` increments the `count` global, so that resuming
+/// can be checked to not execute the caller's side effects twice.
+///
+/// The callee `$helper` sits at table index 1 and returns 2. The decoy `$other`
+/// at table index 0 returns 1 so that a stale table index is caught.
+fn lazy_callee_wasm(call_op: &str, index: CallIndex) -> String {
     let body = "(drop (i32.add (i32.const 1) (i32.const 1)))\n".repeat(2_000);
+    let index = match index {
+        CallIndex::Const => "(i32.const 1)",
+        CallIndex::Computed => "(i32.add (local.get $i) (i32.const 1))",
+    };
     let call = match call_op {
         "call" | "return_call" => format!("({call_op} $helper)"),
         "call_indirect" | "return_call_indirect" => {
-            format!("(i32.const 0) ({call_op} (type $t))")
+            format!("({call_op} (type $t) {index})")
         }
         unknown => panic!("unknown call operator: {unknown}"),
     };
@@ -411,10 +430,15 @@ fn lazy_callee_wasm(call_op: &str) -> String {
         r#"
         (module
             (type $t (func (result i32)))
-            (table 1 1 funcref)
-            (elem (i32.const 0) $helper)
+            (global $count (export "count") (mut i32) (i32.const 0))
+            (table 2 2 funcref)
+            (elem (i32.const 0) $other $helper)
+            (func $other (type $t) (i32.const 1))
             (func $helper (type $t) {body} (i32.const 2))
-            (func (export "main") (result i32) {call})
+            (func (export "main") (param $i i32) (result i32)
+                (global.set $count (i32.add (global.get $count) (i32.const 1)))
+                {call}
+            )
         )
         "#
     )
@@ -422,7 +446,7 @@ fn lazy_callee_wasm(call_op: &str) -> String {
 
 /// Runs `main` with too little fuel to translate the callee, then resumes it
 /// until it finishes, granting the fuel the engine asks for each time.
-fn assert_lazy_callee_resumes(call_op: &str) {
+fn assert_lazy_callee_resumes(call_op: &str, index: CallIndex) {
     let mut config = Config::default();
     config.wasm_tail_call(true);
     config.consume_fuel(true);
@@ -430,19 +454,21 @@ fn assert_lazy_callee_resumes(call_op: &str) {
     let engine = Engine::new(&config);
     let mut store = <Store<()>>::new(&engine, ());
     store.set_fuel(10_000).unwrap();
-    let module = Module::new(&engine, lazy_callee_wasm(call_op)).unwrap();
+    let module = Module::new(&engine, lazy_callee_wasm(call_op, index)).unwrap();
     let instance = <Linker<()>>::new(&engine)
         .instantiate_and_start(&mut store, &module)
         .unwrap();
-    let main = instance.get_typed_func::<(), i32>(&store, "main").unwrap();
+    let main = instance.get_typed_func::<i32, i32>(&store, "main").unwrap();
+    let count = instance.get_global(&store, "count").unwrap();
 
-    let mut call = main.call_resumable(&mut store, ()).unwrap();
+    let mut call = main.call_resumable(&mut store, 0).unwrap();
     let mut resumptions = 0;
     loop {
         match call {
             TypedResumableCall::Finished(result) => {
                 assert_eq!(result, 2);
                 assert!(resumptions > 0, "expected at least one out of fuel pause");
+                assert_eq!(count.get(&store).i32(), Some(1));
                 return;
             }
             TypedResumableCall::OutOfFuel(invocation) => {
@@ -461,20 +487,30 @@ fn assert_lazy_callee_resumes(call_op: &str) {
 
 #[test]
 fn resumable_out_of_fuel_translating_callee_of_call() {
-    assert_lazy_callee_resumes("call");
+    assert_lazy_callee_resumes("call", CallIndex::Const);
 }
 
 #[test]
 fn resumable_out_of_fuel_translating_callee_of_return_call() {
-    assert_lazy_callee_resumes("return_call");
+    assert_lazy_callee_resumes("return_call", CallIndex::Const);
 }
 
 #[test]
 fn resumable_out_of_fuel_translating_callee_of_call_indirect() {
-    assert_lazy_callee_resumes("call_indirect");
+    assert_lazy_callee_resumes("call_indirect", CallIndex::Const);
+}
+
+#[test]
+fn resumable_out_of_fuel_translating_callee_of_call_indirect_computed() {
+    assert_lazy_callee_resumes("call_indirect", CallIndex::Computed);
 }
 
 #[test]
 fn resumable_out_of_fuel_translating_callee_of_return_call_indirect() {
-    assert_lazy_callee_resumes("return_call_indirect");
+    assert_lazy_callee_resumes("return_call_indirect", CallIndex::Const);
+}
+
+#[test]
+fn resumable_out_of_fuel_translating_callee_of_return_call_indirect_computed() {
+    assert_lazy_callee_resumes("return_call_indirect", CallIndex::Computed);
 }
