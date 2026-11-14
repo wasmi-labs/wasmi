@@ -2605,11 +2605,14 @@ impl FuncTranslator {
             return Ok(op);
         }
         let memory_addr = self.memory_addr(memarg.memory)?;
-        let value = self.resolve_operand::<TypedRawVal>(value)?;
-        let op = match (ptr, value) {
+        let resolved_value = self.resolve_operand::<TypedRawVal>(value)?;
+        let op = match (ptr, resolved_value) {
             (Opd::Reg(_), Opd::Reg(_)) => match (vt.store_rr)(offset, memory_addr) {
                 Some(op) => op,
-                None => unreachable!(),
+                None => {
+                    let value = self.reg_operand_to_slot(value)?;
+                    (vt.store_rs)(offset, value, memory_addr)
+                }
             },
             (Opd::Reg(_), Opd::Slot(value)) => (vt.store_rs)(offset, value, memory_addr),
             (Opd::Reg(_), Opd::Immediate(value)) => (vt.store_ri)(offset, value, memory_addr),
