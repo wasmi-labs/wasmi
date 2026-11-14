@@ -64,6 +64,9 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Thanks to [Anthony Menghi](https://github.com/antocreadev) for reporting and fixing the bug!
 - Re-export `LimiterError` in `wasmi::errors` so that `ResourceLimiter` can be implemented without depending on `wasmi_core`. [#2082]
   - Thanks to [Anthony Menghi](https://github.com/antocreadev) for reporting and fixing the issue!
+- Fix `memory.grow` past the declared maximum bypassing the `ResourceLimiter`. [#2084]
+  - With `StoreLimitsBuilder::trap_on_grow_failure(true)` this now traps instead of returning `-1`, as for tables.
+  - Thanks to [Anthony Menghi](https://github.com/antocreadev) for reporting and fixing the bug!
 
 [#2036]: https://github.com/wasmi-labs/wasmi/pull/2036
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
@@ -78,6 +81,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2076]: https://github.com/wasmi-labs/wasmi/pull/2076
 [#2082]: https://github.com/wasmi-labs/wasmi/pull/2082
 [#2083]: https://github.com/wasmi-labs/wasmi/pull/2083
+[#2084]: https://github.com/wasmi-labs/wasmi/pull/2084
 [#2086]: https://github.com/wasmi-labs/wasmi/pull/2086
 [#2087]: https://github.com/wasmi-labs/wasmi/pull/2087
 [#2088]: https://github.com/wasmi-labs/wasmi/pull/2088

@@ -298,3 +298,22 @@ fn test_imported_table_count_limit() -> Result<(), Error> {
     ));
     Ok(())
 }
+
+/// `trap_on_grow_failure` also traps on `memory.grow` past the declared maximum, as for tables.
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn test_memory_traps_on_growth_past_declared_maximum() -> Result<(), Error> {
+    let limits = StoreLimitsBuilder::new().trap_on_grow_failure(true).build();
+    let (mut store, linker) = test_setup(limits);
+    let module = create_module(
+        &store,
+        br#"(module (memory 1 1) (func (export "grow") (result i32) (memory.grow (i32.const 1))))"#,
+    )?;
+    let instance = linker.instantiate_and_start(&mut store, &module)?;
+    let grow = instance.get_typed_func::<(), i32>(&store, "grow")?;
+    assert!(matches!(
+        grow.call(&mut store, ()).unwrap_err().as_trap_code(),
+        Some(TrapCode::GrowthOperationLimited)
+    ));
+    Ok(())
+}
