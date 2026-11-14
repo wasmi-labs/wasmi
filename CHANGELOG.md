@@ -62,6 +62,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fix instantiation counting imported memories and tables against `ResourceLimiter::{memories,tables}`. [#2083]
   - Only the memories and tables a module defines are counted now.
   - Thanks to [Anthony Menghi](https://github.com/antocreadev) for reporting and fixing the bug!
+- Re-export `LimiterError` in `wasmi::errors` so that `ResourceLimiter` can be implemented without depending on `wasmi_core`. [#2082]
+  - Thanks to [Anthony Menghi](https://github.com/antocreadev) for reporting and fixing the issue!
 
 [#2036]: https://github.com/wasmi-labs/wasmi/pull/2036
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
@@ -74,6 +76,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 [#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
 [#2076]: https://github.com/wasmi-labs/wasmi/pull/2076
+[#2082]: https://github.com/wasmi-labs/wasmi/pull/2082
 [#2083]: https://github.com/wasmi-labs/wasmi/pull/2083
 [#2086]: https://github.com/wasmi-labs/wasmi/pull/2086
 [#2087]: https://github.com/wasmi-labs/wasmi/pull/2087
