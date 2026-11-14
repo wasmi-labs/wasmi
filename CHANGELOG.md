@@ -38,6 +38,9 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Requires Cargo 1.93 or newer and only detects `debug-assertions` set via Cargo profiles, not via `RUSTFLAGS`.
   - Thanks to [soraxa-dev](https://github.com/soraxa-dev) for reporting the bug!
   - Thanks to [Kansuke Habano](https://github.com/habakan) for fixing the bug!
+- Fix a translation panic for stores whose address and value alias the same register. [#2098]
+  - Only affected stores that cannot use the `(memory 0)` fast path, e.g. offsets above `u16::MAX`.
+  - Thanks to Sven Kubisch for reporting the bug!
 - Fix a panic when growing a `memory64` declared with the largest allowed maximum size. [#2053]
   - This also fixes `memory.grow` being wrongly denied by `StoreLimits` on 32-bit hosts due to a truncated maximum size.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
@@ -89,6 +92,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2091]: https://github.com/wasmi-labs/wasmi/pull/2091
 [#2092]: https://github.com/wasmi-labs/wasmi/pull/2092
 [#2094]: https://github.com/wasmi-labs/wasmi/pull/2094
+[#2098]: https://github.com/wasmi-labs/wasmi/pull/2098
 
 ## `2.0.0` - 2026-09-01
 
