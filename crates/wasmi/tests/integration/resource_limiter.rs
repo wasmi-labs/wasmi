@@ -16,6 +16,7 @@ use wasmi::{
     TableType,
     TrapCode,
     TypedFunc,
+    errors::{ErrorKind, InstantiationError},
 };
 
 /// Setup [`Engine`] and [`Store`] for resource limiting.
@@ -248,53 +249,52 @@ fn test_host_table_count_limit() -> Result<(), Error> {
     Ok(())
 }
 
-/// A memory created by the host and imported by the module is counted once, when the host creates
-/// it, and not again when the module is instantiated.
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
-fn test_imported_memory_is_not_counted_twice() -> Result<(), Error> {
+fn test_imported_memory_count_limit() -> Result<(), Error> {
     let limits = StoreLimitsBuilder::new().memories(1).build();
     let (mut store, mut linker) = test_setup(limits);
     let memory = Memory::new(&mut store, MemoryType::new(1, None))?;
     linker.define("env", "memory", memory)?;
-    let module = create_module(&store, br#"(module (import "env" "memory" (memory 1)))"#)?;
-    linker.instantiate_and_start(&mut store, &module)?;
-    Ok(())
-}
-
-/// A module that defines its own memory next to an imported one still counts its own memory.
-#[test]
-#[cfg_attr(not(feature = "wat"), ignore)]
-fn test_defined_memory_next_to_imported_memory_is_counted() -> Result<(), Error> {
-    let limits = StoreLimitsBuilder::new().memories(1).build();
-    let (mut store, mut linker) = test_setup(limits);
-    let memory = Memory::new(&mut store, MemoryType::new(1, None))?;
-    linker.define("env", "memory", memory)?;
-    let module = create_module(
+    let imports = create_module(&store, br#"(module (import "env" "memory" (memory 1)))"#)?;
+    let defines = create_module(
         &store,
         br#"(module (import "env" "memory" (memory 1)) (memory 1))"#,
     )?;
-    assert!(linker.instantiate_and_start(&mut store, &module).is_err());
+    linker.instantiate_and_start(&mut store, &imports)?;
+    let error = linker
+        .instantiate_and_start(&mut store, &defines)
+        .unwrap_err();
+    assert!(matches!(
+        error.kind(),
+        ErrorKind::Instantiation(InstantiationError::TooManyMemories)
+    ));
     Ok(())
 }
 
-/// A table created by the host and imported by the module is counted once, when the host creates
-/// it, and not again when the module is instantiated.
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
-fn test_imported_table_is_not_counted_twice() -> Result<(), Error> {
+fn test_imported_table_count_limit() -> Result<(), Error> {
     let limits = StoreLimitsBuilder::new().tables(1).build();
     let (mut store, mut linker) = test_setup(limits);
-    let table = Table::new(
-        &mut store,
-        TableType::new(RefType::Func, 1, None),
-        Ref::null(RefType::Func),
-    )?;
+    let ty = TableType::new(RefType::Func, 1, None);
+    let table = Table::new(&mut store, ty, Ref::null(RefType::Func))?;
     linker.define("env", "table", table)?;
-    let module = create_module(
+    let imports = create_module(
         &store,
         br#"(module (import "env" "table" (table 1 funcref)))"#,
     )?;
-    linker.instantiate_and_start(&mut store, &module)?;
+    let defines = create_module(
+        &store,
+        br#"(module (import "env" "table" (table 1 funcref)) (table 1 funcref))"#,
+    )?;
+    linker.instantiate_and_start(&mut store, &imports)?;
+    let error = linker
+        .instantiate_and_start(&mut store, &defines)
+        .unwrap_err();
+    assert!(matches!(
+        error.kind(),
+        ErrorKind::Instantiation(InstantiationError::TooManyTables)
+    ));
     Ok(())
 }
