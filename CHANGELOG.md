@@ -57,6 +57,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
 - Add the missing `wasmi_error_message` definition to the Wasmi C-API. [#2092]
   - Thanks to [Kevin Jones](https://github.com/KevinJones) for reporting the bug!
+- Fix `prefix-symbols` affecting Wasmi C-API `wasmi_*` functions; only `wasm_*` functions are prefixed now. [#2094]
+  - This mangled `wasmi_error_new`, `wasmi_error_delete` and `wasmi_store_delete`.
 
 [#2036]: https://github.com/wasmi-labs/wasmi/pull/2036
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
@@ -75,6 +77,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2090]: https://github.com/wasmi-labs/wasmi/pull/2090
 [#2091]: https://github.com/wasmi-labs/wasmi/pull/2091
 [#2092]: https://github.com/wasmi-labs/wasmi/pull/2092
+[#2094]: https://github.com/wasmi-labs/wasmi/pull/2094
 
 ## `2.0.0` - 2026-09-01
 

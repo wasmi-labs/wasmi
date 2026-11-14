@@ -23,11 +23,18 @@ pub fn declare_own(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let name = ty.to_string();
     let delete = quote::format_ident!("{}_delete", &name[..name.len() - 2]);
     let docs = format!("Deletes the [`{name}`].");
+    let export = if name.starts_with("wasmi_") {
+        quote! { #[unsafe(no_mangle)] }
+    } else {
+        quote! {
+            #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
+            #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
+        }
+    };
 
     (quote! {
         #[doc = #docs]
-        #[cfg_attr(not(feature = "prefix-symbols"), unsafe(no_mangle))]
-        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
+        #export
         pub extern "C" fn #delete(_: ::alloc::boxed::Box<#ty>) {}
     })
     .into()
@@ -205,8 +212,7 @@ fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<Tok
     };
     let fn_name = fn_ident.to_string();
     if !fn_name.starts_with("wasm_") {
-        // No prefix needed since the function is not a part of the Wasm spec.
-        return Ok(input);
+        bail!("can only apply on `wasm_*` functions")
     }
     let prefixed_fn_name = format!("wasmi_{fn_name}");
     Ok(quote! {
