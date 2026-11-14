@@ -207,6 +207,7 @@ macro_rules! foreach_test {
             fn wasmi_br_table("wasmi/tests/br-table");
             fn wasmi_ref("wasmi/tests/ref");
             fn wasmi_memory("wasmi/tests/memory");
+            fn wasmi_operators_after_end("wasmi/tests/operators-after-end");
             // Wasmi: binary operators
             fn wasmi_i32_add("wasmi/tests/op/i32-add");
             fn wasmi_i32_sub("wasmi/tests/op/i32-sub");
