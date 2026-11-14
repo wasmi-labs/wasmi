@@ -59,6 +59,9 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Thanks to [Kevin Jones](https://github.com/KevinJones) for reporting the bug!
 - Fix `prefix-symbols` affecting Wasmi C-API `wasmi_*` functions; only `wasm_*` functions are prefixed now. [#2094]
   - This mangled `wasmi_error_new`, `wasmi_error_delete` and `wasmi_store_delete`.
+- Fix instantiation counting imported memories and tables against `ResourceLimiter::{memories,tables}`. [#2083]
+  - Only the memories and tables a module defines are counted now.
+  - Thanks to [Anthony Menghi](https://github.com/antocreadev) for reporting and fixing the bug!
 
 [#2036]: https://github.com/wasmi-labs/wasmi/pull/2036
 [#2041]: https://github.com/wasmi-labs/wasmi/pull/2041
@@ -71,6 +74,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2066]: https://github.com/wasmi-labs/wasmi/pull/2066
 [#2068]: https://github.com/wasmi-labs/wasmi/pull/2068
 [#2076]: https://github.com/wasmi-labs/wasmi/pull/2076
+[#2083]: https://github.com/wasmi-labs/wasmi/pull/2083
 [#2086]: https://github.com/wasmi-labs/wasmi/pull/2086
 [#2087]: https://github.com/wasmi-labs/wasmi/pull/2087
 [#2088]: https://github.com/wasmi-labs/wasmi/pull/2088

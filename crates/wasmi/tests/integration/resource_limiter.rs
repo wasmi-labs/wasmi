@@ -16,6 +16,7 @@ use wasmi::{
     TableType,
     TrapCode,
     TypedFunc,
+    errors::{ErrorKind, InstantiationError},
 };
 
 /// Setup [`Engine`] and [`Store`] for resource limiting.
@@ -245,5 +246,55 @@ fn test_host_table_count_limit() -> Result<(), Error> {
     let ty = TableType::new(RefType::Func, 1, None);
     Table::new(&mut store, ty, Ref::null(RefType::Func))?;
     assert!(Table::new(&mut store, ty, Ref::null(RefType::Func)).is_err());
+    Ok(())
+}
+
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn test_imported_memory_count_limit() -> Result<(), Error> {
+    let limits = StoreLimitsBuilder::new().memories(1).build();
+    let (mut store, mut linker) = test_setup(limits);
+    let memory = Memory::new(&mut store, MemoryType::new(1, None))?;
+    linker.define("env", "memory", memory)?;
+    let imports = create_module(&store, br#"(module (import "env" "memory" (memory 1)))"#)?;
+    let defines = create_module(
+        &store,
+        br#"(module (import "env" "memory" (memory 1)) (memory 1))"#,
+    )?;
+    linker.instantiate_and_start(&mut store, &imports)?;
+    let error = linker
+        .instantiate_and_start(&mut store, &defines)
+        .unwrap_err();
+    assert!(matches!(
+        error.kind(),
+        ErrorKind::Instantiation(InstantiationError::TooManyMemories)
+    ));
+    Ok(())
+}
+
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn test_imported_table_count_limit() -> Result<(), Error> {
+    let limits = StoreLimitsBuilder::new().tables(1).build();
+    let (mut store, mut linker) = test_setup(limits);
+    let ty = TableType::new(RefType::Func, 1, None);
+    let table = Table::new(&mut store, ty, Ref::null(RefType::Func))?;
+    linker.define("env", "table", table)?;
+    let imports = create_module(
+        &store,
+        br#"(module (import "env" "table" (table 1 funcref)))"#,
+    )?;
+    let defines = create_module(
+        &store,
+        br#"(module (import "env" "table" (table 1 funcref)) (table 1 funcref))"#,
+    )?;
+    linker.instantiate_and_start(&mut store, &imports)?;
+    let error = linker
+        .instantiate_and_start(&mut store, &defines)
+        .unwrap_err();
+    assert!(matches!(
+        error.kind(),
+        ErrorKind::Instantiation(InstantiationError::TooManyTables)
+    ));
     Ok(())
 }
