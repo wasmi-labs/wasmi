@@ -39,6 +39,8 @@ pub struct ValidatingFuncTranslator<T> {
     validator: FuncValidator,
     /// The chosen function translator.
     translator: T,
+    /// The offset of the end of the Wasm function body.
+    end: usize,
 }
 
 /// Reusable heap allocations for function validation and translation.
@@ -153,11 +155,12 @@ pub trait WasmTranslator<'parser>:
 #[cfg(feature = "validate")]
 impl<T> ValidatingFuncTranslator<T> {
     /// Creates a new [`ValidatingFuncTranslator`].
-    pub fn new(validator: FuncValidator, translator: T) -> Result<Self, Error> {
+    pub fn new(validator: FuncValidator, translator: T, end: usize) -> Result<Self, Error> {
         Ok(Self {
             pos: 0,
             validator,
             translator,
+            end,
         })
     }
 
@@ -248,6 +251,22 @@ macro_rules! impl_visit_operator {
                 |validator| validator.visitor(offset).$visit($arg.clone()),
                 |translator| translator.$visit($arg.clone()),
             )
+        }
+        impl_visit_operator!($($rest)*);
+    };
+    ( @mvp End => visit_end $_ann:tt $($rest:tt)* ) => {
+        fn visit_end(&mut self) -> Self::Output {
+            let offset = self.current_pos();
+            self.validate_then_translate(
+                |validator| validator.visitor(offset).visit_end(),
+                |translator| translator.visit_end(),
+            )?;
+            if self.validator.control_stack_height() == 0 {
+                // Note: wasmparser 0.228 reports operators after the final `end` only in `finish`.
+                // TODO: remove once wasmparser is bumped to 0.229+.
+                self.validator.finish(self.end)?;
+            }
+            Ok(())
         }
         impl_visit_operator!($($rest)*);
     };
