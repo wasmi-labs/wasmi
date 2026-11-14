@@ -176,7 +176,11 @@ impl<T> ValidatingFuncTranslator<T> {
         Validate: FnOnce(&mut FuncValidator) -> Result<(), BinaryReaderError>,
         Translate: FnOnce(&mut T) -> Result<(), Error>,
     {
+        let body_ended = self.validator.control_stack_height() == 0;
         validate(&mut self.validator)?;
+        if body_ended {
+            return Ok(());
+        }
         translate(&mut self.translator)?;
         Ok(())
     }
