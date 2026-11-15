@@ -1315,9 +1315,11 @@ impl ValueStack {
         let results_len = usize::from(results_len);
         let callee_size = params_len.max(results_len);
         if callee_size == 0 {
+            // Note: the caller resumes execution with the returned `Sp`, so it must always
+            //       point at its frame, even if that frame starts where the callee did.
             let sp = match caller {
-                Some(_) if caller_start != callee_start => self.sp(caller_start),
-                _ => Sp::dangling(),
+                Some(_) => self.sp(caller_start),
+                None => Sp::dangling(),
             };
             let control = match caller {
                 Some((ip, _, instance)) => ReturnCallHost::Continue((ip, sp, instance)),
