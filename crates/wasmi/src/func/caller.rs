@@ -34,11 +34,8 @@ impl<'a, T> Caller<'a, T> {
     ///
     /// [`Instance`]: crate::Instance
     pub fn get_export(&self, name: &str) -> Option<Extern> {
-        let Some(instance) = &self.instance else {
-            return None;
-        };
-        let instance = unsafe { instance.as_ptr().as_ref() };
-        instance.get_export(name)
+        let instance = self.instance?;
+        get_export_of(instance, name)
     }
 
     /// Returns a shared reference to the user provided host data.
@@ -77,6 +74,27 @@ impl<'a, T> Caller<'a, T> {
     pub fn set_fuel(&mut self, fuel: u64) -> Result<(), Error> {
         self.ctx.store.set_fuel(fuel)
     }
+}
+
+/// Returns the export of `instance` under `name` if any.
+///
+/// # Note
+///
+/// This is deliberately neither generic nor inlinable so that it is always compiled as part of
+/// Wasmi, never inside the generic [`Caller::get_export`] that a downstream crate instantiates.
+///
+/// On `x86_64` the [`Inst`] is an `f64` and is turned back into a pointer here. LLVM's FastISel,
+/// which handles code built at `opt-level = 0`, folds that `f64`-to-pointer cast into the load
+/// address and ends up using an XMM register as the base register. The emitted load then reads
+/// through whatever general purpose register shares the XMM register's number. This crashed
+/// embedders built at `opt-level = 0` against an optimized Wasmi.
+///
+/// See <https://github.com/wasmi-labs/wasmi/issues/2061>.
+#[inline(never)]
+fn get_export_of(instance: Inst, name: &str) -> Option<Extern> {
+    // Safety: an `Inst` held by a `Caller` refers to a live instance of the caller's store.
+    let instance = unsafe { instance.as_ptr().as_ref() };
+    instance.get_export(name)
 }
 
 impl<T> AsContext for Caller<'_, T> {
