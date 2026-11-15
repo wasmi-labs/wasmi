@@ -90,6 +90,13 @@ impl<'a, T> Caller<'a, T> {
 /// embedders built at `opt-level = 0` against an optimized Wasmi.
 ///
 /// See <https://github.com/wasmi-labs/wasmi/issues/2061>.
+///
+/// TODO: remove this workaround, inline `get_export_of` into [`Caller::get_export`] again and drop
+/// the `#[inline(never)]`. LLVM's FastISel at `opt-level = 0` folds the `f64` to integer to pointer
+/// cast into the load address and uses the XMM register as the base register. This is a compiler
+/// bug, see <https://github.com/rust-lang/rust/issues/165994> and
+/// <https://github.com/llvm/llvm-project/issues/242844>. The workaround can go once a Rust release
+/// that Wasmi's MSRV covers ships an LLVM with the fix.
 #[inline(never)]
 fn get_export_of(instance: Inst, name: &str) -> Option<Extern> {
     // Safety: an `Inst` held by a `Caller` refers to a live instance of the caller's store.
