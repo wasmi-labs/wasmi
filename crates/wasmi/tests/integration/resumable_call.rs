@@ -496,3 +496,35 @@ fn resumable_call_out_of_fuel_table_grow() {
         100_000,
     );
 }
+
+#[test]
+#[should_panic(expected = "failed to resolve stored func")]
+fn resumable_call_out_of_fuel_resume_on_other_store() {
+    let mut config = Config::default();
+    config.consume_fuel(true);
+    let engine = Engine::new(&config);
+    let wasm = r#"
+        (module
+            (func (export "test") (result i32)
+                (loop $continue (br $continue))
+                (i32.const 0)
+            )
+        )
+    "#;
+    let module = Module::new(&engine, wasm).unwrap();
+    let mut store = <Store<()>>::new(&engine, ());
+    let instance = Linker::new(&engine)
+        .instantiate_and_start(&mut store, &module)
+        .unwrap();
+    let test = instance.get_typed_func::<(), i32>(&store, "test").unwrap();
+    store.set_fuel(1_000).unwrap();
+    let TypedResumableCall::OutOfFuel(invocation) = test.call_resumable(&mut store, ()).unwrap()
+    else {
+        panic!("expected `TypedResumableCall::OutOfFuel`")
+    };
+    // Resuming on a `Store` that does not own the call must not execute the
+    // suspended frames which still refer to the instance of `store`.
+    let mut other = <Store<()>>::new(&engine, ());
+    other.set_fuel(1_000).unwrap();
+    _ = invocation.resume(&mut other);
+}

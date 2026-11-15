@@ -180,6 +180,16 @@ impl ResumableCallCommon {
         &mut self.stack
     }
 
+    /// Asserts that `ctx` owns the resumed root [`Func`].
+    ///
+    /// # Panics
+    ///
+    /// If `ctx` does not own the root [`Func`], e.g. since it is not the
+    /// [`Store`](crate::Store) on which the resumable call was started.
+    fn assert_owner<T>(&self, ctx: impl AsContext<Data = T>) {
+        _ = self.func.ty_dedup(ctx.as_context());
+    }
+
     /// Prepares the `outputs` buffer for call resumption.
     ///
     /// # Errors
@@ -588,6 +598,7 @@ impl<Results> TypedResumableCallOutOfFuel<Results> {
     where
         Results: LiftFromCellsByValue,
     {
+        self.common.assert_owner(ctx.as_context());
         self.common
             .engine
             .clone()
