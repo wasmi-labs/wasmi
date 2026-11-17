@@ -371,13 +371,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         };
         let len_temps = default_branch_params.len_temps();
         let len_regs = default_branch_params.len_regs();
-        let values = self.copy_operands_to_temp(len_temps, len_regs)?;
-        self.copy_branch_params_regs(default_branch_params)?;
         let required_temp_copies = len_temps != 0;
         let requires_branch_copies = required_temp_copies && !equal_heights;
         match requires_branch_copies {
-            false => self.encode_br_table_0(table, index_loc)?,
-            true => self.encode_br_table_n(table, index_loc, values)?,
+            false => {
+                // Note: `branch_table` does not copy, so the branch parameters must already be
+                //       where the targets expect them. All targets share the same height and thus
+                //       expect them in the same slots as the default target.
+                self.copy_branch_params(default_branch_params)?;
+                self.encode_br_table_0(table, index_loc)?
+            }
+            true => {
+                let values = self.copy_operands_to_temp(len_temps, len_regs)?;
+                self.copy_branch_params_regs(default_branch_params)?;
+                self.encode_br_table_n(table, index_loc, values)?
+            }
         };
         self.reachable = false;
         Ok(())
