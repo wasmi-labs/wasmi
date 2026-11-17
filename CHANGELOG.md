@@ -8,7 +8,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## `2.0.1` - UNRELEASED
+## `2.0.1` - 2026-11-18
 
 ### Added
 
