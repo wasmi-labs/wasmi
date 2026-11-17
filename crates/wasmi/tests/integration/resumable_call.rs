@@ -174,6 +174,69 @@ fn resumable_call_smoldot_tail_02() {
 
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
+fn resumable_call_smoldot_tail_03() {
+    // The tail calling function has locals, so its host call parameters
+    // start at a different offset than its own frame does in its caller.
+    let (mut store, wasm_fn) = resumable_call_smoldot_common(
+        r#"
+        (module
+            (import "env" "host_fn" (func $host (result i32)))
+            (func $wasm (result i32)
+                (local i32 i32)
+                (return_call $host)
+            )
+            (func (export "test") (result i32)
+                (call $wasm)
+            )
+        )
+        "#,
+    );
+    let invocation = wasm_fn
+        .call_resumable(&mut store, ())
+        .unwrap_resumable_host_trap();
+    invocation
+        .resume(&mut store, &[Val::I32(42)])
+        .assert_finished_with(|result| result == 42);
+}
+
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
+fn resumable_call_smoldot_tail_04() {
+    // The resumed host result must not overwrite the locals of the caller's caller.
+    let (mut store, wasm_fn) = resumable_call_smoldot_common(
+        r#"
+        (module
+            (import "env" "host_fn" (func $host (result i32)))
+            (func $wasm (result i32)
+                (local i32)
+                (return_call $host)
+            )
+            (func (export "test") (result i32)
+                (local $a i32)
+                (local $b i32)
+                (local.set $a (i32.const 1))
+                (local.set $b (i32.const 2))
+                (i32.add
+                    (i32.mul (call $wasm) (i32.const 100))
+                    (i32.add
+                        (i32.mul (local.get $a) (i32.const 10))
+                        (local.get $b)
+                    )
+                )
+            )
+        )
+        "#,
+    );
+    let invocation = wasm_fn
+        .call_resumable(&mut store, ())
+        .unwrap_resumable_host_trap();
+    invocation
+        .resume(&mut store, &[Val::I32(42)])
+        .assert_finished_with(|result| result == 4212);
+}
+
+#[test]
+#[cfg_attr(not(feature = "wat"), ignore)]
 fn resumable_call_smoldot_02() {
     let (mut store, wasm_fn) = resumable_call_smoldot_common(
         r#"

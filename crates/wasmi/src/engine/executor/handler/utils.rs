@@ -939,7 +939,7 @@ pub fn return_call_host(
 ) -> Control<(Ip, Sp, Inst), Break> {
     debug_assert_eq!(params.len(), host_func.len_param_cells());
     let trampoline = *host_func.trampoline();
-    let (control, frame) = store
+    let (control, frame, results) = store
         .stack_mut()
         .return_prepare_host_frame(params, host_func.len_result_cells(), instance)
         .into_control()?;
@@ -949,8 +949,11 @@ pub fn return_call_host(
     if let Err(error) = invoke_host(store, trampoline, Some(instance), inout, CallHooks::Call) {
         // Note: we won't allow resumption in case the execution would
         //       have returned with this the host function tail call.
+        //
+        // Note: a resumption continues in the caller's caller, thus `results` must be
+        //       relative to its frame instead of `params` relative to the replaced frame.
         let reason = match control {
-            Control::Continue(_) => DoneReason::host_error(error, func, params.span()),
+            Control::Continue(_) => DoneReason::host_error(error, func, results),
             Control::Break(_) => DoneReason::error(error),
         };
         done!(store, reason)

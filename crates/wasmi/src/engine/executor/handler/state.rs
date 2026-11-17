@@ -984,15 +984,27 @@ impl Stack {
     ///
     /// Use [`Stack::host_inout`] on the returned [`HostFrame`] to obtain the [`InOutParams`]
     /// of the call.
+    ///
+    /// The returned [`SlotSpan`] is where the caller's caller expects the results of the host
+    /// function, relative to its [`Sp`].
     pub fn return_prepare_host_frame(
         &mut self,
         callee_params: BoundedSlotSpan,
         results_len: u16,
         caller_instance: Inst,
-    ) -> Result<(ReturnCallHost, HostFrame), TrapCode> {
+    ) -> Result<(ReturnCallHost, HostFrame, SlotSpan), TrapCode> {
         let (callee_start, caller) = self.frames.return_prepare_host_frame(caller_instance);
-        self.values
-            .return_prepare_host_frame(caller, callee_start, callee_params, results_len)
+        // Note: the host function replaces the frame at `callee_start` which starts at the
+        //       slots where the caller's caller expects the results of its call.
+        let caller_start = caller.map(|(_, start, _)| start).unwrap_or_default();
+        let results = SlotSpan::new(callee_start.slot_relative_to(caller_start));
+        let (control, frame) = self.values.return_prepare_host_frame(
+            caller,
+            callee_start,
+            callee_params,
+            results_len,
+        )?;
+        Ok((control, frame, results))
     }
 
     /// Prepares `self` for a host function call.
@@ -1747,5 +1759,21 @@ impl SpOffset {
     #[inline]
     fn into_inner(self) -> usize {
         self.0
+    }
+
+    /// Returns the [`Slot`] that refers to `self` from the frame starting at `base`.
+    ///
+    /// # Panics
+    ///
+    /// If `self` is not addressable by a [`Slot`] of the frame starting at `base`.
+    fn slot_relative_to(self, base: Self) -> Slot {
+        let Some(delta) = self
+            .0
+            .checked_sub(base.0)
+            .and_then(|delta| u16::try_from(delta).ok())
+        else {
+            panic!("offset {self:?} is not addressable from the frame at {base:?}")
+        };
+        Slot::from(delta)
     }
 }
