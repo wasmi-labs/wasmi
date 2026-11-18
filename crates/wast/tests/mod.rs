@@ -211,6 +211,7 @@ macro_rules! foreach_test {
             fn local_br_table("local/br_table");
             fn local_if("local/if");
             fn local_loop("local/loop");
+            fn local_return_call("local/return_call");
             // Wasmi: binary operators
             fn wasmi_i32_add("wasmi/tests/op/i32-add");
             fn wasmi_i32_sub("wasmi/tests/op/i32-sub");
