@@ -44,7 +44,7 @@ pub struct TestData {
     _remaining: u32,
 }
 
-fn resumable_call_smoldot_common(wasm: &str) -> (Store<TestData>, TypedFunc<(), i32>) {
+fn host_trap_common(wasm: &str) -> (Store<TestData>, TypedFunc<(), i32>) {
     let (mut store, mut linker) = test_setup(0);
     // The important part about this test is that this
     // host function has more results than parameters.
@@ -107,8 +107,8 @@ impl<Results> ResumableExt for Result<TypedResumableCall<Results>, Error> {
 
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
-fn resumable_call_smoldot_01() {
-    let (mut store, wasm_fn) = resumable_call_smoldot_common(
+fn resumable_call_host_trap() {
+    let (mut store, wasm_fn) = host_trap_common(
         r#"
         (module
             (import "env" "host_fn" (func $host_fn (result i32)))
@@ -128,8 +128,8 @@ fn resumable_call_smoldot_01() {
 
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
-fn resumable_call_smoldot_tail_01() {
-    let (mut store, wasm_fn) = resumable_call_smoldot_common(
+fn resumable_call_root_tail_host_trap() {
+    let (mut store, wasm_fn) = host_trap_common(
         r#"
         (module
             (import "env" "host_fn" (func $host_fn (result i32)))
@@ -150,8 +150,8 @@ fn resumable_call_smoldot_tail_01() {
 
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
-fn resumable_call_smoldot_tail_02() {
-    let (mut store, wasm_fn) = resumable_call_smoldot_common(
+fn resumable_call_tail_host_trap() {
+    let (mut store, wasm_fn) = host_trap_common(
         r#"
         (module
             (import "env" "host_fn" (func $host (result i32)))
@@ -212,8 +212,8 @@ fn resumable_call_tail_host_trap_results() {
 
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
-fn resumable_call_smoldot_02() {
-    let (mut store, wasm_fn) = resumable_call_smoldot_common(
+fn resumable_call_host_trap_branch() {
+    let (mut store, wasm_fn) = host_trap_common(
         r#"
         (module
             (import "env" "host_fn" (func $host_fn (result i32)))
@@ -239,7 +239,7 @@ fn resumable_call_smoldot_02() {
 }
 
 #[test]
-fn resumable_call_host() {
+fn resumable_call_root_host_trap() {
     let (mut store, _linker) = test_setup(0);
     let host_fn = Func::wrap(&mut store, || -> Result<(), Error> {
         Err(Error::i32_exit(100))
@@ -265,7 +265,7 @@ fn resumable_call_host() {
 
 #[test]
 #[cfg_attr(not(feature = "wat"), ignore)]
-fn resumable_call() {
+fn resumable_call_multiple_host_traps() {
     let (mut store, mut linker) = test_setup(0);
     let host_fn = Func::wrap(&mut store, |input: i32| -> Result<i32, Error> {
         match input {
