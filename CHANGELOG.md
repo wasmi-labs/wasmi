@@ -14,8 +14,11 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 - Fix a miscompilation of `if` blocks with parameters whose `then` block writes a local. [#2108]
   - Thanks to [SRLabs](https://srlabs.de/) for reporting the bug!
+- Fix a miscompilation of `loop` blocks with parameters that overwrote a preceding `local.tee` result. [#2109]
+  - Thanks to [SRLabs](https://srlabs.de/) for reporting the bug!
 
 [#2108]: https://github.com/wasmi-labs/wasmi/pull/2108
+[#2109]: https://github.com/wasmi-labs/wasmi/pull/2109
 
 ## `2.0.1` - 2026-11-18
 
