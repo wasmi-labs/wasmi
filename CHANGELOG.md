@@ -21,8 +21,10 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Thanks to [SRLabs](https://srlabs.de/) for reporting the bug!
 - Fix resuming a host trap of a tail called host function writing the host results into the wrong caller slots. [#2110]
   - Thanks to [Dickson Wu](https://github.com/DicksonWu654) for reporting the bug!
+  - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for independently also reporting the bug in [#2107]!
 
 [#2106]: https://github.com/wasmi-labs/wasmi/pull/2106
+[#2107]: https://github.com/wasmi-labs/wasmi/pull/2107
 [#2108]: https://github.com/wasmi-labs/wasmi/pull/2108
 [#2109]: https://github.com/wasmi-labs/wasmi/pull/2109
 [#2110]: https://github.com/wasmi-labs/wasmi/pull/2110
