@@ -654,18 +654,6 @@ impl Sp {
         Self { value }
     }
 
-    /// Creates a new dangling [`Sp`].
-    ///
-    /// # Note
-    ///
-    /// The [`Sp`] returned by this method must never be dereferenced.
-    /// This is used for cases where there are no frames on the call stack.
-    pub fn dangling() -> Self {
-        Self {
-            value: ptr::dangling_mut(),
-        }
-    }
-
     /// Offsets `self` by `slot` to access the [`Cell`] associated to it.
     pub fn offset(self, slot: Slot) -> Self {
         let delta = slot.byte_offset();
@@ -1314,19 +1302,6 @@ impl ValueStack {
         let params_len = usize::from(callee_params.len());
         let results_len = usize::from(results_len);
         let callee_size = params_len.max(results_len);
-        if callee_size == 0 {
-            // Note: the caller resumes execution with the returned `Sp`, so it must always
-            //       point at its frame, even if that frame starts where the callee did.
-            let sp = match caller {
-                Some(_) => self.sp(caller_start),
-                None => Sp::dangling(),
-            };
-            let control = match caller {
-                Some((ip, _, instance)) => ReturnCallHost::Continue((ip, sp, instance)),
-                None => ReturnCallHost::Break(sp),
-            };
-            return Ok((control, HostFrame::new(callee_start, callee_start, 0, 0)));
-        }
         let params_start = callee_start.add(params_offset)?;
         let params_end = params_start.add(params_len)?;
         self.cells_copy_within(params_start..params_end, callee_start);
