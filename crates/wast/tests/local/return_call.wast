@@ -17,6 +17,11 @@
         (call $tail_call_host)
         (call $forty_two)
     )
+
+    (func (export "return_call.host.no-params-no-results.top-level")
+        (return_call $host)
+    )
 )
 
 (assert_return (invoke "return_call.host.no-params-no-results") (i32.const 42))
+(assert_return (invoke "return_call.host.no-params-no-results.top-level"))
