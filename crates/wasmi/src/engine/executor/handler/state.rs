@@ -604,11 +604,6 @@ impl HostFrame {
         }
     }
 
-    /// Creates a [`HostFrame`] that spans no cells.
-    fn empty() -> Self {
-        Self::new(SpOffset::from(0), SpOffset::from(0), 0, 0)
-    }
-
     /// Returns `true` if `self` spans no cells.
     fn is_empty(&self) -> bool {
         self.len_params == 0 && self.len_results == 0
