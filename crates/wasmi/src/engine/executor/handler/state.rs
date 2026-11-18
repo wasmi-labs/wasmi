@@ -1027,6 +1027,7 @@ impl Stack {
     ///
     /// The [`SlotSpan`] is relative to the [`Sp`] of the top-most frame, a.k.a. the caller's caller.
     #[cold]
+    #[inline]
     pub fn return_host_results(&self, frame: HostFrame) -> SlotSpan {
         let offset = frame.start.into_inner() - self.frames.top_start().into_inner();
         let Ok(offset) = u16::try_from(offset) else {
