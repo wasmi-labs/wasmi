@@ -423,7 +423,6 @@ impl Stack {
         debug_assert!(self.is_fuel_metering_enabled() == fuel_pos.is_some());
         if if_frame.is_else_reachable() {
             self.push_else_operands(&if_frame)?;
-            self.operands.set_registers(if_frame.registers());
         }
         self.controls
             .push_else(if_frame, fuel_pos, is_end_of_then_reachable);
@@ -461,10 +460,12 @@ impl Stack {
             IfReachability::Both { .. } => {}
             IfReachability::OnlyThen | IfReachability::OnlyElse => return Ok(()),
         };
+        self.discard_local_regs();
         self.trunc(frame.height());
         for else_operand in self.controls.pop_else_operands() {
             self.operands.push_operand(else_operand)?;
         }
+        self.operands.set_registers(frame.registers());
         Ok(())
     }
 

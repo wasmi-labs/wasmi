@@ -8,6 +8,15 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## Unreleased
+
+### Fixes
+
+- Fix a miscompilation of `if` blocks with parameters whose `then` block writes a local. [#2108]
+  - Thanks to [SRLabs](https://srlabs.de/) for reporting the bug!
+
+[#2108]: https://github.com/wasmi-labs/wasmi/pull/2108
+
 ## `2.0.1` - 2026-11-18
 
 ### Added
