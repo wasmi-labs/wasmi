@@ -1,5 +1,4 @@
 mod aliased_copy;
-mod br_table;
 mod call_hook;
 mod call_host_via_engine;
 mod disallowed_start_fn;
