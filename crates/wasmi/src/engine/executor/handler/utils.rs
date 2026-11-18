@@ -950,7 +950,12 @@ pub fn return_call_host(
         // Note: we won't allow resumption in case the execution would
         //       have returned with this the host function tail call.
         let reason = match control {
-            Control::Continue(_) => DoneReason::host_error(error, func, params.span()),
+            Control::Continue(_) => {
+                // Note: `params` is relative to the replaced frame, not the caller's caller
+                //       which is the frame restored upon resumption.
+                let results = store.stack_mut().return_host_results(frame);
+                DoneReason::host_error(error, func, results)
+            }
             Control::Break(_) => DoneReason::error(error),
         };
         done!(store, reason)
