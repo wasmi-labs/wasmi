@@ -208,6 +208,7 @@ macro_rules! foreach_test {
             fn wasmi_ref("wasmi/tests/ref");
             fn wasmi_memory("wasmi/tests/memory");
             // Wasmi: tests not yet moved to the `wasmi-tests` repository
+            fn local_br_table("local/br_table");
             fn local_if("local/if");
             fn local_loop("local/loop");
             // Wasmi: binary operators
