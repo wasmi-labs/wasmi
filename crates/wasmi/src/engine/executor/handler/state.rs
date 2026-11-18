@@ -1028,6 +1028,18 @@ impl Stack {
         self.values.host_inout(frame)
     }
 
+    /// Returns the [`SlotSpan`] of the results of the host function tail call `frame`.
+    ///
+    /// The [`SlotSpan`] is relative to the [`Sp`] of the top-most frame, a.k.a. the caller's caller.
+    #[cold]
+    pub fn return_host_results(&self, frame: HostFrame) -> SlotSpan {
+        let offset = frame.start.into_inner() - self.frames.top_start().into_inner();
+        let Ok(offset) = u16::try_from(offset) else {
+            unreachable!("host results must be within the caller's frame: {offset}")
+        };
+        SlotSpan::new(Slot::from(offset))
+    }
+
     /// Returns an [`Sp`] pointing at the base of the value stack.
     ///
     /// # Note
@@ -1315,7 +1327,7 @@ impl ValueStack {
                 Some((ip, _, instance)) => ReturnCallHost::Continue((ip, sp, instance)),
                 None => ReturnCallHost::Break(sp),
             };
-            return Ok((control, HostFrame::empty()));
+            return Ok((control, HostFrame::new(callee_start, callee_start, 0, 0)));
         }
         let params_start = callee_start.add(params_offset)?;
         let params_end = params_start.add(params_len)?;
