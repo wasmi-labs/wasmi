@@ -12,11 +12,15 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Fixes
 
+- Fix a miscompilation of multi-value `br_table` with equal-height targets whose branch values sit above another operand. [#2106]
+  - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
+  - Thanks to [SRLabs](https://srlabs.de/) for independently also reporting the bug!
 - Fix a miscompilation of `if` blocks with parameters whose `then` block writes a local. [#2108]
   - Thanks to [SRLabs](https://srlabs.de/) for reporting the bug!
 - Fix a miscompilation of `loop` blocks with parameters that overwrote a preceding `local.tee` result. [#2109]
   - Thanks to [SRLabs](https://srlabs.de/) for reporting the bug!
 
+[#2106]: https://github.com/wasmi-labs/wasmi/pull/2106
 [#2108]: https://github.com/wasmi-labs/wasmi/pull/2108
 [#2109]: https://github.com/wasmi-labs/wasmi/pull/2109
 
