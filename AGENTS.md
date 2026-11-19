@@ -57,7 +57,10 @@ The human is the contributor; the agent is a tool.
 
 ## Soundness and performance
 
+- Prefer safe Rust. Use `unsafe` only where it yields a measurable performance gain on a performance-critical
+  path, which is primarily WebAssembly execution.
 - `unsafe` code must pass Miri; ideally under both Stacked and Tree Borrows.
+- Avoid unnecessary heap allocations; reuse existing buffers where possible and where it makes sense.
 - No locks or atomics on the execution hot path.
 - Executor handlers must tail-call; a missed sibling call leaks a native stack frame per op
   ([#1942](https://github.com/wasmi-labs/wasmi/issues/1942)).
