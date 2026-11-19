@@ -27,6 +27,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fix a use-after-free when resuming a `TypedResumableCallOutOfFuel` on a `Store` that did not start it. [#2103]
   - Resuming on a different `Store` now panics for all resumable call kinds.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
+- Fix a CLI panic when printing non-`null` `funcref` or `externref` results. [#2116]
+  - Thanks to [SRLabs](https://srlabs.de/) for reporting the bug!
 
 [#2099]: https://github.com/wasmi-labs/wasmi/pull/2099
 [#2103]: https://github.com/wasmi-labs/wasmi/pull/2103
@@ -35,6 +37,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2108]: https://github.com/wasmi-labs/wasmi/pull/2108
 [#2109]: https://github.com/wasmi-labs/wasmi/pull/2109
 [#2110]: https://github.com/wasmi-labs/wasmi/pull/2110
+[#2116]: https://github.com/wasmi-labs/wasmi/pull/2116
 
 ## `2.0.1` - 2026-11-18
 
