@@ -23,6 +23,7 @@ use crate::{
     Error,
     Func,
     FuncEntity,
+    Handle,
     Store,
     StoreContextMut,
     engine::{
@@ -221,6 +222,10 @@ fn resume_func<T, R>(
     handle: &mut ResumableCallCommon,
     f: impl FnOnce(&mut Store<T>) -> R,
 ) -> R {
+    assert!(
+        store.inner.contains(handle.func().as_raw()),
+        "resumed a call on a store that did not start it",
+    );
     let stack = handle.take_stack();
     let (outcome, stack) = with_stack(store, stack, |store| f(store));
     *handle.stack_mut() = stack;
