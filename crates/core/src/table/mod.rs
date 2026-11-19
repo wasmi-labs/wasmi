@@ -38,9 +38,7 @@ impl Table {
         let Ok(min_size) = usize::try_from(ty.minimum()) else {
             return Err(TableError::MinimumSizeOverflow);
         };
-        let Ok(max_size) = ty.maximum().map(usize::try_from).transpose() else {
-            return Err(TableError::MaximumSizeOverflow);
-        };
+        let max_size = Self::clipped_maximum(ty);
         if let Some(limiter) = limiter.as_resource_limiter() {
             if !limiter.table_growing(0, min_size, max_size)? {
                 return Err(TableError::ResourceLimiterDeniedAllocation);
@@ -56,6 +54,20 @@ impl Table {
         };
         elements.extend(iter::repeat_n::<RawRef>(init.raw(), min_size));
         Ok(Self { ty, elements })
+    }
+
+    /// Returns the maximum size of a table of type `ty` if any.
+    ///
+    /// # Note
+    ///
+    /// We have to clip the maximum size at [`usize::MAX`] since we do not want to
+    /// error if the system limits are overflown here. This is because the maximum
+    /// size only limits growth and thus creation of tables which have a max size
+    /// that overflows system limits are valid as long as they do not grow beyond
+    /// those limits.
+    fn clipped_maximum(ty: TableType) -> Option<usize> {
+        ty.maximum()
+            .map(|max| usize::try_from(max).unwrap_or(usize::MAX))
     }
 
     /// Returns the resizable limits of the table.
@@ -155,9 +167,7 @@ impl Table {
         let Ok(desired) = usize::try_from(desired) else {
             return Err(TableError::GrowOutOfBounds);
         };
-        let Ok(maximum) = self.ty.maximum().map(usize::try_from).transpose() else {
-            return Err(TableError::GrowOutOfBounds);
-        };
+        let maximum = Self::clipped_maximum(self.ty);
 
         // ResourceLimiter gets first look at the request.
         if let Some(limiter) = limiter.as_resource_limiter() {
