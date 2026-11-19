@@ -29,6 +29,9 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
 - Fix a CLI panic when printing non-`null` `funcref` or `externref` results. [#2116]
   - Thanks to [SRLabs](https://srlabs.de/) for reporting the bug!
+- Fix `call_indirect` signature check bypasses and use-after-frees when instantiating a `Module` compiled by another `Engine` than the `Store`'s. [#2113]
+  - Instantiating such a `Module` now panics.
+  - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
 
 [#2099]: https://github.com/wasmi-labs/wasmi/pull/2099
 [#2103]: https://github.com/wasmi-labs/wasmi/pull/2103
@@ -37,6 +40,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2108]: https://github.com/wasmi-labs/wasmi/pull/2108
 [#2109]: https://github.com/wasmi-labs/wasmi/pull/2109
 [#2110]: https://github.com/wasmi-labs/wasmi/pull/2110
+[#2113]: https://github.com/wasmi-labs/wasmi/pull/2113
 [#2116]: https://github.com/wasmi-labs/wasmi/pull/2116
 
 ## `2.0.1` - 2026-11-18
