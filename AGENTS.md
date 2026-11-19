@@ -26,7 +26,7 @@ The human is the contributor; the agent is a tool.
 
 - Never guess. Measure, or ask the human. Prove compiler or lint claims by compiling, perf claims by measuring
   against a baseline.
-- Small steps: work and commit in small steps so each change stays easy to review.
+- Small steps: work in small, separately reviewable steps.
 - Minimal diffs: no drive-by refactors, renames or reformatting. Separate concerns go into separate PRs.
 - Match the surrounding code. Keep docs and comments terse; unlike code, they silently drift out of sync.
 - Commits are made and signed by the human. No AI co-authorship (`Co-Authored-By` or similar):
