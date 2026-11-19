@@ -36,7 +36,7 @@ The human is the contributor; the agent is a tool.
 ## Code
 
 - Library crates must build with stable Rust (edition 2024, MSRV as `rust-version` in `Cargo.toml`).
-  All but `wasmi_wasi` and `wasmi_wast` must also build without `std`.
+  `wasmi`, `wasmi_core`, `wasmi_ir`, `wasmi_collections` and `wasmi_c_api_impl` must also build without `std`.
 - Wasmi mirrors Wasmtime's API and behaviour on a best-effort basis. Follow Wasmtime; diverge only with a reason
   stated in the PR.
 - No new dependencies without discussing them in an issue first.
