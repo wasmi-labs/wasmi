@@ -57,7 +57,8 @@ The human is the contributor; the agent is a tool.
 
 - `unsafe` code must pass Miri under both Stacked and Tree Borrows.
 - No locks or atomics on the execution hot path.
-- Executor handlers must tail-call; a missed sibling call leaks a native stack frame per op (#1942).
+- Executor handlers must tail-call; a missed sibling call leaks a native stack frame per op
+  ([#1942](https://github.com/wasmi-labs/wasmi/issues/1942)).
 - `Op`/`OpCode` are generated from `crates/ir/build/isa.rs`; edit that, not the output.
 - Optimizations need benchmarks against `main`; regressions need a strong reason.
 
