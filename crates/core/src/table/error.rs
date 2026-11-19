@@ -13,6 +13,7 @@ pub enum TableError {
     /// The minimum size of the table type overflows the system index type.
     MinimumSizeOverflow,
     /// The maximum size of the table type overflows the system index type.
+    #[deprecated(note = "never returned: the maximum size is clipped at `usize::MAX` instead")]
     MaximumSizeOverflow,
     /// If a resource limiter denied allocation or growth of a table.
     ResourceLimiterDeniedAllocation,
@@ -41,6 +42,7 @@ impl Display for TableError {
                 "tried to allocate more virtual memory than available on the system"
             }
             Self::MinimumSizeOverflow => "the minimum table size overflows the system bounds",
+            #[allow(deprecated)]
             Self::MaximumSizeOverflow => "the maximum table size overflows the system bounds",
             Self::ResourceLimiterDeniedAllocation => {
                 "a resource limiter denied to allocate or grow the table"

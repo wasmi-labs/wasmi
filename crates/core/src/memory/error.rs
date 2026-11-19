@@ -19,6 +19,7 @@ pub enum MemoryError {
     /// The minimum size of the memory type overflows the system index type.
     MinimumSizeOverflow,
     /// The maximum size of the memory type overflows the system index type.
+    #[deprecated(note = "never returned: the maximum size is clipped at `usize::MAX` instead")]
     MaximumSizeOverflow,
     /// Encountered if a `memory.grow` operation runs out of fuel.
     OutOfFuel { required_fuel: u64 },
@@ -42,6 +43,7 @@ impl Display for MemoryError {
             Self::MinimumSizeOverflow => {
                 "the minimum size of the memory type overflows the system index type"
             }
+            #[allow(deprecated)]
             Self::MaximumSizeOverflow => {
                 "the maximum size of the memory type overflows the system index type"
             }
