@@ -78,7 +78,8 @@ impl Instance {
     ///
     /// # Panics
     ///
-    /// If any [`Extern`] does not originate from the provided `store`.
+    /// - If any [`Extern`] does not originate from the provided `store`.
+    /// - If the [`Engine`](crate::Engine) of `module` and `store` are not the same.
     ///
     /// [Wasm instantiation procedure]: https://webassembly.github.io/spec/core/exec/modules.html#exec-instantiation
     pub fn new(
