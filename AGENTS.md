@@ -85,10 +85,10 @@ cargo +nightly miri nextest run --target x86_64-unknown-linux-gnu --lib --worksp
 MIRIFLAGS="-Zmiri-tree-borrows" cargo +nightly miri nextest run --target x86_64-unknown-linux-gnu --lib --workspace --exclude wasmi_c_api_macros
 ```
 
-The full benchmark suite is very slow; run a subset. The Rust-based cases and fibonacci are the minimal baseline.
-Save a baseline on `main` with `-- --save-baseline main <filter>`, then compare on the branch with
-`-- --baseline main <filter>`:
+The full benchmark suite is very slow; run a subset. The Rust-based cases and fibonacci are the minimal baseline:
 
 ```sh
-cargo bench --bench benches -p wasmi -- "execute/(sort|prime_sieve|matrix_mul|nbody|argon2|tiny_keccak|mandelbrot|spectralnorm|compression|word_count|json_parse|reverse_complement|regex_redux|fibonacci)"
+F="execute/(sort|prime_sieve|matrix_mul|nbody|argon2|tiny_keccak|mandelbrot|spectralnorm|compression|word_count|json_parse|reverse_complement|regex_redux|fibonacci)"
+cargo bench --bench benches -p wasmi -- --save-baseline main "$F"  # on main
+cargo bench --bench benches -p wasmi -- --baseline main "$F"       # on your branch
 ```
