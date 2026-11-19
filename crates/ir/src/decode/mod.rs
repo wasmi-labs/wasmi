@@ -48,6 +48,7 @@ use crate::{
     SlotAndReg,
     SlotSpan,
     Table0,
+    Zero,
     core::{ShiftAmount, TrapCode},
     index::{
         DataAddr,
@@ -257,6 +258,13 @@ impl<const N: u8> Decode for ImmLaneIdx<N> {
         let byte = u8::decode(decoder)?;
         let lane = ImmLaneIdx::try_from(byte).map_err(|_| DecodeError::InvalidBitPattern)?;
         Ok(lane)
+    }
+}
+
+impl Decode for Zero {
+    #[inline]
+    fn decode<D: Decoder>(_decoder: &mut D) -> Result<Self, DecodeError> {
+        Ok(Self::default())
     }
 }
 

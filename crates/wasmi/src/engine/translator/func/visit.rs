@@ -192,8 +192,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 self.encode_branch_op(else_label, |offset| match fused_op {
                     Some(fused_op) => fused_op.with_branch_offset(offset),
                     None => match condition {
-                        Location::Reg(_) => Op::branch_i32_eq_ri(offset, 0),
-                        Location::Slot(condition) => Op::branch_i32_eq_si(offset, condition, 0),
+                        Location::Reg(_) => Op::branch_i32_eq_rz(offset),
+                        Location::Slot(condition) => Op::branch_i32_eq_sz(offset, condition),
                     },
                 })?;
                 let reachability = IfReachability::Both { else_label };

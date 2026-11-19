@@ -23,6 +23,7 @@ use crate::{
     SlotAndReg,
     Table0,
     TableAddr,
+    Zero,
     core::{ShiftAmount, TrapCode, ValType},
 };
 use core::num::NonZero;
