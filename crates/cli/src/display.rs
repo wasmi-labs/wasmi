@@ -46,10 +46,9 @@ impl fmt::Display for DisplayValue<'_> {
                 write!(f, "0x{:032X}", value.as_u128())
             }
             Val::FuncRef(Nullable::Null) => f.write_str("<null funcref>"),
+            Val::FuncRef(Nullable::Val(_)) => f.write_str("<funcref>"),
             Val::ExternRef(Nullable::Null) => f.write_str("<null externref>"),
-            Val::FuncRef(_) | Val::ExternRef(_) => {
-                panic!("cannot display reference values but found {:?}", self.0)
-            }
+            Val::ExternRef(Nullable::Val(_)) => f.write_str("<externref>"),
         }
     }
 }
