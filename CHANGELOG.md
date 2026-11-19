@@ -36,6 +36,10 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Deprecated `TableError::MaximumSizeOverflow` and `MemoryError::MaximumSizeOverflow` since they are no longer returned.
   - Thanks to [0z5a](https://github.com/0z5a) for fixing the bug!
 
+### Internal
+
+- Add [`AGENTS.md`](AGENTS.md) with guidance for AI coding agents. [#2119]
+
 [#2099]: https://github.com/wasmi-labs/wasmi/pull/2099
 [#2103]: https://github.com/wasmi-labs/wasmi/pull/2103
 [#2106]: https://github.com/wasmi-labs/wasmi/pull/2106
@@ -46,6 +50,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2112]: https://github.com/wasmi-labs/wasmi/pull/2112
 [#2113]: https://github.com/wasmi-labs/wasmi/pull/2113
 [#2116]: https://github.com/wasmi-labs/wasmi/pull/2116
+[#2119]: https://github.com/wasmi-labs/wasmi/pull/2119
 
 ## `2.0.1` - 2026-11-18
 
