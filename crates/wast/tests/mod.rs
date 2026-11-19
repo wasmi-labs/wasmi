@@ -496,6 +496,8 @@ macro_rules! foreach_test_memory64 {
 
             // Wasmi specific `memory64` tests:
             fn wasmi_memory64("wasmi/tests/memory64");
+            // Wasmi: tests not yet moved to the `wasmi-tests` repository
+            fn local_table64("local/table64");
         }
     };
 }
