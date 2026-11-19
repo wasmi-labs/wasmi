@@ -498,7 +498,7 @@ fn resumable_call_out_of_fuel_table_grow() {
 }
 
 #[test]
-#[should_panic(expected = "failed to resolve stored func")]
+#[should_panic(expected = "resumed a call on a store that did not start it")]
 fn resumable_call_out_of_fuel_resume_on_other_store() {
     let mut config = Config::default();
     config.consume_fuel(true);
