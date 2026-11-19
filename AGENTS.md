@@ -75,6 +75,17 @@ cargo +nightly clippy --workspace --all-features -- -D warnings
 
 CI runs more (feature combos, `no_std`, MSRV, docs, Miri), see `.github/workflows/rust.yml`.
 
-The full benchmark suite is very slow; run a subset. The Rust-based cases and fibonacci are the minimal baseline:
+For `unsafe` changes run Miri. CI checks Stacked Borrows only; ideally also run it with Tree Borrows:
 
-    cargo bench --bench benches -p wasmi -- "execute/(sort|prime_sieve|matrix_mul|nbody|argon2|tiny_keccak|mandelbrot|spectralnorm|compression|word_count|json_parse|reverse_complement|regex_redux|fibonacci)"
+```sh
+cargo +nightly miri nextest run --target x86_64-unknown-linux-gnu --lib --workspace --exclude wasmi_c_api_macros
+MIRIFLAGS="-Zmiri-tree-borrows" cargo +nightly miri nextest run --target x86_64-unknown-linux-gnu --lib --workspace --exclude wasmi_c_api_macros
+```
+
+The full benchmark suite is very slow; run a subset. The Rust-based cases and fibonacci are the minimal baseline.
+Save a baseline on `main` with `-- --save-baseline main <filter>`, then compare on the branch with
+`-- --baseline main <filter>`:
+
+```sh
+cargo bench --bench benches -p wasmi -- "execute/(sort|prime_sieve|matrix_mul|nbody|argon2|tiny_keccak|mandelbrot|spectralnorm|compression|word_count|json_parse|reverse_complement|regex_redux|fibonacci)"
+```
