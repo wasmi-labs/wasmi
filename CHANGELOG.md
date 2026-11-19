@@ -33,6 +33,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Instantiating such a `Module` now panics.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
 - Fix creating 64-bit tables with a maximum size above `usize::MAX` on 32-bit hosts. [#2112]
+  - Deprecated `TableError::MaximumSizeOverflow` and `MemoryError::MaximumSizeOverflow` since they are no longer returned.
+  - Thanks to [0z5a](https://github.com/0z5a) for fixing the bug!
 
 [#2099]: https://github.com/wasmi-labs/wasmi/pull/2099
 [#2103]: https://github.com/wasmi-labs/wasmi/pull/2103
