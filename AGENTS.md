@@ -63,10 +63,12 @@ The human is the contributor; the agent is a tool.
 
 ## Checks
 
-    git submodule update --init --recursive
-    cargo test --workspace
-    cargo +nightly fmt
-    cargo +nightly clippy --workspace --all-features -- -D warnings
+```sh
+git submodule update --init --recursive
+cargo test --workspace
+cargo +nightly fmt
+cargo +nightly clippy --workspace --all-features -- -D warnings
+```
 
 CI runs more (feature combos, `no_std`, MSRV, docs, Miri), see `.github/workflows/rust.yml`.
 
