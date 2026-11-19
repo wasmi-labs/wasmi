@@ -423,7 +423,7 @@ impl<T> Linker<T> {
     ///
     /// # Panics
     ///
-    /// If the [`Engine`] of the [`Linker`] and `context` are not the same.
+    /// If the [`Engine`] of the [`Linker`], `context` and `module` are not the same.
     ///
     /// # Errors
     ///
