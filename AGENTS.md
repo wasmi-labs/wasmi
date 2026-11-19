@@ -57,7 +57,7 @@ The human is the contributor; the agent is a tool.
 
 ## Soundness and performance
 
-- `unsafe` code must pass Miri under both Stacked and Tree Borrows.
+- `unsafe` code must pass Miri; ideally under both Stacked and Tree Borrows.
 - No locks or atomics on the execution hot path.
 - Executor handlers must tail-call; a missed sibling call leaks a native stack frame per op
   ([#1942](https://github.com/wasmi-labs/wasmi/issues/1942)).
