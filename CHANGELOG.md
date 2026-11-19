@@ -24,8 +24,12 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for independently also reporting the bug in [#2107]!
 - Fix a segfault after tail calling a host function without parameters and results. [#2099]
   - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
+- Fix a use-after-free when resuming a `TypedResumableCallOutOfFuel` on a `Store` that did not start it. [#2103]
+  - Resuming on a different `Store` now panics for all resumable call kinds.
+  - Thanks to [Sharadhi V](https://github.com/Sharadhi-v98) for reporting and fixing the bug!
 
 [#2099]: https://github.com/wasmi-labs/wasmi/pull/2099
+[#2103]: https://github.com/wasmi-labs/wasmi/pull/2103
 [#2106]: https://github.com/wasmi-labs/wasmi/pull/2106
 [#2107]: https://github.com/wasmi-labs/wasmi/pull/2107
 [#2108]: https://github.com/wasmi-labs/wasmi/pull/2108

@@ -262,6 +262,11 @@ impl StoreInner {
             None => Err(InternalStoreError::store_mismatch()),
         }
     }
+
+    /// Returns `true` if `stored` originates from `self`.
+    pub(crate) fn contains<T>(&self, stored: &Stored<T>) -> bool {
+        self.id.unwrap(stored).is_some()
+    }
 }
 
 impl StoreInner {
