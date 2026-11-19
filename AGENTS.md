@@ -11,7 +11,7 @@ The human is the contributor; the agent is a tool.
 - A human owns every contribution and must understand every line of it. "The LLM wrote it" is no excuse.
 - Communication is between humans. Agents never open, edit or comment on issues, PRs or reviews, and never
   contact anyone. Agents may draft; the human edits, shortens and posts under their own name.
-- Disclose LLM use in the PR description: which parts were generated.
+- Disclose LLM use in PRs and reports: which parts were generated.
 - Discuss features and larger changes in an issue first, see [CONTRIBUTING.md](CONTRIBUTING.md).
 - Do not mass-produce PRs or reports.
 
@@ -45,22 +45,22 @@ The human is the contributor; the agent is a tool.
 
 - Prefer `.wast` tests. New ones go in `crates/wast/tests/local/` and are registered as `local_*` in
   `crates/wast/tests/mod.rs`. Use Rust tests only when `.wast` cannot express the case.
-- Existing `.wast` tests define the expected behaviour: fix Wasmi, never the test.
+- Never change an existing test to make it pass; if it looks wrong, ask the human.
 - Never edit `crates/wast/tests/spec` (upstream testsuite) or the `crates/wast/tests/wasmi` submodule.
 - While iterating, run only the relevant test files, e.g. `cargo test -p wasmi_wast local_if`, to keep the
   edit-compile-test loop fast.
 - A regression test must fail without the fix. The value stack is reused across invocations, so use distinct
   values per assertion.
 - Use as little instance state as possible: params over globals over memories/tables.
-- Cross-check new `.wast` tests with `wasmtime wast`.
+- Cross-check new `.wast` tests with `wasmtime wast` (`-W <proposal>=y` as needed).
 - Name tests after the behaviour they check.
 
 ## Soundness and performance
 
-- Prefer safe Rust. Use `unsafe` only where it yields a measurable performance gain on a performance-critical
-  path, which is primarily WebAssembly execution.
-- `unsafe` code must pass Miri; ideally under both Stacked and Tree Borrows.
-- Avoid unnecessary heap allocations; reuse existing buffers where possible and where it makes sense.
+- Prefer safe Rust. Use `unsafe` only where required (e.g. FFI) or where it yields a measurable performance gain
+  on a performance-critical path, which is primarily WebAssembly execution.
+- `unsafe` code must pass Miri.
+- Avoid unnecessary heap allocations; reuse existing buffers where it makes sense.
 - No locks or atomics on the execution hot path.
 - Executor handlers must tail-call; a missed sibling call leaks a native stack frame per op
   ([#1942](https://github.com/wasmi-labs/wasmi/issues/1942)).
@@ -73,7 +73,7 @@ The human is the contributor; the agent is a tool.
 git submodule update --init --recursive
 cargo test --workspace
 cargo +nightly fmt
-cargo +nightly clippy --workspace --all-features -- -D warnings
+cargo +nightly clippy --workspace --all-targets --all-features -- -D warnings
 ```
 
 CI runs more (feature combos, `no_std`, MSRV, docs, Miri), see `.github/workflows/rust.yml`.
