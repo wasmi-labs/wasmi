@@ -65,9 +65,6 @@ impl Module {
         I: IntoIterator<Item = Extern, IntoIter: ExactSizeIterator>,
     {
         let mut context = context.as_context_mut().store;
-        // Note: the instance's functions refer to the compiled code and the deduplicated
-        //       function types of `self.engine()`, which the store neither keeps alive nor
-        //       can tell apart from its own in `call_indirect` signature checks.
         assert!(
             Engine::same(self.engine(), context.engine()),
             "cannot instantiate a module compiled for a different engine than the store's"
