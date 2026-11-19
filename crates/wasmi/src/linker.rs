@@ -436,6 +436,7 @@ impl<T> Linker<T> {
         module: &Module,
     ) -> Result<Instance, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
+        assert!(Engine::same(self.engine(), module.engine()),);
         // TODO: possibly add further resource limitation here on number of externals.
         // Not clear that user can't import the same external lots of times to inflate this.
         let externals = module
