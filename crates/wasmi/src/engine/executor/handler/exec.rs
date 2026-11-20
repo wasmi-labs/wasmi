@@ -272,9 +272,10 @@ macro_rules! call_indirect_execution_handler {
                         params,
                         index,
                     } = unsafe { args.decode_op() };
-                    let (_, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
+                    let (raw_func, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
                     let FuncEntity::Wasm(wasm_func) = (unsafe { func_entity.as_ref() }) else {
-                        tail_call!($host_name(store, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64))
+                        let (callee, callee_raw) = utils::encode_host_callee(raw_func, func_entity);
+                        tail_call!($host_name(store, ip, sp, callee, callee_raw, instance, ireg, freg32, freg64))
                     };
                     args.call_wasm_func(store, wasm_func, params)?;
                     dispatch!(store, args)
@@ -295,12 +296,10 @@ macro_rules! call_indirect_execution_handler {
                 ) -> Done = {
                     let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
                     let crate::ir::decode::$camel_name {
-                        table,
-                        func_type,
-                        params,
-                        index,
+                        params, ..
                     } = unsafe { args.decode_op() };
-                    let (func, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
+                    // SAFETY: `$snake_name` encoded the resolved host callee into `mem0` and `mem0_len`.
+                    let (func, func_entity) = unsafe { utils::decode_host_callee(store, mem0, mem0_len) };
                     args.call_wasm_or_host_func(store, func, func_entity, params)?;
                     dispatch!(store, args)
                 }
@@ -378,9 +377,10 @@ macro_rules! return_call_indirect_execution_handler {
                         func_type,
                         table,
                     } = unsafe { args.decode_op() };
-                    let (_, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
+                    let (raw_func, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
                     let FuncEntity::Wasm(wasm_func) = (unsafe { func_entity.as_ref() }) else {
-                        tail_call!($host_name(store, ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64))
+                        let (callee, callee_raw) = utils::encode_host_callee(raw_func, func_entity);
+                        tail_call!($host_name(store, ip, sp, callee, callee_raw, instance, ireg, freg32, freg64))
                     };
                     args.return_call_wasm_func(store, wasm_func, params)?;
                     dispatch!(store, args)
@@ -401,12 +401,10 @@ macro_rules! return_call_indirect_execution_handler {
                 ) -> Done = {
                     let mut args = Args::from_parts(ip, sp, mem0, mem0_len, instance, ireg, freg32, freg64);
                     let crate::ir::decode::$camel_name {
-                        params,
-                        index,
-                        func_type,
-                        table,
+                        params, ..
                     } = unsafe { args.decode_op() };
-                    let (func, func_entity) = args.resolve_indirect_func(store, index, table, func_type)?;
+                    // SAFETY: `$snake_name` encoded the resolved host callee into `mem0` and `mem0_len`.
+                    let (func, func_entity) = unsafe { utils::decode_host_callee(store, mem0, mem0_len) };
                     args.return_call_wasm_or_host_func(store, func, func_entity, params)?;
                     dispatch!(store, args)
                 }

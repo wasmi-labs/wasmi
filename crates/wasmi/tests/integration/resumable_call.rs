@@ -10,6 +10,7 @@ use wasmi::{
     Error,
     Extern,
     Func,
+    Instance,
     Linker,
     Module,
     ResumableCall,
@@ -527,4 +528,62 @@ fn resumable_call_out_of_fuel_resume_on_other_store() {
     let mut other = <Store<()>>::new(&engine, ());
     other.set_fuel(1_000).unwrap();
     _ = invocation.resume(&mut other);
+}
+
+/// Asserts that a host function called indirectly is reported by its resumable host trap.
+///
+/// The table holds two host functions with distinct result types so that the test
+/// catches the wrong host function being reported: resumption requires the inputs
+/// to match the result types of the reported host function.
+///
+/// `call_op` is either `call_indirect` or `return_call_indirect`.
+fn assert_resumable_host_trap_via_indirect_call(call_op: &str) {
+    let mut config = Config::default();
+    config.wasm_tail_call(true);
+    let engine = Engine::new(&config);
+    let mut store = <Store<()>>::new(&engine, ());
+    let decoy = Func::wrap(&mut store, |_: i32| -> Result<i64, Error> {
+        panic!("called the wrong host function")
+    });
+    let host = Func::wrap(&mut store, |input: i32| -> Result<i32, Error> {
+        Err(Error::i32_exit(input))
+    });
+    let wasm = format!(
+        r#"
+        (module
+            (import "env" "decoy" (func $decoy (param i32) (result i64)))
+            (import "env" "host" (func $host (param i32) (result i32)))
+            (type $t (func (param i32) (result i32)))
+            (table 2 2 funcref)
+            (elem (i32.const 0) $decoy $host)
+            (func $call_host (param i32) (result i32)
+                ({call_op} (type $t) (local.get 0) (i32.const 1))
+            )
+            (func (export "test") (param i32) (result i32)
+                (i32.add (call $call_host (local.get 0)) (i32.const 1))
+            )
+        )
+        "#
+    );
+    let module = Module::new(&engine, wasm).unwrap();
+    let instance = Instance::new(&mut store, &module, &[decoy.into(), host.into()]).unwrap();
+    let test = instance.get_typed_func::<i32, i32>(&store, "test").unwrap();
+    let invocation = test
+        .call_resumable(&mut store, 10)
+        .unwrap_resumable_host_trap();
+    assert_eq!(invocation.host_error().i32_exit_status(), Some(10));
+    assert_eq!(invocation.host_func().ty(&store).results(), &[ValType::I32]);
+    invocation
+        .resume(&mut store, &[Val::I32(41)])
+        .assert_finished_with(|result| result == 42);
+}
+
+#[test]
+fn resumable_host_trap_via_call_indirect() {
+    assert_resumable_host_trap_via_indirect_call("call_indirect");
+}
+
+#[test]
+fn resumable_host_trap_via_return_call_indirect() {
+    assert_resumable_host_trap_via_indirect_call("return_call_indirect");
 }

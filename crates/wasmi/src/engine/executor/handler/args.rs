@@ -20,7 +20,7 @@ use crate::{
     ir::{self, BoundedSlotSpan, BranchOffset},
     store::PrunedStore,
 };
-use core::ptr::NonNull;
+use core::{num::NonZero, ptr::NonNull};
 
 /// Utility type to store the arguments of an execution handler and provide a clean API.
 #[derive(Debug, Copy, Clone)]
@@ -267,7 +267,7 @@ impl Args {
         index: Idx,
         table: Table,
         func_type: ir::FuncType,
-    ) -> Control<(Func, NonNull<FuncEntity>), Break>
+    ) -> Control<(NonZero<u32>, NonNull<FuncEntity>), Break>
     where
         Idx: GetValue<u64>,
         Inst: LoadEntity<Table, Entity = TableEntity>,

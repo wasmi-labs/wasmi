@@ -87,3 +87,60 @@ fn grow_memory(mut caller: Caller<()>) -> Result<(), Error> {
     memory.grow(&mut caller, 1)?;
     Ok(())
 }
+
+/// Asserts that `(memory 0)` is re-extracted after an indirect call to a host function.
+///
+/// `call_op` is either `call_indirect` or `return_call_indirect`.
+fn assert_host_grows_memory_via_indirect_call(call_op: &str) -> Result<(), Error> {
+    let mut config = wasmi::Config::default();
+    config.wasm_tail_call(true);
+    let engine = Engine::new(&config);
+    let mut store = Store::new(&engine, ());
+    let host_fn = Func::wrap(&mut store, grow_memory);
+    let mem = Memory::new(&mut store, MemoryType::new(1, Some(2)))?;
+    let wasm = format!(
+        r#"
+        (module
+            (import "env" "host_memory_grow" (func $host_memory_grow))
+            (import "env" "mem" (memory $m 1 2))
+            (export "mem" (memory $m))
+            (type $t (func))
+            (table 1 1 funcref)
+            (elem (i32.const 0) $host_memory_grow)
+            (func $call_host
+                ({call_op} (type $t) (i32.const 0))
+            )
+            (func (export "test") (result i32)
+                (call $call_host)
+                ;; access first byte of new page
+                ;; should work if growing was successful, otherwise will trap
+                (i32.store8 $m (i32.const 65536) (i32.const 42))
+                (i32.load8_u $m (i32.const 65536))
+            )
+        )
+        "#
+    );
+    let module = Module::new(store.engine(), wasm)?;
+    let instance = Instance::new(
+        &mut store,
+        &module,
+        &[Extern::Func(host_fn), Extern::Memory(mem)],
+    )?;
+    let result = instance
+        .get_func(&store, "test")
+        .unwrap()
+        .typed::<(), i32>(&store)?
+        .call(&mut store, ())?;
+    assert_eq!(result, 42);
+    Ok(())
+}
+
+#[test]
+fn host_grows_memory_via_call_indirect() -> Result<(), Error> {
+    assert_host_grows_memory_via_indirect_call("call_indirect")
+}
+
+#[test]
+fn host_grows_memory_via_return_call_indirect() -> Result<(), Error> {
+    assert_host_grows_memory_via_indirect_call("return_call_indirect")
+}

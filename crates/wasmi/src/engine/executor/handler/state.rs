@@ -375,6 +375,12 @@ impl From<*mut u8> for Mem0Ptr {
     }
 }
 
+impl From<Mem0Ptr> for *mut u8 {
+    fn from(value: Mem0Ptr) -> Self {
+        value.0
+    }
+}
+
 /// The length in bytes of the default Wasm linear memory at index 0.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
@@ -383,6 +389,12 @@ pub struct Mem0Len(usize);
 impl From<usize> for Mem0Len {
     fn from(value: usize) -> Self {
         Self(value)
+    }
+}
+
+impl From<Mem0Len> for usize {
+    fn from(value: Mem0Len) -> Self {
+        value.0
     }
 }
 
