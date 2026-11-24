@@ -8,6 +8,12 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## Unreleased
+
+### Internal
+
+- Added `wasmi_core::for_each_trap_code!` to generate code for all `TrapCode` variants. [#XXXX]
+
 ## `2.0.2` - 2026-11-19
 
 ### Fixes
