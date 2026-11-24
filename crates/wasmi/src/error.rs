@@ -44,7 +44,7 @@ unsafe impl Sync for Error {}
 /// Returns the unique `static` [`ErrorKind`] for `code`.
 fn static_trap_kind(code: TrapCode) -> &'static ErrorKind {
     macro_rules! static_trap_kinds {
-        ( $($name:ident),* $(,)? ) => {
+        ( $( $(#[$attr:meta])* $name:ident = $discr:literal ),* $(,)? ) => {
             match code {
                 $(
                     TrapCode::$name => {
@@ -55,20 +55,7 @@ fn static_trap_kind(code: TrapCode) -> &'static ErrorKind {
             }
         };
     }
-    static_trap_kinds!(
-        UnreachableCodeReached,
-        MemoryOutOfBounds,
-        TableOutOfBounds,
-        IndirectCallToNull,
-        IntegerDivisionByZero,
-        IntegerOverflow,
-        BadConversionToInteger,
-        StackOverflow,
-        BadSignature,
-        OutOfFuel,
-        GrowthOperationLimited,
-        OutOfSystemMemory,
-    )
+    wasmi_core::for_each_trap_code!(static_trap_kinds)
 }
 
 impl Drop for Error {
