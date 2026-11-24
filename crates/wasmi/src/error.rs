@@ -69,7 +69,7 @@ impl Drop for Error {
         if self.is_static() {
             return;
         }
-        // SAFETY: non-`static` `kind`s are owned and originate from `Box::leak`.
+        // SAFETY: non-`static` `kind`s are owned and originate from `Box::into_raw`.
         drop(unsafe { Box::from_raw(self.kind.as_ptr()) })
     }
 }
@@ -125,7 +125,8 @@ impl Error {
     fn from_kind(kind: ErrorKind) -> Self {
         let kind = match kind {
             ErrorKind::TrapCode(code) => NonNull::from(static_trap_kind(code)),
-            kind => NonNull::from(Box::leak(Box::new(kind))),
+            // SAFETY: `Box::into_raw` never returns a null pointer.
+            kind => unsafe { NonNull::new_unchecked(Box::into_raw(Box::new(kind))) },
         };
         Self { kind }
     }
@@ -143,7 +144,7 @@ impl Error {
         if self.is_static() {
             return None;
         }
-        // SAFETY: non-`static` `kind`s are owned by `self` and originate from `Box::leak`.
+        // SAFETY: non-`static` `kind`s are owned by `self` and originate from `Box::into_raw`.
         Some(unsafe { self.kind.as_mut() })
     }
 
@@ -153,7 +154,7 @@ impl Error {
             return None;
         }
         let this = ManuallyDrop::new(self);
-        // SAFETY: non-`static` `kind`s are owned by `self` and originate from `Box::leak`.
+        // SAFETY: non-`static` `kind`s are owned by `self` and originate from `Box::into_raw`.
         Some(unsafe { Box::from_raw(this.kind.as_ptr()) })
     }
 
