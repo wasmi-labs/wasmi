@@ -42,7 +42,10 @@ unsafe impl Send for Error {}
 unsafe impl Sync for Error {}
 
 // Compile-test to make sure that `ErrorKind` is `Send` + `Sync`.
-const _: () = { const fn f<T: Send + Sync>() {} f::<ErrorKind>() };
+const _: () = {
+    const fn f<T: Send + Sync>() {}
+    f::<ErrorKind>()
+};
 
 /// Returns the unique `static` [`ErrorKind`] for `code`.
 fn static_trap_kind(code: TrapCode) -> &'static ErrorKind {
