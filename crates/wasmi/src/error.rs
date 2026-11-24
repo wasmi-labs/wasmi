@@ -13,7 +13,12 @@ use crate::{
     module::ReadError,
 };
 use alloc::{boxed::Box, string::String};
-use core::{fmt, fmt::Display};
+use core::{
+    fmt,
+    fmt::{Debug, Display},
+    mem::ManuallyDrop,
+    ptr::{self, NonNull},
+};
 use wasmi_core::{FuelError, HostError, MemoryError, TableError};
 use wasmparser::BinaryReaderError as WasmError;
 
@@ -21,10 +26,65 @@ use wasmparser::BinaryReaderError as WasmError;
 use wat::Error as WatError;
 
 /// The generic Wasmi root error type.
-#[derive(Debug)]
 pub struct Error {
     /// The underlying kind of the error and its specific information.
-    kind: Box<ErrorKind>,
+    ///
+    /// # Note
+    ///
+    /// Points to the `static` of [`static_trap_kind`] for [`ErrorKind::TrapCode`]
+    /// so that traps do not allocate, and to an owned `Box<ErrorKind>` otherwise.
+    kind: NonNull<ErrorKind>,
+}
+
+// SAFETY: `Error` is either a `Box<ErrorKind>` or a `&'static ErrorKind`, both are `Send + Sync`.
+unsafe impl Send for Error {}
+// SAFETY: `Error` is either a `Box<ErrorKind>` or a `&'static ErrorKind`, both are `Send + Sync`.
+unsafe impl Sync for Error {}
+
+/// Returns the unique `static` [`ErrorKind`] for `code`.
+fn static_trap_kind(code: TrapCode) -> &'static ErrorKind {
+    macro_rules! static_trap_kinds {
+        ( $($name:ident),* $(,)? ) => {
+            match code {
+                $(
+                    TrapCode::$name => {
+                        static KIND: ErrorKind = ErrorKind::TrapCode(TrapCode::$name);
+                        &KIND
+                    }
+                )*
+            }
+        };
+    }
+    static_trap_kinds!(
+        UnreachableCodeReached,
+        MemoryOutOfBounds,
+        TableOutOfBounds,
+        IndirectCallToNull,
+        IntegerDivisionByZero,
+        IntegerOverflow,
+        BadConversionToInteger,
+        StackOverflow,
+        BadSignature,
+        OutOfFuel,
+        GrowthOperationLimited,
+        OutOfSystemMemory,
+    )
+}
+
+impl Drop for Error {
+    fn drop(&mut self) {
+        if self.is_static() {
+            return;
+        }
+        // SAFETY: non-`static` `kind`s are owned and originate from `Box::leak`.
+        drop(unsafe { Box::from_raw(self.kind.as_ptr()) })
+    }
+}
+
+impl Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Error").field("kind", self.kind()).finish()
+    }
 }
 
 #[test]
@@ -33,12 +93,75 @@ fn error_size() {
     assert_eq!(mem::size_of::<Error>(), 8);
 }
 
+#[test]
+fn trap_code_errors_do_not_allocate() {
+    for code in (0..=u8::MAX).filter_map(|code| TrapCode::try_from(code).ok()) {
+        let mut error = Error::from(code);
+        assert!(ptr::eq(error.kind(), Error::from(code).kind()));
+        assert_eq!(error.as_trap_code(), Some(code));
+        assert!(error.downcast_mut::<HostErrorStub>().is_none());
+        assert!(error.downcast::<HostErrorStub>().is_none());
+    }
+}
+
+#[test]
+fn host_errors_downcast() {
+    let mut error = Error::host(HostErrorStub(42));
+    assert_eq!(error.downcast_ref::<HostErrorStub>().map(|e| e.0), Some(42));
+    error.downcast_mut::<HostErrorStub>().unwrap().0 = 7;
+    assert_eq!(error.downcast::<HostErrorStub>().map(|e| e.0), Some(7));
+    drop(Error::host(HostErrorStub(42)));
+}
+
+#[cfg(test)]
+#[derive(Debug)]
+struct HostErrorStub(i32);
+
+#[cfg(test)]
+impl HostError for HostErrorStub {}
+
+#[cfg(test)]
+impl Display for HostErrorStub {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "HostErrorStub({})", self.0)
+    }
+}
+
 impl Error {
     /// Creates a new [`Error`] from the [`ErrorKind`].
     fn from_kind(kind: ErrorKind) -> Self {
-        Self {
-            kind: Box::new(kind),
+        let kind = match kind {
+            ErrorKind::TrapCode(code) => NonNull::from(static_trap_kind(code)),
+            kind => NonNull::from(Box::leak(Box::new(kind))),
+        };
+        Self { kind }
+    }
+
+    /// Returns `true` if `self.kind` points to a `static` of [`static_trap_kind`].
+    fn is_static(&self) -> bool {
+        match self.kind() {
+            ErrorKind::TrapCode(code) => ptr::eq(self.kind(), static_trap_kind(*code)),
+            _ => false,
         }
+    }
+
+    /// Returns an exclusive reference to the owned [`ErrorKind`] if `self` is not `static`.
+    fn kind_mut(&mut self) -> Option<&mut ErrorKind> {
+        if self.is_static() {
+            return None;
+        }
+        // SAFETY: non-`static` `kind`s are owned by `self` and originate from `Box::leak`.
+        Some(unsafe { self.kind.as_mut() })
+    }
+
+    /// Returns the owned [`ErrorKind`] if `self` is not `static`.
+    fn into_boxed(self) -> Option<Box<ErrorKind>> {
+        if self.is_static() {
+            return None;
+        }
+        let this = ManuallyDrop::new(self);
+        // SAFETY: non-`static` `kind`s are owned by `self` and originate from `Box::leak`.
+        Some(unsafe { Box::from_raw(this.kind.as_ptr()) })
     }
 
     /// Creates a new [`Error`] described by a `message`.
@@ -74,7 +197,8 @@ impl Error {
 
     /// Returns the [`ErrorKind`] of the [`Error`].
     pub fn kind(&self) -> &ErrorKind {
-        &self.kind
+        // SAFETY: `kind` either is a `&'static ErrorKind` or is owned by `self`.
+        unsafe { self.kind.as_ref() }
     }
 
     /// Returns a reference to [`TrapCode`] if [`Error`] is a [`TrapCode`].
@@ -97,7 +221,7 @@ impl Error {
     where
         T: HostError,
     {
-        self.kind
+        self.kind()
             .as_host()
             .and_then(<dyn HostError + 'static>::downcast_ref)
     }
@@ -110,7 +234,7 @@ impl Error {
     where
         T: HostError,
     {
-        self.kind
+        self.kind_mut()?
             .as_host_mut()
             .and_then(<dyn HostError + 'static>::downcast_mut)
     }
@@ -123,7 +247,7 @@ impl Error {
     where
         T: HostError,
     {
-        self.kind
+        self.into_boxed()?
             .into_host()
             .and_then(|error| error.downcast().ok())
             .map(|boxed| *boxed)
@@ -147,7 +271,7 @@ impl core::error::Error for Error {}
 
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.kind, f)
+        Display::fmt(self.kind(), f)
     }
 }
 
