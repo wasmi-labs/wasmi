@@ -105,64 +105,36 @@ impl ExecutionOutcome {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub enum Break {
-    UnreachableCodeReached = TrapCode::UnreachableCodeReached as _,
-    MemoryOutOfBounds = TrapCode::MemoryOutOfBounds as _,
-    TableOutOfBounds = TrapCode::TableOutOfBounds as _,
-    IndirectCallToNull = TrapCode::IndirectCallToNull as _,
-    IntegerDivisionByZero = TrapCode::IntegerDivisionByZero as _,
-    IntegerOverflow = TrapCode::IntegerOverflow as _,
-    BadConversionToInteger = TrapCode::BadConversionToInteger as _,
-    StackOverflow = TrapCode::StackOverflow as _,
-    BadSignature = TrapCode::BadSignature as _,
-    OutOfFuel = TrapCode::OutOfFuel as _,
-    GrowthOperationLimited = TrapCode::GrowthOperationLimited as _,
-    OutOfSystemMemory = TrapCode::OutOfSystemMemory as _,
-    /// Signals that there must be a reason stored externally supplying the caller with more information.
-    WithReason,
-}
-
-impl From<TrapCode> for Break {
-    #[inline]
-    fn from(trap_code: TrapCode) -> Self {
-        match trap_code {
-            TrapCode::UnreachableCodeReached => Self::UnreachableCodeReached,
-            TrapCode::MemoryOutOfBounds => Self::MemoryOutOfBounds,
-            TrapCode::TableOutOfBounds => Self::TableOutOfBounds,
-            TrapCode::IndirectCallToNull => Self::IndirectCallToNull,
-            TrapCode::IntegerDivisionByZero => Self::IntegerDivisionByZero,
-            TrapCode::IntegerOverflow => Self::IntegerOverflow,
-            TrapCode::BadConversionToInteger => Self::BadConversionToInteger,
-            TrapCode::StackOverflow => Self::StackOverflow,
-            TrapCode::BadSignature => Self::BadSignature,
-            TrapCode::OutOfFuel => Self::OutOfFuel,
-            TrapCode::GrowthOperationLimited => Self::GrowthOperationLimited,
-            TrapCode::OutOfSystemMemory => Self::OutOfSystemMemory,
+macro_rules! define_break {
+    ( $( $(#[$attr:meta])* $name:ident = $discr:literal ),* $(,)? ) => {
+        #[derive(Debug, Copy, Clone)]
+        pub enum Break {
+            $( $name = TrapCode::$name as _, )*
+            /// Signals that there must be a reason stored externally supplying the caller with more information.
+            WithReason,
         }
-    }
-}
 
-impl Break {
-    #[inline]
-    pub fn trap_code(self) -> Option<TrapCode> {
-        let trap_code = match self {
-            Self::UnreachableCodeReached => TrapCode::UnreachableCodeReached,
-            Self::MemoryOutOfBounds => TrapCode::MemoryOutOfBounds,
-            Self::TableOutOfBounds => TrapCode::TableOutOfBounds,
-            Self::IndirectCallToNull => TrapCode::IndirectCallToNull,
-            Self::IntegerDivisionByZero => TrapCode::IntegerDivisionByZero,
-            Self::IntegerOverflow => TrapCode::IntegerOverflow,
-            Self::BadConversionToInteger => TrapCode::BadConversionToInteger,
-            Self::StackOverflow => TrapCode::StackOverflow,
-            Self::BadSignature => TrapCode::BadSignature,
-            Self::OutOfFuel => TrapCode::OutOfFuel,
-            Self::GrowthOperationLimited => TrapCode::GrowthOperationLimited,
-            Self::OutOfSystemMemory => TrapCode::OutOfSystemMemory,
-            _ => return None,
-        };
-        Some(trap_code)
-    }
+        impl From<TrapCode> for Break {
+            #[inline]
+            fn from(trap_code: TrapCode) -> Self {
+                match trap_code {
+                    $( TrapCode::$name => Self::$name, )*
+                }
+            }
+        }
+
+        impl Break {
+            #[inline]
+            pub fn trap_code(self) -> Option<TrapCode> {
+                let trap_code = match self {
+                    $( Self::$name => TrapCode::$name, )*
+                    Self::WithReason => return None,
+                };
+                Some(trap_code)
+            }
+        }
+    };
 }
+wasmi_core::for_each_trap_code!(define_break);
 
 pub type Control<C = (), B = Break> = ControlFlow<B, C>;
