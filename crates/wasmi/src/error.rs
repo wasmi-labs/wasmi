@@ -135,10 +135,11 @@ impl Error {
 
     /// Returns `true` if `self.kind` points to a `static` of [`static_trap_kind`].
     fn is_static(&self) -> bool {
-        match self.kind() {
-            ErrorKind::TrapCode(code) => ptr::eq(self.kind(), static_trap_kind(*code)),
-            _ => false,
-        }
+        let ErrorKind::TrapCode(code) = self.kind() else {
+            return false;
+        };
+        debug_assert!(ptr::eq(self.kind(), static_trap_kind(*code)));
+        true
     }
 
     /// Returns an exclusive reference to the owned [`ErrorKind`] if `self` is not `static`.
