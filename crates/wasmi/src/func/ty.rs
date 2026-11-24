@@ -54,6 +54,21 @@ impl FuncType {
         self.core.results()
     }
 
+    /// Returns `true` when the [`FuncType`] is a subtype of the `other` [`FuncType`].
+    ///
+    /// # Note
+    ///
+    /// Currently, `.matches` and `==` give the same result because [`ValType`] has no subtyping yet.
+    /// That may change with `function-references`.
+    ///
+    /// The parameter types are checked in the opposite direction
+    /// (contravariantly), while the result types are checked in the same
+    /// direction (covariantly), following the
+    /// WebAssembly [subtyping rules](https://webassembly.github.io/spec/core/valid/types.html#import-subtyping).
+    pub fn matches(&self, other: &Self) -> bool {
+        self.core.matches(&other.core)
+    }
+
     /// Returns the number of parameter types of the function type.
     pub(crate) fn len_params(&self) -> u16 {
         self.core.len_params()
@@ -134,5 +149,25 @@ impl FuncType {
             *output = Val::default_for_ty(*result_ty);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn matches_works() {
+        // Two void FuncType instances should match
+        let self_ft = FuncType::new([], []);
+        let other_ft = FuncType::new([], []);
+        assert!(self_ft.matches(&other_ft));
+        assert!(other_ft.matches(&self_ft));
+
+        // Two different FuncType instances should not match
+        let self_ft = FuncType::new([ValType::I32, ValType::F32], []);
+        let other_ft = FuncType::new([ValType::F32], [ValType::F32]);
+        assert!(!self_ft.matches(&other_ft));
+        assert!(!other_ft.matches(&self_ft));
     }
 }
