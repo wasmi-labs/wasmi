@@ -122,6 +122,8 @@ impl Display for HostErrorStub {
 
 impl Error {
     /// Creates a new [`Error`] from the [`ErrorKind`].
+    ///
+    /// [`Error::from_kind`] never boxes an [`ErrorKind::TrapCode`].
     fn from_kind(kind: ErrorKind) -> Self {
         let kind = match kind {
             ErrorKind::TrapCode(code) => NonNull::from(static_trap_kind(code)),
