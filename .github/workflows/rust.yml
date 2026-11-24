@@ -191,6 +191,10 @@ jobs:
         env:
           RUSTFLAGS: "-C debug-assertions"
         run: cargo test --workspace --locked --all-features
+      - name: Test (simd without memory64)
+        env:
+          RUSTFLAGS: "-C debug-assertions"
+        run: cargo test --package wasmi --locked --no-default-features --features stable,std,wat,validate,simd,auto-dispatch
       - name: Build (benches)
         env:
           RUSTFLAGS: "-C debug-assertions"
