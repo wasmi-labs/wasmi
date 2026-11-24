@@ -12,7 +12,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
-- Traps no longer allocate: an `Error` carrying only a `TrapCode` now points to a `static` `ErrorKind`. [#XXXX]
+- `TrapCode` errors no longer allocate. [#2125]
+  - An `Error` carrying only a `TrapCode` now points to a `static` `ErrorKind`.
   - Thanks to [moroznah](https://github.com/moroznah) for filing this feature request in [#2069]!
 
 ### Internal
@@ -21,6 +22,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 [#2069]: https://github.com/wasmi-labs/wasmi/issues/2069
 [#2124]: https://github.com/wasmi-labs/wasmi/pull/2124
+[#2125]: https://github.com/wasmi-labs/wasmi/pull/2125
 
 ## `2.0.2` - 2026-11-19
 
