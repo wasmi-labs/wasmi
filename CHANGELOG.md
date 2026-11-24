@@ -12,7 +12,9 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Internal
 
-- Added `wasmi_core::for_each_trap_code!` to generate code for all `TrapCode` variants. [#XXXX]
+- Added `wasmi_core::for_each_trap_code!` to generate code for all `TrapCode` variants. [#2124]
+
+[#2124]: https://github.com/wasmi-labs/wasmi/pull/2124
 
 ## `2.0.2` - 2026-11-19
 
