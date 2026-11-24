@@ -41,6 +41,9 @@ unsafe impl Send for Error {}
 // SAFETY: `Error` is either a `Box<ErrorKind>` or a `&'static ErrorKind`, both are `Send + Sync`.
 unsafe impl Sync for Error {}
 
+// Compile-test to make sure that `ErrorKind` is `Send` + `Sync`.
+const _: () = { const fn f<T: Send + Sync>() {} f::<ErrorKind>() };
+
 /// Returns the unique `static` [`ErrorKind`] for `code`.
 fn static_trap_kind(code: TrapCode) -> &'static ErrorKind {
     macro_rules! static_trap_kinds {
