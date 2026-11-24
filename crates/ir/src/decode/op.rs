@@ -269,7 +269,7 @@ impl<Ptr: Decode, Val: Decode> Decode for StoreOpMem0Offset16<Ptr, Val> {
 #[cfg(feature = "simd")]
 pub struct StoreLaneOp<Ptr, Val, LaneIdx> {
     pub ptr: Ptr,
-    pub offset: u64,
+    pub offset: Offset,
     pub value: Val,
     pub memory: MemoryAddr,
     pub lane: LaneIdx,

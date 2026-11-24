@@ -15,3 +15,5 @@ mod reextract_memory;
 mod resource_limiter;
 mod resumable_call;
 mod static_memory;
+#[cfg(feature = "simd")]
+mod v128_store_lane;

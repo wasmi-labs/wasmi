@@ -10,6 +10,11 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ## Unreleased
 
+### Fixes
+
+- Fix memory-unsafe execution of `v128.store8_lane` and `v128.store16_lane` when `simd` is enabled without `memory64`. [#2126]
+  - Thanks to [neit-16](https://github.com/neit-16) for reporting the bug and proposing a fix!
+
 ### Changed
 
 - `TrapCode` errors no longer allocate. [#2125]
@@ -23,6 +28,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#2069]: https://github.com/wasmi-labs/wasmi/issues/2069
 [#2124]: https://github.com/wasmi-labs/wasmi/pull/2124
 [#2125]: https://github.com/wasmi-labs/wasmi/pull/2125
+[#2126]: https://github.com/wasmi-labs/wasmi/pull/2126
 
 ## `2.0.2` - 2026-11-19
 
