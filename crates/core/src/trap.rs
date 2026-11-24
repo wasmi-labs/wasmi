@@ -262,89 +262,98 @@ macro_rules! generate_trap_code {
         }
     };
 }
-generate_trap_code! {
-    // Note: we deliberately do _not_ assign the zero value so that it can be used as success state
-    //       in `Result<(), TrapCode>` or `Control<(), TrapCode>` as the compiler can then generate
-    //       slightly better code.
+/// Calls `$mac!` with all [`TrapCode`] variants.
+///
+/// Variants are passed as `$( $(#[$attr:meta])* $name:ident = $discr:literal ),*`.
+#[macro_export]
+macro_rules! for_each_trap_code {
+    ($mac:ident) => {
+        $mac! {
+            // Note: we deliberately do _not_ assign the zero value so that it can be used as success state
+            //       in `Result<(), TrapCode>` or `Control<(), TrapCode>` as the compiler can then generate
+            //       slightly better code.
 
-    /// Wasm code executed `unreachable` opcode.
-    ///
-    /// This indicates that unreachable Wasm code was actually reached.
-    /// This opcode have a similar purpose as `ud2` in x86.
-    UnreachableCodeReached = 1,
+            /// Wasm code executed `unreachable` opcode.
+            ///
+            /// This indicates that unreachable Wasm code was actually reached.
+            /// This opcode have a similar purpose as `ud2` in x86.
+            UnreachableCodeReached = 1,
 
-    /// Attempt to load or store at the address which
-    /// lies outside of bounds of the memory.
-    ///
-    /// Since addresses are interpreted as unsigned integers, out of bounds access
-    /// can't happen with negative addresses (i.e. they will always wrap).
-    MemoryOutOfBounds = 2,
+            /// Attempt to load or store at the address which
+            /// lies outside of bounds of the memory.
+            ///
+            /// Since addresses are interpreted as unsigned integers, out of bounds access
+            /// can't happen with negative addresses (i.e. they will always wrap).
+            MemoryOutOfBounds = 2,
 
-    /// Attempt to access table element at index which
-    /// lies outside of bounds.
-    ///
-    /// This typically can happen when `call_indirect` is executed
-    /// with index that lies out of bounds.
-    ///
-    /// Since indexes are interpreted as unsigned integers, out of bounds access
-    /// can't happen with negative indexes (i.e. they will always wrap).
-    TableOutOfBounds = 3,
+            /// Attempt to access table element at index which
+            /// lies outside of bounds.
+            ///
+            /// This typically can happen when `call_indirect` is executed
+            /// with index that lies out of bounds.
+            ///
+            /// Since indexes are interpreted as unsigned integers, out of bounds access
+            /// can't happen with negative indexes (i.e. they will always wrap).
+            TableOutOfBounds = 3,
 
-    /// Indicates that a `call_indirect` instruction called a function at
-    /// an uninitialized (i.e. `null`) table index.
-    IndirectCallToNull = 4,
+            /// Indicates that a `call_indirect` instruction called a function at
+            /// an uninitialized (i.e. `null`) table index.
+            IndirectCallToNull = 4,
 
-    /// Attempt to divide by zero.
-    ///
-    /// This trap typically can happen if `div` or `rem` is executed with
-    /// zero as divider.
-    IntegerDivisionByZero = 5,
+            /// Attempt to divide by zero.
+            ///
+            /// This trap typically can happen if `div` or `rem` is executed with
+            /// zero as divider.
+            IntegerDivisionByZero = 5,
 
-    /// An integer arithmetic operation caused an overflow.
-    ///
-    /// This can happen when trying to do signed division (or get the remainder)
-    /// -2<sup>N-1</sup> over -1. This is because the result +2<sup>N-1</sup>
-    /// isn't representable as a N-bit signed integer.
-    IntegerOverflow = 6,
+            /// An integer arithmetic operation caused an overflow.
+            ///
+            /// This can happen when trying to do signed division (or get the remainder)
+            /// -2<sup>N-1</sup> over -1. This is because the result +2<sup>N-1</sup>
+            /// isn't representable as a N-bit signed integer.
+            IntegerOverflow = 6,
 
-    /// Attempted to make an invalid conversion to an integer type.
-    ///
-    /// This can for example happen when trying to truncate NaNs,
-    /// infinity, or value for which the result is out of range into an integer.
-    BadConversionToInteger = 7,
+            /// Attempted to make an invalid conversion to an integer type.
+            ///
+            /// This can for example happen when trying to truncate NaNs,
+            /// infinity, or value for which the result is out of range into an integer.
+            BadConversionToInteger = 7,
 
-    /// Stack overflow.
-    ///
-    /// This is likely caused by some infinite or very deep recursion.
-    /// Extensive inlining might also be the cause of stack overflow.
-    StackOverflow = 8,
+            /// Stack overflow.
+            ///
+            /// This is likely caused by some infinite or very deep recursion.
+            /// Extensive inlining might also be the cause of stack overflow.
+            StackOverflow = 8,
 
-    /// Attempt to invoke a function with mismatching signature.
-    ///
-    /// This can happen with indirect calls as they always
-    /// specify the expected signature of function. If an indirect call is executed
-    /// with an index that points to a function with signature different of what is
-    /// expected by this indirect call, this trap is raised.
-    BadSignature = 9,
+            /// Attempt to invoke a function with mismatching signature.
+            ///
+            /// This can happen with indirect calls as they always
+            /// specify the expected signature of function. If an indirect call is executed
+            /// with an index that points to a function with signature different of what is
+            /// expected by this indirect call, this trap is raised.
+            BadSignature = 9,
 
-    /// This trap is raised when a WebAssembly execution ran out of fuel.
-    ///
-    /// The Wasmi execution engine can be configured to instrument its
-    /// internal bytecode so that fuel is consumed for each executed instruction.
-    /// This is useful to deterministically halt or yield a WebAssembly execution.
-    OutOfFuel = 10,
+            /// This trap is raised when a WebAssembly execution ran out of fuel.
+            ///
+            /// The Wasmi execution engine can be configured to instrument its
+            /// internal bytecode so that fuel is consumed for each executed instruction.
+            /// This is useful to deterministically halt or yield a WebAssembly execution.
+            OutOfFuel = 10,
 
-    /// This trap is raised when a growth operation was attempted and an
-    /// installed `wasmi::ResourceLimiter` returned `Err(...)` from the
-    /// associated `table_growing` or `memory_growing` method, indicating a
-    /// desire on the part of the embedder to trap the interpreter rather than
-    /// merely fail the growth operation.
-    GrowthOperationLimited = 11,
+            /// This trap is raised when a growth operation was attempted and an
+            /// installed `wasmi::ResourceLimiter` returned `Err(...)` from the
+            /// associated `table_growing` or `memory_growing` method, indicating a
+            /// desire on the part of the embedder to trap the interpreter rather than
+            /// merely fail the growth operation.
+            GrowthOperationLimited = 11,
 
-    /// This trap is raised when a WebAssembly operation demanded a memory
-    /// allocation and the host system could not supply the requested amount.
-    OutOfSystemMemory = 12,
+            /// This trap is raised when a WebAssembly operation demanded a memory
+            /// allocation and the host system could not supply the requested amount.
+            OutOfSystemMemory = 12,
+        }
+    };
 }
+for_each_trap_code!(generate_trap_code);
 
 impl TrapCode {
     /// Returns the trap message as specified by the WebAssembly specification.
