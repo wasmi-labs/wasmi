@@ -11,7 +11,6 @@ use crate::{
     Global,
     Handle,
     Memory,
-    Nullable,
     RefType,
     Table,
     TrapCode,
@@ -27,7 +26,7 @@ use crate::{
         },
         utils::unreachable_unchecked,
     },
-    func::{FuncEntity, HostFuncEntity, Trampoline},
+    func::{FuncEntity, HostFuncEntity, Trampoline, WasmFuncEntity},
     instance::{DataAddr, ElemAddr, FuncAddr, GlobalAddr, HandleAndEntity, MemoryAddr, TableAddr},
     ir::{
         self,
@@ -797,7 +796,7 @@ pub fn resolve_indirect_func<Idx, Table>(
     func_type: ir::FuncType,
     store: &mut PrunedStore,
     args: &mut Args,
-) -> Result<(Func, NonNull<FuncEntity>), TrapCode>
+) -> Result<(NonZero<u32>, NonNull<FuncEntity>), TrapCode>
 where
     Idx: GetValue<u64>,
     Inst: LoadEntity<Table, Entity = TableEntity>,
@@ -806,9 +805,10 @@ where
     let table = args.fetch_table(store, table);
     let rawref = table.get(index).ok_or(TrapCode::TableOutOfBounds)?;
     debug_assert!(matches!(rawref.ty(), RefType::Func));
-    let funcref = <Nullable<Func>>::from_raw_parts(rawref.raw(), &*store);
-    let func = funcref.val().ok_or(TrapCode::IndirectCallToNull)?;
-    let func_entity = store.inner_mut().resolve_func_ptr(func);
+    let raw_func =
+        <NonZero<u32>>::new(u32::from(rawref.raw())).ok_or(TrapCode::IndirectCallToNull)?;
+    let func = Func::from_raw_parts(raw_func, &*store);
+    let func_entity = store.inner_mut().resolve_func_ptr(&func);
     // SAFETY: freshly resolved from the store; only read here for the signature check.
     let actual_fnty = unsafe { func_entity.as_ref() }.ty_dedup().repr_entity();
     // Note: `func_type` already stores the resolved deduplicated function type, thus the
@@ -817,7 +817,44 @@ where
     if actual_fnty != u32::from(func_type) {
         return Err(TrapCode::BadSignature);
     }
-    Ok((*func, func_entity))
+    Ok((raw_func, func_entity))
+}
+
+/// Encodes the host function callee of an indirect call as `(memory 0)` handler arguments.
+///
+/// # Note
+///
+/// The `call_indirect` handlers inline the Wasm callee path and tail-call a dedicated
+/// `*_host` handler for host function callees. The `*_host` handlers reload `(memory 0)`
+/// after the host call, so their `mem0` and `mem0_len` arguments are free to carry the
+/// already resolved callee. This way they don't decode the table entry, resolve the
+/// callee and check its signature a second time.
+#[inline(always)]
+pub fn encode_host_callee(
+    raw_func: NonZero<u32>,
+    func_entity: NonNull<FuncEntity>,
+) -> (Mem0Ptr, Mem0Len) {
+    let mem0 = Mem0Ptr::from(func_entity.as_ptr().cast::<u8>());
+    let mem0_len = Mem0Len::from(raw_func.get() as usize);
+    (mem0, mem0_len)
+}
+
+/// Decodes the host function callee encoded by [`encode_host_callee`].
+///
+/// # Safety
+///
+/// `mem0` and `mem0_len` must have been returned by [`encode_host_callee`].
+#[inline(always)]
+pub unsafe fn decode_host_callee(
+    store: &PrunedStore,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+) -> (Func, NonNull<FuncEntity>) {
+    // SAFETY: `encode_host_callee` encoded a non-null `FuncEntity` pointer
+    //         and a non-zero `u32`, so both conversions round-trip.
+    let func_entity = unsafe { NonNull::new_unchecked(<*mut u8>::from(mem0).cast::<FuncEntity>()) };
+    let raw_func = unsafe { NonZero::new_unchecked(usize::from(mem0_len) as u32) };
+    (Func::from_raw_parts(raw_func, store), func_entity)
 }
 
 pub fn update_instance(
@@ -1001,6 +1038,23 @@ pub fn call_wasm_or_host(
             return Control::Continue((caller_ip, sp, mem0, mem0_len, instance));
         }
     };
+    call_wasm(
+        store, caller_ip, caller_sp, wasm_func, params, mem0, mem0_len, instance,
+    )
+}
+
+#[inline(always)]
+#[expect(clippy::too_many_arguments)]
+pub fn call_wasm(
+    store: &mut PrunedStore,
+    caller_ip: Ip,
+    caller_sp: Sp,
+    wasm_func: &WasmFuncEntity,
+    params: BoundedSlotSpan,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
     // Hot path: calling a Wasm function. Uses the cached `FuncEntry` and the same inlined
     // machinery as `call_internal`, differing only in the possible instance switch.
     let callee_instance: Inst = wasm_func.instance();
@@ -1043,6 +1097,21 @@ pub fn return_call_wasm_or_host(
             return Control::Continue((callee_ip, sp, mem0, mem0_len, new_instance));
         }
     };
+    return_call_wasm(
+        store, caller_sp, wasm_func, params, mem0, mem0_len, instance,
+    )
+}
+
+#[inline(always)]
+pub fn return_call_wasm(
+    store: &mut PrunedStore,
+    caller_sp: Sp,
+    wasm_func: &WasmFuncEntity,
+    params: BoundedSlotSpan,
+    mem0: Mem0Ptr,
+    mem0_len: Mem0Len,
+    instance: Inst,
+) -> Control<(Ip, Sp, Mem0Ptr, Mem0Len, Inst), Break> {
     // Hot path: tail-calling a Wasm function. See `call_wasm_or_host` for the shape.
     let callee_instance: Inst = wasm_func.instance();
     let (callee_ip, callee_sp) = return_call_func_entry(

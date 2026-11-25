@@ -1536,6 +1536,15 @@ fn bench_execute_host_calls(c: &mut Criterion) {
     for n in [0, 1, 8, 16] {
         bench_with(&mut g, &mut store, &instance, n);
     }
+    drop(g);
+
+    let mut g = c.benchmark_group("execute/call/indirect-host");
+    let wasm = include_bytes!("wat/indirect_host_calls.wat");
+    let module = Module::new(&engine, wasm).unwrap();
+    let instance = linker.instantiate_and_start(&mut store, &module).unwrap();
+    for n in [0, 1, 8, 16] {
+        bench_with(&mut g, &mut store, &instance, n);
+    }
 }
 
 fn bench_execute_imported_calls(c: &mut Criterion) {
