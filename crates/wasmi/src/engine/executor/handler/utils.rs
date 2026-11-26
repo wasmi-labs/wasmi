@@ -208,6 +208,20 @@ macro_rules! impl_get_value_for_ireg {
 }
 impl_get_value_for_ireg!(bool, i8, i16, i32, i64, u8, u16, u32, u64, ShiftAmount);
 
+macro_rules! impl_get_value_for_zero {
+    ( $($prim:ty),* $(,)? ) => {
+        $(
+            impl GetValue<$prim> for ir::Zero {
+                #[inline]
+                fn get_value(_src: Self, _sp: Sp, _ireg: Ireg, _freg32: Freg32, _freg64: Freg64) -> $prim {
+                    0
+                }
+            }
+        )*
+    };
+}
+impl_get_value_for_zero!(i8, i16, i32, i64, u8, u16, u32, u64);
+
 impl From<Ireg> for ShiftAmount {
     #[inline]
     fn from(value: Ireg) -> Self {
