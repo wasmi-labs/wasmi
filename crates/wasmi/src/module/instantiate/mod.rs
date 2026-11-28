@@ -410,7 +410,7 @@ impl Module {
         for segment in &self.module_header().element_segments[..] {
             let ctx = InstanceBuilderContext::new(&context.as_context().store.inner, builder);
             let items: Box<[RawRef]> = match segment.kind() {
-                ElementSegmentKind::Passive | ElementSegmentKind::Active(_) => segment
+                ElementSegmentKind::Passive => segment
                     .items()
                     .iter()
                     .map(|const_expr| {
@@ -424,7 +424,9 @@ impl Module {
                             })
                     })
                     .collect(),
-                ElementSegmentKind::Declared => Box::from([]),
+                // Note: active segments are evaluated, applied and dropped by
+                //       `initialize_table_elements` after checking that they fit.
+                ElementSegmentKind::Active(_) | ElementSegmentKind::Declared => Box::from([]),
             };
             let element = ElementSegment::new(context.as_context_mut(), segment.ty(), items);
             builder.push_element_segment(element);
