@@ -408,22 +408,10 @@ impl Module {
         builder: &mut InstanceEntityBuilder,
     ) {
         for segment in &self.module_header().element_segments[..] {
-            let ctx = InstanceBuilderContext::new(&context.as_context().store.inner, builder);
             let items: Box<[RawRef]> = match segment.kind() {
-                ElementSegmentKind::Passive => segment
-                    .items()
-                    .iter()
-                    .map(|const_expr| {
-                        const_expr
-                            .eval(&ctx)
-                            .and_then(|val| val.unwrap_raw_ref(context.as_context()))
-                            .unwrap_or_else(|| {
-                                panic!(
-                                    "failed initialization of constant expression: {const_expr:?}"
-                                )
-                            })
-                    })
-                    .collect(),
+                ElementSegmentKind::Passive => {
+                    Self::eval_element_items(context.as_context(), builder, segment.items())
+                }
                 // Note: active segments are evaluated, applied and dropped by
                 //       `initialize_table_elements` after checking that they fit.
                 ElementSegmentKind::Active(_) | ElementSegmentKind::Declared => Box::from([]),
@@ -431,6 +419,26 @@ impl Module {
             let element = ElementSegment::new(context.as_context_mut(), segment.ty(), items);
             builder.push_element_segment(element);
         }
+    }
+
+    /// Evaluates the element segment `items` to their [`RawRef`] values.
+    fn eval_element_items(
+        context: impl AsContext,
+        builder: &InstanceEntityBuilder,
+        items: &[ConstExpr],
+    ) -> Box<[RawRef]> {
+        let ctx = InstanceBuilderContext::new(&context.as_context().store.inner, builder);
+        items
+            .iter()
+            .map(|const_expr| {
+                const_expr
+                    .eval(&ctx)
+                    .and_then(|val| val.unwrap_raw_ref(context.as_context()))
+                    .unwrap_or_else(|| {
+                        panic!("failed initialization of constant expression: {const_expr:?}")
+                    })
+            })
+            .collect()
     }
 
     /// Initializes the [`Instance`] tables with the Wasm element segments of the [`Module`].
@@ -462,15 +470,8 @@ impl Module {
                         table_index: dst_index,
                         len: len_items,
                     })?;
-                let ctx = InstanceBuilderContext::new(&context.as_context().store.inner, builder);
-                let items = segment.items().iter().map(|const_expr| {
-                    const_expr
-                        .eval(&ctx)
-                        .and_then(|val| val.unwrap_raw_ref(context.as_context()))
-                        .unwrap_or_else(|| {
-                            panic!("failed initialization of constant expression: {const_expr:?}")
-                        })
-                });
+                let items =
+                    Self::eval_element_items(context.as_context(), builder, segment.items());
                 let elem = CoreElementSegment::new(segment.ty(), items);
                 let table = context
                     .as_context_mut()
