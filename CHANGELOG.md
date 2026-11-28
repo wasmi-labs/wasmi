@@ -8,6 +8,15 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## Unreleased
+
+### Changed
+
+- Instantiation now checks that an active element segment fits its table before evaluating its items. [#2129]
+  - Thanks to [SRLabs](https://srlabs.de/) for reporting the issue!
+
+[#2129]: https://github.com/wasmi-labs/wasmi/pull/2129
+
 ## `2.0.3` - 2026-11-24
 
 ### Fixes
