@@ -571,26 +571,6 @@ impl StoreInner {
         Self::resolve_mut(*idx, &mut self.tables)
     }
 
-    /// Returns an exclusive reference to the [`CoreTable`] and [`CoreElementSegment`] associated to `table` and `elem`.
-    ///
-    /// # Errors
-    ///
-    /// - If the [`Table`] does not originate from this [`StoreInner`].
-    /// - If the [`Table`] cannot be resolved to its entity.
-    /// - If the [`ElementSegment`] does not originate from this [`StoreInner`].
-    /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub fn try_resolve_table_and_element_mut(
-        &mut self,
-        table: &Table,
-        elem: &ElementSegment,
-    ) -> Result<(&mut CoreTable, &mut CoreElementSegment), InternalStoreError> {
-        let table_idx = self.unwrap_stored(table.as_raw())?;
-        let elem_idx = self.unwrap_stored(elem.as_raw())?;
-        let table = Self::resolve_mut(*table_idx, &mut self.tables)?;
-        let elem = Self::resolve_mut(*elem_idx, &mut self.elems)?;
-        Ok((table, elem))
-    }
-
     /// Returns both
     ///
     /// - an exclusive reference to the [`CoreTable`] associated to the given [`Table`]
@@ -840,11 +820,6 @@ impl StoreInner {
         pub fn resolve_func_ptr(&mut Self, func: &Func) -> NonNull<FuncEntity> = Self::try_resolve_func_ptr;
         pub fn resolve_element_ptr(&mut Self, elem: &ElementSegment) -> NonNull<CoreElementSegment> = Self::try_resolve_element_ptr;
         pub fn resolve_data_ptr(&mut Self, data: &DataSegment) -> NonNull<DataSegmentEntity> = Self::try_resolve_data_ptr;
-
-        pub fn resolve_table_and_element_mut(
-            &mut Self,
-            table: &Table, elem: &ElementSegment,
-        ) -> (&mut CoreTable, &mut CoreElementSegment) = Self::try_resolve_table_and_element_mut;
 
         pub fn resolve_table_pair_and_fuel(
             &mut Self,
