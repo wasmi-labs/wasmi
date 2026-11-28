@@ -20,7 +20,7 @@ use crate::{
     Ref,
     Table,
     Val,
-    core::RawRef,
+    core::{CoreElementSegment, RawRef},
     engine::Inst,
     error::ErrorKind,
     errors::MemoryError,
@@ -408,27 +408,37 @@ impl Module {
         builder: &mut InstanceEntityBuilder,
     ) {
         for segment in &self.module_header().element_segments[..] {
-            let ctx = InstanceBuilderContext::new(&context.as_context().store.inner, builder);
             let items: Box<[RawRef]> = match segment.kind() {
-                ElementSegmentKind::Passive | ElementSegmentKind::Active(_) => segment
-                    .items()
-                    .iter()
-                    .map(|const_expr| {
-                        const_expr
-                            .eval(&ctx)
-                            .and_then(|val| val.unwrap_raw_ref(context.as_context()))
-                            .unwrap_or_else(|| {
-                                panic!(
-                                    "failed initialization of constant expression: {const_expr:?}"
-                                )
-                            })
-                    })
-                    .collect(),
-                ElementSegmentKind::Declared => Box::from([]),
+                ElementSegmentKind::Passive => {
+                    Self::eval_element_items(context.as_context(), builder, segment.items())
+                }
+                // Note: active segments are evaluated, applied and dropped by
+                //       `initialize_table_elements` after checking that they fit.
+                ElementSegmentKind::Active(_) | ElementSegmentKind::Declared => Box::from([]),
             };
             let element = ElementSegment::new(context.as_context_mut(), segment.ty(), items);
             builder.push_element_segment(element);
         }
+    }
+
+    /// Evaluates the element segment `items` to their [`RawRef`] values.
+    fn eval_element_items(
+        context: impl AsContext,
+        builder: &InstanceEntityBuilder,
+        items: &[ConstExpr],
+    ) -> Box<[RawRef]> {
+        let ctx = InstanceBuilderContext::new(&context.as_context().store.inner, builder);
+        items
+            .iter()
+            .map(|const_expr| {
+                const_expr
+                    .eval(&ctx)
+                    .and_then(|val| val.unwrap_raw_ref(context.as_context()))
+                    .unwrap_or_else(|| {
+                        panic!("failed initialization of constant expression: {const_expr:?}")
+                    })
+            })
+            .collect()
     }
 
     /// Initializes the [`Instance`] tables with the Wasm element segments of the [`Module`].
@@ -437,14 +447,7 @@ impl Module {
         mut context: impl AsContextMut,
         builder: &InstanceEntityBuilder,
     ) -> Result<(), Error> {
-        let segments = &self.module_header().element_segments[..];
-        let elements = builder.element_segments();
-        assert_eq!(
-            segments.len(),
-            elements.len(),
-            "mismatched element segments"
-        );
-        for (segment, &element) in segments.iter().zip(elements) {
+        for segment in &self.module_header().element_segments[..] {
             if let ElementSegmentKind::Active(active) = segment.kind() {
                 let dst_index =
                     match Self::eval_init_expr(context.as_context(), builder, active.offset()) {
@@ -457,7 +460,8 @@ impl Module {
                 //       fit into the table at the given offset but also that the element segment
                 //       consists of at least 1 element member.
                 let len_table = table.size(&context);
-                let len_items = element.size(&context);
+                let len_items = u32::try_from(segment.items().len())
+                    .expect("element segments have at most 2^32 items");
                 dst_index
                     .checked_add(u64::from(len_items))
                     .filter(|&max_index| max_index <= len_table)
@@ -466,14 +470,15 @@ impl Module {
                         table_index: dst_index,
                         len: len_items,
                     })?;
-                let (table, elem) = context
+                let items =
+                    Self::eval_element_items(context.as_context(), builder, segment.items());
+                let elem = CoreElementSegment::new(segment.ty(), items);
+                let table = context
                     .as_context_mut()
                     .store
                     .inner
-                    .resolve_table_and_element_mut(&table, &element);
+                    .resolve_table_mut(&table);
                 table.init(elem.as_ref(), dst_index, 0, len_items, None)?;
-                // Now drop the active element segment as commanded by the Wasm spec.
-                elem.drop_items();
             }
         }
         Ok(())
